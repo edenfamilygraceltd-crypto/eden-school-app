@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!--Import Google Icon Font-->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!--FontAwesome icons-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- Compiled and minified CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <link rel="stylesheet" href="parent-style.css">
+
+  <title>Eden Family School - Portail Personnel</title>
+  
+  <style>
+    .role-selector {
+      display: flex;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .role-card {
+      flex: 1;
+      min-width: 150px;
+      max-width: 200px;
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s;
+      background: white;
+    }
+    
+    .role-card:hover {
+      border-color: #667eea;
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    }
+    
+    .role-card.selected {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .role-card i {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+    
+    .role-card h5 {
+      margin: 10px 0;
+      font-weight: 600;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    .alert {
+      padding: 15px;
+      border-radius: 5px;
+      margin: 15px 0;
+    }
+    
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .signup-role-section {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!--header-->
+  <header>
+    <nav class="nav-wrapper transparent" id="nb">
+      <div class="container">
+        <a href="#" class="brand-logo white-text">
+          <i class="fas fa-graduation-cap"></i>
+          <span id="B">E</span><span id="_">DEN </span><span id="B">F</span><span id="_">AMILY </span><span id="B">S</span><span id="_">CHOOL</span>
+        </a>
+        <a href="#" class="sidenav-trigger" data-target="mobile">
+          <i class="material-icons">menu</i>
+        </a>
+        
+        <!-- nav-bar for pc-->
+        <ul class="right hide-on-med-and-down" id="nav-bar">
+          <li><a href="index.html" class="fas fa-home"> ACCUEIL</a></li>
+          <li><a href="#" class="btn waves-effect waves-light" id="login-btn" onclick="openLoginModal()">
+            <i class="fas fa-sign-in-alt"></i> CONNEXION
+          </a></li>
+        </ul>
+        
+        <!-- nav-bar for mobile phone-->
+        <ul class="sidenav grey darken-4 center" id="mobile">
+          <li><h5 class="white-text fas fa-graduation-cap center">Eden Family School</h5></li>
+          <li><a href="index.html" class="waves-effect waves-light white-text fas fa-home"> ACCUEIL</a></li>
+          <li><a href="#" class="waves-effect waves-light white-text fas fa-sign-in-alt" onclick="openLoginModal()"> CONNEXION</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="white-text center header-content">
+      <h3>
+        <i class="fas fa-users-cog"></i><br/>
+        PORTAIL PERSONNEL
+        <br />
+        <strong class="fas">
+          EDEN FAMILY SCHOOL
+        </strong>
+        <br />
+        <span id="tagline">Connexion pour Enseignants, Secrétaires et Comptables</span>
+      </h3>
+      <a href="#" class="btn-large waves-effect waves-light" id="discover-btn" onclick="openLoginModal()">
+        <i class="fas fa-sign-in-alt"></i> SE CONNECTER
+      </a>
+    </div>
+  </header>
+
+  <!-- Login/Signup Modal -->
+  <div id="authModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeLoginModal()">&times;</span>
+      
+      <div class="auth-container">
+        <!-- Login Form -->
+        <div class="auth-form" id="loginForm">
+          <h4><i class="fas fa-sign-in-alt"></i> CONNEXION</h4>
+          <div id="loginAlert"></div>
+          <form onsubmit="handleLogin(event)">
+            <div class="input-field">
+              <i class="material-icons prefix">email</i>
+              <input type="email" id="login-email" required>
+              <label for="login-email">Email</label>
+            </div>
+            <div class="input-field">
+              <i class="material-icons prefix">lock</i>
+              <input type="password" id="login-password" required>
+              <label for="login-password">Mot de passe</label>
+            </div>
+            <div class="input-field">
+              <label>
+                <input type="checkbox" id="remember-me">
+                <span>Se souvenir de moi</span>
+              </label>
+            </div>
+            <button type="submit" class="btn waves-effect waves-light btn-large" id="login-submit-btn">
+              <i class="fas fa-sign-in-alt"></i> SE CONNECTER
+            </button>
+          </form>
+          <p class="center-align">
+            <a href="#" onclick="showForgotPassword()">Mot de passe oublié ?</a>
+          </p>
+          <p class="center-align">
+            Pas encore de compte ? 
+            <a href="#" onclick="switchToSignup()">Créer un compte</a>
+          </p>
+        </div>
+
+        <!-- Signup Form -->
+        <div class="auth-form hidden" id="signupForm">
+          <h4><i class="fas fa-user-plus"></i> CRÉER UN COMPTE</h4>
+          <div id="signupAlert"></div>
+          
+          <!-- Role Selection -->
+          <div class="signup-role-section">
+            <label style="font-weight: 600; margin-bottom: 10px; display: block;">Sélectionnez votre rôle *</label>
+            <div class="role-selector">
+              <div class="role-card" onclick="selectRole('teacher')" id="role-teacher">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <h5>Enseignant</h5>
+                <p style="font-size: 0.9rem; margin: 0;">Gestion des bulletins</p>
+              </div>
+              <div class="role-card" onclick="selectRole('secretary')" id="role-secretary">
+                <i class="fas fa-user-tie"></i>
+                <h5>Secrétaire</h5>
+                <p style="font-size: 0.9rem; margin: 0;">Gestion administrative</p>
+              </div>
+              <div class="role-card" onclick="selectRole('accountant')" id="role-accountant">
+                <i class="fas fa-calculator"></i>
+                <h5>Comptable</h5>
+                <p style="font-size: 0.9rem; margin: 0;">Gestion financière</p>
+              </div>
+            </div>
+            <input type="hidden" id="signup-role" required>
+          </div>
+          
+          <form onsubmit="handleSignup(event)">
+            <div class="input-field">
+              <i class="material-icons prefix">person</i>
+              <input type="text" id="signup-name" required>
+              <label for="signup-name">Nom complet</label>
+            </div>
+            <div class="input-field">
+              <i class="material-icons prefix">email</i>
+              <input type="email" id="signup-email" required>
+              <label for="signup-email">Email</label>
+            </div>
+            <div class="input-field">
+              <i class="material-icons prefix">phone</i>
+              <input type="tel" id="signup-phone" required>
+              <label for="signup-phone">Téléphone</label>
+            </div>
+            
+            <!-- Additional fields based on role -->
+            <div class="input-field hidden" id="teacher-class-field">
+              <i class="material-icons prefix">class</i>
+              <input type="text" id="signup-class" placeholder="Ex: 1ère A Maternelle">
+              <label for="signup-class">Classe assignée</label>
+            </div>
+            
+            <div class="input-field">
+              <i class="material-icons prefix">lock</i>
+              <input type="password" id="signup-password" required>
+              <label for="signup-password">Mot de passe (min. 6 caractères)</label>
+            </div>
+            <div class="input-field">
+              <i class="material-icons prefix">lock</i>
+              <input type="password" id="signup-confirm-password" required>
+              <label for="signup-confirm-password">Confirmer mot de passe</label>
+            </div>
+            <button type="submit" class="btn waves-effect waves-light btn-large" id="signup-submit-btn">
+              <i class="fas fa-user-plus"></i> CRÉER LE COMPTE
+            </button>
+          </form>
+          <p class="center-align">
+            Déjà un compte ? 
+            <a href="#" onclick="switchToLogin()">Se connecter</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--About Section-->
+  <section class="container section" id="about">
+    <div class="row">
+      <div class="col s12">
+        <h2 class="black-text center"><i class="fas fa-info-circle"></i> <u>À PROPOS DU PORTAIL</u></h2>
+        <p class="center-align flow-text">
+          Ce portail est réservé au personnel de l'école Eden Family School. 
+          Connectez-vous pour accéder à votre espace de travail selon votre rôle.
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s12 m4">
+        <div class="card hoverable">
+          <div class="card-content">
+            <span class="card-title"><i class="fas fa-chalkboard-teacher"></i> Enseignants</span>
+            <p>Créez et gérez les bulletins scolaires de vos élèves. Accédez à votre classe et suivez la progression de chaque élève.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col s12 m4">
+        <div class="card hoverable">
+          <div class="card-content">
+            <span class="card-title"><i class="fas fa-user-tie"></i> Secrétaires</span>
+            <p>Gérez les paiements, les inscriptions et les tâches administratives de l'école.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col s12 m4">
+        <div class="card hoverable">
+          <div class="card-content">
+            <span class="card-title"><i class="fas fa-calculator"></i> Comptables</span>
+            <p>Suivez les finances de l'école, enregistrez les paiements et générez les rapports financiers.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!--Page Footer-->
+  <footer class="page-footer grey darken-4">
+    <div class="container">
+      <div class="row">
+        <div class="col s12 l6">
+          <h5><span id="g"><i class="fas fa-school"></i> <u>EDEN FAMILY SCHOOL</u></span></h5>
+          <p>
+            Une école qui allie tradition et modernité pour offrir la meilleure éducation. 
+            Notre devise "Learning by doing" reflète notre engagement envers une pédagogie active et participative.
+          </p>
+        </div>
+        <div class="col s12 l4 offset-l2">
+          <h5><span id="c"><i class="fas fa-envelope"></i> <u>CONTACT</u></span></h5>
+          <ul>
+            <li><i class="fas fa-envelope"></i> edenfamily9@gmail.com</li>
+            <li><i class="fas fa-phone"></i> +250 XXX XXX XXX</li>
+            <li><i class="fas fa-map-marker-alt"></i> Kigali, Rwanda</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-copyright">
+      <div class="container center cyan-text">
+        <h6>&copy; 2025 Eden Family School - Tous droits réservés</h6>
+      </div>
+    </div>
+  </footer>
+
+  <!--Compiled and minified Jquery-->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Compiled and minified JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  
+  <script>
+    // Configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCx6kmJ59x0tLt4vh_3czvEEQrtw4aWFHs",
+      authDomain: "edendatabase-7e1ed.firebaseapp.com",
+      databaseURL: "https://edendatabase-7e1ed-default-rtdb.firebaseio.com",
+      projectId: "edendatabase-7e1ed",
+      storageBucket: "edendatabase-7e1ed.firebasestorage.app",
+      messagingSenderId: "147248399046",
+      appId: "1:147248399046:web:d0b433e755772bbe718dc7",
+      measurementId: "G-XB192PCMV7"
+    };
+
+    // Initialisation Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+    const firestore = firebase.firestore();
+
+    let selectedRole = '';
+
+    // Initialisation Materialize
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Initialisation de la page...');
+      
+      // Initialiser Materialize
+      try {
+        var elems = document.querySelectorAll('.modal');
+        M.Modal.init(elems);
+        console.log('Materialize initialisé');
+      } catch (e) {
+        console.error('Erreur initialisation Materialize:', e);
+      }
+      
+      // Initialiser les sidenav
+      try {
+        var sidenavElems = document.querySelectorAll('.sidenav');
+        M.Sidenav.init(sidenavElems);
+      } catch (e) {
+        console.error('Erreur initialisation Sidenav:', e);
+      }
+      
+      // Vérifier si l'utilisateur est déjà connecté
+      auth.onAuthStateChanged(function(user) {
+        if (user) {
+          console.log('Utilisateur déjà connecté:', user.email);
+          redirectBasedOnRole(user.email);
+        } else {
+          console.log('Aucun utilisateur connecté');
+        }
+      });
+    });
+
+    // Sélection du rôle
+    function selectRole(role) {
+      selectedRole = role;
+      document.getElementById('signup-role').value = role;
+      
+      console.log('Rôle sélectionné:', role);
+      
+      // Mettre à jour l'interface
+      document.querySelectorAll('.role-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      const selectedCard = document.getElementById('role-' + role);
+      if (selectedCard) {
+        selectedCard.classList.add('selected');
+      }
+      
+      // Afficher/masquer les champs selon le rôle
+      const classField = document.getElementById('teacher-class-field');
+      if (role === 'teacher') {
+        classField.classList.remove('hidden');
+        document.getElementById('signup-class').required = true;
+        console.log('Champ classe activé pour enseignant');
+      } else {
+        classField.classList.add('hidden');
+        document.getElementById('signup-class').required = false;
+        document.getElementById('signup-class').value = '';
+      }
+    }
+
+    // Modal Functions
+    function openLoginModal() {
+      document.getElementById('authModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLoginModal() {
+      document.getElementById('authModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+      // Réinitialiser les formulaires
+      document.getElementById('loginForm').classList.remove('hidden');
+      document.getElementById('signupForm').classList.add('hidden');
+      document.getElementById('loginAlert').innerHTML = '';
+      document.getElementById('signupAlert').innerHTML = '';
+      selectedRole = '';
+      document.getElementById('signup-role').value = '';
+      document.querySelectorAll('.role-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('authModal');
+      if (event.target == modal) {
+        closeLoginModal();
+      }
+    }
+
+    // Switch between Login and Signup
+    function switchToSignup() {
+      document.getElementById('loginForm').classList.add('hidden');
+      document.getElementById('signupForm').classList.remove('hidden');
+    }
+
+    function switchToLogin() {
+      document.getElementById('signupForm').classList.add('hidden');
+      document.getElementById('loginForm').classList.remove('hidden');
+    }
+
+    function showForgotPassword() {
+      const email = document.getElementById('login-email').value;
+      
+      if (!email) {
+        showAlert('loginAlert', 'Veuillez entrer votre email', 'error');
+        return;
+      }
+
+      auth.sendPasswordResetEmail(email)
+        .then(() => {
+          showAlert('loginAlert', 'Email de réinitialisation envoyé!', 'success');
+        })
+        .catch((error) => {
+          showAlert('loginAlert', 'Erreur: ' + error.message, 'error');
+        });
+    }
+
+    // Handle Login
+    async function handleLogin(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
+      const password = document.getElementById('login-password').value;
+      const rememberMe = document.getElementById('remember-me').checked;
+
+      if (!email || !password) {
+        showAlert('loginAlert', 'Veuillez remplir tous les champs', 'error');
+        return;
+      }
+
+      // Désactiver le bouton pendant le chargement
+      const submitBtn = document.getElementById('login-submit-btn');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
+
+      try {
+        // Set persistence
+        const persistence = rememberMe ? 
+          firebase.auth.Auth.Persistence.LOCAL : 
+          firebase.auth.Auth.Persistence.SESSION;
+        
+        await auth.setPersistence(persistence);
+        
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        
+        console.log('Connexion réussie pour:', email);
+        showAlert('loginAlert', 'Connexion réussie! Vérification du rôle...', 'success');
+        
+        // Rediriger selon le rôle
+        await redirectBasedOnRole(email);
+        
+      } catch (error) {
+        console.error('Erreur de connexion:', error);
+        let errorMessage = 'Erreur de connexion';
+        
+        switch(error.code) {
+          case 'auth/user-not-found':
+            errorMessage = 'Aucun compte trouvé avec cet email';
+            break;
+          case 'auth/wrong-password':
+            errorMessage = 'Mot de passe incorrect';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Email invalide';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'Ce compte a été désactivé';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Erreur de connexion réseau. Vérifiez votre connexion internet.';
+            break;
+          default:
+            errorMessage = error.message || 'Erreur inconnue';
+        }
+        
+        showAlert('loginAlert', errorMessage, 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    }
+
+    // Handle Signup
+    async function handleSignup(event) {
+      event.preventDefault();
+      
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim().toLowerCase();
+      const phone = document.getElementById('signup-phone').value.trim();
+      const password = document.getElementById('signup-password').value;
+      const confirmPassword = document.getElementById('signup-confirm-password').value;
+      const role = selectedRole;
+      const classe = document.getElementById('signup-class').value.trim();
+
+      // Validation
+      if (!name || !email || !phone || !password) {
+        showAlert('signupAlert', 'Veuillez remplir tous les champs obligatoires', 'error');
+        return;
+      }
+
+      if (!role) {
+        showAlert('signupAlert', 'Veuillez sélectionner un rôle', 'error');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showAlert('signupAlert', 'Les mots de passe ne correspondent pas', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showAlert('signupAlert', 'Le mot de passe doit contenir au moins 6 caractères', 'error');
+        return;
+      }
+
+      if (role === 'teacher' && !classe) {
+        showAlert('signupAlert', 'Veuillez indiquer la classe assignée', 'error');
+        return;
+      }
+
+      // Désactiver le bouton pendant le chargement
+      const submitBtn = document.getElementById('signup-submit-btn');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Création du compte...';
+
+      try {
+        console.log('Création du compte pour:', email, 'Rôle:', role);
+        
+        // Créer le compte Firebase Auth
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        
+        console.log('Compte Firebase créé:', user.uid);
+
+        // Mettre à jour le profil
+        await user.updateProfile({
+          displayName: name
+        });
+
+        // Préparer les données selon le rôle
+        const userData = {
+          id: user.uid,
+          name: name,
+          email: email,
+          phone: phone,
+          role: role,
+          createdAt: firebase.database.ServerValue.TIMESTAMP,
+          updatedAt: firebase.database.ServerValue.TIMESTAMP,
+          status: 'active'
+        };
+
+        // Ajouter les champs spécifiques selon le rôle
+        if (role === 'teacher') {
+          userData.classe = classe;
+          userData.section = classe.includes('Maternelle') || classe.includes('maternelle') ? 'maternelle' : 'primaire';
+          
+          console.log('Enregistrement enseignant dans Realtime Database...');
+          console.log('Données à enregistrer:', userData);
+          
+          // Enregistrer dans teachers avec le rôle
+          await database.ref('teachers/' + user.uid).set(userData);
+          console.log('Enseignant enregistré avec succès dans Realtime Database');
+          
+          // Vérifier que les données sont bien enregistrées
+          const verifyRef = database.ref('teachers/' + user.uid);
+          const verifySnapshot = await verifyRef.once('value');
+          if (verifySnapshot.exists()) {
+            console.log('✅ Vérification réussie - Données enregistrées:', verifySnapshot.val());
+          } else {
+            console.error('❌ Erreur: Les données ne sont pas enregistrées');
+            throw new Error('Erreur lors de l\'enregistrement des données');
+          }
+          
+          // Essayer Firestore aussi
+          try {
+            await firestore.collection('teachers').doc(user.uid).set(userData);
+            console.log('Enseignant enregistré avec succès dans Firestore');
+          } catch (e) {
+            console.log('Firestore non disponible, utilisation de Realtime Database uniquement');
+          }
+        } else if (role === 'secretary' || role === 'accountant') {
+          userData.department = role === 'accountant' ? 'finance' : 'administration';
+          
+          console.log('Enregistrement secrétaire/comptable dans Realtime Database...');
+          console.log('Données à enregistrer:', userData);
+          
+          // Enregistrer dans secretaries avec le rôle
+          await database.ref('secretaries/' + user.uid).set(userData);
+          console.log('Secrétaire/Comptable enregistré avec succès dans Realtime Database');
+          
+          // Vérifier que les données sont bien enregistrées
+          const verifyRef = database.ref('secretaries/' + user.uid);
+          const verifySnapshot = await verifyRef.once('value');
+          if (verifySnapshot.exists()) {
+            console.log('✅ Vérification réussie - Données enregistrées:', verifySnapshot.val());
+          } else {
+            console.error('❌ Erreur: Les données ne sont pas enregistrées');
+            throw new Error('Erreur lors de l\'enregistrement des données');
+          }
+          
+          // Essayer Firestore aussi
+          try {
+            await firestore.collection('secretaries').doc(user.uid).set(userData);
+            console.log('Secrétaire/Comptable enregistré avec succès dans Firestore');
+          } catch (e) {
+            console.log('Firestore non disponible, utilisation de Realtime Database uniquement');
+          }
+        }
+
+        showAlert('signupAlert', '✅ Compte créé avec succès! Redirection...', 'success');
+        
+        // Attendre un peu pour que les données soient bien enregistrées
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Rediriger selon le rôle
+        await redirectBasedOnRole(email);
+        
+      } catch (error) {
+        console.error('Erreur lors de la création du compte:', error);
+        let errorMessage = 'Erreur lors de la création du compte';
+        
+        switch(error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'Cet email est déjà utilisé. Veuillez vous connecter.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Email invalide. Veuillez entrer un email valide.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'Mot de passe trop faible. Utilisez au moins 6 caractères.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Erreur de connexion réseau. Vérifiez votre connexion internet.';
+            break;
+          default:
+            errorMessage = error.message || 'Erreur inconnue lors de la création du compte';
+        }
+        
+        showAlert('signupAlert', errorMessage, 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    }
+
+    // Redirection basée sur le rôle
+    async function redirectBasedOnRole(email) {
+      try {
+        console.log('Vérification du rôle pour:', email);
+        
+        // Normaliser l'email
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        // Vérifier si c'est un enseignant
+        console.log('Recherche dans teachers...');
+        const teacherRef = database.ref('teachers').orderByChild('email').equalTo(normalizedEmail);
+        const teacherSnapshot = await teacherRef.once('value');
+        
+        if (teacherSnapshot.exists()) {
+          const teacherData = teacherSnapshot.val();
+          const teacherKey = Object.keys(teacherData)[0];
+          const teacher = teacherData[teacherKey];
+          console.log('Enseignant trouvé:', teacher);
+          console.log('Redirection vers teacher_clean.html');
+          window.location.href = 'teacher_clean.html';
+          return;
+        }
+
+        // Vérifier si c'est un secrétaire/comptable
+        console.log('Recherche dans secretaries...');
+        const secretaryRef = database.ref('secretaries').orderByChild('email').equalTo(normalizedEmail);
+        const secretarySnapshot = await secretaryRef.once('value');
+        
+        if (secretarySnapshot.exists()) {
+          const secretaryData = secretarySnapshot.val();
+          const secretaryKey = Object.keys(secretaryData)[0];
+          const secretary = secretaryData[secretaryKey];
+          console.log('Secrétaire/Comptable trouvé:', secretary);
+          console.log('Redirection vers secretary.html');
+          window.location.href = 'secretary.html';
+          return;
+        }
+
+        // Vérifier si c'est un directeur
+        console.log('Recherche dans directors...');
+        const directorRef = database.ref('directors').orderByChild('email').equalTo(normalizedEmail);
+        const directorSnapshot = await directorRef.once('value');
+        
+        if (directorSnapshot.exists()) {
+          const directorData = directorSnapshot.val();
+          const directorKey = Object.keys(directorData)[0];
+          const director = directorData[directorKey];
+          console.log('Directeur trouvé:', director);
+          console.log('Redirection vers index.html');
+          window.location.href = 'index.html';
+          return;
+        }
+
+        // Si aucun rôle trouvé
+        console.log('Aucun rôle trouvé pour cet email');
+        showAlert('loginAlert', 'Aucun compte trouvé avec cet email. Veuillez créer un compte.', 'error');
+        
+        // Attendre un peu avant de déconnecter
+        setTimeout(() => {
+          auth.signOut().then(() => {
+            console.log('Utilisateur déconnecté');
+          }).catch(err => {
+            console.error('Erreur lors de la déconnexion:', err);
+          });
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Erreur lors de la vérification du rôle:', error);
+        showAlert('loginAlert', 'Erreur lors de la vérification du rôle: ' + error.message, 'error');
+      }
+    }
+
+    // Fonction pour afficher les alertes
+    function showAlert(containerId, message, type) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+      
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 5000);
+    }
+  </script>
+</body>
+
+</html>

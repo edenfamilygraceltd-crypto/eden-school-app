@@ -1,0 +1,154 @@
+/* Parent Portal Styles */
+
+body {
+    font-family: 'Roboto', sans-serif;
+}
+
+header {
+    position: relative;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.header-content {
+    padding: 100px 0;
+    text-align: center;
+}
+
+.header-content h3 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+#tagline {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+#discover-btn {
+    margin-top: 30px;
+}
+
+#B {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+#_ {
+    color: white;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: black;
+}
+
+.auth-container {
+    padding: 20px;
+}
+
+.auth-form {
+    display: block;
+}
+
+.auth-form.hidden {
+    display: none;
+}
+
+.auth-form h4 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Section Styles */
+.section {
+    padding: 60px 0;
+}
+
+#trend {
+    margin-bottom: 20px;
+}
+
+#service-title {
+    margin-bottom: 15px;
+    color: #2563eb;
+}
+
+.service-img {
+    width: 100%;
+    max-width: 300px;
+    margin: 20px 0;
+    border-radius: 10px;
+}
+
+/* Parallax */
+.parallax-container {
+    height: 300px;
+}
+
+/* Footer */
+#g {
+    color: #00bcd4;
+}
+
+#c {
+    color: #ff9800;
+}
+
+#fa-facebook {
+    color: #1877f2;
+}
+
+#fa-whatsapp {
+    color: #25d366;
+}
+
+#fa-instagram {
+    background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Responsive */
+@media only screen and (max-width: 600px) {
+    .header-content h3 {
+        font-size: 2rem;
+    }
+    
+    #tagline {
+        font-size: 1.2rem;
+    }
+}

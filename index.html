@@ -1,0 +1,4050 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eden Family School - Portail Parents</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: #f8f9fa;
+    }
+
+    /* Navigation */
+    nav {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 0;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    }
+
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .logo i {
+      font-size: 2rem;
+    }
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    .nav-links a:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+
+    .notification-icon {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #ff4757;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+
+    .login-btn {
+      background: white;
+      color: #667eea;
+      padding: 0.7rem 1.5rem !important;
+      border-radius: 25px;
+      font-weight: 600;
+    }
+
+    .mobile-menu {
+      display: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* Carousel Styles */
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      margin-top: 80px;
+    }
+
+    .carousel-slide {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .carousel-slide.active {
+      opacity: 1;
+    }
+
+    .carousel-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.85), rgba(118, 75, 162, 0.85));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+    }
+
+    .carousel-content h1 {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+      animation: fadeInUp 1s;
+    }
+
+    .carousel-content p {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .carousel-btn {
+      background: white;
+      color: #667eea;
+      padding: 1rem 2.5rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-block;
+      margin: 0.5rem;
+      transition: all 0.3s;
+      cursor: pointer;
+      border: none;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .carousel-btn:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .carousel-controls {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 1rem;
+    }
+
+    .carousel-dot {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .carousel-dot.active {
+      background: white;
+      width: 40px;
+      border-radius: 10px;
+    }
+
+    .carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.3);
+      color: white;
+      border: none;
+      font-size: 2rem;
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    .carousel-arrow:hover {
+      background: rgba(255,255,255,0.5);
+    }
+
+    .carousel-arrow.left {
+      left: 20px;
+    }
+
+    .carousel-arrow.right {
+      right: 20px;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      animation: fadeIn 0.3s;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      background: white;
+      margin: 5% auto;
+      padding: 2rem;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 900px;
+      position: relative;
+      animation: slideDown 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-size: 2rem;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .close-modal:hover {
+      color: #000;
+    }
+
+    .modal-content h2 {
+      margin-bottom: 1.5rem;
+      color: #667eea;
+    }
+
+    .input-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .input-group input, .input-group select, .input-group textarea {
+      width: 100%;
+      padding: 0.8rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 1rem;
+      background: #f8f9fa;
+      color: #333;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-secondary:hover {
+      background: #e9ecef;
+    }
+
+    /* Sections */
+    section {
+      padding: 5rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 3rem;
+      color: #667eea;
+      position: relative;
+      padding-bottom: 1rem;
+    }
+
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 4px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 2px;
+    }
+
+    /* Gallery Grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .gallery-item {
+      position: relative;
+      height: 300px;
+      border-radius: 15px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+    }
+
+    .gallery-item:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .gallery-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      color: white;
+      padding: 1.5rem;
+      transform: translateY(100%);
+      transition: all 0.3s;
+    }
+
+    .gallery-item:hover .gallery-overlay {
+      transform: translateY(0);
+    }
+
+    /* Academic Activities */
+    .academic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .academic-card {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .academic-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+
+    .academic-card i {
+      font-size: 3.5rem;
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    .academic-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: #333;
+    }
+
+    /* Presentation Section Styles */
+    .presentation-section {
+      margin-top: 4rem;
+    }
+
+    .presentation-filter {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .presentation-filter-btn {
+      background: white;
+      border: 2px solid #667eea;
+      color: #667eea;
+      padding: 0.8rem 2rem;
+      border-radius: 25px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .presentation-filter-btn:hover,
+    .presentation-filter-btn.active {
+      background: #667eea;
+      color: white;
+    }
+
+    .presentation-classes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .presentation-class-card {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+    }
+
+    .presentation-class-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+
+    .presentation-class-header {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .presentation-class-header h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .presentation-class-content {
+      padding: 1.5rem;
+    }
+
+    .presentation-media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .presentation-media-item {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      height: 150px;
+    }
+
+    .presentation-media-item img,
+    .presentation-media-item video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .presentation-media-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .presentation-info {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #eee;
+    }
+
+    .presentation-info p {
+      margin-bottom: 0.5rem;
+      color: #666;
+    }
+
+    .presentation-info strong {
+      color: #333;
+    }
+
+    .presentation-timestamp {
+      font-size: 0.85rem;
+      color: #888;
+      text-align: right;
+      margin-top: 1rem;
+    }
+
+    /* Real-time Status Indicator */
+    .realtime-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #4ecdc4;
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 25px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      z-index: 100;
+      animation: pulse 2s infinite;
+    }
+
+    .realtime-indicator.offline {
+      background: #ff6b6b;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    /* School Info Dashboard */
+    .info-dashboard {
+      margin-top: 4rem;
+    }
+
+    .info-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .info-card {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+    }
+
+    .info-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .info-card-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-card-header i {
+      font-size: 2.5rem;
+      color: #667eea;
+    }
+
+    .info-card h3 {
+      color: #667eea;
+      margin-bottom: 0.5rem;
+    }
+
+    .info-content {
+      margin-top: 1rem;
+    }
+
+    .info-item {
+      padding: 0.8rem 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .info-item:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .info-value {
+      color: #333;
+      font-weight: 500;
+    }
+
+    .info-value.live {
+      color: #4ecdc4;
+      font-weight: 600;
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    /* Report Section in Contact */
+    .report-section {
+      background: white;
+      border-radius: 20px;
+      padding: 3rem;
+      margin: 3rem auto;
+      max-width: 800px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .report-section h3 {
+      color: #667eea;
+      margin-bottom: 2rem;
+      text-align: center;
+      font-size: 2rem;
+    }
+
+    .recipient-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .recipient-option {
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .recipient-option:hover {
+      border-color: #667eea;
+      transform: translateY(-5px);
+    }
+
+    .recipient-option.selected {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+
+    .recipient-option i {
+      font-size: 2.5rem;
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    .recipient-option h4 {
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .report-status {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      border-radius: 15px;
+      background: #f8f9fa;
+      text-align: center;
+    }
+
+    .report-status h4 {
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    .report-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 1rem;
+      padding-right: 1rem;
+    }
+
+    .report-item {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid #667eea;
+    }
+
+    .report-item.unread {
+      border-left-color: #ff6b6b;
+      background: #fff0f0;
+    }
+
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .report-recipient {
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    .report-date {
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    .report-subject {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+
+    .report-message {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    /* Library Section */
+    .library-container {
+      margin-top: 3rem;
+    }
+
+    .library-level-buttons {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .level-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 1.5rem 3rem;
+      border: none;
+      border-radius: 15px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .level-btn:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 35px rgba(102, 126, 234, 0.5);
+    }
+
+    .level-btn i {
+      margin-right: 0.5rem;
+    }
+
+    .library-content {
+      display: none;
+      animation: fadeIn 0.5s;
+    }
+
+    .library-content.active {
+      display: block;
+    }
+
+    .subject-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .subject-card {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .subject-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+
+    .subject-card i {
+      font-size: 3.5rem;
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    .subject-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: #333;
+    }
+
+    .books-section {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-radius: 20px;
+      padding: 3rem;
+      margin-top: 3rem;
+    }
+
+    .books-section h3 {
+      color: #667eea;
+      margin-bottom: 2rem;
+      font-size: 2rem;
+      text-align: center;
+    }
+
+    .books-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+    }
+
+    .book-item {
+      background: white;
+      border-radius: 15px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .book-item:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .book-item i {
+      font-size: 4rem;
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    .book-item h4 {
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+
+    .book-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #ff4757;
+      color: white;
+      padding: 0.3rem 0.7rem;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .book-badge.free {
+      background: #4ecdc4;
+    }
+
+    .book-item .read-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 0.7rem 1.5rem;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 1rem;
+      transition: all 0.3s;
+    }
+
+    .book-item .read-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Subscription Styles */
+    .subscription-plan {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      margin: 2rem 0;
+      border: 3px solid #ffd166;
+    }
+
+    .subscription-plan h3 {
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    .price {
+      font-size: 3rem;
+      color: #4ecdc4;
+      font-weight: 700;
+      margin: 1rem 0;
+    }
+
+    .mobile-money-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .mobile-money-option {
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .mobile-money-option:hover {
+      border-color: #4ecdc4;
+      transform: translateY(-5px);
+    }
+
+    .mobile-money-option.selected {
+      border-color: #4ecdc4;
+      background: #f0fffe;
+    }
+
+    .mobile-money-option img {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 1rem;
+    }
+
+    /* Book Reader */
+    .book-reader {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      z-index: 4000;
+      overflow-y: auto;
+    }
+
+    .book-reader.active {
+      display: block;
+    }
+
+    .book-reader-header {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 4001;
+    }
+
+    .book-reader-content {
+      padding: 80px 3rem 3rem;
+      line-height: 1.8;
+      font-size: 1.1rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .book-page {
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .book-page h3 {
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    .book-reader-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-top: 1px solid #eee;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .voice-control-book {
+      background: #4ecdc4;
+      color: white;
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.3s;
+    }
+
+    .voice-control-book:hover {
+      transform: scale(1.1);
+    }
+
+    .voice-control-book.active {
+      background: #ff6b6b;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    /* Subscription Status */
+    .subscription-status {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-left: 1rem;
+    }
+
+    .subscription-status.active {
+      background: #4ecdc4;
+      color: white;
+    }
+
+    .subscription-status.inactive {
+      background: #ff6b6b;
+      color: white;
+    }
+
+    .subscription-status.trial {
+      background: #ffd166;
+      color: #333;
+    }
+
+    /* SECTION DES JEUX ÉDUCATIFS */
+    .games-section {
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      padding: 5rem 2rem;
+    }
+
+    .games-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 4rem 2rem;
+      text-align: center;
+      margin-bottom: 3rem;
+      border-radius: 20px;
+    }
+
+    .games-header h1 {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+      text-shadow: 3px 3px 0 #ffd166;
+    }
+
+    .games-header p {
+      font-size: 1.2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .games-categories {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Sélection de niveau et difficulté */
+    .level-selection {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .level-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .level-option {
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .level-option:hover {
+      border-color: #667eea;
+      transform: translateY(-5px);
+    }
+
+    .level-option.selected {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+
+    .level-option i {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #667eea;
+    }
+
+    /* Catégories de Jeux */
+    .game-categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    .category-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      text-align: center;
+      border: 5px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .category-card:hover {
+      transform: translateY(-15px) scale(1.05);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+      border-color: #ff6b6b;
+    }
+
+    .category-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+      animation: rainbow 3s linear infinite;
+    }
+
+    .category-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      display: inline-block;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .category-card h3 {
+      color: #2d3561;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .category-card p {
+      color: #666;
+      margin-bottom: 1.5rem;
+      min-height: 60px;
+    }
+
+    .play-category-btn {
+      background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .play-category-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+    }
+
+    .play-category-btn.disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+    }
+
+    .play-category-btn.disabled:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Game Container */
+    .game-container {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      z-index: 3000;
+      overflow-y: auto;
+      padding: 80px 2rem 2rem;
+    }
+
+    .game-container.active {
+      display: block;
+      animation: slideUp 0.5s;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(50px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .game-title {
+      color: #ff6b6b;
+      font-size: 2.5rem;
+      margin: 0;
+    }
+
+    .game-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .voice-control {
+      background: #4ecdc4;
+      color: white;
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.3s;
+    }
+
+    .voice-control:hover {
+      transform: scale(1.1);
+    }
+
+    .voice-control.active {
+      background: #ff6b6b;
+      animation: pulse 1.5s infinite;
+    }
+
+    .back-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .back-btn:hover {
+      background: #764ba2;
+    }
+
+    /* Game Content */
+    .game-content {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+      min-height: 400px;
+    }
+
+    .game-canvas-large {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-radius: 20px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Interface de Mathématiques - CORRIGÉE */
+    .math-question {
+      font-size: 2.5rem;
+      color: #333;
+      margin-bottom: 2rem;
+      text-align: center;
+      padding: 1rem;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      min-width: 300px;
+    }
+
+    .math-answer-input {
+      width: 200px;
+      height: 60px;
+      font-size: 2rem;
+      text-align: center;
+      border: 3px solid #667eea;
+      border-radius: 15px;
+      margin-bottom: 2rem;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .math-answer-input:focus {
+      border-color: #4ecdc4;
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .math-buttons {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+      max-width: 400px;
+    }
+
+    .math-btn {
+      background: white;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #667eea;
+      cursor: pointer;
+      transition: all 0.3s;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .math-btn:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-3px);
+    }
+
+    .math-btn.clear {
+      grid-column: span 2;
+      background: #ff6b6b;
+      color: white;
+      border-color: #ff6b6b;
+    }
+
+    .math-btn.submit {
+      grid-column: span 3;
+      background: #4ecdc4;
+      color: white;
+      border-color: #4ecdc4;
+      font-size: 1.2rem;
+    }
+
+    /* Jeu de comptage amélioré */
+    .counting-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .counting-items-display {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      max-width: 500px;
+    }
+
+    .counting-item {
+      font-size: 2.5rem;
+      padding: 1rem;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      animation: popIn 0.5s;
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .game-sidebar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 2rem;
+      color: white;
+    }
+
+    .game-instruction {
+      margin-bottom: 2rem;
+    }
+
+    .game-instruction h3 {
+      color: #ffd166;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+
+    .game-instruction p {
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    .game-score-board {
+      background: rgba(255,255,255,0.1);
+      border-radius: 15px;
+      padding: 1.5rem;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .score-display {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #ffd166;
+      margin: 1rem 0;
+    }
+
+    .score-label {
+      font-size: 1.2rem;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .game-progress {
+      margin-top: 2rem;
+    }
+
+    .progress-bar {
+      height: 10px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #4ecdc4;
+      border-radius: 5px;
+      transition: width 0.5s;
+    }
+
+    /* Exercices supplémentaires */
+    .exercises-section {
+      padding: 3rem 2rem;
+      background: white;
+      border-radius: 20px;
+      margin: 2rem auto;
+      max-width: 1400px;
+    }
+
+    .exercises-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .exercise-card {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+      cursor: pointer;
+      border-left: 5px solid #667eea;
+    }
+
+    .exercise-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .exercise-card h4 {
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    .exercise-card p {
+      color: #666;
+      margin-bottom: 1rem;
+    }
+
+    .exercise-difficulty {
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .difficulty-easy {
+      background: #4ecdc4;
+      color: white;
+    }
+
+    .difficulty-medium {
+      background: #ffd166;
+      color: #333;
+    }
+
+    .difficulty-hard {
+      background: #ff6b6b;
+      color: white;
+    }
+
+    /* Styles pour les jeux de coloriage et traçage */
+    .game-items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .game-item {
+      background: white;
+      border-radius: 15px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 3px solid #e0e0e0;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .game-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border-color: #667eea;
+    }
+
+    .game-item.correct {
+      border-color: #4ecdc4;
+      background: #f0fffe;
+      animation: correct 0.5s;
+    }
+
+    .game-item.wrong {
+      border-color: #ff6b6b;
+      background: #fff0f0;
+      animation: shake 0.5s;
+    }
+
+    @keyframes correct {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .item-text {
+      font-weight: 600;
+      margin-top: 0.5rem;
+      color: #333;
+    }
+
+    /* Canvas styles */
+    canvas {
+      display: block;
+    }
+
+    /* Compte utilisateur */
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      background: white;
+      color: #667eea;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    /* Messagerie de paiement */
+    .payment-message {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+      border-left: 5px solid #4ecdc4;
+    }
+
+    .payment-message.success {
+      border-left-color: #4ecdc4;
+      background: #f0fffe;
+    }
+
+    .payment-message.error {
+      border-left-color: #ff6b6b;
+      background: #fff0f0;
+    }
+
+    .payment-message.warning {
+      border-left-color: #ffd166;
+      background: #fffbf0;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .game-content {
+        grid-template-columns: 1fr;
+      }
+      
+      .math-buttons {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        position: fixed;
+        left: -100%;
+        top: 80px;
+        flex-direction: column;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        width: 100%;
+        padding: 2rem;
+        transition: 0.3s;
+        box-shadow: 0 10px 27px rgba(0,0,0,0.1);
+      }
+
+      .nav-links.active {
+        left: 0;
+      }
+
+      .mobile-menu {
+        display: block;
+      }
+
+      .carousel-content h1 {
+        font-size: 2rem;
+      }
+
+      .game-categories-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .games-header h1 {
+        font-size: 2.5rem;
+      }
+
+      .game-container {
+        padding: 1.5rem;
+      }
+
+      .math-buttons {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .presentation-classes-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .info-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .recipient-selector {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .math-buttons {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .game-container {
+        padding: 1.5rem;
+      }
+
+      .math-question {
+        font-size: 1.5rem;
+      }
+
+      .presentation-filter {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .presentation-filter-btn {
+        width: 100%;
+        max-width: 250px;
+      }
+
+      .realtime-indicator {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+        text-align: center;
+      }
+    }
+
+    /* Footer */
+    footer {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 3rem 2rem;
+      margin-top: 4rem;
+    }
+
+    .footer-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+    }
+
+    .footer-section h3 {
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+    }
+
+    .footer-section p {
+      line-height: 1.8;
+    }
+
+    .footer-bottom {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-container">
+      <a href="#accueil" class="logo">
+        <i class="fas fa-graduation-cap"></i>
+        <span>EDEN FAMILY SCHOOL</span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#accueil"><i class="fas fa-home"></i> Accueil</a></li>
+        <li><a href="#galerie"><i class="fas fa-images"></i> Galerie</a></li>
+        <li><a href="#presentation"><i class="fas fa-graduation-cap"></i> Présentations</a></li>
+        <li><a href="#bibliotheque"><i class="fas fa-book"></i> Bibliothèque</a></li>
+        <li><a href="#jeux"><i class="fas fa-gamepad"></i> Jeux Éducatifs</a></li>
+        <li><a href="#contact"><i class="fas fa-envelope"></i> Contact & Rapports</a></li>
+        <li><a href="#" onclick="openSettingsModal()"><i class="fas fa-cog"></i> Paramètres</a></li>
+        <li class="notification-icon" onclick="toggleNotifications()">
+          <a href="#"><i class="fas fa-bell"></i></a>
+          <span class="notification-badge" id="notifBadge">0</span>
+        </li>
+        <li class="user-info" id="userInfo" style="display: none;">
+          <div class="user-avatar" id="userAvatar">U</div>
+          <span id="userName"></span>
+          <span class="subscription-status inactive" id="subscriptionStatus">Non Abonné</span>
+        </li>
+        <li id="loginBtn">
+          <a href="#" class="login-btn" onclick="openAuthModal()">
+            <i class="fas fa-user-plus"></i> Créer un compte
+          </a>
+        </li>
+        <li style="display: none;" id="logoutBtn">
+          <a href="#" onclick="logout()" style="color: #ff4757;">
+            <i class="fas fa-sign-out-alt"></i> Déconnexion
+          </a>
+        </li>
+      </ul>
+      <div class="mobile-menu" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Modal d'authentification -->
+  <div class="modal" id="authModal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeAuthModal()">&times;</span>
+      <h2 id="authModalTitle">Créer un compte parent</h2>
+      
+      <div id="authTabs" style="display: flex; margin-bottom: 2rem; border-bottom: 2px solid #e0e0e0;">
+        <button id="loginTab" onclick="showAuthTab('login')" style="flex: 1; padding: 1rem; border: none; background: none; font-weight: 600; color: #667eea; border-bottom: 3px solid #667eea; cursor: pointer;">
+          Connexion
+        </button>
+        <button id="registerTab" onclick="showAuthTab('register')" style="flex: 1; padding: 1rem; border: none; background: none; font-weight: 600; color: #666; border-bottom: 3px solid transparent; cursor: pointer;">
+          Inscription
+        </button>
+      </div>
+
+      <!-- Formulaire de connexion -->
+      <div id="loginForm" style="display: block;">
+        <div class="input-group">
+          <label for="loginEmail"><i class="fas fa-envelope"></i> Email</label>
+          <input type="email" id="loginEmail" placeholder="votre@email.com">
+        </div>
+        <div class="input-group">
+          <label for="loginPassword"><i class="fas fa-lock"></i> Mot de passe</label>
+          <input type="password" id="loginPassword" placeholder="Votre mot de passe">
+        </div>
+        <button class="btn-primary" onclick="login()">
+          <i class="fas fa-sign-in-alt"></i> Se connecter
+        </button>
+        <p style="text-align: center; margin-top: 1rem; color: #666;">
+          Nouveau parent? <a href="#" onclick="showAuthTab('register')" style="color: #667eea; font-weight: 600;">Créez un compte</a>
+        </p>
+      </div>
+
+      <!-- Formulaire d'inscription -->
+      <div id="registerForm" style="display: none;">
+        <div class="input-group">
+          <label for="registerName"><i class="fas fa-user"></i> Nom complet</label>
+          <input type="text" id="registerName" placeholder="Votre nom et prénom">
+        </div>
+        <div class="input-group">
+          <label for="registerEmail"><i class="fas fa-envelope"></i> Email</label>
+          <input type="email" id="registerEmail" placeholder="votre@email.com">
+        </div>
+        <div class="input-group">
+          <label for="registerPhone"><i class="fas fa-phone"></i> Numéro de téléphone</label>
+          <input type="tel" id="registerPhone" placeholder="+250 78X XXX XXX">
+        </div>
+        <div class="input-group">
+          <label for="registerPassword"><i class="fas fa-lock"></i> Mot de passe</label>
+          <input type="password" id="registerPassword" placeholder="Créez un mot de passe">
+        </div>
+        <div class="input-group">
+          <label for="registerConfirmPassword"><i class="fas fa-lock"></i> Confirmer le mot de passe</label>
+          <input type="password" id="registerConfirmPassword" placeholder="Retapez votre mot de passe">
+        </div>
+        <div class="input-group">
+          <label>
+            <input type="checkbox" id="registerTerms">
+            J'accepte les <a href="#" style="color: #667eea;">conditions d'utilisation</a> et la <a href="#" style="color: #667eea;">politique de confidentialité</a>
+          </label>
+        </div>
+        <button class="btn-primary" onclick="register()">
+          <i class="fas fa-user-plus"></i> Créer mon compte
+        </button>
+        <p style="text-align: center; margin-top: 1rem; color: #666;">
+          Déjà un compte? <a href="#" onclick="showAuthTab('login')" style="color: #667eea; font-weight: 600;">Connectez-vous</a>
+        </p>
+      </div>
+
+      <!-- Message d'information -->
+      <div class="payment-message warning" style="margin-top: 2rem;">
+        <h4><i class="fas fa-info-circle"></i> Information importante</h4>
+        <p>En créant un compte, vous bénéficiez de <strong>3 jeux gratuits</strong>.</p>
+        <p>Pour continuer à jouer au-delà de 3 jeux, vous devez souscrire à un abonnement.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal d'abonnement -->
+  <div class="modal" id="subscriptionModal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeSubscriptionModal()">&times;</span>
+      <h2><i class="fas fa-crown"></i> Abonnement Premium</h2>
+      
+      <div class="subscription-plan">
+        <h3>Accès Complet</h3>
+        <p>Débloquez tous les jeux éducatifs et la bibliothèque complète</p>
+        <div class="price">5.000 FCFA<span style="font-size: 1rem; color: #666;">/mois</span></div>
+        <p><i class="fas fa-check" style="color: #4ecdc4;"></i> Accès illimité à tous les jeux</p>
+        <p><i class="fas fa-check" style="color: #4ecdc4;"></i> Bibliothèque complète</p>
+        <p><i class="fas fa-check" style="color: #4ecdc4;"></i> Pas de publicités</p>
+        <p><i class="fas fa-check" style="color: #4ecdc4;"></i> Support prioritaire</p>
+      </div>
+
+      <div class="mobile-money-options">
+        <div class="mobile-money-option" onclick="selectPaymentMethod('mtn')" id="mtnOption">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Mtn-logo.svg/1200px-Mtn-logo.svg.png" alt="MTN">
+          <h4>MTN Mobile Money</h4>
+          <p>+250 78X XXX XXX</p>
+        </div>
+        <div class="mobile-money-option" onclick="selectPaymentMethod('airtel')" id="airtelOption">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Airtel-Logo.svg/2560px-Airtel-Logo.svg.png" alt="Airtel">
+          <h4>Airtel Money</h4>
+          <p>+250 73X XXX XXX</p>
+        </div>
+      </div>
+
+      <div id="paymentDetails" style="display: none;">
+        <div class="input-group">
+          <label for="paymentPhone"><i class="fas fa-phone"></i> Votre numéro de téléphone</label>
+          <input type="tel" id="paymentPhone" placeholder="+250 78X XXX XXX">
+        </div>
+        <div class="input-group">
+          <label for="paymentCode"><i class="fas fa-key"></i> Code de paiement reçu</label>
+          <input type="text" id="paymentCode" placeholder="Entrez le code reçu par SMS">
+        </div>
+        <div class="payment-message warning">
+          <p><i class="fas fa-exclamation-triangle"></i> <strong>Instructions :</strong></p>
+          <p>1. Envoyez <strong>5.000 FCFA</strong> au numéro <strong id="paymentNumber">+250 788 123 456</strong></p>
+          <p>2. Vous recevrez un code par SMS</p>
+          <p>3. Entrez ce code ci-dessus pour activer votre abonnement</p>
+        </div>
+        <button class="btn-primary" onclick="verifyPayment()">
+          <i class="fas fa-check-circle"></i> Vérifier le paiement
+        </button>
+      </div>
+
+      <div id="paymentSuccess" style="display: none; text-align: center;">
+        <div style="font-size: 4rem; color: #4ecdc4; margin: 2rem 0;">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <h3 style="color: #4ecdc4;">Paiement réussi !</h3>
+        <p>Votre abonnement a été activé avec succès.</p>
+        <p>Vous avez maintenant accès à tous les jeux éducatifs.</p>
+        <button class="btn-primary" onclick="closeSubscriptionModal()" style="max-width: 300px; margin: 2rem auto;">
+          <i class="fas fa-play"></i> Commencer à jouer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal des jeux gratuits restants -->
+  <div class="modal" id="freeGamesModal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeFreeGamesModal()">&times;</span>
+      <h2><i class="fas fa-gamepad"></i> Jeux gratuits restants</h2>
+      
+      <div style="text-align: center; padding: 2rem;">
+        <div style="font-size: 4rem; color: #667eea; margin-bottom: 1rem;">
+          <i class="fas fa-ticket-alt"></i>
+        </div>
+        <h3 id="freeGamesCount">3 jeux gratuits restants</h3>
+        <p>Vous avez utilisé <span id="usedGamesCount">0</span> jeux sur 3 gratuits</p>
+        
+        <div style="background: #f8f9fa; border-radius: 15px; padding: 1.5rem; margin: 2rem 0;">
+          <h4><i class="fas fa-info-circle"></i> Comment continuer à jouer ?</h4>
+          <p>Une fois vos 3 jeux gratuits épuisés, vous pouvez :</p>
+          <p>1. <strong>S'abonner</strong> pour un accès illimité (5.000 FCFA/mois)</p>
+          <p>2. <strong>Attendre demain</strong> pour obtenir 1 jeu gratuit supplémentaire</p>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+          <button class="btn-primary" onclick="closeFreeGamesModal(); startGame(currentGameType);" style="max-width: 200px;">
+            <i class="fas fa-play"></i> Jouer maintenant
+          </button>
+          <button class="btn-secondary" onclick="closeFreeGamesModal(); openSubscriptionModal();" style="max-width: 200px;">
+            <i class="fas fa-crown"></i> S'abonner
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal des présentations -->
+  <div class="modal" id="presentationModal">
+    <div class="modal-content" style="max-width: 1200px;">
+      <span class="close-modal" onclick="closePresentationModal()">&times;</span>
+      <h2><i class="fas fa-video"></i> Présentations des Classes</h2>
+      
+      <div class="presentation-section">
+        <!-- Filtres par niveau -->
+        <div class="presentation-filter">
+          <button class="presentation-filter-btn active" onclick="filterPresentations('all')">
+            <i class="fas fa-layer-group"></i> Tous les niveaux
+          </button>
+          <button class="presentation-filter-btn" onclick="filterPresentations('maternelle')">
+            <i class="fas fa-child"></i> Maternelle
+          </button>
+          <button class="presentation-filter-btn" onclick="filterPresentations('primaire')">
+            <i class="fas fa-school"></i> Primaire
+          </button>
+        </div>
+
+        <!-- Liste des présentations -->
+        <div id="presentationsContainer" class="presentation-classes-grid">
+          <!-- Les présentations seront chargées dynamiquement depuis Firebase -->
+        </div>
+
+        <!-- Indicateur de chargement en temps réel -->
+        <div id="realtimeIndicator" style="text-align: center; margin-top: 2rem; padding: 1rem; background: #f0f4ff; border-radius: 10px;">
+          <i class="fas fa-sync-alt fa-spin"></i>
+          <span style="margin-left: 10px;">Connexion en temps réel active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section Accueil avec Carousel -->
+  <section id="accueil" class="carousel-container">
+    <div class="carousel-slide active" style="background-image: url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200');">
+      <div class="carousel-overlay">
+        <div class="carousel-content">
+          <h1><i class="fas fa-book-reader"></i> Bienvenue au Portail Parents</h1>
+          <p>Learning by doing - Excellence et Innovation</p>
+          <button class="carousel-btn" onclick="scrollToSection('presentation')"><i class="fas fa-video"></i> Voir les Présentations</button>
+          <button class="carousel-btn" onclick="scrollToSection('bibliotheque')"><i class="fas fa-book"></i> Bibliothèque</button>
+        </div>
+      </div>
+    </div>
+    <div class="carousel-slide" style="background-image: url('https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1200');">
+      <div class="carousel-overlay">
+        <div class="carousel-content">
+          <h1><i class="fas fa-graduation-cap"></i> Excellence Académique</h1>
+          <p>Une éducation de qualité pour vos enfants</p>
+          <button class="carousel-btn" onclick="openPresentationModal()"><i class="fas fa-video"></i> Présentations des Classes</button>
+        </div>
+      </div>
+    </div>
+    <div class="carousel-slide" style="background-image: url('https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1200');">
+      <div class="carousel-overlay">
+        <div class="carousel-content">
+          <h1><i class="fas fa-users"></i> Notre Communauté</h1>
+          <p>Ensemble pour l'avenir de vos enfants</p>
+          <button class="carousel-btn" onclick="scrollToSection('jeux')"><i class="fas fa-gamepad"></i> Jeux Éducatifs</button>
+        </div>
+      </div>
+    </div>
+    
+    <button class="carousel-arrow left" onclick="changeSlide(-1)">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <button class="carousel-arrow right" onclick="changeSlide(1)">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+    
+    <div class="carousel-controls">
+      <span class="carousel-dot active" onclick="goToSlide(0)"></span>
+      <span class="carousel-dot" onclick="goToSlide(1)"></span>
+      <span class="carousel-dot" onclick="goToSlide(2)"></span>
+    </div>
+  </section>
+
+  <!-- Indicateur de connexion en temps réel -->
+  <div class="realtime-indicator" id="realtimeStatus">
+    <i class="fas fa-circle"></i>
+    <span>Connexion en temps réel active</span>
+  </div>
+
+  <!-- Section Informations de l'école en temps réel -->
+  <section id="info">
+    <h2 class="section-title"><i class="fas fa-info-circle"></i> Informations de l'École</h2>
+    
+    <div class="info-dashboard">
+      <div class="info-cards">
+        <!-- Informations générales -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <i class="fas fa-school"></i>
+            <h3>Informations Générales</h3>
+          </div>
+          <div class="info-content">
+            <div class="info-item">
+              <span class="info-label">Statut de l'école:</span>
+              <span class="info-value live" id="schoolStatus">Ouverte</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Élèves présents:</span>
+              <span class="info-value" id="studentsPresent">0</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Enseignants présents:</span>
+              <span class="info-value" id="teachersPresent">0</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Dernière mise à jour:</span>
+              <span class="info-value" id="lastUpdate">--:--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Événements à venir -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <i class="fas fa-calendar-alt"></i>
+            <h3>Événements à Venir</h3>
+          </div>
+          <div class="info-content" id="upcomingEvents">
+            <!-- Événements chargés dynamiquement -->
+          </div>
+        </div>
+
+        <!-- Annonces importantes -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <i class="fas fa-bullhorn"></i>
+            <h3>Annonces Importantes</h3>
+          </div>
+          <div class="info-content" id="importantAnnouncements">
+            <!-- Annonces chargées dynamiquement -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section Galerie -->
+  <section id="galerie">
+    <h2 class="section-title"><i class="fas fa-images"></i> Galerie</h2>
+    <div class="gallery-grid">
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600" alt="Classe">
+        <div class="gallery-overlay">
+          <h3>Nos Salles de Classe</h3>
+          <p>Modernes et bien équipées</p>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=600" alt="Étudiants">
+        <div class="gallery-overlay">
+          <h3>Nos Élèves</h3>
+          <p>Passionnés par l'apprentissage</p>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600" alt="Activités">
+        <div class="gallery-overlay">
+          <h3>Activités</h3>
+          <p>Sports et culture</p>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=600" alt="Bibliothèque">
+        <div class="gallery-overlay">
+          <h3>Bibliothèque</h3>
+          <p>Riche collection de livres</p>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1588072432836-e10032774350?w=600" alt="Laboratoire">
+        <div class="gallery-overlay">
+          <h3>Laboratoires</h3>
+          <p>Sciences pratiques</p>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=600" alt="Cour">
+        <div class="gallery-overlay">
+          <h3>Cour de Récréation</h3>
+          <p>Sécurisée et amusante</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section Présentation -->
+  <section id="presentation">
+    <h2 class="section-title"><i class="fas fa-video"></i> Présentations des Classes</h2>
+    <div style="text-align: center; margin-bottom: 3rem;">
+      <p style="font-size: 1.2rem; color: #666; max-width: 800px; margin: 0 auto;">
+        Activité académique
+      </p>
+    </div>
+
+    <div class="academic-grid">
+      <div class="academic-card" onclick="openPresentationModal()">
+        <i class="fas fa-video"></i>
+        <h3>Présentations</h3>
+        <p>Vidéos et photos de chaque classe</p>
+        <div class="presentation-timestamp" style="margin-top: 1rem; color: #667eea;">
+          <i class="fas fa-sync-alt"></i> Mise à jour en temps réel
+        </div>
+      </div>
+
+      <div class="academic-card" onclick="openAcademicPage('homeworkPage')">
+        <i class="fas fa-book"></i>
+        <h3>Devoirs</h3>
+        <p>Consultez et téléchargez les devoirs</p>
+      </div>
+      <div class="academic-card" onclick="openAcademicPage('testsPage')">
+        <i class="fas fa-clipboard-check"></i>
+        <h3>Tests</h3>
+        <p>Calendrier et résultats des tests</p>
+      </div>
+      <div class="academic-card" onclick="openAcademicPage('examsPage')">
+        <i class="fas fa-file-alt"></i>
+        <h3>Examens</h3>
+        <p>Informations sur les examens</p>
+      </div>
+      <div class="academic-card" onclick="openAcademicPage('vacationPage')">
+        <i class="fas fa-umbrella-beach"></i>
+        <h3>Travaux de Vacances</h3>
+        <p>Activités pendant les vacances</p>
+      </div>
+      <div class="academic-card" onclick="viewParentMeetings()">
+        <i class="fas fa-users"></i>
+        <h3>Réunions Parents</h3>
+        <p>Calendrier des rencontres</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section Bibliothèque -->
+  <section id="bibliotheque">
+    <h2 class="section-title"><i class="fas fa-book-reader"></i> Bibliothèque de Lecture</h2>
+    
+    <div class="library-container">
+      <div class="library-level-buttons">
+        <button class="level-btn" onclick="showLibraryLevel('maternelle')">
+          <i class="fas fa-child"></i> MATERNELLE
+        </button>
+        <button class="level-btn" onclick="showLibraryLevel('primaire')">
+          <i class="fas fa-school"></i> ÉCOLE PRIMAIRE
+        </button>
+      </div>
+
+      <!-- Maternelle Content -->
+      <div class="library-content active" id="maternelle-content">
+        <h3 style="text-align: center; color: #667eea; margin-bottom: 2rem;">
+          <i class="fas fa-book"></i> Livres Scolaires - Maternelle
+        </h3>
+        <div class="subject-grid" id="maternelle-subjects">
+          <div class="subject-card" onclick="loadBooks('maternelle', 'pre-mathematique')">
+            <i class="fas fa-calculator"></i>
+            <h3>Pré-Mathématique</h3>
+            <p class="book-count">5 livres disponibles</p>
+          </div>
+          <div class="subject-card" onclick="loadBooks('maternelle', 'francais')">
+            <i class="fas fa-book"></i>
+            <h3>Français</h3>
+            <p class="book-count">8 livres disponibles</p>
+          </div>
+          <div class="subject-card" onclick="loadBooks('maternelle', 'francais-langage')">
+            <i class="fas fa-comments"></i>
+            <h3>Français Langage</h3>
+            <p class="book-count">6 livres disponibles</p>
+          </div>
+          <div class="subject-card" onclick="loadBooks('maternelle', 'etude-milieu')">
+            <i class="fas fa-globe"></i>
+            <h3>Étude du Milieu</h3>
+            <p class="book-count">4 livres disponibles</p>
+          </div>
+          <div class="subject-card" onclick="loadBooks('maternelle', 'art-culture')">
+            <i class="fas fa-palette"></i>
+            <h3>Art et Culture</h3>
+            <p class="book-count">7 livres disponibles</p>
+          </div>
+        </div>
+
+        <div class="books-section">
+          <h3><i class="fas fa-heart"></i> Livres pour Enfants</h3>
+          <div class="books-grid" id="maternelle-enfants">
+            <div class="book-item">
+              <div class="book-badge free">GRATUIT</div>
+              <i class="fas fa-book"></i>
+              <h4>Les Trois Petits Cochons</h4>
+              <p>Conte classique</p>
+              <button class="read-btn" onclick="readBook('Les Trois Petits Cochons', 'maternelle')">
+                <i class="fas fa-book-open"></i> Lire
+              </button>
+            </div>
+            <div class="book-item">
+              <div class="book-badge">ABONNEMENT</div>
+              <i class="fas fa-book"></i>
+              <h4>Boucle d'Or</h4>
+              <p>Histoire interactive</p>
+              <button class="read-btn" onclick="readBook('Boucle d\'Or', 'maternelle')">
+                <i class="fas fa-book-open"></i> Lire
+              </button>
+            </div>
+            <div class="book-item">
+              <div class="book-badge">ABONNEMENT</div>
+              <i class="fas fa-book"></i>
+              <h4>Le Petit Chaperon Rouge</h4>
+              <p>Conte avec images</p>
+              <button class="read-btn" onclick="readBook('Le Petit Chaperon Rouge', 'maternelle')">
+                <i class="fas fa-book-open"></i> Lire
+              </button>
+            </div>
+            <div class="book-item">
+              <div class="book-badge free">GRATUIT</div>
+              <i class="fas fa-book"></i>
+              <h4>Les Couleurs</h4>
+              <p>Apprentissage</p>
+              <button class="read-btn" onclick="readBook('Les Couleurs', 'maternelle')">
+                <i class="fas fa-book-open"></i> Lire
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="books-section">
+          <h3><i class="fas fa-book-reader"></i> Livres de Lecture</h3>
+          <div class="books-grid" id="maternelle-lecture">
+            <div class="book-item">
+              <div class="book-badge">ABONNEMENT</div>
+              <i class="fas fa-book"></i>
+              <h4>Mon Premier Livre</h4>
+              <p>Lecture facile</p>
+              <button class="read-btn" onclick="readBook('Mon Premier Livre', 'maternelle')">
+                <i class="fas fa-book-open"></i> Lire
+              </button>
+            </div>
+            <div class="book-item">
+              <div class="book-badge">ABONNEMENT</div>
+              <i class="fas fa-book"></i>
+              <h4>Les Animaux de la Ferme</h4>
+              <p>Découverte</p>
+              <button class="read-btn" onclick="readBook('Les Animaux de la Ferme', 'maternelle')">
+                <i class="fas fa-book-open"></i> Lire
+              </button>
+            </div>
+            <div class="book-item">
+              <div class="book-badge">ABONNEMENT</div>
+              <i class="fas fa-book"></i>
+              <h4>Les Chiffres Magiques</h4>
+              <p>Apprentissage</p>
+              <button class="read-btn" onclick="readBook('Les Chiffres Magiques', 'maternelle')">
+                <i class="fas fa-book-open"></i> Lire
+              </button>
+            </div>
+            <div class="book-item">
+              <div class="book-badge free">GRATUIT</div>
+              <i class="fas fa-book"></i>
+              <h4>L'Alphabet Enchanté</h4>
+              <p>Apprentissage ABC</p>
+              <button class="read-btn" onclick="readBook('L\'Alphabet Enchanté', 'maternelle')">
+                <i class="fas fa-book-open"></i> Lire
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Primaire Content -->
+      <div class="library-content" id="primaire-content">
+        <h3 style="text-align: center; color: #667eea; margin-bottom: 2rem;">
+          <i class="fas fa-book"></i> Livres Scolaires - École Primaire
+        </h3>
+        <div class="subject-grid" id="primaire-subjects">
+          <div class="subject-card" onclick="loadBooks('primaire', 'mathematique')">
+            <i class="fas fa-square-root-alt"></i>
+            <h3>Mathématique</h3>
+            <p class="book-count">12 livres disponibles</p>
+          </div>
+          <div class="subject-card" onclick="loadBooks('primaire', 'francais')">
+            <i class="fas fa-book"></i>
+            <h3>Français</h3>
+            <p class="book-count">15 livres disponibles</p>
+          </div>
+          <div class="subject-card" onclick="loadBooks('primaire', 'kinyarwanda')">
+            <i class="fas fa-flag"></i>
+            <h3>Kinyarwanda</h3>
+            <p class="book-count">10 livres disponibles</p>
+          </div>
+          <div class="subject-card" onclick="loadBooks('primaire', 'anglais')">
+            <i class="fas fa-language"></i>
+            <h3>Anglais</h3>
+            <p class="book-count">8 livres disponibles</p>
+          </div>
+          <div class="subject-card" onclick="loadBooks('primaire', 'etude-sociale-science')">
+            <i class="fas fa-flask"></i>
+            <h3>Étude Sociale et Science</h3>
+            <p class="book-count">6 livres disponibles</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section Jeux Éducatifs -->
+  <section id="jeux" class="games-section">
+    <div class="games-header">
+      <h1><i class="fas fa-gamepad"></i> JEUX ÉDUCATIFS</h1>
+      <p>Choisissez le niveau et la difficulté adaptés à votre enfant. Tous les jeux incluent une voix douce de petite fille.</p>
+    </div>
+
+    <div class="games-categories">
+      <!-- Sélection de niveau et difficulté -->
+      <div class="level-selection">
+        <h3><i class="fas fa-sliders-h"></i> Sélectionnez le niveau et la difficulté</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem;">
+          <div>
+            <h4>Niveau scolaire</h4>
+            <div class="level-options">
+              <div class="level-option" onclick="selectLevel('maternelle')" id="level-maternelle">
+                <i class="fas fa-child"></i>
+                <h5>Maternelle</h5>
+                <small>3-5 ans</small>
+              </div>
+              <div class="level-option" onclick="selectLevel('primaire')" id="level-primaire">
+                <i class="fas fa-school"></i>
+                <h5>Primaire</h5>
+                <small>6-12 ans</small>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h4>Difficulté</h4>
+            <div class="level-options">
+              <div class="level-option" onclick="selectDifficulty('facile')" id="difficulty-facile">
+                <i class="fas fa-star"></i>
+                <h5>Facile</h5>
+                <small>Débutant</small>
+              </div>
+              <div class="level-option" onclick="selectDifficulty('moyen')" id="difficulty-moyen">
+                <i class="fas fa-star-half-alt"></i>
+                <h5>Moyen</h5>
+                <small>Intermédiaire</small>
+              </div>
+              <div class="level-option" onclick="selectDifficulty('difficile')" id="difficulty-difficile">
+                <i class="fas fa-star"></i>
+                <h5>Difficile</h5>
+                <small>Avancé</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-top: 2rem; text-align: center;">
+          <button class="btn-primary" onclick="applyGameSettings()" style="max-width: 300px;">
+            <i class="fas fa-check"></i> Appliquer les paramètres
+          </button>
+        </div>
+      </div>
+
+      <!-- Catégories de Jeux -->
+      <div class="game-categories-grid">
+        <!-- Mathématiques -->
+        <div class="category-card">
+          <div class="category-icon" style="color: #ff6b6b;">
+            <i class="fas fa-calculator"></i>
+          </div>
+          <h3>Mathématiques</h3>
+          <p id="math-description">Chiffres, additions, soustractions selon le niveau sélectionné</p>
+          <button class="play-category-btn" onclick="checkAndStartGame('mathematique')">
+            <i class="fas fa-play"></i> JOUER
+          </button>
+        </div>
+
+        <!-- Fruits et Légumes -->
+        <div class="category-card">
+          <div class="category-icon" style="color: #ff6b6b;">
+            <i class="fas fa-apple-alt"></i>
+          </div>
+          <h3>Fruits & Légumes</h3>
+          <p>Apprends à reconnaître les fruits et légumes. Trouve le bon fruit ou légume demandé.</p>
+          <button class="play-category-btn" onclick="checkAndStartGame('fruits-legumes')">
+            <i class="fas fa-play"></i> JOUER
+          </button>
+        </div>
+
+        <!-- Animaux -->
+        <div class="category-card">
+          <div class="category-icon" style="color: #4ecdc4;">
+            <i class="fas fa-paw"></i>
+          </div>
+          <h3>Animaux</h3>
+          <p>Découvre les animaux domestiques, sauvages et aquatiques. Identifie l'animal demandé.</p>
+          <button class="play-category-btn" onclick="checkAndStartGame('animaux')">
+            <i class="fas fa-play"></i> JOUER
+          </button>
+        </div>
+
+        <!-- Couleurs -->
+        <div class="category-card">
+          <div class="category-icon" style="color: #ffd166;">
+            <i class="fas fa-palette"></i>
+          </div>
+          <h3>Couleurs</h3>
+          <p>Apprends les couleurs. Trouve l'objet de la couleur demandée parmi plusieurs.</p>
+          <button class="play-category-btn" onclick="checkAndStartGame('couleurs')">
+            <i class="fas fa-play"></i> JOUER
+          </button>
+        </div>
+
+        <!-- Alphabet -->
+        <div class="category-card">
+          <div class="category-icon" style="color: #45b7d1;">
+            <i class="fas fa-font"></i>
+          </div>
+          <h3>Alphabet</h3>
+          <p>Apprends les lettres de l'alphabet. Clique sur la lettre qui correspond au son entendu.</p>
+          <button class="play-category-btn" onclick="checkAndStartGame('alphabet')">
+            <i class="fas fa-play"></i> JOUER
+          </button>
+        </div>
+
+        <!-- Comptage -->
+        <div class="category-card">
+          <div class="category-icon" style="color: #96ceb4;">
+            <i class="fas fa-sort-numeric-up"></i>
+          </div>
+          <h3>Comptage</h3>
+          <p id="counting-description">Compte les objets et écris la réponse dans la case</p>
+          <button class="play-category-btn" onclick="checkAndStartGame('comptage')">
+            <i class="fas fa-play"></i> JOUER
+          </button>
+        </div>
+
+        <!-- Coloriage -->
+        <div class="category-card">
+          <div class="category-icon" style="color: #a8edea;">
+            <i class="fas fa-fill-drip"></i>
+          </div>
+          <h3>Coloriage</h3>
+          <p>Colorie les images avec les couleurs de ton choix. Développe ta créativité.</p>
+          <button class="play-category-btn" onclick="checkAndStartGame('coloriage')">
+            <i class="fas fa-play"></i> JOUER
+          </button>
+        </div>
+
+        <!-- Tracage -->
+        <div class="category-card">
+          <div class="category-icon" style="color: #ff6b6b;">
+            <i class="fas fa-draw-polygon"></i>
+          </div>
+          <h3>Tracage</h3>
+          <p>Suis les pointillés pour compléter les dessins, lettres et chiffres.</p>
+          <button class="play-category-btn" onclick="checkAndStartGame('tracage')">
+            <i class="fas fa-play"></i> JOUER
+          </button>
+        </div>
+      </div>
+
+      <!-- Section Exercices supplémentaires -->
+      <div class="exercises-section">
+        <h2 class="section-title"><i class="fas fa-pencil-alt"></i> Exercices Supplémentaires</h2>
+        <div class="exercises-grid">
+          <div class="exercise-card" onclick="checkAndStartGame('logique-puzzles')">
+            <h4>Puzzles Logiques</h4>
+            <p>Exercices de réflexion et de logique</p>
+            <span class="exercise-difficulty difficulty-medium">Moyen</span>
+          </div>
+          <div class="exercise-card" onclick="checkAndStartGame('sciences-decouverte')">
+            <h4>Découverte Scientifique</h4>
+            <p>Expériences et observations simples</p>
+            <span class="exercise-difficulty difficulty-hard">Difficile</span>
+          </div>
+          <div class="exercise-card" onclick="checkAndStartGame('geographie-monde')">
+            <h4>Géographie du Monde</h4>
+            <p>Cartes, pays et capitales</p>
+            <span class="exercise-difficulty difficulty-medium">Moyen</span>
+          </div>
+          <div class="exercise-card" onclick="checkAndStartGame('histoire-contes')">
+            <h4>Histoire et Contes</h4>
+            <p>Personnages historiques et contes traditionnels</p>
+            <span class="exercise-difficulty difficulty-easy">Facile</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section Contact & Rapports -->
+  <section id="contact">
+    <h2 class="section-title"><i class="fas fa-envelope"></i> Contact & Rapports</h2>
+    
+    <!-- Section Rapport -->
+    <div class="report-section">
+      <h3><i class="fas fa-file-alt"></i> Envoyer un Rapport</h3>
+      <p style="text-align: center; margin-bottom: 2rem; color: #666;">
+        Envoyez un message directement au directeur, à la secrétaire ou au comptable.
+      </p>
+
+      <!-- Sélection du destinataire -->
+      <div class="recipient-selector">
+        <div class="recipient-option" onclick="selectRecipient('directeur')" id="directeurOption">
+          <i class="fas fa-user-tie"></i>
+          <h4>Directeur</h4>
+          <p>Pour les questions académiques importantes</p>
+        </div>
+        <div class="recipient-option" onclick="selectRecipient('secretaire')" id="secretaireOption">
+          <i class="fas fa-user-female"></i>
+          <h4>Secrétaire</h4>
+          <p>Pour les questions administratives</p>
+        </div>
+        <div class="recipient-option" onclick="selectRecipient('comptable')" id="comptableOption">
+          <i class="fas fa-calculator"></i>
+          <h4>Comptable</h4>
+          <p>Pour les questions financières</p>
+        </div>
+      </div>
+
+      <!-- Formulaire de rapport -->
+      <div class="input-group">
+        <label for="reportSubject"><i class="fas fa-heading"></i> Sujet</label>
+        <input type="text" id="reportSubject" placeholder="Sujet de votre message">
+      </div>
+      <div class="input-group">
+        <label for="reportMessage"><i class="fas fa-comment"></i> Message</label>
+        <textarea id="reportMessage" rows="5" placeholder="Décrivez votre demande ou préoccupation..."></textarea>
+      </div>
+      <button class="btn-primary" onclick="sendReport()">
+        <i class="fas fa-paper-plane"></i> Envoyer le rapport
+      </button>
+
+      <!-- Historique des rapports -->
+      <div class="report-status">
+        <h4><i class="fas fa-history"></i> Historique de vos rapports</h4>
+        <div class="report-list" id="reportHistory">
+          <!-- Les rapports seront chargés dynamiquement -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Section Contact traditionnelle -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 4rem;">
+      <div style="background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center;">
+        <i class="fas fa-map-marker-alt" style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;"></i>
+        <h3>Adresse</h3>
+        <p>Kigali, Rwanda</p>
+      </div>
+      <div style="background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center;">
+        <i class="fas fa-phone" style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;"></i>
+        <h3>Téléphone</h3>
+        <p>+250 788 123 456</p>
+      </div>
+      <div style="background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center;">
+        <i class="fas fa-envelope" style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;"></i>
+        <h3>Email</h3>
+        <p>edenfamily9@gmail.com</p>
+      </div>
+    </div>
+
+    <!-- Formulaire de contact général -->
+    <div style="max-width: 800px; margin: 4rem auto 0; background: white; padding: 3rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+      <h3 style="text-align: center; color: #667eea; margin-bottom: 2rem;">Envoyez-nous un message général</h3>
+      <div class="input-group">
+        <label for="contactName"><i class="fas fa-user"></i> Nom Complet</label>
+        <input type="text" id="contactName" placeholder="Votre nom">
+      </div>
+      <div class="input-group">
+        <label for="contactEmail"><i class="fas fa-envelope"></i> Email</label>
+        <input type="email" id="contactEmail" placeholder="votre@email.com">
+      </div>
+      <div class="input-group">
+        <label for="contactMessage"><i class="fas fa-comment"></i> Message</label>
+        <textarea id="contactMessage" rows="5" placeholder="Votre message..."></textarea>
+      </div>
+      <button class="btn-primary" onclick="sendContactMessage()">
+        <i class="fas fa-paper-plane"></i> Envoyer le message
+      </button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3><i class="fas fa-graduation-cap"></i> EDEN FAMILY SCHOOL</h3>
+        <p>Excellence et Innovation dans l'éducation. Notre devise "Learning by doing" reflète notre engagement.</p>
+      </div>
+      <div class="footer-section">
+        <h3>Contact</h3>
+        <p><i class="fas fa-map-marker-alt"></i> Kigali, Rwanda<br>
+        <i class="fas fa-envelope"></i> edenfamily9@gmail.com<br>
+        <i class="fas fa-phone"></i> +250 788 123 456</p>
+      </div>
+      <div class="footer-section">
+        <h3>Services</h3>
+        <p>Bibliothèque en ligne<br>
+        Jeux éducatifs<br>
+        Présentations en temps réel<br>
+        Abonnement Mobile Money</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024 Eden Family School - Tous droits réservés</p>
+      <p style="font-size: 0.9rem; margin-top: 1rem; opacity: 0.8;">
+        <i class="fas fa-sync-alt"></i> Système en temps réel activé
+      </p>
+    </div>
+  </footer>
+
+  <!-- Game Container -->
+  <div class="game-container" id="gameContainer">
+    <div class="game-header">
+      <h2 class="game-title" id="gameTitle">Jeu Éducatif</h2>
+      <div class="game-controls">
+        <button class="voice-control" id="voiceControl" onclick="toggleVoice()">
+          <i class="fas fa-volume-up"></i>
+        </button>
+        <button class="back-btn" onclick="backToCategories()">
+          <i class="fas fa-arrow-left"></i> Retour aux jeux
+        </button>
+      </div>
+    </div>
+
+    <div class="game-content">
+      <div class="game-canvas-large" id="gameCanvas">
+        <!-- Game content will be loaded here -->
+      </div>
+      
+      <div class="game-sidebar">
+        <div class="game-instruction">
+          <h3><i class="fas fa-info-circle"></i> Instructions</h3>
+          <p id="gameInstructions">Clique sur les éléments correspondants à la demande.</p>
+        </div>
+        
+        <div class="game-score-board">
+          <div class="score-label">SCORE</div>
+          <div class="score-display" id="gameScore">0</div>
+          <div class="score-label">points</div>
+          
+          <div class="game-progress">
+            <div class="score-label">PROGRESSION</div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="gameProgress" style="width: 0%"></div>
+            </div>
+            <div class="score-label" id="gameProgressText">0/10</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Book Reader -->
+  <div class="book-reader" id="bookReader">
+    <div class="book-reader-header">
+      <h2 id="bookReaderTitle">Livre</h2>
+      <button class="back-btn" onclick="closeBookReader()">
+        <i class="fas fa-times"></i> Fermer
+      </button>
+    </div>
+    <div class="book-reader-content" id="bookReaderContent">
+      <!-- Book content will be loaded here -->
+    </div>
+    <div class="book-reader-controls">
+      <button class="voice-control-book" id="voiceControlBook" onclick="toggleBookVoice()">
+        <i class="fas fa-volume-up"></i>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCx6kmJ59x0tLt4vh_3czvEEQrtw4aWFHs",
+      authDomain: "edendatabase-7e1ed.firebaseapp.com",
+      databaseURL: "https://edendatabase-7e1ed-default-rtdb.firebaseio.com",
+      projectId: "edendatabase-7e1ed",
+      storageBucket: "edendatabase-7e1ed.firebasestorage.app",
+      messagingSenderId: "147248399046",
+      appId: "1:147248399046:web:d0b433e755772bbe718dc7",
+      measurementId: "G-XB192PCMV7"
+    };
+
+    // Initialiser Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const realtimeDB = firebase.database(); // Realtime Database
+
+    // Variables globales
+    let currentUser = null;
+    let userData = null;
+    let currentGameType = null;
+    let selectedLevel = 'maternelle';
+    let selectedDifficulty = 'facile';
+    let currentGame = null;
+    let score = 0;
+    let currentRound = 0;
+    let totalRounds = 10;
+    let targetItem = null;
+    let currentAnswer = '';
+    let currentColor = '#ff6b6b';
+    const speech = window.speechSynthesis;
+    let voiceActive = true;
+    let currentUtterance = null;
+    let presentations = [];
+    let currentPresentationFilter = 'all';
+    let schoolInfoListener = null;
+    let presentationsListener = null;
+    let reportsListener = null;
+    let eventsListener = null;
+    let announcementsListener = null;
+    let selectedRecipient = 'directeur';
+
+    // Observer l'état d'authentification
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        currentUser = user;
+
+        // Vérifier le rôle de l'utilisateur et rediriger vers le bon portail
+        const userRole = await checkUserRole(user.email);
+        if (userRole === 'teacher') {
+          window.location.href = 'teacher_clean.html';
+          return;
+        } else if (userRole === 'secretary' || userRole === 'accountant' || userRole === 'director') {
+          window.location.href = 'secretary.html';
+          return;
+        }
+
+        // Si c'est un parent, continuer avec le portail parent
+        await loadUserData();
+        updateUIForLoggedInUser();
+        startAllRealtimeListeners();
+      } else {
+        currentUser = null;
+        userData = null;
+        updateUIForLoggedOutUser();
+        stopAllRealtimeListeners();
+      }
+    });
+
+    // Vérifier le rôle de l'utilisateur
+    async function checkUserRole(userEmail) {
+      try {
+        // Vérifier si c'est un enseignant
+        const teacherRef = realtimeDB.ref('teachers').orderByChild('email').equalTo(userEmail);
+        const teacherSnapshot = await teacherRef.once('value');
+        if (teacherSnapshot.exists()) {
+          return 'teacher';
+        }
+
+        // Vérifier si c'est un secrétaire/comptable
+        const secretaryRef = realtimeDB.ref('secretaries').orderByChild('email').equalTo(userEmail);
+        const secretarySnapshot = await secretaryRef.once('value');
+        if (secretarySnapshot.exists()) {
+          const secretaryData = Object.values(secretarySnapshot.val())[0];
+          if (secretaryData.role === 'secretary' || secretaryData.role === 'accountant') {
+            return secretaryData.role;
+          }
+        }
+
+        // Vérifier si c'est un directeur
+        const directorRef = realtimeDB.ref('directors').orderByChild('email').equalTo(userEmail);
+        const directorSnapshot = await directorRef.once('value');
+        if (directorSnapshot.exists()) {
+          return 'director';
+        }
+
+        // Par défaut, c'est un parent
+        return 'parent';
+      } catch (error) {
+        console.error('Erreur lors de la vérification du rôle:', error);
+        return 'parent'; // Par défaut
+      }
+    }
+
+    // Démarrer tous les écouteurs en temps réel
+    function startAllRealtimeListeners() {
+      startSchoolInfoListener();
+      startPresentationsListener();
+      startReportsListener();
+      startEventsListener();
+      startAnnouncementsListener();
+      updateRealtimeStatus(true);
+    }
+
+    // Arrêter tous les écouteurs en temps réel
+    function stopAllRealtimeListeners() {
+      if (schoolInfoListener) schoolInfoListener();
+      if (presentationsListener) presentationsListener();
+      if (reportsListener) reportsListener();
+      if (eventsListener) eventsListener();
+      if (announcementsListener) announcementsListener();
+      updateRealtimeStatus(false);
+    }
+
+    // Mettre à jour le statut de connexion en temps réel
+    function updateRealtimeStatus(connected) {
+      const indicator = document.getElementById('realtimeStatus');
+      if (connected) {
+        indicator.className = 'realtime-indicator';
+        indicator.innerHTML = '<i class="fas fa-circle"></i><span>Connexion en temps réel active</span>';
+      } else {
+        indicator.className = 'realtime-indicator offline';
+        indicator.innerHTML = '<i class="fas fa-circle"></i><span>Connexion hors ligne</span>';
+      }
+    }
+
+    // Écouteur pour les informations de l'école
+    function startSchoolInfoListener() {
+      schoolInfoListener = realtimeDB.ref('school/info').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          // Mettre à jour les informations générales
+          document.getElementById('schoolStatus').textContent = data.status || 'Ouverte';
+          document.getElementById('studentsPresent').textContent = data.studentsPresent || '0';
+          document.getElementById('teachersPresent').textContent = data.teachersPresent || '0';
+          document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('fr-FR');
+        }
+      });
+    }
+
+    // Écouteur pour les présentations
+    function startPresentationsListener() {
+      presentationsListener = realtimeDB.ref('presentations').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          presentations = Object.keys(data).map(key => ({
+            id: key,
+            ...data[key]
+          }));
+          // Trier par date (plus récent d'abord)
+          presentations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          
+          // Si la modal est ouverte, mettre à jour l'affichage
+          if (document.getElementById('presentationModal').style.display === 'block') {
+            displayPresentations(
+              currentPresentationFilter === 'all' 
+                ? presentations 
+                : presentations.filter(p => p.level === currentPresentationFilter)
+            );
+          }
+        }
+      });
+    }
+
+    // Écouteur pour les rapports
+    function startReportsListener() {
+      if (!currentUser) return;
+      
+      reportsListener = realtimeDB.ref('reports').orderByChild('senderId').equalTo(currentUser.uid)
+        .on('value', (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            const reports = Object.keys(data).map(key => ({
+              id: key,
+              ...data[key]
+            }));
+            // Trier par date (plus récent d'abord)
+            reports.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            displayUserReports(reports);
+          } else {
+            document.getElementById('reportHistory').innerHTML = 
+              '<p style="text-align: center; color: #666;">Aucun rapport envoyé</p>';
+          }
+        });
+    }
+
+    // Écouteur pour les événements
+    function startEventsListener() {
+      eventsListener = realtimeDB.ref('school/events').on('value', (snapshot) => {
+        const data = snapshot.val();
+        const container = document.getElementById('upcomingEvents');
+        
+        if (data) {
+          const events = Object.keys(data).map(key => ({
+            id: key,
+            ...data[key]
+          }));
+          
+          // Trier par date (plus proche d'abord)
+          events.sort((a, b) => new Date(a.date) - new Date(b.date));
+          
+          container.innerHTML = events.slice(0, 3).map(event => `
+            <div class="info-item">
+              <span class="info-label">${event.title}</span>
+              <span class="info-value">${new Date(event.date).toLocaleDateString('fr-FR')}</span>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p style="text-align: center; color: #666;">Aucun événement à venir</p>';
+        }
+      });
+    }
+
+    // Écouteur pour les annonces
+    function startAnnouncementsListener() {
+      announcementsListener = realtimeDB.ref('school/announcements').on('value', (snapshot) => {
+        const data = snapshot.val();
+        const container = document.getElementById('importantAnnouncements');
+        
+        if (data) {
+          const announcements = Object.keys(data).map(key => ({
+            id: key,
+            ...data[key]
+          }));
+          
+          // Trier par date (plus récent d'abord)
+          announcements.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          
+          container.innerHTML = announcements.slice(0, 3).map(announcement => `
+            <div class="info-item">
+              <span class="info-label" style="color: #ff6b6b;">${announcement.title}</span>
+              <span class="info-value">${new Date(announcement.timestamp).toLocaleDateString('fr-FR')}</span>
+            </div>
+            <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
+              ${announcement.message}
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p style="text-align: center; color: #666;">Aucune annonce pour le moment</p>';
+        }
+      });
+    }
+
+    // Charger les données utilisateur depuis Firebase Realtime Database
+    async function loadUserData() {
+      try {
+        console.log('Chargement des données parent depuis Firebase pour:', currentUser.email);
+        
+        // Chercher dans la collection parents
+        const parentRef = realtimeDB.ref('parents').orderByChild('email').equalTo(currentUser.email.toLowerCase());
+        const parentSnapshot = await parentRef.once('value');
+        
+        if (parentSnapshot.exists()) {
+          const parentKey = Object.keys(parentSnapshot.val())[0];
+          userData = parentSnapshot.val()[parentKey];
+          userData.id = parentKey;
+          console.log('Données parent chargées depuis Firebase:', userData);
+          updateSubscriptionStatus();
+        } else {
+          // Si pas trouvé, chercher dans Firestore (pour compatibilité)
+          try {
+            const doc = await db.collection('parents').doc(currentUser.uid).get();
+            if (doc.exists) {
+              userData = doc.data();
+              console.log('Données parent chargées depuis Firestore:', userData);
+              updateSubscriptionStatus();
+            } else {
+              // Créer un document parent si inexistant
+              userData = {
+                name: currentUser.displayName || currentUser.email.split('@')[0],
+                email: currentUser.email.toLowerCase(),
+                phone: '',
+                role: 'parent',
+                subscription: 'inactive',
+                freeGamesUsed: 0,
+                freeGamesResetDate: new Date().toISOString(),
+                subscriptionExpiry: null,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              };
+              
+              // Enregistrer dans Realtime Database
+              await realtimeDB.ref('parents/' + currentUser.uid).set({
+                ...userData,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+              });
+              
+              // Enregistrer dans Firestore aussi
+              await db.collection('parents').doc(currentUser.uid).set(userData);
+              console.log('Nouveau parent créé dans Firebase');
+            }
+          } catch (firestoreError) {
+            console.log('Firestore non disponible, utilisation de Realtime Database uniquement');
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+      }
+    }
+
+    // Mettre à jour l'interface pour utilisateur connecté
+    function updateUIForLoggedInUser() {
+      document.getElementById('userInfo').style.display = 'flex';
+      document.getElementById('loginBtn').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'block';
+      
+      const userName = document.getElementById('userName');
+      const userAvatar = document.getElementById('userAvatar');
+      const subscriptionStatus = document.getElementById('subscriptionStatus');
+      
+      userName.textContent = userData?.name || currentUser.email.split('@')[0];
+      userAvatar.textContent = userData?.name?.charAt(0).toUpperCase() || currentUser.email.charAt(0).toUpperCase();
+      
+      // Mettre à jour le statut d'abonnement
+      updateSubscriptionStatus();
+      
+      // Vérifier si le reset des jeux gratuits est nécessaire
+      checkFreeGamesReset();
+    }
+
+    // Mettre à jour le statut d'abonnement
+    function updateSubscriptionStatus() {
+      const subscriptionStatus = document.getElementById('subscriptionStatus');
+      if (!userData) return;
+      
+      if (userData.subscription === 'active') {
+        subscriptionStatus.textContent = 'Abonné';
+        subscriptionStatus.className = 'subscription-status active';
+      } else if (userData.freeGamesUsed < 3) {
+        subscriptionStatus.textContent = `Essai gratuit (${3 - userData.freeGamesUsed} restants)`;
+        subscriptionStatus.className = 'subscription-status trial';
+      } else {
+        subscriptionStatus.textContent = 'Non Abonné';
+        subscriptionStatus.className = 'subscription-status inactive';
+      }
+    }
+
+    // Vérifier le reset des jeux gratuits
+    function checkFreeGamesReset() {
+      if (!userData || !userData.freeGamesResetDate) return;
+      
+      const resetDate = new Date(userData.freeGamesResetDate);
+      const today = new Date();
+      
+      // Si c'est un nouveau jour, réinitialiser les jeux gratuits
+      if (today.toDateString() !== resetDate.toDateString()) {
+        userData.freeGamesUsed = 0;
+        userData.freeGamesResetDate = today.toISOString();
+        
+        // Mettre à jour dans Realtime Database
+        await realtimeDB.ref('parents/' + currentUser.uid).update({
+          freeGamesUsed: 0,
+          freeGamesResetDate: today.toISOString()
+        });
+        
+        // Mettre à jour dans Firestore aussi
+        try {
+          await db.collection('parents').doc(currentUser.uid).update({
+            freeGamesUsed: 0,
+            freeGamesResetDate: today.toISOString()
+          });
+        } catch (e) {
+          console.log('Firestore non disponible pour la mise à jour');
+        }
+        updateSubscriptionStatus();
+      }
+    }
+
+    // Mettre à jour l'interface pour utilisateur non connecté
+    function updateUIForLoggedOutUser() {
+      document.getElementById('userInfo').style.display = 'none';
+      document.getElementById('loginBtn').style.display = 'block';
+      document.getElementById('logoutBtn').style.display = 'none';
+    }
+
+    // Vérifier et démarrer un jeu
+    async function checkAndStartGame(gameType) {
+      currentGameType = gameType;
+      
+      if (!currentUser) {
+        openAuthModal();
+        return;
+      }
+
+      if (!userData) {
+        await loadUserData();
+      }
+
+      // Vérifier l'abonnement
+      if (userData.subscription === 'active') {
+        startGame(gameType);
+        return;
+      }
+
+      // Vérifier les jeux gratuits
+      if (userData.freeGamesUsed < 3) {
+        openFreeGamesModal();
+      } else {
+        openSubscriptionModal();
+      }
+    }
+
+    // Utiliser un jeu gratuit
+    async function useFreeGame() {
+      userData.freeGamesUsed = (userData.freeGamesUsed || 0) + 1;
+      
+      try {
+        await db.collection('users').doc(currentUser.uid).update({
+          freeGamesUsed: userData.freeGamesUsed
+        });
+        
+        updateSubscriptionStatus();
+        return true;
+      } catch (error) {
+        console.error('Erreur lors de l\'utilisation du jeu gratuit:', error);
+        return false;
+      }
+    }
+
+    // Démarrer un jeu
+    async function startGame(gameType) {
+      // Si l'utilisateur n'est pas abonné et utilise un jeu gratuit
+      if (userData.subscription !== 'active') {
+        const used = await useFreeGame();
+        if (!used) {
+          alert('Erreur lors de l\'accès au jeu.');
+          return;
+        }
+      }
+
+      // Masquer la modale des jeux gratuits si elle est ouverte
+      closeFreeGamesModal();
+      
+      // Démarrer le jeu selon le type
+      switch(gameType) {
+        case 'mathematique':
+          startMathGame();
+          break;
+        case 'comptage':
+          startCountingGame();
+          break;
+        case 'coloriage':
+          startColoringGame();
+          break;
+        case 'tracage':
+          startTracingGame();
+          break;
+        default:
+          startGenericGame(gameType);
+      }
+    }
+
+    // Fonctions pour les présentations
+    function openPresentationModal() {
+      document.getElementById('presentationModal').style.display = 'block';
+      displayPresentations(presentations);
+    }
+
+    function closePresentationModal() {
+      document.getElementById('presentationModal').style.display = 'none';
+    }
+
+    function filterPresentations(filter) {
+      currentPresentationFilter = filter;
+      
+      // Mettre à jour les boutons actifs
+      document.querySelectorAll('.presentation-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Filtrer les présentations
+      const filteredPresentations = filter === 'all' 
+        ? presentations 
+        : presentations.filter(p => p.level === filter);
+      
+      displayPresentations(filteredPresentations);
+    }
+
+    function displayPresentations(presentationsList) {
+      const container = document.getElementById('presentationsContainer');
+      
+      if (presentationsList.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 3rem; background: white; border-radius: 15px; grid-column: 1/-1;">
+            <i class="fas fa-video-slash" style="font-size: 4rem; color: #667eea; margin-bottom: 1rem;"></i>
+            <h3>Aucune présentation disponible</h3>
+            <p>Les présentations seront ajoutées prochainement.</p>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = presentationsList.map(presentation => `
+        <div class="presentation-class-card">
+          <div class="presentation-class-header">
+            <h3>${presentation.className}</h3>
+            <p>${presentation.level === 'maternelle' ? 'Maternelle' : 'Primaire'} - ${presentation.teacher}</p>
+          </div>
+          <div class="presentation-class-content">
+            <p><strong>Thème:</strong> ${presentation.theme}</p>
+            <p><strong>Date:</strong> ${new Date(presentation.timestamp).toLocaleDateString('fr-FR')}</p>
+            
+            <div class="presentation-media-grid">
+              ${presentation.videos ? presentation.videos.map(video => `
+                <div class="presentation-media-item">
+                  <video controls style="width:100%;height:100%;">
+                    <source src="${video}" type="video/mp4">
+                    Votre navigateur ne supporte pas la vidéo.
+                  </video>
+                  <div class="presentation-media-overlay">
+                    Vidéo
+                  </div>
+                </div>
+              `).join('') : ''}
+              
+              ${presentation.images ? presentation.images.map(image => `
+                <div class="presentation-media-item" onclick="openMediaViewer('${image}')">
+                  <img src="${image}" alt="Photo de présentation">
+                  <div class="presentation-media-overlay">
+                    Photo
+                  </div>
+                </div>
+              `).join('') : ''}
+            </div>
+            
+            <div class="presentation-info">
+              <p><strong>Publié par:</strong> ${presentation.postedBy}</p>
+              <p><strong>Description:</strong> ${presentation.description}</p>
+            </div>
+            
+            <div class="presentation-timestamp">
+              <i class="far fa-clock"></i> ${new Date(presentation.timestamp).toLocaleString('fr-FR')}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Fonctions pour les rapports
+    function selectRecipient(recipient) {
+      selectedRecipient = recipient;
+      
+      // Mettre à jour l'interface
+      document.querySelectorAll('.recipient-option').forEach(option => {
+        option.classList.remove('selected');
+      });
+      document.getElementById(recipient + 'Option').classList.add('selected');
+    }
+
+    async function sendReport() {
+      if (!currentUser) {
+        alert('Veuillez vous connecter pour envoyer un rapport.');
+        return;
+      }
+
+      const subject = document.getElementById('reportSubject').value;
+      const message = document.getElementById('reportMessage').value;
+      
+      if (!subject || !message) {
+        alert('Veuillez remplir tous les champs.');
+        return;
+      }
+
+      try {
+        const reportData = {
+          senderId: currentUser.uid,
+          senderName: userData?.name || currentUser.email,
+          recipient: selectedRecipient,
+          subject: subject,
+          message: message,
+          timestamp: new Date().toISOString(),
+          read: false
+        };
+
+        // Sauvegarder dans Realtime Database
+        const newReportRef = realtimeDB.ref('reports').push();
+        await newReportRef.set(reportData);
+
+        // Réinitialiser le formulaire
+        document.getElementById('reportSubject').value = '';
+        document.getElementById('reportMessage').value = '';
+        
+        alert('Rapport envoyé avec succès!');
+      } catch (error) {
+        console.error('Erreur lors de l\'envoi du rapport:', error);
+        alert('Erreur lors de l\'envoi du rapport.');
+      }
+    }
+
+    function displayUserReports(reports) {
+      const container = document.getElementById('reportHistory');
+      
+      if (reports.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666;">Aucun rapport envoyé</p>';
+        return;
+      }
+      
+      container.innerHTML = reports.map(report => `
+        <div class="report-item ${report.read ? '' : 'unread'}">
+          <div class="report-header">
+            <span class="report-recipient">${getRecipientLabel(report.recipient)}</span>
+            <span class="report-date">${new Date(report.timestamp).toLocaleDateString('fr-FR')}</span>
+          </div>
+          <div class="report-subject">${report.subject}</div>
+          <div class="report-message">${report.message}</div>
+          ${report.read ? '' : '<small style="color: #ff6b6b;"><i class="fas fa-circle"></i> Non lu</small>'}
+        </div>
+      `).join('');
+    }
+
+    function getRecipientLabel(recipient) {
+      switch(recipient) {
+        case 'directeur': return 'Directeur';
+        case 'secretaire': return 'Secrétaire';
+        case 'comptable': return 'Comptable';
+        default: return recipient;
+      }
+    }
+
+    // Gestion des modales
+    function openAuthModal() {
+      document.getElementById('authModal').style.display = 'block';
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').style.display = 'none';
+    }
+
+    function openSubscriptionModal() {
+      document.getElementById('subscriptionModal').style.display = 'block';
+    }
+
+    function closeSubscriptionModal() {
+      document.getElementById('subscriptionModal').style.display = 'none';
+      document.getElementById('paymentDetails').style.display = 'none';
+      document.getElementById('paymentSuccess').style.display = 'none';
+    }
+
+    function openFreeGamesModal() {
+      if (userData) {
+        document.getElementById('freeGamesCount').textContent = `${3 - userData.freeGamesUsed} jeux gratuits restants`;
+        document.getElementById('usedGamesCount').textContent = userData.freeGamesUsed;
+      }
+      document.getElementById('freeGamesModal').style.display = 'block';
+    }
+
+    function closeFreeGamesModal() {
+      document.getElementById('freeGamesModal').style.display = 'none';
+    }
+
+    function showAuthTab(tab) {
+      if (tab === 'login') {
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('registerForm').style.display = 'none';
+        document.getElementById('loginTab').style.borderBottomColor = '#667eea';
+        document.getElementById('loginTab').style.color = '#667eea';
+        document.getElementById('registerTab').style.borderBottomColor = 'transparent';
+        document.getElementById('registerTab').style.color = '#666';
+        document.getElementById('authModalTitle').textContent = 'Créer un compte parent';
+      } else {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('registerForm').style.display = 'block';
+        document.getElementById('loginTab').style.borderBottomColor = 'transparent';
+        document.getElementById('loginTab').style.color = '#666';
+        document.getElementById('registerTab').style.borderBottomColor = '#667eea';
+        document.getElementById('registerTab').style.color = '#667eea';
+        document.getElementById('authModalTitle').textContent = 'Créer un compte parent';
+      }
+    }
+
+    // Sélection de la méthode de paiement
+    let selectedPaymentMethod = 'mtn';
+    function selectPaymentMethod(method) {
+      selectedPaymentMethod = method;
+      
+      // Mettre à jour l'interface
+      document.querySelectorAll('.mobile-money-option').forEach(option => {
+        option.classList.remove('selected');
+      });
+      document.getElementById(method + 'Option').classList.add('selected');
+      
+      // Mettre à jour les détails de paiement
+      document.getElementById('paymentDetails').style.display = 'block';
+      document.getElementById('paymentNumber').textContent = method === 'mtn' ? '+250 788 123 456' : '+250 733 123 456';
+    }
+
+    // Vérifier le paiement
+    async function verifyPayment() {
+      const phone = document.getElementById('paymentPhone').value;
+      const code = document.getElementById('paymentCode').value;
+      
+      if (!phone || !code) {
+        alert('Veuillez remplir tous les champs.');
+        return;
+      }
+
+      // Simulation de vérification de paiement
+      // En production, cela devrait vérifier avec votre serveur/API
+      const success = Math.random() > 0.3; // 70% de chance de succès pour la simulation
+      
+      if (success) {
+        // Mettre à jour l'abonnement dans Firestore
+        const expiryDate = new Date();
+        expiryDate.setMonth(expiryDate.getMonth() + 1); // 1 mois d'abonnement
+        
+        try {
+          await db.collection('users').doc(currentUser.uid).update({
+            subscription: 'active',
+            subscriptionExpiry: expiryDate.toISOString()
+          });
+          
+          // Mettre à jour les données locales
+          userData.subscription = 'active';
+          userData.subscriptionExpiry = expiryDate.toISOString();
+          
+          // Afficher le succès
+          document.getElementById('paymentDetails').style.display = 'none';
+          document.getElementById('paymentSuccess').style.display = 'block';
+          
+          updateSubscriptionStatus();
+        } catch (error) {
+          console.error('Erreur lors de la mise à jour de l\'abonnement:', error);
+          alert('Erreur lors de l\'activation de l\'abonnement.');
+        }
+      } else {
+        alert('Code de paiement invalide. Veuillez réessayer.');
+      }
+    }
+
+    // Navigation et Carousel (conservé depuis la version précédente)
+    function scrollToSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      if (section) {
+        const navHeight = document.querySelector('nav').offsetHeight;
+        const sectionPosition = section.offsetTop - navHeight;
+        window.scrollTo({
+          top: sectionPosition,
+          behavior: 'smooth'
+        });
+        document.getElementById('navLinks').classList.remove('active');
+      }
+    }
+
+    function toggleMenu() {
+      document.getElementById('navLinks').classList.toggle('active');
+    }
+
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.carousel-slide');
+    const dots = document.querySelectorAll('.carousel-dot');
+
+    function showSlide(n) {
+      slides.forEach(slide => slide.classList.remove('active'));
+      dots.forEach(dot => dot.classList.remove('active'));
+      
+      if (n >= slides.length) currentSlide = 0;
+      if (n < 0) currentSlide = slides.length - 1;
+      
+      slides[currentSlide].classList.add('active');
+      dots[currentSlide].classList.add('active');
+    }
+
+    function changeSlide(n) {
+      currentSlide += n;
+      showSlide(currentSlide);
+    }
+
+    function goToSlide(n) {
+      currentSlide = n;
+      showSlide(currentSlide);
+    }
+
+    // Initialisation
+    window.addEventListener('load', () => {
+      // Auto-rotation du carousel
+      setInterval(() => {
+        currentSlide++;
+        showSlide(currentSlide);
+      }, 5000);
+      
+      // Initialiser les paramètres de jeu
+      selectLevel('maternelle');
+      selectDifficulty('facile');
+      updateGameDescriptions();
+      
+      // Initialiser le destinataire par défaut
+      selectRecipient('directeur');
+      
+      console.log('Portail Eden Family School chargé avec succès!');
+    });
+
+    // Gestion des liens de navigation
+    document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+        if (targetId) {
+          scrollToSection(targetId);
+        }
+      });
+    });
+
+    // Système de jeu (simplifié pour cet exemple)
+    const gameSettings = {
+      maternelle: {
+        facile: {
+          maxNumber: 5,
+          operations: ['chiffres', 'compter'],
+          description: "Chiffres de 1 à 5 et comptage simple"
+        },
+        moyen: {
+          maxNumber: 10,
+          operations: ['chiffres', 'compter', 'addition-simple'],
+          description: "Chiffres jusqu'à 10 et additions simples"
+        },
+        difficile: {
+          maxNumber: 20,
+          operations: ['compter', 'addition', 'soustraction'],
+          description: "Additions et soustractions jusqu'à 20"
+        }
+      },
+      primaire: {
+        facile: {
+          maxNumber: 50,
+          operations: ['addition', 'soustraction'],
+          description: "Additions et soustractions jusqu'à 50"
+        },
+        moyen: {
+          maxNumber: 100,
+          operations: ['addition', 'soustraction', 'multiplication-simple'],
+          description: "Multiplications simples et problèmes"
+        },
+        difficile: {
+          maxNumber: 1000,
+          operations: ['multiplication', 'division', 'problemes'],
+          description: "Multiplications, divisions et problèmes complexes"
+        }
+      }
+    };
+
+    function selectLevel(level) {
+      selectedLevel = level;
+      document.querySelectorAll('.level-option').forEach(el => {
+        el.classList.remove('selected');
+      });
+      document.getElementById('level-' + level).classList.add('selected');
+      updateGameDescriptions();
+    }
+
+    function selectDifficulty(difficulty) {
+      selectedDifficulty = difficulty;
+      document.querySelectorAll('.level-option').forEach(el => {
+        el.classList.remove('selected');
+      });
+      document.getElementById('difficulty-' + difficulty).classList.add('selected');
+      updateGameDescriptions();
+    }
+
+    function updateGameDescriptions() {
+      const settings = gameSettings[selectedLevel][selectedDifficulty];
+      document.getElementById('math-description').textContent = settings.description;
+      document.getElementById('counting-description').textContent = `Compte les objets et écris la réponse dans la case`;
+    }
+
+    function applyGameSettings() {
+      const settings = gameSettings[selectedLevel][selectedDifficulty];
+      alert(`Paramètres appliqués avec succès !\nNiveau: ${selectedLevel}\nDifficulté: ${selectedDifficulty}\n\n${settings.description}`);
+    }
+
+    // Fonctions de jeu (simplifiées)
+    async function startMathGame() {
+      document.getElementById('gameContainer').classList.add('active');
+      document.getElementById('gameTitle').textContent = 'Mathématiques';
+      document.getElementById('gameInstructions').textContent = 'Résous les opérations mathématiques.';
+      
+      document.getElementById('gameCanvas').innerHTML = `
+        <div style="text-align: center;">
+          <h3>Jeu de Mathématiques</h3>
+          <div class="math-question">5 + 3 = ?</div>
+          <input type="number" class="math-answer-input" id="mathAnswer" placeholder="Ta réponse">
+          <div class="math-buttons">
+            <button class="math-btn" onclick="document.getElementById('mathAnswer').value += '1'">1</button>
+            <button class="math-btn" onclick="document.getElementById('mathAnswer').value += '2'">2</button>
+            <button class="math-btn" onclick="document.getElementById('mathAnswer').value += '3'">3</button>
+            <button class="math-btn" onclick="checkMathAnswer()">Vérifier</button>
+          </div>
+        </div>
+      `;
+      
+      if (voiceActive) {
+        await speak("Résous l'opération : 5 plus 3 égal ?");
+      }
+    }
+
+    function checkMathAnswer() {
+      const answer = document.getElementById('mathAnswer').value;
+      if (answer === '8') {
+        score += 10;
+        document.getElementById('gameScore').textContent = score;
+        alert('Bravo ! 5 + 3 = 8. Correct !');
+      } else {
+        alert('Oh non ! La bonne réponse est 8. Essaie encore !');
+      }
+    }
+
+    async function startCountingGame() {
+      document.getElementById('gameContainer').classList.add('active');
+      document.getElementById('gameTitle').textContent = 'Comptage';
+      document.getElementById('gameInstructions').textContent = 'Compte les objets.';
+      
+      document.getElementById('gameCanvas').innerHTML = `
+        <div style="text-align: center;">
+          <h3>Compte les pommes</h3>
+          <div class="counting-items-display">
+            <div class="counting-item">🍎</div>
+            <div class="counting-item">🍎</div>
+            <div class="counting-item">🍎</div>
+          </div>
+          <p>Combien vois-tu de pommes ?</p>
+          <input type="number" class="math-answer-input" id="countingAnswer" placeholder="Nombre">
+          <button class="btn-primary" onclick="checkCountingAnswer()" style="max-width: 200px;">
+            <i class="fas fa-check"></i> Vérifier
+          </button>
+        </div>
+      `;
+      
+      if (voiceActive) {
+        await speak("Compte combien il y a de pommes.");
+      }
+    }
+
+    function checkCountingAnswer() {
+      const answer = document.getElementById('countingAnswer').value;
+      if (answer === '3') {
+        score += 10;
+        document.getElementById('gameScore').textContent = score;
+        alert('Bravo ! Il y a 3 pommes. Excellent comptage !');
+      } else {
+        alert('Oh non ! Il y a 3 pommes. Essaie encore !');
+      }
+    }
+
+    function startColoringGame() {
+      document.getElementById('gameContainer').classList.add('active');
+      document.getElementById('gameTitle').textContent = 'Coloriage';
+      document.getElementById('gameInstructions').textContent = 'Colorie le dessin.';
+      
+      document.getElementById('gameCanvas').innerHTML = `
+        <div style="text-align: center;">
+          <h3>Coloriage du Papillon</h3>
+          <div style="font-size: 8rem; margin: 2rem 0;">🦋</div>
+          <p>Choisis une couleur pour colorier le papillon!</p>
+          <div style="display: flex; gap: 1rem; justify-content: center; margin: 2rem 0;">
+            <button style="width: 50px; height: 50px; background: #ff6b6b; border: none; border-radius: 10px; cursor: pointer;" onclick="currentColor = '#ff6b6b'"></button>
+            <button style="width: 50px; height: 50px; background: #ffd166; border: none; border-radius: 10px; cursor: pointer;" onclick="currentColor = '#ffd166'"></button>
+            <button style="width: 50px; height: 50px; background: #4ecdc4; border: none; border-radius: 10px; cursor: pointer;" onclick="currentColor = '#4ecdc4'"></button>
+          </div>
+          <p>Couleur sélectionnée: <span id="currentColorDisplay" style="font-weight: bold; color: ${currentColor}">${currentColor}</span></p>
+          <button class="btn-primary" onclick="completeColoringGame()" style="max-width: 200px;">
+            <i class="fas fa-check"></i> J'ai terminé
+          </button>
+        </div>
+      `;
+    }
+
+    function completeColoringGame() {
+      score += 10;
+      document.getElementById('gameScore').textContent = score;
+      alert('Magnifique coloriage ! Tu as gagné 10 points !');
+    }
+
+    function startTracingGame() {
+      document.getElementById('gameContainer').classList.add('active');
+      document.getElementById('gameTitle').textContent = 'Tracage';
+      document.getElementById('gameInstructions').textContent = 'Suis les pointillés.';
+      
+      document.getElementById('gameCanvas').innerHTML = `
+        <div style="text-align: center;">
+          <h3>Tracage des Lettres</h3>
+          <div style="font-size: 6rem; margin: 2rem 0; color: #667eea; font-family: cursive;">
+            A B C
+          </div>
+          <p>Suis les pointillés pour tracer les lettres A, B et C.</p>
+          <button class="btn-primary" onclick="completeTracingGame()" style="max-width: 200px;">
+            <i class="fas fa-check"></i> J'ai terminé
+          </button>
+        </div>
+      `;
+    }
+
+    function completeTracingGame() {
+      score += 10;
+      document.getElementById('gameScore').textContent = score;
+      alert('Super traçage ! Tu as gagné 10 points !');
+    }
+
+    function startGenericGame(gameType) {
+      document.getElementById('gameContainer').classList.add('active');
+      document.getElementById('gameTitle').textContent = gameType.replace('-', ' ').toUpperCase();
+      document.getElementById('gameInstructions').textContent = 'Jouez et apprenez !';
+      
+      document.getElementById('gameCanvas').innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+          <h3>Jeu en cours de développement</h3>
+          <div style="font-size: 4rem; color: #667eea; margin: 2rem 0;">
+            <i class="fas fa-gamepad"></i>
+          </div>
+          <p>Ce jeu sera bientôt disponible !</p>
+          <p>En attendant, profitez des autres jeux éducatifs.</p>
+          <button class="btn-primary" onclick="backToCategories()" style="max-width: 200px; margin-top: 2rem;">
+            <i class="fas fa-arrow-left"></i> Retour aux jeux
+          </button>
+        </div>
+      `;
+    }
+
+    function backToCategories() {
+      document.getElementById('gameContainer').classList.remove('active');
+      score = 0;
+      document.getElementById('gameScore').textContent = '0';
+      scrollToSection('jeux');
+    }
+
+    // Synthèse vocale
+    async function speak(text) {
+      if (!voiceActive) return;
+      
+      if (currentUtterance) {
+        speech.cancel();
+      }
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'fr-FR';
+      utterance.rate = 0.85;
+      utterance.pitch = 1.3;
+      utterance.volume = 1;
+      
+      currentUtterance = utterance;
+      speech.speak(utterance);
+      
+      return new Promise((resolve) => {
+        utterance.onend = resolve;
+        utterance.onerror = resolve;
+      });
+    }
+
+    function toggleVoice() {
+      voiceActive = !voiceActive;
+      const voiceBtn = document.getElementById('voiceControl');
+      
+      if (voiceActive) {
+        voiceBtn.classList.add('active');
+        voiceBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+      } else {
+        voiceBtn.classList.remove('active');
+        voiceBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+        if (currentUtterance) {
+          speech.cancel();
+        }
+      }
+    }
+
+    // Autres fonctions
+    function openAcademicPage(pageId) {
+      alert(`Ouverture de la page: ${pageId}`);
+    }
+
+    function viewParentMeetings() {
+      alert('La prochaine réunion parents-professeurs aura lieu le 20/01/2024 à 14h.');
+    }
+
+    function showLibraryLevel(level) {
+      document.querySelectorAll('.library-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(`${level}-content`).classList.add('active');
+    }
+
+    function loadBooks(level, subject) {
+      alert(`Chargement des livres ${subject} pour le niveau ${level}`);
+    }
+
+    function readBook(bookTitle, level) {
+      const bookReader = document.getElementById('bookReader');
+      const bookReaderTitle = document.getElementById('bookReaderTitle');
+      const bookReaderContent = document.getElementById('bookReaderContent');
+      
+      bookReaderTitle.textContent = bookTitle;
+      bookReaderContent.innerHTML = `
+        <div class="book-page">
+          <h3>${bookTitle}</h3>
+          <p>Ceci est un exemple de contenu pour le livre "${bookTitle}" (Niveau: ${level}).</p>
+          <p>Dans la version complète, vous pourriez lire le livre entier avec des images et du texte.</p>
+        </div>
+      `;
+      
+      bookReader.classList.add('active');
+    }
+
+    function closeBookReader() {
+      document.getElementById('bookReader').classList.remove('active');
+    }
+
+    function toggleBookVoice() {
+      const voiceBtn = document.getElementById('voiceControlBook');
+      voiceBtn.classList.toggle('active');
+    }
+
+    function sendContactMessage() {
+      const name = document.getElementById('contactName').value;
+      const email = document.getElementById('contactEmail').value;
+      const message = document.getElementById('contactMessage').value;
+      
+      if (name && email && message) {
+        alert(`Merci ${name}! Votre message a été envoyé.`);
+        document.getElementById('contactName').value = '';
+        document.getElementById('contactEmail').value = '';
+        document.getElementById('contactMessage').value = '';
+      } else {
+        alert('Veuillez remplir tous les champs du formulaire de contact.');
+      }
+    }
+
+    function startExercise(exerciseType) {
+      checkAndStartGame(exerciseType);
+    }
+
+    function openSettingsModal() {
+      alert('Ouvrir les paramètres');
+    }
+
+    function toggleNotifications() {
+      alert('Afficher les notifications');
+    }
+
+    function openMediaViewer(imageUrl) {
+      // Ouvrir une visionneuse d'image simple
+      const viewer = window.open('', '_blank');
+      viewer.document.write(`
+        <html>
+          <head>
+            <title>Photo de présentation</title>
+            <style>
+              body { margin: 0; padding: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
+              img { max-width: 100%; max-height: 100vh; }
+            </style>
+          </head>
+          <body>
+            <img src="${imageUrl}" alt="Photo de présentation">
+          </body>
+        </html>
+      `);
+    }
+
+    // Initialiser les paramètres de jeu par défaut
+    window.addEventListener('load', () => {
+      selectLevel('maternelle');
+      selectDifficulty('facile');
+      updateGameDescriptions();
+    });
+  </script>
+</body>
+</html>

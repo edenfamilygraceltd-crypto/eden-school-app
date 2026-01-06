@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isDirector() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/directors/$(request.auth.uid));
+    }
+
+    function isTeacher() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+    }
+
+    function isSecretary() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/secretaries/$(request.auth.uid));
+    }
+
+    function isParent() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/parents/$(request.auth.uid));
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasSchoolAccess() {
+      return isAuthenticated() &&
+             (isDirector() || isTeacher() || isSecretary() || isParent());
+    }
+
+    // Users collection - only directors can manage
+    match /users/{userId} {
+      allow read: if hasSchoolAccess();
+      allow write: if isDirector();
+      allow update: if isDirector() || isOwner(userId);
+    }
+
+    // Directors collection
+    match /directors/{directorId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == directorId;
+      allow read: if isTeacher() || isSecretary();
+    }
+
+    // Teachers collection
+    match /teachers/{teacherId} {
+      allow read: if hasSchoolAccess();
+      allow write: if isDirector();
+      allow update: if isDirector() || (isTeacher() && request.auth.uid == teacherId);
+    }
+
+    // Secretaries collection
+    match /secretaries/{secretaryId} {
+      allow read: if isDirector() || isSecretary();
+      allow write: if isDirector();
+      allow update: if isDirector() || (isSecretary() && request.auth.uid == secretaryId);
+    }
+
+    // Parents collection
+    match /parents/{parentId} {
+      allow read: if isDirector() || isSecretary() || isOwner(parentId);
+      allow write: if isDirector() || isSecretary();
+      allow update: if isDirector() || isSecretary() || isOwner(parentId);
+    }
+
+    // Students collection - sensitive data
+    match /students/{studentId} {
+      allow read: if hasSchoolAccess();
+      allow write: if isDirector() || isSecretary();
+      allow update: if isDirector() || isSecretary() || isTeacher();
+    }
+
+    // Contacts collection - for parent communications
+    match /contacts/{contactId} {
+      allow read: if isDirector() || isSecretary();
+      allow write: if isAuthenticated(); // Allow parents to send messages
+      allow update: if isDirector() || isSecretary();
+    }
+
+    // Settings collection
+    match /settings/{settingId} {
+      allow read: if hasSchoolAccess();
+      allow write: if isDirector();
+    }
+
+    // Activities collection - audit log
+    match /activities/{activityId} {
+      allow read: if hasSchoolAccess();
+      allow write: if hasSchoolAccess();
+    }
+
+    // Announcements collection
+    match /announcements/{announcementId} {
+      allow read: if hasSchoolAccess();
+      allow write: if isDirector();
+    }
+
+    // Carousel collection
+    match /carousel/{itemId} {
+      allow read: if hasSchoolAccess();
+      allow write: if isDirector();
+    }
+
+    // Default deny for any other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
