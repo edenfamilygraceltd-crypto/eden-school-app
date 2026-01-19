@@ -352,6 +352,119 @@
         align-items: center;
       }
     }
+
+    /* Téléphones petits (320px - 480px) */
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      .auth-container {
+        padding: 1.5rem 1rem;
+        margin: 0;
+        border-radius: 15px;
+        max-width: 100%;
+      }
+
+      .auth-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .auth-header p {
+        font-size: 0.9rem;
+      }
+
+      .role-badges {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .role-badge {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+        border-radius: 8px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .form-group {
+        margin-bottom: 1rem;
+      }
+
+      label {
+        font-size: 0.9rem;
+      }
+
+      input[type="email"],
+      input[type="password"],
+      select {
+        font-size: 16px;
+        padding: 0.75rem;
+        width: 100%;
+        border-radius: 8px;
+      }
+
+      .remember-forgot {
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+      }
+
+      button {
+        padding: 0.9rem;
+        font-size: 1rem;
+        width: 100%;
+        border-radius: 8px;
+      }
+
+      .divider {
+        margin: 1rem 0;
+        font-size: 0.9rem;
+      }
+
+      .social-login {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .social-btn {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+      }
+
+      .footer-links {
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .footer-links a {
+        display: inline-block;
+      }
+    }
+
+    /* Tablettes (481px - 768px) */
+    @media (min-width: 481px) and (max-width: 768px) {
+      .auth-container {
+        padding: 2rem 1.5rem;
+        border-radius: 18px;
+      }
+
+      .auth-header h1 {
+        font-size: 1.8rem;
+      }
+
+      input[type="email"],
+      input[type="password"],
+      select {
+        font-size: 15px;
+      }
+
+      button {
+        padding: 0.85rem;
+      }
+    }
   </style>
 </head>
 <body>
