@@ -3187,94 +3187,147 @@
 
     <!-- Student Modal -->
     <div class="modal fade" id="studentModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Ajouter un Élève</h5>
+                    <h5 class="modal-title">Ajouter Nouvel Élève</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body">
                     <form id="studentForm">
+                        <!-- Code Référence - Auto-generated and read-only -->
                         <div class="mb-3">
                             <label class="form-label">Code Référence *</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control-modern" id="studentReference" placeholder="EDU-20260118-120000" readonly>
-                                <button type="button" class="btn-modern" onclick="generateStudentReference()" title="Générer référence">
-                                    <i class="fas fa-sync"></i>
-                                </button>
+                            <input type="text" class="form-control-modern" id="studentReference" placeholder="Auto-généré" readonly style="background-color: #f0f0f0; cursor: not-allowed;">
+                        </div>
+                        
+                        <!-- Nom Complet -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nom *</label>
+                                <input type="text" class="form-control-modern" id="studentLastName" placeholder="Nom de famille" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Prénom *</label>
+                                <input type="text" class="form-control-modern" id="studentFirstName" placeholder="Prénom" required>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Nom Complet *</label>
-                            <input type="text" class="form-control-modern" id="studentFullName" required>
-                        </div>
+                        
+                        <!-- Date de Naissance -->
                         <div class="mb-3">
                             <label class="form-label">Date de Naissance *</label>
                             <input type="date" class="form-control-modern" id="studentBirthDate" required>
                         </div>
+                        
+                        <!-- Classe et Branche -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Classe *</label>
+                                <select class="form-control-modern" id="studentClass" required>
+                                    <option value="">Sélectionnez</option>
+                                    <optgroup label="NURSERY (MATERNELLE)">
+                                        <option value="N1A">N1A (Nursery 1A)</option>
+                                        <option value="N1B">N1B (Nursery 1B)</option>
+                                        <option value="N1C">N1C (Nursery 1C)</option>
+                                        <option value="N2A">N2A (Nursery 2A)</option>
+                                        <option value="N2B">N2B (Nursery 2B)</option>
+                                        <option value="N2C">N2C (Nursery 2C)</option>
+                                        <option value="N3A">N3A (Nursery 3A)</option>
+                                        <option value="N3B">N3B (Nursery 3B)</option>
+                                        <option value="N3C">N3C (Nursery 3C)</option>
+                                    </optgroup>
+                                    <optgroup label="PRIMAIRE">
+                                        <option value="P1A">P1A</option>
+                                        <option value="P1B">P1B</option>
+                                        <option value="P1C">P1C</option>
+                                        <option value="P2A">P2A</option>
+                                        <option value="P2B">P2B</option>
+                                        <option value="P2C">P2C</option>
+                                        <option value="P3A">P3A</option>
+                                        <option value="P3B">P3B</option>
+                                        <option value="P3C">P3C</option>
+                                        <option value="P4A">P4A</option>
+                                        <option value="P4B">P4B</option>
+                                        <option value="P4C">P4C</option>
+                                        <option value="P5A">P5A</option>
+                                        <option value="P5B">P5B</option>
+                                        <option value="P5C">P5C</option>
+                                        <option value="P6A">P6A</option>
+                                        <option value="P6B">P6B</option>
+                                        <option value="P6C">P6C</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Branche *</label>
+                                <select class="form-control-modern" id="studentBranch" required>
+                                    <option value="">Sélectionnez</option>
+                                    <option value="kacyiru">EDEN FAMILY SCHOOL KACYIRU</option>
+                                    <option value="kimisagara">EDEN FAMILY SCHOOL KIMISAGARA</option>
+                                    <option value="gisozi_maternelle">EDEN FAMILY SCHOOL GISOZI MATERNELLE</option>
+                                    <option value="gisozi_primaire">EDEN FAMILY SCHOOL GISOZI PRIMAIRE</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Nom du Parent/Tuteur -->
                         <div class="mb-3">
-                            <label class="form-label">Classe *</label>
-                            <select class="form-control-modern" id="studentClass" required>
-                                <option value="">Sélectionnez</option>
-                                <optgroup label="NURSERY">
-                                    <option value="N1A">N1A (Nursery 1A)</option>
-                                    <option value="N1B">N1B (Nursery 1B)</option>
-                                    <option value="N1C">N1C (Nursery 1C)</option>
-                                    <option value="N2A">N2A (Nursery 2A)</option>
-                                    <option value="N2B">N2B (Nursery 2B)</option>
-                                    <option value="N2C">N2C (Nursery 2C)</option>
-                                    <option value="N3A">N3A (Nursery 3A)</option>
-                                    <option value="N3B">N3B (Nursery 3B)</option>
-                                    <option value="N3C">N3C (Nursery 3C)</option>
-                                </optgroup>
-                                <optgroup label="PRIMAIRE">
-                                    <option value="P1A">P1A</option>
-                                    <option value="P1B">P1B</option>
-                                    <option value="P1C">P1C</option>
-                                    <option value="P2A">P2A</option>
-                                    <option value="P2B">P2B</option>
-                                    <option value="P2C">P2C</option>
-                                    <option value="P3A">P3A</option>
-                                    <option value="P3B">P3B</option>
-                                    <option value="P3C">P3C</option>
-                                    <option value="P4A">P4A</option>
-                                    <option value="P4B">P4B</option>
-                                    <option value="P4C">P4C</option>
-                                    <option value="P5A">P5A</option>
-                                    <option value="P5B">P5B</option>
-                                    <option value="P5C">P5C</option>
-                                    <option value="P6A">P6A</option>
-                                    <option value="P6B">P6B</option>
-                                    <option value="P6C">P6C</option>
-                                </optgroup>
-                                    <option value="P4">Primaire 4</option>
-                                    <option value="P5">Primaire 5</option>
-                                </optgroup>
+                            <label class="form-label">Nom du Parent/Tuteur *</label>
+                            <input type="text" class="form-control-modern" id="studentParent" placeholder="Nom du parent/tuteur" required>
+                        </div>
+                        
+                        <!-- Téléphones -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Téléphone du Parent *</label>
+                                <input type="tel" class="form-control-modern" id="studentParentPhone" placeholder="0781234567" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Téléphone du Parent 2</label>
+                                <input type="tel" class="form-control-modern" id="studentParentPhone2" placeholder="0781234567">
+                            </div>
+                        </div>
+                        
+                        <!-- Email Parent -->
+                        <div class="mb-3">
+                            <label class="form-label">Email du Parent</label>
+                            <input type="email" class="form-control-modern" id="studentParentEmail" placeholder="parent@email.com">
+                        </div>
+                        
+                        <!-- Adresse -->
+                        <div class="mb-3">
+                            <label class="form-label">Adresse du Domicile</label>
+                            <input type="text" class="form-control-modern" id="studentAddress" placeholder="Adresse complète">
+                        </div>
+                        
+                        <!-- Date d'Inscription -->
+                        <div class="mb-3">
+                            <label class="form-label">Date d'Inscription *</label>
+                            <input type="date" class="form-control-modern" id="studentEnrollmentDate" required>
+                        </div>
+                        
+                        <!-- Type d'Inscription -->
+                        <div class="mb-3">
+                            <label class="form-label">Type d'Inscription</label>
+                            <select class="form-control-modern" id="studentEnrollmentType">
+                                <option value="Régulier">Régulier</option>
+                                <option value="Spécial">Spécial</option>
+                                <option value="Transfert">Transfert</option>
                             </select>
                         </div>
+                        
+                        <!-- Conditions Médicales -->
                         <div class="mb-3">
-                            <label class="form-label">Nom du Parent</label>
-                            <input type="text" class="form-control-modern" id="studentParent">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Téléphone du Parent</label>
-                            <input type="tel" class="form-control-modern" id="studentParentPhone">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Branche *</label>
-                            <select class="form-control-modern" id="studentBranch" required>
-                                <option value="kacyiru">EDEN FAMILY SCHOOL KACYIRU</option>
-                                <option value="kimisagara">EDEN FAMILY SCHOOL KIMISAGARA</option>
-                                <option value="gisozimaternelle">EDEN FAMILY SCHOOL GISOZI MATERNELLE</option>
-                                <option value="gisoziprimaire">EDEN FAMILY SCHOOL GISOZI PRIMAIRE</option>
-                            </select>
+                            <label class="form-label">Conditions Médicales Spécifiques</label>
+                            <textarea class="form-control-modern" id="studentMedicalConditions" placeholder="Allergie, asthme, diabète, etc." rows="3"></textarea>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetStudentFormComptable()">Réinitialiser</button>
+                    <button type="button" class="btn-close-btn" data-bs-dismiss="modal">Annuler</button>
                     <button type="button" class="btn-modern btn-primary-modern" onclick="saveStudent()">
-                        <i class="fas fa-save me-2"></i> Enregistrer
+                        <i class="fas fa-save me-2"></i> Enregistrer l'Élève
                     </button>
                 </div>
             </div>
@@ -5133,6 +5186,44 @@
         }
 
         // Save student
+        // Show student modal
+        function showStudentModal() {
+            // Générer un code de référence unique
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+            const randomNum = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
+            const referenceCode = 'EDU-' + dateStr.substring(2) + '-' + randomNum;
+            
+            // Remplir le champ du code de référence
+            document.getElementById('studentReference').value = referenceCode;
+            
+            // Réinitialiser les autres champs
+            resetStudentFormComptable();
+            
+            // Afficher la modale
+            const modal = new bootstrap.Modal(document.getElementById('studentModal'));
+            modal.show();
+        }
+        
+        // Réinitialiser le formulaire d'élève
+        function resetStudentFormComptable() {
+            document.getElementById('studentForm').reset();
+            document.getElementById('studentReference').value = '';
+            document.getElementById('studentLastName').value = '';
+            document.getElementById('studentFirstName').value = '';
+            document.getElementById('studentBirthDate').value = '';
+            document.getElementById('studentParent').value = '';
+            document.getElementById('studentParentPhone').value = '';
+            document.getElementById('studentParentPhone2').value = '';
+            document.getElementById('studentParentEmail').value = '';
+            document.getElementById('studentAddress').value = '';
+            document.getElementById('studentBranch').value = '';
+            document.getElementById('studentClass').value = '';
+            document.getElementById('studentEnrollmentDate').value = '';
+            document.getElementById('studentEnrollmentType').value = 'Régulier';
+            document.getElementById('studentMedicalConditions').value = '';
+        }
+
         async function saveStudent() {
             const form = document.getElementById('studentForm');
             if (!form.checkValidity()) {
@@ -5140,14 +5231,26 @@
                 return;
             }
             
+            const lastName = document.getElementById('studentLastName').value;
+            const firstName = document.getElementById('studentFirstName').value;
+            const referenceCode = document.getElementById('studentReference').value;
+            
             const studentData = {
-                reference: document.getElementById('studentReference').value,
-                fullName: document.getElementById('studentFullName').value,
-                birthDate: document.getElementById('studentBirthDate').value,
+                referenceCode: referenceCode,
+                fullName: `${firstName} ${lastName}`,
+                firstName: firstName,
+                lastName: lastName,
+                dateOfBirth: document.getElementById('studentBirthDate').value,
                 class: document.getElementById('studentClass').value,
-                parent: document.getElementById('studentParent').value || '',
-                parentPhone: document.getElementById('studentParentPhone').value || '',
+                parentName: document.getElementById('studentParent').value || '',
+                parentPhone1: document.getElementById('studentParentPhone').value || '',
+                parentPhone2: document.getElementById('studentParentPhone2').value || '',
+                parentEmail: document.getElementById('studentParentEmail').value || '',
+                address: document.getElementById('studentAddress').value || '',
                 branch: document.getElementById('studentBranch').value,
+                enrollmentDate: document.getElementById('studentEnrollmentDate').value,
+                enrollmentType: document.getElementById('studentEnrollmentType').value || 'Régulier',
+                medicalConditions: document.getElementById('studentMedicalConditions').value || '',
                 status: 'active',
                 timestamp: Date.now(),
                 createdBy: currentUserName
@@ -5160,8 +5263,8 @@
                 } else {
                     // Vérifier si la référence existe déjà
                     const existingSnapshot = await studentsRef
-                        .orderByChild('reference')
-                        .equalTo(studentData.reference)
+                        .orderByChild('referenceCode')
+                        .equalTo(studentData.referenceCode)
                         .once('value');
                     
                     if (existingSnapshot.exists()) {
@@ -5177,8 +5280,8 @@
                 document.getElementById('studentForm').reset();
                 currentStudentId = null;
                 
-                // Générer une nouvelle référence
-                generateStudentReference();
+                // Recharger les élèves
+                loadStudentsFromDatabase();
                 
             } catch (error) {
                 console.error('Erreur sauvegarde élève:', error);
