@@ -10,33 +10,32 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Poppins', sans-serif;
-      line-height: 1.6;
-      color: #333;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    body { 
+      font-family: 'Poppins', sans-serif; 
+      line-height: 1.6; 
+      color: #333; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+      min-height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
       padding: 20px;
     }
-
-    .auth-container {
-      background: white;
-      border-radius: 25px;
-      box-shadow: 0 25px 70px rgba(0,0,0,0.3);
-      width: 100%;
-      max-width: 500px;
-      padding: 3rem 2.5rem;
+    
+    .auth-container { 
+      background: white; 
+      border-radius: 25px; 
+      box-shadow: 0 25px 70px rgba(0,0,0,0.3); 
+      width: 100%; 
+      max-width: 500px; 
+      padding: 3rem 2.5rem; 
       margin: 1rem;
       overflow: hidden;
       position: relative;
     }
-
+    
     .auth-container::before {
       content: '';
       position: absolute;
@@ -46,24 +45,24 @@
       height: 4px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
-
-    .auth-header {
-      text-align: center;
-      margin-bottom: 2rem;
+    
+    .auth-header { 
+      text-align: center; 
+      margin-bottom: 2rem; 
     }
-    .auth-header h1 {
-      color: #667eea;
-      font-size: 2.5rem;
+    .auth-header h1 { 
+      color: #667eea; 
+      font-size: 2.5rem; 
       margin-bottom: 0.5rem;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .auth-header p {
-      color: #666;
-      font-size: 1.1rem;
+    .auth-header p { 
+      color: #666; 
+      font-size: 1.1rem; 
     }
-
+    
     .role-badges {
       display: flex;
       justify-content: center;
@@ -71,7 +70,7 @@
       margin-bottom: 2rem;
       flex-wrap: wrap;
     }
-
+    
     .role-badge {
       display: flex;
       align-items: center;
@@ -84,90 +83,90 @@
       border: 2px solid #e0e0e0;
       transition: all 0.3s ease;
     }
-
+    
     .role-badge:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
       border-color: #667eea;
     }
-
+    
     .role-badge i {
       font-size: 1rem;
     }
-
+    
     .role-badge.accountant {
       color: #10b981;
       border-color: #a7f3d0;
     }
-
+    
     .role-badge.director {
       color: #667eea;
       border-color: #c7d2fe;
     }
-
+    
     .role-badge.secretary {
       color: #8b5cf6;
       border-color: #ddd6fe;
     }
-
+    
     .role-badge.teacher {
       color: #f59e0b;
       border-color: #fde68a;
     }
-
-    .auth-form {
+    
+    .auth-form { 
       animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
-
-    .input-group {
-      margin-bottom: 1.8rem;
+    
+    .input-group { 
+      margin-bottom: 1.8rem; 
       position: relative;
     }
-    .input-group label {
-      display: block;
-      margin-bottom: 0.8rem;
-      font-weight: 600;
-      color: #333;
+    .input-group label { 
+      display: block; 
+      margin-bottom: 0.8rem; 
+      font-weight: 600; 
+      color: #333; 
       font-size: 1.05rem;
     }
-    .input-group label i {
-      color: #667eea;
-      margin-right: 0.8rem;
+    .input-group label i { 
+      color: #667eea; 
+      margin-right: 0.8rem; 
       width: 20px;
       text-align: center;
     }
-    .input-group input {
-      width: 100%;
-      padding: 1rem 1.2rem;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
-      font-size: 1.05rem;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      font-family: 'Poppins', sans-serif;
+    .input-group input { 
+      width: 100%; 
+      padding: 1rem 1.2rem; 
+      border: 2px solid #e0e0e0; 
+      border-radius: 12px; 
+      font-size: 1.05rem; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      font-family: 'Poppins', sans-serif; 
       background: white;
     }
-    .input-group input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+    .input-group input:focus { 
+      outline: none; 
+      border-color: #667eea; 
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.2); 
       transform: translateY(-2px);
     }
-
-    .btn-primary {
-      width: 100%;
-      padding: 1.2rem;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.2rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.8rem;
+    
+    .btn-primary { 
+      width: 100%; 
+      padding: 1.2rem; 
+      background: linear-gradient(135deg, #667eea, #764ba2); 
+      color: white; 
+      border: none; 
+      border-radius: 12px; 
+      font-size: 1.2rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 0.8rem; 
       margin-top: 1rem;
       position: relative;
       overflow: hidden;
@@ -187,21 +186,21 @@
     .btn-primary:hover::before {
       left: 100%;
     }
-    .btn-primary:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+    .btn-primary:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4); 
     }
-    .btn-primary:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    .btn-primary:disabled { 
+      opacity: 0.6; 
+      cursor: not-allowed; 
       transform: none !important;
     }
-
-    .alert {
-      padding: 1.2rem 1.5rem;
-      border-radius: 12px;
-      margin-bottom: 1.5rem;
-      display: none;
+    
+    .alert { 
+      padding: 1.2rem 1.5rem; 
+      border-radius: 12px; 
+      margin-bottom: 1.5rem; 
+      display: none; 
       position: relative;
       overflow: hidden;
     }
@@ -213,33 +212,33 @@
       width: 6px;
       height: 100%;
     }
-    .alert.success {
-      background: #f0f9f0;
-      color: #166534;
-      border: 2px solid #dcfce7;
+    .alert.success { 
+      background: #f0f9f0; 
+      color: #166534; 
+      border: 2px solid #dcfce7; 
     }
     .alert.success::before {
       background: #22c55e;
     }
-    .alert.error {
-      background: #fef2f2;
-      color: #991b1b;
-      border: 2px solid #fee2e2;
+    .alert.error { 
+      background: #fef2f2; 
+      color: #991b1b; 
+      border: 2px solid #fee2e2; 
     }
     .alert.error::before {
       background: #ef4444;
     }
-    .alert.show {
-      display: block;
-      animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    .alert.show { 
+      display: block; 
+      animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
     }
-
-    .info-box {
-      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-      border-left: 5px solid #667eea;
-      padding: 1.5rem;
-      border-radius: 12px;
-      margin-bottom: 2rem;
+    
+    .info-box { 
+      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); 
+      border-left: 5px solid #667eea; 
+      padding: 1.5rem; 
+      border-radius: 12px; 
+      margin-bottom: 2rem; 
       position: relative;
       overflow: hidden;
     }
@@ -248,207 +247,109 @@
       position: absolute;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="%23667eea" opacity="0.1"/><circle cx="80" cy="80" r="2" fill="%23667eea" opacity="0.1"/><circle cx="40" cy="60" r="1" fill="%23667eea" opacity="0.1"/></svg>');
+      width: 100%;
+      height: 100%;
+      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23667eea' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
       opacity: 0.5;
     }
-
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      font-size: 0.95rem;
-      color: #666;
-    }
-    .checkbox-group input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: #667eea;
-    }
-
-    .separator {
-      text-align: center;
-      margin: 2rem 0;
-      position: relative;
-    }
-    .separator::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #e0e0e0, transparent);
-    }
-    .separator span {
-      background: white;
-      padding: 0 1rem;
-      color: #999;
-      font-weight: 500;
+    .info-box i { 
+      color: #667eea; 
+      margin-right: 1rem; 
+      font-size: 1.2rem;
       position: relative;
       z-index: 1;
     }
-
-    .access-portal-btn {
-      display: inline-block;
-      width: 100%;
-      padding: 1.2rem;
-      background: white;
-      color: #667eea;
-      border: 2px solid #667eea;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 600;
-      text-align: center;
-      transition: all 0.3s ease;
-      margin-top: 1rem;
+    .info-box strong { 
+      position: relative;
+      z-index: 1;
     }
-    .access-portal-btn:hover {
-      background: #667eea;
-      color: white;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-    }
-
-    /* Modal OTP */
-    .otp-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 1000;
-      animation: fadeIn 0.3s ease;
-    }
-    .otp-modal.show {
+    
+    .separator {
       display: flex;
       align-items: center;
-      justify-content: center;
-    }
-    .otp-modal-content {
-      background: white;
-      border-radius: 20px;
-      padding: 2.5rem;
-      max-width: 450px;
-      width: 90%;
-      position: relative;
-      box-shadow: 0 25px 70px rgba(0,0,0,0.3);
-      animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .otp-header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .otp-header h2 {
-      color: #667eea;
-      font-size: 1.8rem;
-      margin-bottom: 0.5rem;
-    }
-    .otp-header p {
-      color: #666;
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-    .otp-input-group {
-      margin-bottom: 2rem;
-    }
-    .otp-input-group label {
-      display: block;
-      margin-bottom: 1rem;
-      font-weight: 600;
-      color: #333;
-      text-align: center;
-    }
-    .otp-input {
-      width: 100%;
-      padding: 1rem;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
-      font-size: 1.5rem;
-      text-align: center;
-      letter-spacing: 0.5rem;
-      font-family: 'Poppins', sans-serif;
-      transition: all 0.3s ease;
-    }
-    .otp-input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
-    }
-    .otp-buttons {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .otp-btn {
-      flex: 1;
-      padding: 1rem;
-      border: none;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .otp-btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-    }
-    .otp-btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-    }
-    .otp-btn-secondary {
-      background: #f8f9fa;
-      color: #666;
-      border: 2px solid #e0e0e0;
-    }
-    .otp-btn-secondary:hover {
-      background: #e0e0e0;
-    }
-    .otp-timer {
-      text-align: center;
+      margin: 1.5rem 0;
       color: #666;
       font-size: 0.9rem;
     }
-    .otp-timer .resend-available {
-      color: #667eea;
-      cursor: pointer;
-      font-weight: 600;
+    
+    .separator::before,
+    .separator::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e0e0e0;
     }
-    .otp-timer .resend-available:hover {
+    
+    .separator span {
+      padding: 0 1rem;
+    }
+    
+    .access-portal-btn {
+      display: block;
+      text-align: center;
+      margin-top: 2rem;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: color 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    
+    .access-portal-btn:hover {
+      color: #764ba2;
       text-decoration: underline;
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(20px); } 
+      to { opacity: 1; transform: translateY(0); } 
     }
-    @keyframes slideDown {
-      from { transform: translateY(-30px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    @keyframes slideDown { 
+      from { transform: translateY(-30px); opacity: 0; } 
+      to { transform: translateY(0); opacity: 1; } 
     }
-    @keyframes slideUp {
-      from { transform: translateY(50px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 2rem;
     }
-
+    
+    .loader.active {
+      display: block;
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
     @media (max-width: 768px) {
-      .auth-container {
-        padding: 2rem 1.5rem;
-        margin: 0.5rem;
+      .auth-container { 
+        padding: 2rem 1.5rem; 
+        margin: 0.5rem; 
+        border-radius: 20px;
       }
-      .auth-header h1 {
-        font-size: 2rem;
+      .auth-header h1 { 
+        font-size: 2rem; 
       }
       .role-badges {
-        gap: 0.5rem;
-      }
-      .role-badge {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.8rem;
+        flex-direction: column;
+        align-items: center;
       }
     }
   </style>
@@ -456,24 +357,30 @@
 <body>
   <div class="auth-container">
     <div class="auth-header">
-      <h1><i class="fas fa-school"></i> EDEN SCHOOL</h1>
-      <p>Portail d'authentification du personnel</p>
+      <h1><i class="fas fa-graduation-cap"></i> EDEN FAMILY SCHOOL</h1>
+      <p>Portail Staff - Accès Professionnel</p>
     </div>
 
     <div class="role-badges">
       <div class="role-badge director">
-        <i class="fas fa-user-tie"></i> Directeur
+        <i class="fas fa-user-tie"></i>
+        <span>Directeurs</span>
       </div>
       <div class="role-badge secretary">
-        <i class="fas fa-user-check"></i> Secrétaire
+        <i class="fas fa-user-shield"></i>
+        <span>Secrétaires</span>
       </div>
       <div class="role-badge teacher">
-        <i class="fas fa-chalkboard-teacher"></i> Enseignant
+        <i class="fas fa-chalkboard-teacher"></i>
+        <span>Enseignants</span>
       </div>
       <div class="role-badge accountant">
-        <i class="fas fa-calculator"></i> Comptable
+        <i class="fas fa-calculator"></i>
+        <span>Comptables</span>
       </div>
     </div>
+
+    <div id="alertBox" class="alert"></div>
 
     <div class="info-box">
       <i class="fas fa-info-circle"></i>
@@ -490,12 +397,12 @@
         <label for="loginPassword"><i class="fas fa-lock"></i> Mot de passe</label>
         <input type="password" id="loginPassword" placeholder="Votre mot de passe professionnel" required>
       </div>
-
+      
       <div class="checkbox-group" style="margin-bottom: 1.5rem;">
         <input type="checkbox" id="rememberMe">
         <label for="rememberMe">Se souvenir de moi sur cet appareil</label>
       </div>
-
+      
       <button class="btn-primary" onclick="login()">
         <i class="fas fa-sign-in-alt"></i> Connexion Staff
       </button>
@@ -504,40 +411,16 @@
     <div class="separator">
       <span>OU</span>
     </div>
-
+    <!-- Bouton d'initialisation (temporaire pour développement) -->
+    <div style="text-align: center; margin: 1rem 0;">
+      <button type="button" onclick="initializeTestUsers()" 
+              style="background: #f59e0b; color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+        🛠️ Initialiser utilisateurs de test
+      </button>
+    </div>
     <a href="index.html" class="access-portal-btn">
       <i class="fas fa-user-friends"></i> Accéder au portail parents
     </a>
-
-    <div id="alertBox" class="alert"></div>
-  </div>
-
-  <!-- Modal OTP pour Directeurs -->
-  <div id="otpModal" class="otp-modal">
-    <div class="otp-modal-content">
-      <div class="otp-header">
-        <h2><i class="fas fa-shield-alt"></i> Vérification de Sécurité</h2>
-        <p>Un code de vérification a été envoyé à votre adresse email professionnelle.<br>Veuillez saisir le code à 6 chiffres pour continuer.</p>
-      </div>
-
-      <div class="otp-input-group">
-        <label for="otpCode">Code de vérification</label>
-        <input type="text" id="otpCode" class="otp-input" placeholder="000000" maxlength="6" pattern="[0-9]{6}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-      </div>
-
-      <div class="otp-buttons">
-        <button class="otp-btn otp-btn-secondary" onclick="closeOtpModal()">
-          <i class="fas fa-times"></i> Annuler
-        </button>
-        <button class="otp-btn otp-btn-primary" onclick="verifyOtp()">
-          <i class="fas fa-check"></i> Vérifier
-        </button>
-      </div>
-
-      <div id="otpTimer" class="otp-timer">
-        Renvoyer le code dans <span id="countdown">60</span> secondes
-      </div>
-    </div>
   </div>
 
   <script>
@@ -561,7 +444,7 @@
       const alertBox = document.getElementById('alertBox');
       alertBox.textContent = message;
       alertBox.className = `alert ${type} show`;
-
+      
       setTimeout(() => {
         hideAlert();
       }, 5000);
@@ -572,217 +455,84 @@
       alertBox.classList.remove('show');
     }
 
-    // Variables pour l'OTP
-    let currentOtp = '';
-    let otpTimer = null;
-    let countdownInterval = null;
-    let directorEmail = '';
-    let directorData = null;
-
-    // Initialiser EmailJS
-    (function() {
-      emailjs.init('Un7snKzeE4AGeorc-');
-    })();
-
-    // Générer un code OTP à 6 chiffres
-    function generateOtp() {
-      return Math.floor(100000 + Math.random() * 900000).toString();
-    }
-
-    // Envoyer l'OTP par email
-    async function sendOtpEmail(email, otp) {
-      try {
-        const templateParams = {
-          to_email: email,
-          otp_code: otp,
-          to_name: email.split('@')[0],
-          school_name: 'EDEN FAMILY SCHOOL'
-        };
-
-        const result = await emailjs.send(
-          'service_yvl11d5',
-          'template_hjw7vbj',
-          templateParams
-        );
-
-        console.log('Email envoyé avec succès:', result);
-        return true;
-      } catch (error) {
-        console.error('Erreur envoi email:', error);
-        return false;
-      }
-    }
-
-    // Afficher le modal OTP
-    function showOtpModal(email, data) {
-      directorEmail = email;
-      directorData = data;
-
-      // Générer et envoyer l'OTP
-      currentOtp = generateOtp();
-      console.log('OTP généré:', currentOtp); // Pour debug - à retirer en production
-
-      sendOtpEmail(email, currentOtp).then(success => {
-        if (success) {
-          document.getElementById('otpModal').classList.add('show');
-          startOtpTimer();
-        } else {
-          showAlert('Erreur lors de l\'envoi du code de vérification. Veuillez réessayer.', 'error');
-        }
-      });
-    }
-
-    // Fermer le modal OTP
-    function closeOtpModal() {
-      document.getElementById('otpModal').classList.remove('show');
-      document.getElementById('otpCode').value = '';
-      clearInterval(countdownInterval);
-      otpTimer = null;
-      currentOtp = '';
-      directorEmail = '';
-      directorData = null;
-    }
-
-    // Démarrer le timer pour le renvoi d'OTP
-    function startOtpTimer() {
-      let timeLeft = 60;
-      const countdownElement = document.getElementById('countdown');
-      const timerElement = document.getElementById('otpTimer');
-
-      timerElement.classList.remove('resend-available');
-
-      countdownInterval = setInterval(() => {
-        countdownElement.textContent = timeLeft;
-        timeLeft--;
-
-        if (timeLeft < 0) {
-          clearInterval(countdownInterval);
-          timerElement.innerHTML = '<span class="resend-available" onclick="resendOtp()">Renvoyer le code</span>';
-          timerElement.classList.add('resend-available');
-        }
-      }, 1000);
-    }
-
-    // Renvoyer l'OTP
-    function resendOtp() {
-      if (!directorEmail) return;
-
-      currentOtp = generateOtp();
-      console.log('Nouvel OTP généré:', currentOtp);
-
-      sendOtpEmail(directorEmail, currentOtp).then(success => {
-        if (success) {
-          showAlert('Nouveau code envoyé à votre email.', 'success');
-          startOtpTimer();
-        } else {
-          showAlert('Erreur lors de l\'envoi du nouveau code.', 'error');
-        }
-      });
-    }
-
-    // Vérifier l'OTP saisi
-    function verifyOtp() {
-      const enteredOtp = document.getElementById('otpCode').value.trim();
-
-      if (!enteredOtp || enteredOtp.length !== 6) {
-        showAlert('Veuillez saisir un code à 6 chiffres.', 'error');
-        return;
-      }
-
-      if (enteredOtp === currentOtp) {
-        // OTP correct - rediriger vers le portail directeur
-        showAlert('Vérification réussie! Redirection vers le portail directeur...', 'success');
-        closeOtpModal();
-        setTimeout(() => {
-          window.location.href = 'director.html';
-        }, 1500);
-      } else {
-        showAlert('Code incorrect. Veuillez vérifier et réessayer.', 'error');
-      }
-    }
-
-    // Permettre la validation OTP avec Entrée
-    document.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter' && document.getElementById('otpModal').classList.contains('show')) {
-        verifyOtp();
-      }
-    });
-
     // Fonction pour obtenir le rôle de l'utilisateur et rediriger (version staff)
     async function getUserRoleAndRedirect(user, email) {
       const uid = user.uid;
       const emailLower = email.toLowerCase();
 
-      // Vérifier si c'est un directeur (priorité la plus haute)
-      const directorRef = realtimeDB.ref('directors').orderByChild('email').equalTo(emailLower);
-      const directorSnapshot = await directorRef.once('value');
-      if (directorSnapshot.exists()) {
-        const directorData = Object.values(directorSnapshot.val())[0];
-        if (directorData.role === 'director' || directorData.role === 'admin') {
-          // Pour les directeurs, demander vérification OTP
-          showOtpModal(email, directorData);
-          return true;
+      try {
+        // Vérifier si c'est un directeur (priorité la plus haute)
+        const directorRef = realtimeDB.ref('directors/' + uid);
+        const directorSnapshot = await directorRef.once('value');
+        if (directorSnapshot.exists()) {
+          const directorData = directorSnapshot.val();
+          if (directorData.role === 'director' || directorData.role === 'admin') {
+            showAlert('Connexion réussie! Redirection vers le portail directeur...', 'success');
+            setTimeout(() => {
+              window.location.href = 'director.html';
+            }, 1500);
+            return true;
+          }
         }
-      }
 
-      // Vérifier si c'est un secrétaire
-      const secretaryRef = realtimeDB.ref('secretaries').orderByChild('email').equalTo(emailLower);
-      const secretarySnapshot = await secretaryRef.once('value');
-      if (secretarySnapshot.exists()) {
-        const secretaryData = Object.values(secretarySnapshot.val())[0];
-        if (secretaryData.role === 'secretary') {
-          showAlert('Connexion réussie! Redirection vers le portail secrétaire...', 'success');
-          setTimeout(() => {
-            window.location.href = 'secretary.html';
-          }, 1500);
-          return true;
+        // Vérifier si c'est un secrétaire ou comptable
+        const secretaryRef = realtimeDB.ref('secretaries/' + uid);
+        const secretarySnapshot = await secretaryRef.once('value');
+        if (secretarySnapshot.exists()) {
+          const secretaryData = secretarySnapshot.val();
+          if (secretaryData.role === 'secretary') {
+            showAlert('Connexion réussie! Redirection vers le portail secrétaire...', 'success');
+            setTimeout(() => {
+              window.location.href = 'secretary.html';
+            }, 1500);
+            return true;
+          }
+          if (secretaryData.role === 'accountant') {
+            showAlert('Connexion réussie! Redirection vers le portail comptable...', 'success');
+            setTimeout(() => {
+              window.location.href = 'comptable.html';
+            }, 1500);
+            return true;
+          }
         }
-      }
 
-      // Vérifier si c'est un enseignant
-      const teacherRef = realtimeDB.ref('teachers').orderByChild('email').equalTo(emailLower);
-      const teacherSnapshot = await teacherRef.once('value');
-      if (teacherSnapshot.exists()) {
-        const teacherData = Object.values(teacherSnapshot.val())[0];
-        if (teacherData.role === 'teacher') {
-          showAlert('Connexion réussie! Redirection vers le portail enseignant...', 'success');
-          setTimeout(() => {
-            window.location.href = 'teacher_clean.html';
-          }, 1500);
-          return true;
+        // Vérifier si c'est un enseignant
+        const teacherRef = realtimeDB.ref('teachers/' + uid);
+        const teacherSnapshot = await teacherRef.once('value');
+        if (teacherSnapshot.exists()) {
+          const teacherData = teacherSnapshot.val();
+          if (teacherData.role === 'teacher') {
+            showAlert('Connexion réussie! Redirection vers le portail enseignant...', 'success');
+            setTimeout(() => {
+              window.location.href = 'teacher_clean.html';
+            }, 1500);
+            return true;
+          }
         }
-      }
 
-      // Vérifier si c'est un comptable
-      const accountantRef = realtimeDB.ref('accountants').orderByChild('email').equalTo(emailLower);
-      const accountantSnapshot = await accountantRef.once('value');
-      if (accountantSnapshot.exists()) {
-        const accountantData = Object.values(accountantSnapshot.val())[0];
-        if (accountantData.role === 'accountant') {
-          showAlert('Connexion réussie! Redirection vers le portail comptable...', 'success');
-          setTimeout(() => {
-            window.location.href = 'comptable.html';
-          }, 1500);
-          return true;
+        // Vérifier si c'est un parent (interdire l'accès depuis ce portail)
+        const parentRef = realtimeDB.ref('parents/' + uid);
+        const parentSnapshot = await parentRef.once('value');
+        if (parentSnapshot.exists()) {
+          const parentData = parentSnapshot.val();
+          if (parentData.role === 'parent') {
+            showAlert('Accès réservé au personnel uniquement. Veuillez utiliser le portail parents.', 'error');
+            await auth.signOut();
+            return false;
+          }
         }
-      }
 
-      // Vérifier si c'est un parent (interdire l'accès depuis ce portail)
-      const parentRef = realtimeDB.ref('parents/' + uid);
-      const parentSnapshot = await parentRef.once('value');
-      if (parentSnapshot.exists()) {
-        const parentData = parentSnapshot.val();
-        if (parentData.role === 'parent') {
-          showAlert('Accès réservé au personnel uniquement. Veuillez utiliser le portail parents.', 'error');
-          await auth.signOut();
-          return false;
-        }
-      }
+        // Si aucun rôle staff trouvé
+        showAlert('Accès refusé. Vos identifiants ne sont pas reconnus comme membre du personnel.', 'error');
+        await auth.signOut();
+        return false;
 
-      // Si aucun rôle staff trouvé
-      showAlert('Accès refusé. Vos identifiants ne sont pas reconnus comme membre du personnel.', 'error');
-      await auth.signOut();
-      return false;
+      } catch (error) {
+        console.error('Erreur lors de la vérification du rôle:', error);
+        showAlert('Erreur technique lors de la vérification des droits d\'accès.', 'error');
+        await auth.signOut();
+        return false;
+      }
     }
 
     // Connexion
@@ -811,7 +561,7 @@
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         const user = userCredential.user;
         const isStaff = await getUserRoleAndRedirect(user, email);
-
+        
         if (!isStaff) {
           // Réactiver le bouton si la connexion échoue
           button.disabled = false;
@@ -819,13 +569,13 @@
         }
       } catch (error) {
         console.error('Erreur de connexion:', error);
-
+        
         // Réactiver le bouton
         button.disabled = false;
         button.innerHTML = originalText;
-
+        
         let errorMessage = 'Erreur de connexion. ';
-
+        
         switch(error.code) {
           case 'auth/user-not-found':
             errorMessage += 'Aucun compte staff trouvé avec cet email.';
@@ -845,18 +595,112 @@
           default:
             errorMessage += 'Erreur technique. Contactez l\'administration.';
         }
-
+        
         showAlert(errorMessage, 'error');
       }
     }
 
-    // Vérifier si l'utilisateur est déjà connecté
-    auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        const email = user.email;
-        await getUserRoleAndRedirect(user, email);
+    // Fonction d'initialisation des utilisateurs de test (à supprimer en production)
+    async function initializeTestUsers() {
+      try {
+        // Créer un directeur de test
+        const directorEmail = 'director@edenschool.edu';
+        const directorPassword = 'director123';
+        
+        const directorCredential = await auth.createUserWithEmailAndPassword(directorEmail, directorPassword);
+        const directorUid = directorCredential.user.uid;
+        
+        const directorData = {
+          id: directorUid,
+          name: 'Directeur Test',
+          email: directorEmail,
+          role: 'director',
+          createdAt: new Date().toISOString()
+        };
+        
+        await realtimeDB.ref('directors/' + directorUid).set(directorData);
+        console.log('Directeur de test créé:', directorData);
+        
+        // Créer un secrétaire de test
+        await auth.signOut();
+        const secretaryEmail = 'secretary@edenschool.edu';
+        const secretaryPassword = 'secretary123';
+        
+        const secretaryCredential = await auth.createUserWithEmailAndPassword(secretaryEmail, secretaryPassword);
+        const secretaryUid = secretaryCredential.user.uid;
+        
+        const secretaryData = {
+          id: secretaryUid,
+          name: 'Secrétaire Test',
+          email: secretaryEmail,
+          phone: '+250123456789',
+          role: 'secretary',
+          department: 'administration',
+          schoolCode: 'EDF-KA',
+          userRole: 'secretary',
+          createdAt: new Date().toISOString(),
+          status: 'active'
+        };
+        
+        await realtimeDB.ref('secretaries/' + secretaryUid).set(secretaryData);
+        console.log('Secrétaire de test créé:', secretaryData);
+        
+        // Créer un comptable de test
+        await auth.signOut();
+        const accountantEmail = 'accountant@edenschool.edu';
+        const accountantPassword = 'accountant123';
+        
+        const accountantCredential = await auth.createUserWithEmailAndPassword(accountantEmail, accountantPassword);
+        const accountantUid = accountantCredential.user.uid;
+        
+        const accountantData = {
+          id: accountantUid,
+          name: 'Comptable Test',
+          email: accountantEmail,
+          phone: '+250123456789',
+          role: 'accountant',
+          department: 'finance',
+          schoolCode: 'EDF-KA',
+          userRole: 'secretary',
+          createdAt: new Date().toISOString(),
+          status: 'active'
+        };
+        
+        await realtimeDB.ref('secretaries/' + accountantUid).set(accountantData);
+        console.log('Comptable de test créé:', accountantData);
+        
+        // Créer un enseignant de test
+        await auth.signOut();
+        const teacherEmail = 'teacher@edenschool.edu';
+        const teacherPassword = 'teacher123';
+        
+        const teacherCredential = await auth.createUserWithEmailAndPassword(teacherEmail, teacherPassword);
+        const teacherUid = teacherCredential.user.uid;
+        
+        const teacherData = {
+          id: teacherUid,
+          name: 'Enseignant Test',
+          email: teacherEmail,
+          phone: '+250123456789',
+          section: 'maternelle',
+          classe: '1ère A Maternelle',
+          schoolCode: 'EDF-KA',
+          role: 'teacher',
+          createdAt: new Date().toISOString(),
+          status: 'active'
+        };
+        
+        await realtimeDB.ref('teachers/' + teacherUid).set(teacherData);
+        console.log('Enseignant de test créé:', teacherData);
+        
+        await auth.signOut();
+        showAlert('Utilisateurs de test créés avec succès! Vous pouvez maintenant vous connecter.', 'success');
+        
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation:', error);
+        showAlert('Erreur lors de l\'initialisation des utilisateurs de test.', 'error');
       }
-    });
+    }
 
     // Permettre la connexion avec la touche Entrée
     document.addEventListener('keypress', function(e) {
