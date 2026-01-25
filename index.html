@@ -130,6 +130,18 @@
       background: none;
       border: none;
       padding: 0.5rem;
+      z-index: 1001;
+      position: relative;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .mobile-menu:active,
+    .mobile-menu:focus {
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
     }
 
     /* Carousel */
@@ -596,7 +608,7 @@
       background: var(--light-bg);
       border: 2px solid #e0e0e0;
       border-radius: 15px;
-      padding: 1.5rem;
+      padding: 1rem;
       text-align: center;
       cursor: pointer;
       transition: var(--transition);
@@ -616,12 +628,21 @@
     }
 
     .level-option i {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
+      font-size: 1.8rem;
+      margin-bottom: 0.7rem;
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
+    }
+
+    .level-option h5 {
+      font-size: 0.95rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .level-option small {
+      font-size: 0.8rem;
     }
 
     .game-categories-grid {
@@ -2344,14 +2365,19 @@
         <li><a href="#youtube"><i class="fab fa-youtube"></i> YouTube</a></li>
         <li><a href="#jeux"><i class="fas fa-gamepad"></i> Jeux</a></li>
         <li><a href="#contact"><i class="fas fa-envelope"></i> Contact</a></li>
-        <li>
+        <li id="staffAccessLi">
           <a href="Auth.html" class="btn-secondary" style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
             <i class="fas fa-user-tie"></i> Staff Access
           </a>
         </li>
-        <li>
+        <li id="parentLoginLi">
           <button class="btn-primary" onclick="openLoginModal()" style="padding: 0.5rem 1.5rem;">
             <i class="fas fa-user"></i> Parent Login
+          </button>
+        </li>
+        <li id="logoutLi" style="display: none;">
+          <button class="btn-secondary" onclick="logoutFromIndex()" style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
+            <i class="fas fa-sign-out-alt"></i> <span id="userNameDisplay"></span> - Déconnexion
           </button>
         </li>
       </ul>
@@ -2360,6 +2386,8 @@
       </button>
     </div>
   </nav>
+
+  <script src="security-auth.js"></script>
 
   <!-- Section Accueil -->
   <section id="accueil" class="carousel-container">
@@ -5007,6 +5035,9 @@
       CONFIG.gamesCompleted = parseInt(localStorage.getItem('gamesCompleted')) || 0;
       updateGameScores();
       
+      // Vérifier si l'utilisateur est authentifié et mettre à jour les boutons de navigation
+      checkAndUpdateAuthStatus();
+      
       // Charger les voix
       if (speechSynthesis) {
         loadVoices();
@@ -5021,10 +5052,32 @@
         anchor.addEventListener('click', function (e) {
           e.preventDefault();
           const targetId = this.getAttribute('href').substring(1);
+          closeMobileMenu(); // Fermer le menu mobile après clic
           if (targetId) {
             scrollToSection(targetId);
           }
         });
+      });
+      
+      // Ajouter les événements tactiles pour meilleure compatibilité mobile
+      const navLinks = document.getElementById('navLinks');
+      if (navLinks) {
+        navLinks.querySelectorAll('a, button').forEach(element => {
+          element.addEventListener('click', () => {
+            closeMobileMenu();
+          });
+        });
+      }
+      
+      // Fermer le menu si on clique en dehors
+      document.addEventListener('click', (e) => {
+        const navLinks = document.getElementById('navLinks');
+        const mobileMenuBtn = document.querySelector('.mobile-menu');
+        if (navLinks && navLinks.classList.contains('active')) {
+          if (!navLinks.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+            closeMobileMenu();
+          }
+        }
       });
       
       // Gestion du scroll
@@ -5033,6 +5086,47 @@
       
       console.log('Portail Eden Family School chargé avec succès!');
     });
+
+    /**
+     * Vérifier l'état d'authentification et mettre à jour les boutons
+     */
+    function checkAndUpdateAuthStatus() {
+      const userData = sessionManager?.getUserData();
+      const staffAccessLi = document.getElementById('staffAccessLi');
+      const parentLoginLi = document.getElementById('parentLoginLi');
+      const logoutLi = document.getElementById('logoutLi');
+      
+      if (userData && userData.email) {
+        // Utilisateur connecté - afficher bouton déconnexion
+        if (staffAccessLi) staffAccessLi.style.display = 'none';
+        if (parentLoginLi) parentLoginLi.style.display = 'none';
+        if (logoutLi) {
+          logoutLi.style.display = 'block';
+          const userNameDisplay = document.getElementById('userNameDisplay');
+          if (userNameDisplay) {
+            userNameDisplay.textContent = userData.name || userData.email.split('@')[0];
+          }
+        }
+        console.log('✅ Utilisateur authentifié:', userData.email);
+      } else {
+        // Utilisateur non connecté - afficher boutons de login
+        if (staffAccessLi) staffAccessLi.style.display = 'block';
+        if (parentLoginLi) parentLoginLi.style.display = 'block';
+        if (logoutLi) logoutLi.style.display = 'none';
+      }
+    }
+
+    /**
+     * Déconnexion depuis index.html
+     */
+    function logoutFromIndex() {
+      if (sessionManager) {
+        sessionManager.logSecurityEvent('USER_LOGOUT_FROM_INDEX');
+        sessionManager.clearSession();
+      }
+      // Recharger la page pour réinitialiser l'état
+      window.location.reload();
+    }
 
     // Gérer la visibilité du carousel sur mobile
     window.addEventListener('resize', () => {

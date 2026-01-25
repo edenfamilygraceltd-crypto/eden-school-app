@@ -35,7 +35,17 @@ class SecureSessionManager {
       console.warn('⚠️ AVERTISSEMENT SÉCURITÉ: HTTPS non détecté. Utilisez HTTPS en production!');
     }
 
-    // Valider la session existante
+    // Pour index.html, ne pas forcer redirection si non connecté
+    // Les pages publiques peuvent être visitées sans session
+    if (window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/')) {
+      // Page d'accueil publique - juste valider si session existe
+      if (this.isSessionValid()) {
+        this.resetSessionTimeout();
+      }
+      return; // Ne pas rediriger sur index.html
+    }
+
+    // Pour les autres pages, valider la session
     if (!this.isSessionValid()) {
       this.clearSession();
       this.redirectToAuth();
