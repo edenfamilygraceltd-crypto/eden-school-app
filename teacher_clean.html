@@ -1320,16 +1320,58 @@
         let currentGalleryBranch = 'maternelle';
         let galleryImages = [];
 
+        // Vérifier d'abord la session dans sessionStorage (créée par Auth.html)
+        function checkStorageSession() {
+            try {
+                const userData = sessionStorage.getItem('eden_user_data');
+                const session = sessionStorage.getItem('eden_secure_session');
+                
+                if (userData && session) {
+                    const user = JSON.parse(userData);
+                    const sessionData = JSON.parse(session);
+                    
+                    // Vérifier que la session n'a pas expiré
+                    if (Date.now() < sessionData.expiresAt) {
+                        console.log('✅ Session valide trouvée dans sessionStorage');
+                        return true;
+                    } else {
+                        console.log('⏰ Session expirée');
+                        sessionStorage.clear();
+                        return false;
+                    }
+                }
+                return false;
+            } catch (error) {
+                console.error('Erreur vérification session:', error);
+                return false;
+            }
+        }
+
         // Vérifier l'authentification
         auth.onAuthStateChanged((user) => {
-            if (user) {
+            // Vérifier d'abord la session stockée
+            const hasStorageSession = checkStorageSession();
+            
+            if (user && hasStorageSession) {
                 currentUser = user;
                 loadUserData(user.email);
                 loadDashboardStats();
                 loadRecentActivities();
                 loadNotifications();
+            } else if (!user && !hasStorageSession) {
+                // Seulement rediriger si pas authentifié et pas de session
+                console.log('❌ Non authentifié - redirection vers Auth.html');
+                window.location.href = './Auth.html';
             } else {
-                window.location.href = 'index.html';
+                // User existe mais pas de session en storage - c'est normal, garder la page
+                console.log('✅ Utilisateur Firebase présent, session sera créée');
+                if (user) {
+                    currentUser = user;
+                    loadUserData(user.email);
+                    loadDashboardStats();
+                    loadRecentActivities();
+                    loadNotifications();
+                }
             }
         });
 

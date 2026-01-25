@@ -848,6 +848,35 @@
     }
 
     // Fonction pour obtenir le rôle de l'utilisateur et rediriger
+    async function createSecureSession(user) {
+      try {
+        // Créer une session sécurisée dans sessionStorage pour security-auth.js
+        const session = {
+          createdAt: Date.now(),
+          expiresAt: Date.now() + (30 * 60 * 1000), // 30 minutes
+          token: btoa(user.uid + ':' + Date.now()),
+          userAgent: navigator.userAgent.substring(0, 50)
+        };
+        
+        const userData = {
+          uid: user.uid,
+          email: user.email,
+          role: user.role,
+          name: user.name || 'Utilisateur'
+        };
+        
+        // Sauvegarder dans sessionStorage
+        sessionStorage.setItem('eden_secure_session', JSON.stringify(session));
+        sessionStorage.setItem('eden_user_data', JSON.stringify(userData));
+        sessionStorage.setItem('eden_auth_token', session.token);
+        
+        console.log('✅ Secure session créée pour:', user.email);
+      } catch (error) {
+        console.error('Erreur création session sécurisée:', error);
+      }
+    }
+
+    // Fonction pour obtenir le rôle de l'utilisateur et rediriger
     async function getUserRoleAndRedirect(user, email) {
       const uid = user.uid;
       const emailLower = email.toLowerCase();
@@ -891,7 +920,11 @@
               role: userRole,
               name: userData.name || 'Directeur'
             };
+            
+            // Sauvegarder dans localStorage et sessionStorage
             localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            createSecureSession(secureUser);
+            
             console.log('✅ Directeur authentifié, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail directeur...', 'success');
             
@@ -910,7 +943,11 @@
               role: 'secretary',
               name: userData.name || 'Secrétaire'
             };
+            
+            // Sauvegarder dans localStorage et sessionStorage
             localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            createSecureSession(secureUser);
+            
             console.log('✅ Secrétaire authentifiée, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail secrétaire...', 'success');
             
@@ -928,7 +965,11 @@
               role: 'accountant',
               name: userData.name || 'Comptable'
             };
+            
+            // Sauvegarder dans localStorage et sessionStorage
             localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            createSecureSession(secureUser);
+            
             console.log('✅ Comptable authentifié, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail comptable...', 'success');
             
@@ -946,7 +987,11 @@
               role: 'teacher',
               name: userData.name || 'Enseignant'
             };
+            
+            // Sauvegarder dans localStorage et sessionStorage
             localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            createSecureSession(secureUser);
+            
             console.log('✅ Enseignant authentifié, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail enseignant...', 'success');
             
@@ -976,14 +1021,17 @@
               role: 'secretary',
               name: secretaryData.name || 'Secrétaire'
             };
+            
+            // Sauvegarder dans localStorage et sessionStorage
             localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            createSecureSession(secureUser);
+            
             console.log('✅ Secrétaire authentifiée, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail secrétaire...', 'success');
             
-            setTimeout(() => {
-              console.log('🔄 Redirection vers secretary.html...');
-              window.location.replace('secretary.html');
-            }, 1000);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('🔄 Redirection vers secretary.html...');
+            window.location.href = './secretary.html';
             return true;
           }
           
@@ -994,14 +1042,17 @@
               role: 'accountant',
               name: secretaryData.name || 'Comptable'
             };
+            
+            // Sauvegarder dans localStorage et sessionStorage
             localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            createSecureSession(secureUser);
+            
             console.log('✅ Comptable authentifié, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail comptable...', 'success');
             
-            setTimeout(() => {
-              console.log('🔄 Redirection vers comptable.html...');
-              window.location.replace('comptable.html');
-            }, 1000);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('🔄 Redirection vers comptable.html...');
+            window.location.href = './comptable.html';
             return true;
           }
         }
@@ -1025,14 +1076,17 @@
               role: 'teacher',
               name: teacherData.name || 'Enseignant'
             };
+            
+            // Sauvegarder dans localStorage et sessionStorage
             localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            createSecureSession(secureUser);
+            
             console.log('✅ Enseignant authentifié, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail enseignant...', 'success');
             
-            setTimeout(() => {
-              console.log('🔄 Redirection vers teacher_clean.html...');
-              window.location.replace('teacher_clean.html');
-            }, 1000);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('🔄 Redirection vers teacher_clean.html...');
+            window.location.href = './teacher_clean.html';
             return true;
           }
         }

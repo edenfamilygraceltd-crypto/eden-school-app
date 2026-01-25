@@ -35,26 +35,25 @@ class SecureSessionManager {
       console.warn('⚠️ AVERTISSEMENT SÉCURITÉ: HTTPS non détecté. Utilisez HTTPS en production!');
     }
 
-    // Pour index.html, ne pas forcer redirection si non connecté
-    // Les pages publiques peuvent être visitées sans session
-    if (window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/')) {
-      // Page d'accueil publique - juste valider si session existe
+    // Ne pas rediriger depuis Auth.html ou index.html
+    const currentPath = window.location.pathname.toLowerCase();
+    if (currentPath.includes('auth.html') || currentPath.includes('index.html') || currentPath.endsWith('/')) {
+      // Ces pages gèrent elles-mêmes leur authentification
       if (this.isSessionValid()) {
         this.resetSessionTimeout();
       }
-      return; // Ne pas rediriger sur index.html
+      return;
     }
 
-    // Pour les autres pages, valider la session
+    // Pour les autres pages (protégées), valider la session
     if (!this.isSessionValid()) {
       this.clearSession();
       this.redirectToAuth();
     } else {
       this.resetSessionTimeout();
+      // Écouter l'inactivité
+      this.setupInactivityListener();
     }
-
-    // Écouter l'inactivité
-    this.setupInactivityListener();
   }
 
   /**
