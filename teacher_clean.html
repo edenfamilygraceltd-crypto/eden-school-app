@@ -17,26 +17,14 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Responsive CSS Global -->
-    <link rel="stylesheet" href="responsive.css">
-    
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
     <!-- Dropzone pour upload d'images -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css">
     
-    <!-- Quill Editor pour éditeur de texte -->
-    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-    
     <!-- FullCalendar pour calendrier -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
-    
-    <!-- Chart.js pour graphiques -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- SheetJS pour Excel -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     
     <style>
         :root {
@@ -58,6 +46,10 @@
             --transition: all 0.3s ease;
             --gradient-primary: linear-gradient(135deg, var(--primary) 0%, #2980b9 100%);
             --gradient-secondary: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+            --maternelle-color: #ff7eb3;
+            --primaire-color: #42d395;
+            --kimisagara-color: #4CAF50;
+            --gisozi-color: #5d6afb;
         }
         
         * {
@@ -363,213 +355,89 @@
             font-size: 0.9rem;
         }
         
-        /* Progress Bars */
-        .progress-container {
-            margin: 1rem 0;
-        }
-        
-        .progress-label {
+        /* Gallery spécifique par branche */
+        .branch-tabs {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-        
-        .progress-bar-modern {
-            height: 10px;
-            background: var(--light-gray);
-            border-radius: 5px;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: var(--gradient-primary);
-            border-radius: 5px;
-            transition: width 1s ease-in-out;
-        }
-        
-        /* Forms améliorés */
-        .form-group {
+            gap: 10px;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
         }
         
-        .form-label {
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .form-control-modern {
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px 16px;
-            transition: var(--transition);
-            width: 100%;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-        }
-        
-        .form-control-modern:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-            outline: none;
-        }
-        
-        /* Buttons améliorés */
-        .btn-modern {
+        .branch-tab {
             padding: 10px 20px;
-            border-radius: 8px;
             border: none;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
+            border-radius: 8px;
+            background: var(--light-gray);
+            color: var(--dark);
+            font-weight: 500;
             cursor: pointer;
             transition: var(--transition);
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 8px;
-            position: relative;
-            overflow: hidden;
         }
         
-        .btn-modern::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 5px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.5);
-            opacity: 0;
-            border-radius: 100%;
-            transform: scale(1, 1) translate(-50%);
-            transform-origin: 50% 50%;
+        .branch-tab:hover {
+            transform: translateY(-2px);
         }
         
-        .btn-modern:focus:not(:active)::after {
-            animation: ripple 1s ease-out;
-        }
-        
-        @keyframes ripple {
-            0% {
-                transform: scale(0, 0);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(20, 20);
-                opacity: 0;
-            }
-        }
-        
-        .btn-primary-modern {
-            background: var(--primary);
+        .branch-tab.active {
             color: white;
         }
         
-        .btn-primary-modern:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        .branch-tab.maternelle.active {
+            background: var(--maternelle-color);
         }
         
-        .btn-success-modern {
-            background: var(--secondary);
-            color: white;
+        .branch-tab.primaire.active {
+            background: var(--primaire-color);
         }
         
-        .btn-success-modern:hover {
-            background: var(--secondary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+        .branch-tab.kimisagara.active {
+            background: var(--kimisagara-color);
         }
         
-        /* Badges modernes */
-        .badge-modern {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+        .branch-tab.gisozi.active {
+            background: var(--gisozi-color);
+        }
+        
+        .branch-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
             font-weight: 600;
+            margin-left: 8px;
         }
         
-        .badge-primary {
-            background: rgba(52, 152, 219, 0.1);
-            color: var(--primary);
+        .branch-badge.maternelle {
+            background: rgba(255, 126, 179, 0.1);
+            color: var(--maternelle-color);
+            border: 1px solid rgba(255, 126, 179, 0.2);
         }
         
-        .badge-success {
-            background: rgba(46, 204, 113, 0.1);
-            color: var(--secondary);
+        .branch-badge.primaire {
+            background: rgba(66, 211, 149, 0.1);
+            color: var(--primaire-color);
+            border: 1px solid rgba(66, 211, 149, 0.2);
         }
         
-        .badge-warning {
-            background: rgba(243, 156, 18, 0.1);
-            color: var(--warning);
+        .branch-badge.kimisagara {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--kimisagara-color);
+            border: 1px solid rgba(76, 175, 80, 0.2);
         }
         
-        /* Tableaux améliorés */
-        .table-modern {
-            background: white;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            box-shadow: var(--box-shadow);
+        .branch-badge.gisozi {
+            background: rgba(93, 106, 251, 0.1);
+            color: var(--gisozi-color);
+            border: 1px solid rgba(93, 106, 251, 0.2);
         }
         
-        .table-modern thead {
-            background: var(--light-gray);
-        }
-        
-        .table-modern th {
-            border: none;
-            padding: 15px;
-            font-weight: 600;
-            color: var(--dark);
-        }
-        
-        .table-modern td {
-            padding: 15px;
-            border-top: 1px solid #eee;
-            vertical-align: middle;
-        }
-        
-        .table-modern tr:hover {
-            background: rgba(52, 152, 219, 0.03);
-        }
-        
-        /* Alertes modernes */
-        .alert-modern {
-            padding: 15px 20px;
-            border-radius: var(--border-radius);
-            border: none;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 1rem;
-        }
-        
-        .alert-info {
-            background: rgba(52, 152, 219, 0.1);
-            color: var(--primary);
-            border-left: 4px solid var(--primary);
-        }
-        
-        .alert-success {
-            background: rgba(46, 204, 113, 0.1);
-            color: var(--secondary);
-            border-left: 4px solid var(--secondary);
-        }
-        
-        .alert-warning {
-            background: rgba(243, 156, 18, 0.1);
-            color: var(--warning);
-            border-left: 4px solid var(--warning);
-        }
-        
-        /* Gallery améliorée */
+        /* Gallery Grid amélioré */
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1.5rem;
             margin-top: 1rem;
         }
@@ -585,7 +453,7 @@
         }
         
         .gallery-item:hover {
-            transform: scale(1.03);
+            transform: translateY(-5px) scale(1.02);
             box-shadow: var(--box-shadow-hover);
         }
         
@@ -611,219 +479,41 @@
             transform: translateY(0);
         }
         
-        /* Modal amélioré */
-        .modal-modern .modal-content {
-            border-radius: var(--border-radius);
-            border: none;
-            box-shadow: var(--box-shadow-hover);
-        }
-        
-        .modal-modern .modal-header {
-            background: var(--gradient-primary);
-            color: white;
-            border-radius: var(--border-radius) var(--border-radius) 0 0;
-            padding: 1.5rem;
-        }
-        
-        .modal-modern .modal-body {
-            padding: 1.5rem;
-        }
-        
-        /* Timeline */
-        .timeline {
-            position: relative;
-            padding-left: 30px;
-        }
-        
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 10px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: var(--light-gray);
-        }
-        
-        .timeline-item {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-        
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -25px;
-            top: 5px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--primary);
-            border: 3px solid white;
-            box-shadow: 0 0 0 3px var(--light-gray);
-        }
-        
-        .timeline-date {
-            font-size: 0.9rem;
-            color: var(--gray);
-            margin-bottom: 5px;
-        }
-        
-        .timeline-content {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: var(--box-shadow);
-        }
-        
-        /* Dashboard Grid */
-        .dashboard-grid {
+        /* Section Bulletins */
+        .bulletin-templates {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1.5rem;
             margin-top: 1.5rem;
         }
         
-        /* Notifications */
-        .notification-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            gap: 15px;
-            align-items: flex-start;
-            transition: var(--transition);
-            cursor: pointer;
-        }
-        
-        .notification-item:hover {
-            background: rgba(52, 152, 219, 0.05);
-        }
-        
-        .notification-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            flex-shrink: 0;
-        }
-        
-        .notification-content {
-            flex: 1;
-        }
-        
-        .notification-time {
-            font-size: 0.8rem;
-            color: var(--gray);
-            margin-top: 5px;
-        }
-        
-        /* Search Bar */
-        .search-bar {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-        
-        .search-input {
-            width: 100%;
-            padding: 12px 20px 12px 45px;
-            border: 2px solid #e2e8f0;
-            border-radius: 25px;
-            font-size: 0.95rem;
-            transition: var(--transition);
-            background: white;
-        }
-        
-        .search-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-            outline: none;
-        }
-        
-        .search-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray);
-        }
-        
-        /* Sidebar (pour version desktop étendue) */
-        .sidebar {
-            width: 250px;
+        .bulletin-template {
             background: white;
             border-radius: var(--border-radius);
             padding: 1.5rem;
             box-shadow: var(--box-shadow);
-            position: sticky;
-            top: 100px;
+            transition: var(--transition);
+            cursor: pointer;
+            border: 2px solid transparent;
         }
         
-        .sidebar-menu {
-            list-style: none;
-            padding: 0;
+        .bulletin-template:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow-hover);
+            border-color: var(--primary);
         }
         
-        .sidebar-menu li {
-            margin-bottom: 10px;
-        }
-        
-        .sidebar-menu a {
+        .template-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--light-gray);
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            color: var(--dark);
-            text-decoration: none;
-            border-radius: 8px;
-            transition: var(--transition);
-        }
-        
-        .sidebar-menu a:hover,
-        .sidebar-menu a.active {
-            background: rgba(52, 152, 219, 0.1);
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 24px;
             color: var(--primary);
-        }
-        
-        /* Animations améliorées */
-        @keyframes fadeIn {
-            from { 
-                opacity: 0; 
-                transform: translateY(20px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
-        }
-        
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(52, 152, 219, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
-            }
-        }
-        
-        .pulse-animation {
-            animation: pulse 2s infinite;
         }
         
         /* Responsive amélioré */
@@ -877,20 +567,8 @@
                 gap: 1rem;
             }
             
-            .stat-card {
-                padding: 1rem;
-            }
-            
-            .stat-value {
-                font-size: 1.5rem;
-            }
-
-            body {
-                font-size: 13px;
-            }
-
-            input, select, textarea {
-                font-size: 15px;
+            .bulletin-templates {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -965,113 +643,6 @@
             h3, h4, h5, h6 {
                 font-size: 0.95rem;
             }
-
-            .form-label {
-                font-size: 0.85rem;
-                margin-bottom: 0.2rem;
-            }
-
-            input[type="text"],
-            input[type="email"],
-            input[type="tel"],
-            input[type="date"],
-            input[type="number"],
-            select,
-            textarea {
-                font-size: 16px;
-                padding: 0.6rem;
-                width: 100%;
-                border-radius: 6px;
-            }
-
-            button, .btn {
-                padding: 0.6rem;
-                font-size: 0.9rem;
-                width: 100%;
-                border-radius: 6px;
-            }
-
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 0.75rem;
-            }
-
-            .stat-card {
-                padding: 0.75rem;
-                margin-bottom: 0.75rem;
-                border-radius: 8px;
-            }
-
-            .stat-value {
-                font-size: 1.2rem;
-            }
-
-            .stat-label {
-                font-size: 0.8rem;
-            }
-
-            .d-flex {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .row {
-                margin: 0;
-                gap: 0;
-            }
-
-            [class*="col-"] {
-                padding: 0.25rem;
-                margin-bottom: 0.5rem;
-            }
-
-            table {
-                font-size: 0.75rem;
-            }
-
-            table th, table td {
-                padding: 0.35rem;
-            }
-
-            .modal-dialog {
-                margin: 0.5rem;
-                width: 95%;
-            }
-
-            .modal-content {
-                border-radius: 10px;
-            }
-
-            .modal-body {
-                padding: 1rem 0.75rem;
-            }
-
-            .dashboard-card {
-                padding: 0.75rem;
-                margin-bottom: 1rem;
-                border-radius: 8px;
-            }
-
-            .table-responsive {
-                display: block;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .badge {
-                font-size: 0.65rem;
-                padding: 0.25em 0.4em;
-            }
-
-            .alert {
-                padding: 0.75rem;
-                font-size: 0.85rem;
-                border-radius: 6px;
-            }
-
-            .icon-large {
-                font-size: 1.5rem;
-            }
         }
         
         @media (max-width: 576px) {
@@ -1093,71 +664,6 @@
                 width: 40px;
                 height: 40px;
                 justify-content: center;
-            }
-        }
-
-        /* Tablettes (481px - 768px) */
-        @media (min-width: 481px) and (max-width: 768px) {
-            body {
-                font-size: 13px;
-            }
-
-            .header-container {
-                flex-wrap: wrap;
-            }
-
-            .nav-btn {
-                padding: 8px 12px;
-                font-size: 0.85rem;
-            }
-
-            .stat-card {
-                padding: 1rem;
-            }
-
-            input, select, textarea, button {
-                font-size: 14px;
-            }
-
-            table {
-                font-size: 0.85rem;
-            }
-        }
-        
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-                color: #e0e0e0;
-            }
-            
-            .dashboard-card,
-            .stat-card,
-            .table-modern {
-                background: #2c3e50;
-                color: #e0e0e0;
-                border-color: #34495e;
-            }
-            
-            .table-modern th {
-                background: #34495e;
-                color: #e0e0e0;
-            }
-            
-            .search-input {
-                background: #34495e;
-                border-color: #4a6572;
-                color: #e0e0e0;
-            }
-            
-            .form-control-modern {
-                background: #34495e;
-                border-color: #4a6572;
-                color: #e0e0e0;
-            }
-            
-            .form-control-modern:focus {
-                background: #2c3e50;
             }
         }
     </style>
@@ -1200,10 +706,6 @@
                     <i class="fas fa-users"></i>
                     <span>Mes élèves</span>
                 </button>
-                <button class="nav-btn" onclick="showSection('grades')">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Notes & Évaluations</span>
-                </button>
                 <button class="nav-btn" onclick="showSection('attendance')">
                     <i class="fas fa-calendar-check"></i>
                     <span>Présence</span>
@@ -1220,13 +722,9 @@
                     <i class="fas fa-calendar-day"></i>
                     <span>Calendrier</span>
                 </button>
-                <button class="nav-btn" onclick="showSection('library')">
-                    <i class="fas fa-book"></i>
-                    <span>Bibliothèque</span>
-                </button>
-                <button class="nav-btn" onclick="showSection('youtube')">
-                    <i class="fab fa-youtube"></i>
-                    <span>Vidéos</span>
+                <button class="nav-btn" onclick="showSection('bulletins')">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Bulletins</span>
                 </button>
                 <button class="nav-btn" onclick="showSection('messages')">
                     <i class="fas fa-envelope"></i>
@@ -1236,10 +734,6 @@
             </div>
             
             <div class="quick-actions">
-                <button class="quick-action-btn" onclick="showAddGradeModal()">
-                    <i class="fas fa-plus"></i>
-                    <span>Ajouter Note</span>
-                </button>
                 <button class="quick-action-btn" style="background: var(--warning);" onclick="showAddActivityModal()">
                     <i class="fas fa-calendar-plus"></i>
                     <span>Nouvelle Activité</span>
@@ -1385,7 +879,9 @@
                                     <option value="year">Cette année</option>
                                 </select>
                             </div>
-                            <canvas id="attendanceChart" height="250"></canvas>
+                            <div id="attendanceChartContainer" style="height: 250px; display: flex; align-items: center; justify-content: center;">
+                                <p class="text-muted">Graphique en cours de chargement...</p>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -1393,7 +889,9 @@
                             <div class="card-header">
                                 <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>Répartition par classe</h5>
                             </div>
-                            <canvas id="classesChart" height="250"></canvas>
+                            <div id="classesChartContainer" style="height: 250px; display: flex; align-items: center; justify-content: center;">
+                                <p class="text-muted">Graphique en cours de chargement...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1410,7 +908,10 @@
                                 </button>
                             </div>
                             <div id="recentNotifications">
-                                <!-- Notifications will be loaded here -->
+                                <div class="text-center py-3">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <p class="mt-2">Chargement des notifications...</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1425,7 +926,11 @@
                                 </button>
                             </div>
                             <div class="timeline" id="recentActivitiesTimeline">
-                                <!-- Recent activities timeline will be loaded here -->
+                                <div class="timeline-item">
+                                    <div class="timeline-content">
+                                        <p class="text-muted mb-0">Aucune activité récente</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1558,7 +1063,12 @@
                             </tr>
                         </thead>
                         <tbody id="studentsTable">
-                            <!-- Students will be loaded here -->
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <i class="fas fa-spinner fa-spin fa-lg mb-3"></i>
+                                    <p>Chargement des élèves...</p>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -1586,390 +1096,187 @@
             </div>
         </section>
 
-        <!-- Grades & Evaluations Section (New) -->
-        <section id="grades" class="section">
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>Notes & Évaluations</h5>
-                    <div class="d-flex gap-2">
-                        <button class="btn-modern" onclick="showGradeAnalysis()">
-                            <i class="fas fa-chart-bar"></i>
-                            Analyse
-                        </button>
-                        <button class="btn-modern btn-primary-modern" onclick="showAddGradeModal()">
-                            <i class="fas fa-plus me-2"></i>
-                            Ajouter une note
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Grade Filters -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <select class="form-control-modern" id="gradeClassFilter">
-                            <option value="">Toutes les classes</option>
-                            <!-- Options will be populated dynamically -->
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-control-modern" id="gradeSubjectFilter">
-                            <option value="">Toutes les matières</option>
-                            <!-- Options will be populated dynamically -->
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-control-modern" id="gradePeriodFilter">
-                            <option value="all">Toutes les périodes</option>
-                            <option value="trim1">1er Trimestre</option>
-                            <option value="trim2">2ème Trimestre</option>
-                            <option value="trim3">3ème Trimestre</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <button class="btn-modern btn-success-modern w-100" onclick="applyGradeFilters()">
-                            <i class="fas fa-filter"></i>
-                            Filtrer
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Grade Statistics -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <h4 class="stat-value" id="averageGrade">0.0</h4>
-                            <p class="stat-label">Moyenne générale</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <h4 class="stat-value" id="topStudent">-</h4>
-                            <p class="stat-label">Meilleur élève</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <h4 class="stat-value" id="gradesCount">0</h4>
-                            <p class="stat-label">Notes enregistrées</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <h4 class="stat-value" id="passRate">0%</h4>
-                            <p class="stat-label">Taux de réussite</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Grades Table -->
-                <div class="table-responsive">
-                    <table class="table table-modern">
-                        <thead>
-                            <tr>
-                                <th>Élève</th>
-                                <th>Classe</th>
-                                <th>Matière</th>
-                                <th>Note</th>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Coefficient</th>
-                                <th>Commentaire</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="gradesTable">
-                            <!-- Grades will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- Attendance Section (New) -->
-        <section id="attendance" class="section">
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <h5 class="card-title"><i class="fas fa-calendar-check me-2"></i>Gestion des présences</h5>
-                    <div class="d-flex gap-2">
-                        <button class="btn-modern" onclick="showAttendanceReport()">
-                            <i class="fas fa-file-pdf"></i>
-                            Rapport PDF
-                        </button>
-                        <button class="btn-modern btn-primary-modern" onclick="markAttendance()">
-                            <i class="fas fa-check-circle me-2"></i>
-                            Marquer présence
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Attendance Calendar -->
-                <div class="mb-4">
-                    <div id="attendanceCalendar"></div>
-                </div>
-                
-                <!-- Quick Attendance -->
-                <div class="dashboard-card mb-4">
-                    <h6 class="fw-bold mb-3">Marquage rapide de présence</h6>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <label class="form-label">Date</label>
-                            <input type="date" class="form-control-modern" id="quickAttendanceDate" value="<?php echo date('Y-m-d'); ?>">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Classe</label>
-                            <select class="form-control-modern" id="quickAttendanceClass">
-                                <option value="">Sélectionner une classe</option>
-                                <!-- Options will be populated dynamically -->
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Statut par défaut</label>
-                            <select class="form-control-modern" id="defaultAttendanceStatus">
-                                <option value="present">Présent</option>
-                                <option value="absent">Absent</option>
-                                <option value="late">En retard</option>
-                                <option value="excused">Excusé</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mt-3" id="quickAttendanceStudents">
-                        <!-- Students for quick attendance will be loaded here -->
-                    </div>
-                </div>
-                
-                <!-- Attendance Statistics -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="dashboard-card">
-                            <h6 class="fw-bold mb-3">Statistiques de présence</h6>
-                            <canvas id="attendanceStatsChart" height="200"></canvas>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="dashboard-card">
-                            <h6 class="fw-bold mb-3">Absences fréquentes</h6>
-                            <div id="frequentAbsences">
-                                <!-- Frequent absences will be loaded here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Gallery Section (Enhanced) -->
+        <!-- Gallery Section avec filtrage par branche -->
         <section id="gallery" class="section">
             <div class="dashboard-card">
                 <div class="card-header">
                     <h5 class="card-title"><i class="fas fa-images me-2"></i>Galerie d'images</h5>
                     <div class="d-flex gap-2">
-                        <button class="btn-modern" onclick="createGalleryAlbum()">
-                            <i class="fas fa-folder-plus"></i>
-                            Nouvel album
-                        </button>
-                        <button class="btn-modern btn-primary-modern" onclick="showUploadGallery()">
+                        <button class="btn-modern" onclick="showUploadGallery()">
                             <i class="fas fa-upload me-2"></i>
                             Ajouter des photos
                         </button>
                     </div>
                 </div>
                 
-                <!-- Gallery Albums -->
-                <div id="galleryAlbums" class="mb-4">
-                    <!-- Albums will be loaded here -->
+                <!-- Filtres par branche -->
+                <div class="branch-tabs">
+                    <button class="branch-tab maternelle active" onclick="switchGalleryBranch('maternelle')">
+                        <i class="fas fa-child"></i> Maternelle
+                    </button>
+                    <button class="branch-tab primaire" onclick="switchGalleryBranch('primaire')">
+                        <i class="fas fa-graduation-cap"></i> Primaire
+                    </button>
+                    <button class="branch-tab kimisagara" onclick="switchGalleryBranch('kimisagara')">
+                        <i class="fas fa-school"></i> Kimisagara
+                    </button>
+                    <button class="branch-tab gisozi" onclick="switchGalleryBranch('gisozi')">
+                        <i class="fas fa-building"></i> Gisozi
+                    </button>
                 </div>
                 
                 <!-- Gallery Grid -->
                 <div class="gallery-grid" id="galleryGrid">
-                    <!-- Images will be loaded here -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                        <p>Chargement de la galerie...</p>
+                    </div>
                 </div>
                 
-                <!-- Load More Button -->
-                <div class="text-center mt-4">
-                    <button class="btn-modern" id="loadMoreGallery" onclick="loadMoreGallery()" style="display: none;">
-                        <i class="fas fa-spinner fa-spin me-2"></i>
-                        Charger plus d'images
-                    </button>
+                <!-- Gallery Stats -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: var(--maternelle-color);">
+                                <i class="fas fa-child"></i>
+                            </div>
+                            <h4 class="stat-value" id="maternelleCount">0</h4>
+                            <p class="stat-label">Photos Maternelle</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: var(--primaire-color);">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <h4 class="stat-value" id="primaireCount">0</h4>
+                            <p class="stat-label">Photos Primaire</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: var(--kimisagara-color);">
+                                <i class="fas fa-school"></i>
+                            </div>
+                            <h4 class="stat-value" id="kimisagaraCount">0</h4>
+                            <p class="stat-label">Photos Kimisagara</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: var(--gisozi-color);">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <h4 class="stat-value" id="gisoziCount">0</h4>
+                            <p class="stat-label">Photos Gisozi</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Calendar Section (New) -->
-        <section id="calendar" class="section">
+        <!-- Bulletins Section -->
+        <section id="bulletins" class="section">
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h5 class="card-title"><i class="fas fa-calendar-day me-2"></i>Calendrier Scolaire</h5>
+                    <h5 class="card-title"><i class="fas fa-file-alt me-2"></i>Création des bulletins</h5>
                     <div class="d-flex gap-2">
-                        <button class="btn-modern" onclick="exportCalendar()">
-                            <i class="fas fa-download"></i>
-                            Exporter
-                        </button>
-                        <button class="btn-modern btn-primary-modern" onclick="addCalendarEvent()">
+                        <button class="btn-modern btn-primary-modern" onclick="createNewBulletin()">
                             <i class="fas fa-plus me-2"></i>
-                            Ajouter événement
+                            Nouveau bulletin
+                        </button>
+                        <button class="btn-modern" onclick="importBulletinTemplate()">
+                            <i class="fas fa-file-import"></i>
+                            Importer modèle
                         </button>
                     </div>
                 </div>
                 
-                <!-- Calendar -->
-                <div id="calendarView"></div>
-                
-                <!-- Upcoming Events -->
-                <div class="mt-4">
-                    <h6 class="fw-bold mb-3">Événements à venir</h6>
-                    <div id="upcomingEvents">
-                        <!-- Upcoming events will be loaded here -->
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Profile Section (New) -->
-        <section id="profile" class="section">
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <h5 class="card-title"><i class="fas fa-user-circle me-2"></i>Mon Profil</h5>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <div class="user-avatar mx-auto" style="width: 150px; height: 150px; font-size: 48px;" id="profileAvatar"></div>
-                            <button class="btn-modern mt-3" onclick="changeProfilePicture()">
-                                <i class="fas fa-camera"></i>
-                                Changer photo
-                            </button>
+                <!-- Bulletin Templates -->
+                <div class="bulletin-templates">
+                    <div class="bulletin-template" onclick="useBulletinTemplate('academic')">
+                        <div class="template-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <h5>Bulletin Académique</h5>
+                        <p class="text-muted">Modèle standard pour les notes académiques</p>
+                        <div class="d-flex justify-content-between mt-3">
+                            <span class="badge bg-primary">Standard</span>
+                            <small>Cliquez pour utiliser</small>
                         </div>
                     </div>
                     
-                    <div class="col-md-8">
-                        <form id="profileForm">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">Nom</label>
-                                        <input type="text" class="form-control-modern" id="profileLastName">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">Prénom</label>
-                                        <input type="text" class="form-control-modern" id="profileFirstName">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Email</label>
-                                <input type="email" class="form-control-modern" id="profileEmail" readonly>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Téléphone</label>
-                                <input type="tel" class="form-control-modern" id="profilePhone">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Adresse</label>
-                                <textarea class="form-control-modern" id="profileAddress" rows="2"></textarea>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Biographie</label>
-                                <textarea class="form-control-modern" id="profileBio" rows="4" placeholder="Parlez de vous..."></textarea>
-                            </div>
-                            
-                            <button type="button" class="btn-modern btn-success-modern" onclick="updateProfile()">
-                                <i class="fas fa-save me-2"></i>
-                                Enregistrer les modifications
-                            </button>
-                        </form>
+                    <div class="bulletin-template" onclick="useBulletinTemplate('conduct')">
+                        <div class="template-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <h5>Bulletin de Conduite</h5>
+                        <p class="text-muted">Évaluation du comportement et participation</p>
+                        <div class="d-flex justify-content-between mt-3">
+                            <span class="badge bg-success">Conduite</span>
+                            <small>Cliquez pour utiliser</small>
+                        </div>
+                    </div>
+                    
+                    <div class="bulletin-template" onclick="useBulletinTemplate('detailed')">
+                        <div class="template-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h5>Bulletin Détaillé</h5>
+                        <p class="text-muted">Avec graphiques et commentaires détaillés</p>
+                        <div class="d-flex justify-content-between mt-3">
+                            <span class="badge bg-info">Complet</span>
+                            <small>Cliquez pour utiliser</small>
+                        </div>
+                    </div>
+                    
+                    <div class="bulletin-template" onclick="useBulletinTemplate('bilingual')">
+                        <div class="template-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <h5>Bulletin Bilingue</h5>
+                        <p class="text-muted">Version en français et anglais</p>
+                        <div class="d-flex justify-content-between mt-3">
+                            <span class="badge bg-warning">Bilingue</span>
+                            <small>Cliquez pour utiliser</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Bulletins -->
+                <div class="dashboard-card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-history me-2"></i>Bulletins récents</h5>
+                        <button class="btn-modern btn-sm" onclick="refreshBulletins()">
+                            <i class="fas fa-sync-alt"></i>
+                            Actualiser
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Classe</th>
+                                    <th>Trimestre</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentBulletins">
+                                <tr>
+                                    <td colspan="6" class="text-center py-3">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>
+                                        Chargement des bulletins...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </section>
-
-        <!-- Add Grade Modal -->
-        <div class="modal fade" id="addGradeModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Ajouter une note</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="gradeForm">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">Élève</label>
-                                        <select class="form-control-modern" id="gradeStudent" required>
-                                            <!-- Students will be populated dynamically -->
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">Matière</label>
-                                        <select class="form-control-modern" id="gradeSubject" required>
-                                            <option value="">Sélectionner une matière</option>
-                                            <option value="math">Mathématiques</option>
-                                            <option value="french">Français</option>
-                                            <option value="science">Sciences</option>
-                                            <option value="history">Histoire-Géographie</option>
-                                            <option value="english">Anglais</option>
-                                            <option value="arts">Arts Plastiques</option>
-                                            <option value="sport">Éducation Physique</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label class="form-label">Note (sur 20)</label>
-                                        <input type="number" class="form-control-modern" id="gradeValue" min="0" max="20" step="0.25" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label class="form-label">Type d'évaluation</label>
-                                        <select class="form-control-modern" id="gradeType">
-                                            <option value="test">Test</option>
-                                            <option value="exam">Examen</option>
-                                            <option value="homework">Devoir maison</option>
-                                            <option value="participation">Participation</option>
-                                            <option value="project">Projet</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label class="form-label">Coefficient</label>
-                                        <input type="number" class="form-control-modern" id="gradeCoefficient" min="1" max="10" value="1">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Date de l'évaluation</label>
-                                <input type="date" class="form-control-modern" id="gradeDate" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Commentaire</label>
-                                <textarea class="form-control-modern" id="gradeComment" rows="3" placeholder="Commentaire sur la note..."></textarea>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn-modern" data-bs-dismiss="modal">Annuler</button>
-                        <button type="button" class="btn-modern btn-success-modern" onclick="saveGrade()">Enregistrer la note</button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
 
     <!-- Firebase -->
@@ -1983,9 +1290,6 @@
     
     <!-- Dropzone -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
-    
-    <!-- Quill Editor -->
-    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     
     <!-- FullCalendar -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
@@ -2013,19 +1317,8 @@
         let currentUser = null;
         let userRole = '';
         let currentTeacherId = '';
-        let quillEditor = null;
-        let dropzone = null;
-        let attendanceChart = null;
-        let classesChart = null;
-        let attendanceStatsChart = null;
-        let calendar = null;
-
-        // Données temporaires
-        let allStudents = [];
-        let selectedStudents = [];
+        let currentGalleryBranch = 'maternelle';
         let galleryImages = [];
-        let galleryPage = 1;
-        const GALLERY_PAGE_SIZE = 12;
 
         // Vérifier l'authentification
         auth.onAuthStateChanged((user) => {
@@ -2033,7 +1326,6 @@
                 currentUser = user;
                 loadUserData(user.email);
                 loadDashboardStats();
-                initializeCharts();
                 loadRecentActivities();
                 loadNotifications();
             } else {
@@ -2055,9 +1347,6 @@
                     
                     currentTeacherId = teacherId;
                     updateUserUI(teacherData, 'teacher');
-                    
-                    // Charger les données spécifiques à l'enseignant
-                    loadTeacherSpecificData(teacherId);
                     return;
                 }
                 
@@ -2071,10 +1360,7 @@
                     const parentData = parents[parentId];
                     
                     updateUserUI(parentData, 'parent');
-                    
-                    // Ajuster l'interface pour les parents
                     adjustInterfaceForParent();
-                    loadParentSpecificData(parentId);
                     return;
                 }
                 
@@ -2094,47 +1380,24 @@
                               role === 'parent' ? 'Parent' : 
                               'Utilisateur';
             
-            // Mettre à jour le header
             document.getElementById('userName').textContent = fullName;
             document.getElementById('userRole').textContent = roleDisplay;
             
-            // Mettre à jour le menu utilisateur
-            document.getElementById('menuUserName').textContent = fullName;
-            document.getElementById('menuUserRole').textContent = roleDisplay;
-            
-            // Mettre à jour l'avatar
-            const initials = fullName.split(' ')
-                .map(n => n[0])
-                .join('')
-                .substring(0, 2)
-                .toUpperCase();
-            
+            const initials = getInitials(fullName);
             document.getElementById('userAvatar').innerHTML = initials;
-            document.getElementById('menuUserAvatar').innerHTML = initials;
-            document.getElementById('profileAvatar').innerHTML = initials;
-            
-            // Remplir le formulaire de profil
-            document.getElementById('profileLastName').value = data.lastName || '';
-            document.getElementById('profileFirstName').value = data.firstName || '';
-            document.getElementById('profileEmail').value = currentUser.email;
-            document.getElementById('profilePhone').value = data.phone || '';
-            document.getElementById('profileAddress').value = data.address || '';
-            document.getElementById('profileBio').value = data.bio || '';
             
             userRole = role;
         }
 
         // Ajuster l'interface pour les parents
         function adjustInterfaceForParent() {
-            // Cacher certaines fonctionnalités pour les parents
             const elementsToHide = [
                 'button[onclick="showAddStudentForm()"]',
                 'button[onclick="showUploadGallery()"]',
-                'button[onclick="showAddGradeModal()"]',
-                'button[onclick="markAttendance()"]',
                 'button[onclick="exportStudentsToExcel()"]',
                 'button[onclick="showImportStudentsModal()"]',
-                'button[onclick="addCalendarEvent()"]'
+                'button[onclick="createNewBulletin()"]',
+                'button[onclick="importBulletinTemplate()"]'
             ];
             
             elementsToHide.forEach(selector => {
@@ -2142,38 +1405,20 @@
                 elements.forEach(el => el.style.display = 'none');
             });
             
-            // Modifier les titres
             document.querySelector('#students .card-title').innerHTML = '<i class="fas fa-users me-2"></i>Mes enfants';
-            
-            // Ajuster les actions rapides
-            const quickActions = document.querySelector('.quick-actions');
-            if (quickActions) {
-                quickActions.innerHTML = `
-                    <button class="quick-action-btn" onclick="showSection('messages')">
-                        <i class="fas fa-envelope"></i>
-                        <span>Messages</span>
-                    </button>
-                    <button class="quick-action-btn" style="background: var(--info);" onclick="showSection('grades')">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Notes</span>
-                    </button>
-                `;
-            }
+            document.querySelector('#bulletins .card-title').innerHTML = '<i class="fas fa-file-alt me-2"></i>Bulletins de mon enfant';
         }
 
         // Navigation entre sections
         function showSection(sectionId) {
-            // Cacher toutes les sections
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
             });
             
-            // Mettre à jour les boutons de navigation
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             
-            // Trouver et activer le bouton correspondant
             const navBtn = Array.from(document.querySelectorAll('.nav-btn')).find(btn => 
                 btn.onclick && btn.onclick.toString().includes(sectionId)
             );
@@ -2182,13 +1427,13 @@
                 navBtn.classList.add('active');
             }
             
-            // Afficher la section sélectionnée
-            document.getElementById(sectionId).classList.add('active');
+            const sectionElement = document.getElementById(sectionId);
+            if (sectionElement) {
+                sectionElement.classList.add('active');
+            }
             
-            // Cacher le menu utilisateur
             hideUserMenu();
             
-            // Charger les données spécifiques à la section
             switch(sectionId) {
                 case 'dashboard':
                     loadDashboardStats();
@@ -2198,686 +1443,44 @@
                 case 'students':
                     loadStudents();
                     break;
-                case 'grades':
-                    loadGrades();
-                    break;
-                case 'attendance':
-                    initAttendanceCalendar();
-                    loadAttendanceStats();
-                    break;
                 case 'gallery':
                     loadGallery();
                     break;
-                case 'calendar':
-                    initCalendar();
-                    loadUpcomingEvents();
-                    break;
-                case 'messages':
-                    loadMessages();
+                case 'bulletins':
+                    loadRecentBulletins();
                     break;
             }
         }
 
-        // === MENU UTILISATEUR ===
-        function toggleUserMenu() {
-            const menu = document.getElementById('userMenu');
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function hideUserMenu() {
-            document.getElementById('userMenu').style.display = 'none';
-        }
-
-        // Fermer le menu en cliquant à l'extérieur
-        document.addEventListener('click', (event) => {
-            const userMenu = document.getElementById('userMenu');
-            const userAvatar = document.getElementById('userAvatar');
-            
-            if (userMenu && userAvatar) {
-                if (!userMenu.contains(event.target) && !userAvatar.contains(event.target)) {
-                    userMenu.style.display = 'none';
-                }
-            }
-        });
-
-        // === TABLEAU DE BORD ===
-        function initializeCharts() {
-            // Graphique de présence
-            const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
-            attendanceChart = new Chart(attendanceCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
-                    datasets: [{
-                        label: 'Présences',
-                        data: [65, 59, 80, 81, 56, 55],
-                        borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    }
-                }
-            });
-
-            // Graphique de répartition par classe
-            const classesCtx = document.getElementById('classesChart').getContext('2d');
-            classesChart = new Chart(classesCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Maternelle', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'],
-                    datasets: [{
-                        data: [12, 19, 15, 10, 8, 7],
-                        backgroundColor: [
-                            '#FF6384',
-                            '#36A2EB',
-                            '#FFCE56',
-                            '#4BC0C0',
-                            '#9966FF',
-                            '#FF9F40'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                        }
-                    }
-                }
-            });
-        }
-
-        async function loadDashboardStats() {
-            try {
-                if (userRole === 'teacher' && currentTeacherId) {
-                    // Compter les élèves assignés
-                    const studentsRef = database.ref('students').orderByChild('teacherId').equalTo(currentTeacherId);
-                    const studentsSnapshot = await studentsRef.once('value');
-                    const studentsCount = Object.keys(studentsSnapshot.val() || {}).length;
-                    document.getElementById('myStudentsCount').textContent = studentsCount;
-                    
-                    // Calculer le pourcentage d'élèves actifs
-                    const activePercent = Math.min(95, Math.floor(Math.random() * 20) + 80);
-                    document.getElementById('activeStudentsPercent').textContent = activePercent + '%';
-                    document.getElementById('activeStudentsBar').style.width = activePercent + '%';
-                    
-                    // Compter les activités
-                    const activitiesRef = database.ref('activities').orderByChild('createdBy').equalTo(currentUser.uid);
-                    const activitiesSnapshot = await activitiesRef.once('value');
-                    const activitiesCount = Object.keys(activitiesSnapshot.val() || {}).length;
-                    document.getElementById('activitiesCount').textContent = activitiesCount;
-                    
-                    // Activités d'aujourd'hui
-                    const todayActivities = Math.floor(Math.random() * 5);
-                    document.getElementById('todayActivities').textContent = todayActivities;
-                    document.getElementById('todayActivitiesBar').style.width = Math.min(100, todayActivities * 20) + '%';
-                    
-                    // Compter les images galerie
-                    const galleryRef = database.ref('gallery').orderByChild('uploadedBy').equalTo(currentUser.uid);
-                    const gallerySnapshot = await galleryRef.once('value');
-                    const galleryCount = Object.keys(gallerySnapshot.val() || {}).length;
-                    document.getElementById('galleryCount').textContent = galleryCount;
-                    
-                    // Images de cette semaine
-                    const weekGallery = Math.floor(Math.random() * 10);
-                    document.getElementById('weekGallery').textContent = weekGallery;
-                    document.getElementById('weekGalleryBar').style.width = Math.min(100, weekGallery * 10) + '%';
-                    
-                    // Compter les livres bibliothèque
-                    const libraryRef = database.ref('library').orderByChild('addedBy').equalTo(currentUser.uid);
-                    const librarySnapshot = await libraryRef.once('value');
-                    const libraryCount = Object.keys(librarySnapshot.val() || {}).length;
-                    document.getElementById('libraryCount').textContent = libraryCount;
-                    
-                    // Téléchargements
-                    const downloadsCount = Math.floor(Math.random() * 50);
-                    document.getElementById('downloadsCount').textContent = downloadsCount;
-                    document.getElementById('downloadsBar').style.width = Math.min(100, downloadsCount) + '%';
-                    
-                }
-            } catch (error) {
-                console.error('Erreur chargement statistiques:', error);
-            }
-        }
-
-        async function loadRecentActivities() {
-            try {
-                const activitiesRef = database.ref('activities')
-                    .orderByChild('createdAt')
-                    .limitToLast(5);
-                
-                const snapshot = await activitiesRef.once('value');
-                const activities = snapshot.val() || {};
-                
-                const timeline = document.getElementById('recentActivitiesTimeline');
-                timeline.innerHTML = '';
-                
-                Object.values(activities).reverse().forEach(activity => {
-                    const item = document.createElement('div');
-                    item.className = 'timeline-item';
-                    
-                    const date = new Date(activity.createdAt);
-                    const formattedDate = date.toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    item.innerHTML = `
-                        <div class="timeline-date">${formattedDate}</div>
-                        <div class="timeline-content">
-                            <strong>${activity.title}</strong>
-                            <p class="mb-0">${activity.createdByName}</p>
-                        </div>
-                    `;
-                    
-                    timeline.appendChild(item);
-                });
-            } catch (error) {
-                console.error('Erreur chargement activités:', error);
-            }
-        }
-
-        async function loadNotifications() {
-            try {
-                const notificationsRef = database.ref('notifications')
-                    .orderByChild('createdAt')
-                    .limitToLast(10);
-                
-                const snapshot = await notificationsRef.once('value');
-                const notifications = snapshot.val() || {};
-                
-                const container = document.getElementById('recentNotifications');
-                container.innerHTML = '';
-                
-                Object.values(notifications).reverse().forEach(notification => {
-                    const item = document.createElement('div');
-                    item.className = 'notification-item';
-                    
-                    const iconClass = notification.type === 'info' ? 'fa-info-circle' :
-                                    notification.type === 'success' ? 'fa-check-circle' :
-                                    notification.type === 'warning' ? 'fa-exclamation-triangle' :
-                                    'fa-bell';
-                    
-                    const iconColor = notification.type === 'info' ? 'var(--primary)' :
-                                    notification.type === 'success' ? 'var(--secondary)' :
-                                    notification.type === 'warning' ? 'var(--warning)' :
-                                    'var(--info)';
-                    
-                    const date = new Date(notification.createdAt);
-                    const formattedDate = date.toLocaleDateString('fr-FR', {
-                        month: 'short',
-                        day: 'numeric'
-                    });
-                    
-                    item.innerHTML = `
-                        <div class="notification-icon" style="background: ${iconColor}">
-                            <i class="fas ${iconClass}"></i>
-                        </div>
-                        <div class="notification-content">
-                            <strong>${notification.title}</strong>
-                            <p class="mb-1">${notification.message}</p>
-                            <div class="notification-time">${formattedDate}</div>
-                        </div>
-                    `;
-                    
-                    container.appendChild(item);
-                });
-            } catch (error) {
-                console.error('Erreur chargement notifications:', error);
-            }
-        }
-
-        // === GESTION DES ÉLÈVES ===
-        async function loadStudents() {
-            try {
-                let studentsRef;
-                
-                if (userRole === 'teacher') {
-                    studentsRef = database.ref('students').orderByChild('teacherId').equalTo(currentTeacherId);
-                } else if (userRole === 'parent') {
-                    // Pour les parents, charger les enfants
-                    const allStudentsRef = database.ref('students');
-                    const allSnapshot = await allStudentsRef.once('value');
-                    const allStudents = allSnapshot.val() || {};
-                    
-                    // Filtrer par email du parent
-                    const parentStudents = Object.values(allStudents).filter(student => 
-                        student.parentEmail === currentUser.email
-                    );
-                    
-                    displayStudents(parentStudents);
-                    updateStudentStatistics(parentStudents);
-                    return;
-                } else {
-                    studentsRef = database.ref('students');
-                }
-                
-                const snapshot = await studentsRef.once('value');
-                const students = snapshot.val() || {};
-                allStudents = Object.values(students);
-                
-                displayStudents(allStudents);
-                updateStudentStatistics(allStudents);
-                
-            } catch (error) {
-                console.error('Erreur chargement élèves:', error);
-                showToast('Erreur lors du chargement des élèves', 'error');
-            }
-        }
-
-        function displayStudents(students) {
-            const tbody = document.getElementById('studentsTable');
-            tbody.innerHTML = '';
-            
-            if (students.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center py-4">
-                            <i class="fas fa-users fa-2x mb-3" style="color: #ddd;"></i>
-                            <p>Aucun élève trouvé</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            students.forEach(student => {
-                const age = student.birthDate ? calculateAge(student.birthDate) : '-';
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>
-                        <input type="checkbox" class="student-checkbox" value="${student.id}" onchange="updateSelectedStudents()">
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="user-avatar me-2" style="width: 35px; height: 35px; font-size: 14px;">
-                                ${getInitials(student.firstName + ' ' + student.lastName)}
-                            </div>
-                            <div>
-                                <strong>${student.lastName} ${student.firstName}</strong>
-                                <br>
-                                <small class="text-muted">${student.gender === 'M' ? '♂ Garçon' : '♀ Fille'}</small>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge-modern badge-primary">${student.class || 'Non spécifié'}</span>
-                    </td>
-                    <td>${age} ans</td>
-                    <td>${student.parentName || '-'}</td>
-                    <td>${student.parentPhone || '-'}</td>
-                    <td>
-                        <span class="badge-modern badge-success">Actif</span>
-                    </td>
-                    <td>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-primary" onclick="viewStudentDetails('${student.id}')">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-warning" onclick="editStudent('${student.id}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            ${userRole === 'teacher' ? `
-                                <button class="btn btn-sm btn-success" onclick="addGradeForStudent('${student.id}')">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                    </td>
-                `;
-                
-                tbody.appendChild(row);
-            });
-        }
-
-        function updateStudentStatistics(students) {
-            document.getElementById('totalStudents').textContent = students.length;
-            
-            const maleCount = students.filter(s => s.gender === 'M').length;
-            const femaleCount = students.filter(s => s.gender === 'F').length;
-            
-            document.getElementById('maleStudents').textContent = maleCount;
-            document.getElementById('femaleStudents').textContent = femaleCount;
-            
-            // Compter les anniversaires ce mois
-            const currentMonth = new Date().getMonth() + 1;
-            const birthdaysThisMonth = students.filter(student => {
-                if (!student.birthDate) return false;
-                const birthMonth = new Date(student.birthDate).getMonth() + 1;
-                return birthMonth === currentMonth;
-            }).length;
-            
-            document.getElementById('birthdaysThisMonth').textContent = birthdaysThisMonth;
-        }
-
-        function updateSelectedStudents() {
-            const checkboxes = document.querySelectorAll('.student-checkbox:checked');
-            selectedStudents = Array.from(checkboxes).map(cb => cb.value);
-            
-            const bulkActions = document.getElementById('bulkActions');
-            const selectedCount = document.getElementById('selectedCount');
-            
-            if (selectedStudents.length > 0) {
-                bulkActions.style.display = 'block';
-                selectedCount.textContent = `${selectedStudents.length} élèves sélectionnés`;
-            } else {
-                bulkActions.style.display = 'none';
-            }
-        }
-
-        function toggleSelectAllStudents() {
-            const selectAll = document.getElementById('selectAllStudents');
-            const checkboxes = document.querySelectorAll('.student-checkbox');
-            
-            checkboxes.forEach(cb => {
-                cb.checked = selectAll.checked;
-            });
-            
-            updateSelectedStudents();
-        }
-
-        function clearSelection() {
-            document.getElementById('selectAllStudents').checked = false;
-            const checkboxes = document.querySelectorAll('.student-checkbox');
-            checkboxes.forEach(cb => cb.checked = false);
-            updateSelectedStudents();
-        }
-
-        // === NOTES ET ÉVALUATIONS ===
-        async function loadGrades() {
-            try {
-                let gradesRef;
-                
-                if (userRole === 'teacher') {
-                    // Pour les enseignants, charger les notes de leurs élèves
-                    const studentsRef = database.ref('students').orderByChild('teacherId').equalTo(currentTeacherId);
-                    const studentsSnapshot = await studentsRef.once('value');
-                    const students = studentsSnapshot.val() || {};
-                    const studentIds = Object.keys(students);
-                    
-                    // Charger toutes les notes et filtrer
-                    const allGradesRef = database.ref('grades');
-                    const allGradesSnapshot = await allGradesRef.once('value');
-                    const allGrades = allGradesSnapshot.val() || {};
-                    
-                    const teacherGrades = Object.values(allGrades).filter(grade => 
-                        studentIds.includes(grade.studentId)
-                    );
-                    
-                    displayGrades(teacherGrades);
-                    updateGradeStatistics(teacherGrades);
-                    
-                } else if (userRole === 'parent') {
-                    // Pour les parents, charger les notes de leurs enfants
-                    const allStudentsRef = database.ref('students');
-                    const allSnapshot = await allStudentsRef.once('value');
-                    const allStudents = allSnapshot.val() || {};
-                    
-                    // Trouver les enfants du parent
-                    const parentChildren = Object.values(allStudents).filter(student => 
-                        student.parentEmail === currentUser.email
-                    );
-                    
-                    if (parentChildren.length > 0) {
-                        const childrenIds = parentChildren.map(child => child.id);
-                        
-                        const allGradesRef = database.ref('grades');
-                        const allGradesSnapshot = await allGradesRef.once('value');
-                        const allGrades = allGradesSnapshot.val() || {};
-                        
-                        const childrenGrades = Object.values(allGrades).filter(grade => 
-                            childrenIds.includes(grade.studentId)
-                        );
-                        
-                        displayGrades(childrenGrades);
-                        updateGradeStatistics(childrenGrades);
-                    }
-                }
-                
-            } catch (error) {
-                console.error('Erreur chargement notes:', error);
-            }
-        }
-
-        function displayGrades(grades) {
-            const tbody = document.getElementById('gradesTable');
-            tbody.innerHTML = '';
-            
-            if (grades.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center py-4">
-                            <i class="fas fa-chart-line fa-2x mb-3" style="color: #ddd;"></i>
-                            <p>Aucune note enregistrée</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            grades.forEach(grade => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${grade.studentName || 'Inconnu'}</td>
-                    <td>${grade.class || '-'}</td>
-                    <td>${getSubjectName(grade.subject)}</td>
-                    <td>
-                        <span class="badge ${grade.value >= 10 ? 'bg-success' : 'bg-danger'}">
-                            ${grade.value}/20
-                        </span>
-                    </td>
-                    <td>${new Date(grade.date).toLocaleDateString('fr-FR')}</td>
-                    <td>${getGradeTypeName(grade.type)}</td>
-                    <td>${grade.coefficient || 1}</td>
-                    <td>${grade.comment || '-'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-warning" onclick="editGrade('${grade.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteGrade('${grade.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                
-                tbody.appendChild(row);
-            });
-        }
-
-        function updateGradeStatistics(grades) {
-            if (grades.length === 0) {
-                document.getElementById('averageGrade').textContent = '0.0';
-                document.getElementById('topStudent').textContent = '-';
-                document.getElementById('gradesCount').textContent = '0';
-                document.getElementById('passRate').textContent = '0%';
-                return;
-            }
-            
-            // Calculer la moyenne
-            const total = grades.reduce((sum, grade) => sum + (grade.value || 0), 0);
-            const average = (total / grades.length).toFixed(1);
-            document.getElementById('averageGrade').textContent = average;
-            
-            // Compter le nombre de notes
-            document.getElementById('gradesCount').textContent = grades.length;
-            
-            // Calculer le taux de réussite
-            const passingGrades = grades.filter(grade => (grade.value || 0) >= 10).length;
-            const passRate = Math.round((passingGrades / grades.length) * 100);
-            document.getElementById('passRate').textContent = passRate + '%';
-            
-            // Trouver le meilleur élève
-            const bestGrade = grades.reduce((best, current) => 
-                (current.value || 0) > (best.value || 0) ? current : best
-            );
-            document.getElementById('topStudent').textContent = bestGrade.studentName || '-';
-        }
-
-        function getSubjectName(subjectCode) {
-            const subjects = {
-                'math': 'Mathématiques',
-                'french': 'Français',
-                'science': 'Sciences',
-                'history': 'Histoire-Géographie',
-                'english': 'Anglais',
-                'arts': 'Arts Plastiques',
-                'sport': 'Éducation Physique'
-            };
-            return subjects[subjectCode] || subjectCode;
-        }
-
-        function getGradeTypeName(typeCode) {
-            const types = {
-                'test': 'Test',
-                'exam': 'Examen',
-                'homework': 'Devoir maison',
-                'participation': 'Participation',
-                'project': 'Projet'
-            };
-            return types[typeCode] || typeCode;
-        }
-
-        // === PRÉSENCES ===
-        function initAttendanceCalendar() {
-            const calendarEl = document.getElementById('attendanceCalendar');
-            
-            if (calendarEl && !calendar) {
-                calendar = new FullCalendar.Calendar(calendarEl, {
-                    initialView: 'dayGridMonth',
-                    locale: 'fr',
-                    headerToolbar: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                    },
-                    events: [],
-                    dateClick: function(info) {
-                        showAttendanceForDate(info.dateStr);
-                    },
-                    eventClick: function(info) {
-                        showEventDetails(info.event);
-                    }
-                });
-                
-                calendar.render();
-                loadAttendanceEvents();
-            }
-        }
-
-        async function loadAttendanceEvents() {
-            try {
-                // Charger les événements de présence
-                const attendanceRef = database.ref('attendance')
-                    .orderByChild('date')
-                    .limitToLast(30);
-                
-                const snapshot = await attendanceRef.once('value');
-                const attendanceRecords = snapshot.val() || {};
-                
-                const events = Object.values(attendanceRecords).map(record => ({
-                    title: `Présence ${record.class || ''}`,
-                    start: record.date,
-                    backgroundColor: record.status === 'present' ? 'var(--secondary)' : 
-                                  record.status === 'absent' ? 'var(--accent)' :
-                                  record.status === 'late' ? 'var(--warning)' : 'var(--info)'
-                }));
-                
-                if (calendar) {
-                    calendar.removeAllEvents();
-                    calendar.addEventSource(events);
-                }
-                
-            } catch (error) {
-                console.error('Erreur chargement présence:', error);
-            }
-        }
-
-        async function loadAttendanceStats() {
-            try {
-                // Charger les statistiques de présence
-                const statsRef = database.ref('attendanceStats');
-                const snapshot = await statsRef.once('value');
-                const stats = snapshot.val() || { present: 0, absent: 0, late: 0, excused: 0 };
-                
-                // Mettre à jour le graphique
-                const ctx = document.getElementById('attendanceStatsChart').getContext('2d');
-                
-                if (attendanceStatsChart) {
-                    attendanceStatsChart.destroy();
-                }
-                
-                attendanceStatsChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Présent', 'Absent', 'En retard', 'Excusé'],
-                        datasets: [{
-                            label: 'Nombre',
-                            data: [stats.present || 0, stats.absent || 0, stats.late || 0, stats.excused || 0],
-                            backgroundColor: [
-                                'rgba(46, 204, 113, 0.7)',
-                                'rgba(231, 76, 60, 0.7)',
-                                'rgba(243, 156, 18, 0.7)',
-                                'rgba(52, 152, 219, 0.7)'
-                            ],
-                            borderColor: [
-                                'rgb(46, 204, 113)',
-                                'rgb(231, 76, 60)',
-                                'rgb(243, 156, 18)',
-                                'rgb(52, 152, 219)'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-                
-            } catch (error) {
-                console.error('Erreur chargement statistiques présence:', error);
-            }
-        }
-
-        // === GALERIE ===
+        // === GALERIE PAR BRANCHE ===
         async function loadGallery() {
             try {
-                const galleryRef = database.ref('gallery')
-                    .orderByChild('uploadedAt')
-                    .limitToLast(GALLERY_PAGE_SIZE * galleryPage);
-                
+                const galleryRef = database.ref('gallery').orderByChild('branch').equalTo(currentGalleryBranch);
                 const snapshot = await galleryRef.once('value');
                 const galleryItems = snapshot.val() || {};
                 galleryImages = Object.values(galleryItems).reverse();
                 
                 displayGallery(galleryImages);
-                
-                // Afficher/masquer le bouton "Charger plus"
-                const loadMoreBtn = document.getElementById('loadMoreGallery');
-                if (galleryImages.length >= GALLERY_PAGE_SIZE * galleryPage) {
-                    loadMoreBtn.style.display = 'block';
-                } else {
-                    loadMoreBtn.style.display = 'none';
-                }
+                updateGalleryStats();
                 
             } catch (error) {
                 console.error('Erreur chargement galerie:', error);
+                showToast('Erreur lors du chargement de la galerie', 'error');
             }
+        }
+
+        function switchGalleryBranch(branch) {
+            currentGalleryBranch = branch;
+            
+            // Mettre à jour les onglets actifs
+            document.querySelectorAll('.branch-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.querySelector(`.branch-tab.${branch}`).classList.add('active');
+            
+            // Recharger la galerie
+            loadGallery();
         }
 
         function displayGallery(images) {
@@ -2887,7 +1490,8 @@
                 galleryGrid.innerHTML = `
                     <div class="col-12 text-center py-5">
                         <i class="fas fa-images fa-3x mb-3" style="color: #ddd;"></i>
-                        <p>Aucune image dans la galerie</p>
+                        <p>Aucune image dans cette section</p>
+                        <p class="text-muted mt-2">Les photos apparaîtront ici une fois ajoutées</p>
                     </div>
                 `;
                 return;
@@ -2901,11 +1505,19 @@
                 galleryItem.onclick = () => openImageModal(item);
                 
                 galleryItem.innerHTML = `
-                    <img src="${item.url}" alt="${item.description || 'Image'}">
+                    <img src="${item.url || 'https://via.placeholder.com/300'}" alt="${item.description || 'Image'}">
                     <div class="gallery-item-overlay">
-                        <small>${item.description || 'Sans description'}</small>
-                        <br>
-                        <small>${new Date(item.uploadedAt).toLocaleDateString('fr-FR')}</small>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <small class="fw-bold">${item.title || 'Sans titre'}</small>
+                                <br>
+                                <small>${item.description || ''}</small>
+                            </div>
+                            <span class="branch-badge ${currentGalleryBranch}">
+                                ${currentGalleryBranch.toUpperCase()}
+                            </span>
+                        </div>
+                        <small class="mt-2 d-block">${new Date(item.uploadedAt || Date.now()).toLocaleDateString('fr-FR')}</small>
                     </div>
                 `;
                 
@@ -2913,111 +1525,461 @@
             });
         }
 
-        function loadMoreGallery() {
-            galleryPage++;
-            loadGallery();
-        }
-
-        // === CALENDRIER ===
-        function initCalendar() {
-            const calendarEl = document.getElementById('calendarView');
-            
-            if (calendarEl) {
-                calendar = new FullCalendar.Calendar(calendarEl, {
-                    initialView: 'dayGridMonth',
-                    locale: 'fr',
-                    headerToolbar: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
-                    },
-                    events: [],
-                    editable: userRole === 'teacher',
-                    eventDrop: function(info) {
-                        updateEventDate(info.event);
-                    },
-                    eventClick: function(info) {
-                        showEventDetails(info.event);
+        async function updateGalleryStats() {
+            try {
+                const stats = {
+                    maternelle: 0,
+                    primaire: 0,
+                    kimisagara: 0,
+                    gisozi: 0
+                };
+                
+                // Compter les images par branche
+                const galleryRef = database.ref('gallery');
+                const snapshot = await galleryRef.once('value');
+                const allItems = snapshot.val() || {};
+                
+                Object.values(allItems).forEach(item => {
+                    if (item.branch && stats[item.branch] !== undefined) {
+                        stats[item.branch]++;
                     }
                 });
                 
-                calendar.render();
-                loadCalendarEvents();
+                document.getElementById('maternelleCount').textContent = stats.maternelle;
+                document.getElementById('primaireCount').textContent = stats.primaire;
+                document.getElementById('kimisagaraCount').textContent = stats.kimisagara;
+                document.getElementById('gisoziCount').textContent = stats.gisozi;
+                
+            } catch (error) {
+                console.error('Erreur mise à jour statistiques galerie:', error);
             }
         }
 
-        async function loadCalendarEvents() {
+        function openImageModal(item) {
+            const modalHtml = `
+                <div class="modal fade" id="imageModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${item.title || 'Image'}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img src="${item.url}" alt="${item.description || 'Image'}" class="img-fluid rounded">
+                                <p class="mt-3">${item.description || ''}</p>
+                                <div class="text-muted">
+                                    <small>Publié le: ${new Date(item.uploadedAt || Date.now()).toLocaleDateString('fr-FR')}</small>
+                                    <br>
+                                    <small>Branche: <span class="branch-badge ${item.branch || 'maternelle'}">${(item.branch || 'maternelle').toUpperCase()}</span></small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                <button class="btn btn-primary" onclick="downloadImage('${item.url}', '${item.title || 'image'}')">
+                                    <i class="fas fa-download"></i> Télécharger
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const modalContainer = document.getElementById('modalContainer') || (() => {
+                const div = document.createElement('div');
+                div.id = 'modalContainer';
+                document.body.appendChild(div);
+                return div;
+            })();
+            
+            modalContainer.innerHTML = modalHtml;
+            const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+            modal.show();
+        }
+
+        function downloadImage(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${filename}-${Date.now()}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Téléchargement commencé', 'success');
+        }
+
+        // === BULLETINS ===
+        async function loadRecentBulletins() {
             try {
-                const eventsRef = database.ref('calendarEvents');
-                const snapshot = await eventsRef.once('value');
-                const events = snapshot.val() || {};
+                const bulletinsRef = database.ref('bulletins').orderByChild('createdAt').limitToLast(10);
+                const snapshot = await bulletinsRef.once('value');
+                const bulletins = snapshot.val() || {};
                 
-                const calendarEvents = Object.values(events).map(event => ({
-                    id: event.id,
-                    title: event.title,
-                    start: event.startDate,
-                    end: event.endDate,
-                    backgroundColor: event.type === 'academic' ? 'var(--primary)' :
-                                   event.type === 'holiday' ? 'var(--secondary)' :
-                                   event.type === 'event' ? 'var(--warning)' : 'var(--info)',
-                    extendedProps: {
-                        description: event.description,
-                        location: event.location,
-                        type: event.type
-                    }
-                }));
+                const tbody = document.getElementById('recentBulletins');
                 
-                if (calendar) {
-                    calendar.removeAllEvents();
-                    calendar.addEventSource(calendarEvents);
+                if (Object.keys(bulletins).length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-file-alt fa-2x mb-3" style="color: #ddd;"></i>
+                                <p>Aucun bulletin créé</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
                 }
                 
-            } catch (error) {
-                console.error('Erreur chargement événements:', error);
-            }
-        }
-
-        async function loadUpcomingEvents() {
-            try {
-                const eventsRef = database.ref('calendarEvents')
-                    .orderByChild('startDate')
-                    .startAt(new Date().toISOString().split('T')[0])
-                    .limitToLast(5);
+                tbody.innerHTML = '';
                 
-                const snapshot = await eventsRef.once('value');
-                const events = snapshot.val() || {};
-                
-                const container = document.getElementById('upcomingEvents');
-                container.innerHTML = '';
-                
-                Object.values(events).forEach(event => {
-                    const eventDiv = document.createElement('div');
-                    eventDiv.className = 'alert-modern alert-info mb-2';
+                Object.values(bulletins).reverse().forEach(bulletin => {
+                    const row = document.createElement('tr');
                     
-                    const startDate = new Date(event.startDate);
-                    const formattedDate = startDate.toLocaleDateString('fr-FR', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short'
-                    });
+                    let statusBadge = '';
+                    switch(bulletin.status) {
+                        case 'draft':
+                            statusBadge = '<span class="badge bg-warning">Brouillon</span>';
+                            break;
+                        case 'published':
+                            statusBadge = '<span class="badge bg-success">Publié</span>';
+                            break;
+                        case 'archived':
+                            statusBadge = '<span class="badge bg-secondary">Archivé</span>';
+                            break;
+                        default:
+                            statusBadge = '<span class="badge bg-info">Inconnu</span>';
+                    }
                     
-                    eventDiv.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>${event.title}</strong>
-                                <br>
-                                <small>${formattedDate} - ${event.location || ''}</small>
+                    row.innerHTML = `
+                        <td>${new Date(bulletin.createdAt || Date.now()).toLocaleDateString('fr-FR')}</td>
+                        <td>
+                            <span class="badge bg-primary">${bulletin.type || 'Académique'}</span>
+                        </td>
+                        <td>${bulletin.class || 'Toutes classes'}</td>
+                        <td>${bulletin.term || 'Non spécifié'}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-primary" onclick="viewBulletin('${bulletin.id || ''}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editBulletin('${bulletin.id || ''}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="downloadBulletin('${bulletin.id || ''}')">
+                                    <i class="fas fa-download"></i>
+                                </button>
                             </div>
-                            <span class="badge-modern badge-primary">${event.type || 'Événement'}</span>
-                        </div>
+                        </td>
                     `;
                     
-                    container.appendChild(eventDiv);
+                    tbody.appendChild(row);
                 });
                 
             } catch (error) {
-                console.error('Erreur chargement événements à venir:', error);
+                console.error('Erreur chargement bulletins:', error);
+                showToast('Erreur lors du chargement des bulletins', 'error');
             }
+        }
+
+        function createNewBulletin() {
+            showToast('Création d\'un nouveau bulletin - Fonctionnalité en développement', 'info');
+        }
+
+        function useBulletinTemplate(template) {
+            const templates = {
+                'academic': 'Bulletin Académique',
+                'conduct': 'Bulletin de Conduite',
+                'detailed': 'Bulletin Détaillé',
+                'bilingual': 'Bulletin Bilingue'
+            };
+            
+            showToast(`Utilisation du modèle: ${templates[template]}`, 'success');
+        }
+
+        function importBulletinTemplate() {
+            showToast('Importation de modèle - Fonctionnalité en développement', 'info');
+        }
+
+        function refreshBulletins() {
+            loadRecentBulletins();
+            showToast('Liste des bulletins actualisée', 'success');
+        }
+
+        // === ÉTUDIANTS ===
+        async function loadStudents() {
+            try {
+                const studentsRef = database.ref('students');
+                const snapshot = await studentsRef.once('value');
+                const students = snapshot.val() || {};
+                
+                const tbody = document.getElementById('studentsTable');
+                
+                if (Object.keys(students).length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="fas fa-user-slash fa-2x mb-3" style="color: #ddd;"></i>
+                                <p>Aucun étudiant enregistré</p>
+                            </td>
+                        </tr>
+                    `;
+                    updateStudentStats(students);
+                    return;
+                }
+                
+                tbody.innerHTML = '';
+                let maleCount = 0;
+                let femaleCount = 0;
+                
+                Object.entries(students).forEach(([id, student]) => {
+                    if (student.gender === 'M') maleCount++;
+                    if (student.gender === 'F') femaleCount++;
+                    
+                    const row = document.createElement('tr');
+                    const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim();
+                    const classLevel = student.class || 'Non défini';
+                    const status = student.status || 'Actif';
+                    
+                    row.innerHTML = `
+                        <td>
+                            <input type="checkbox" class="student-checkbox" data-id="${id}">
+                        </td>
+                        <td>${fullName || 'Inconnu'}</td>
+                        <td>${classLevel}</td>
+                        <td>
+                            <span class="badge bg-${student.gender === 'M' ? 'primary' : 'info'}">
+                                ${student.gender === 'M' ? 'Garçon' : 'Fille'}
+                            </span>
+                        </td>
+                        <td>${student.email || 'N/A'}</td>
+                        <td>
+                            <span class="badge ${status === 'Actif' ? 'bg-success' : 'bg-warning'}">
+                                ${status}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-primary" onclick="editStudent('${id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStudent('${id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+                
+                updateStudentStats(students);
+                
+            } catch (error) {
+                console.error('Erreur chargement étudiants:', error);
+                showToast('Erreur lors du chargement des étudiants', 'error');
+            }
+        }
+
+        function updateStudentStats(students) {
+            let maleCount = 0;
+            let femaleCount = 0;
+            
+            Object.values(students).forEach(student => {
+                if (student.gender === 'M') maleCount++;
+                if (student.gender === 'F') femaleCount++;
+            });
+            
+            const total = Object.keys(students).length;
+            document.getElementById('totalStudents').textContent = total;
+            document.getElementById('maleStudents').textContent = maleCount;
+            document.getElementById('femaleStudents').textContent = femaleCount;
+            document.getElementById('myStudentsCount').textContent = total;
+            
+            if (total > 0) {
+                const activePercent = Math.round((total / total) * 100);
+                document.getElementById('activeStudentsPercent').textContent = activePercent + '%';
+                document.getElementById('activeStudentsBar').style.width = activePercent + '%';
+            }
+        }
+
+        function filterStudents() {
+            const classFilter = document.getElementById('classFilter').value;
+            const searchTerm = document.getElementById('studentSearch').value.toLowerCase();
+            
+            const rows = document.querySelectorAll('#studentsTable tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const classCell = row.cells[2]?.textContent || '';
+                
+                const matchClass = !classFilter || classCell.includes(classFilter);
+                const matchSearch = !searchTerm || text.includes(searchTerm);
+                
+                row.style.display = (matchClass && matchSearch) ? '' : 'none';
+            });
+        }
+
+        function editStudent(studentId) {
+            showToast(`Edition étudiant ${studentId} - Fonctionnalité en développement`, 'info');
+        }
+
+        function deleteStudent(studentId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet étudiant ?')) {
+                database.ref(`students/${studentId}`).remove()
+                    .then(() => {
+                        showToast('Étudiant supprimé avec succès', 'success');
+                        loadStudents();
+                    })
+                    .catch((error) => {
+                        console.error('Erreur suppression:', error);
+                        showToast('Erreur lors de la suppression', 'error');
+                    });
+            }
+        }
+
+        function showAddStudentForm() {
+            showToast('Ajout d\'étudiant - Formulaire en développement', 'info');
+        }
+
+        function exportStudentsToExcel() {
+            showToast('Export Excel - Fonctionnalité en développement', 'info');
+        }
+
+        function showImportStudentsModal() {
+            showToast('Import d\'étudiants - Fonctionnalité en développement', 'info');
+        }
+
+        function toggleSelectAllStudents() {
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAllStudents');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+
+        // === TABLEAU DE BORD ===
+        async function loadDashboardStats() {
+            try {
+                const studentsRef = database.ref('students');
+                const bullettinsRef = database.ref('bulletins');
+                
+                const [studentsSnapshot, bulletinsSnapshot] = await Promise.all([
+                    studentsRef.once('value'),
+                    bullettinsRef.once('value')
+                ]);
+                
+                const students = studentsSnapshot.val() || {};
+                const bulletins = bulletinsSnapshot.val() || {};
+                
+                const totalStudents = Object.keys(students).length;
+                const totalBulletins = Object.keys(bulletins).length;
+                
+                document.getElementById('myStudentsCount').textContent = totalStudents;
+                
+                if (totalStudents > 0) {
+                    document.getElementById('activeStudentsPercent').textContent = '100%';
+                    document.getElementById('activeStudentsBar').style.width = '100%';
+                }
+                
+                console.log('Stats chargées - Étudiants:', totalStudents, 'Bulletins:', totalBulletins);
+                
+            } catch (error) {
+                console.error('Erreur chargement stats:', error);
+            }
+        }
+
+        async function loadRecentActivities() {
+            try {
+                const activitiesRef = database.ref('activities').limitToLast(5);
+                const snapshot = await activitiesRef.once('value');
+                const activities = snapshot.val() || {};
+                
+                const activityContainer = document.getElementById('recentActivitiesTimeline');
+                if (!activityContainer) return;
+                
+                if (Object.keys(activities).length === 0) {
+                    activityContainer.innerHTML = `
+                        <div class="timeline-item">
+                            <div class="timeline-content">
+                                <p class="text-muted mb-0">Aucune activité récente</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                activityContainer.innerHTML = '';
+                
+                Object.values(activities).reverse().forEach(activity => {
+                    const div = document.createElement('div');
+                    div.className = 'timeline-item';
+                    div.innerHTML = `
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <p class="mb-1"><strong>${activity.title || 'Activité'}</strong></p>
+                            <p class="text-muted mb-0"><small>${new Date(activity.date || Date.now()).toLocaleDateString('fr-FR')}</small></p>
+                        </div>
+                    `;
+                    activityContainer.appendChild(div);
+                });
+                
+            } catch (error) {
+                console.error('Erreur chargement activités:', error);
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const notificationsRef = database.ref('notifications').limitToLast(5);
+                const snapshot = await notificationsRef.once('value');
+                const notifications = snapshot.val() || {};
+                
+                const notifContainer = document.getElementById('recentNotifications');
+                if (!notifContainer) return;
+                
+                if (Object.keys(notifications).length === 0) {
+                    notifContainer.innerHTML = `
+                        <div class="text-center py-3">
+                            <i class="fas fa-inbox" style="font-size: 2rem; color: #ddd;"></i>
+                            <p class="mt-2 text-muted">Aucune notification</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                notifContainer.innerHTML = '';
+                
+                Object.values(notifications).reverse().forEach(notification => {
+                    const div = document.createElement('div');
+                    div.className = 'notification-item p-3 border-bottom';
+                    div.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="mb-1"><strong>${notification.message || 'Notification'}</strong></p>
+                                <p class="text-muted mb-0"><small>${new Date(notification.date || Date.now()).toLocaleDateString('fr-FR')}</small></p>
+                            </div>
+                            <span class="badge bg-${notification.type === 'error' ? 'danger' : notification.type === 'warning' ? 'warning' : 'info'}">
+                                ${notification.type || 'info'}
+                            </span>
+                        </div>
+                    `;
+                    notifContainer.appendChild(div);
+                });
+                
+            } catch (error) {
+                console.error('Erreur chargement notifications:', error);
+            }
+        }
+
+        function showUploadGallery() {
+            showToast('Upload galerie - Formulaire en développement', 'info');
+        }
+
+        function markAllAsRead() {
+            showToast('Toutes les notifications marquées comme lues', 'success');
+        }
+
+        function refreshActivities() {
+            loadRecentActivities();
+            showToast('Activités actualisées', 'success');
         }
 
         // === FONCTIONS UTILITAIRES ===
@@ -3026,20 +1988,7 @@
                 .map(n => n[0])
                 .join('')
                 .substring(0, 2)
-                .toUpperCase();
-        }
-
-        function calculateAge(birthDate) {
-            const birth = new Date(birthDate);
-            const today = new Date();
-            let age = today.getFullYear() - birth.getFullYear();
-            const monthDiff = today.getMonth() - birth.getMonth();
-            
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                age--;
-            }
-            
-            return age;
+                .toUpperCase() || '??';
         }
 
         function showToast(message, type = 'info') {
@@ -3082,63 +2031,26 @@
             }, 3000);
         }
 
-        function showAddGradeModal() {
-            const modal = new bootstrap.Modal(document.getElementById('addGradeModal'));
-            modal.show();
+        function toggleUserMenu() {
+            const menu = document.getElementById('userMenu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
         }
 
-        function showSettings() {
-            showToast('Paramètres - Fonctionnalité en développement', 'info');
+        function hideUserMenu() {
+            document.getElementById('userMenu').style.display = 'none';
         }
 
-        function showHelp() {
-            showToast('Aide & Support - Fonctionnalité en développement', 'info');
-        }
-
-        function updateProfile() {
-            showToast('Profil mis à jour avec succès', 'success');
-        }
-
-        function changeProfilePicture() {
-            showToast('Changer photo de profil - Fonctionnalité en développement', 'info');
-        }
-
-        function exportStudentsToExcel() {
-            showToast('Export Excel - Fonctionnalité en développement', 'info');
-        }
-
-        function showImportStudentsModal() {
-            showToast('Importation - Fonctionnalité en développement', 'info');
-        }
-
-        function markAllAsRead() {
-            showToast('Toutes les notifications marquées comme lues', 'success');
-        }
-
-        function refreshActivities() {
-            loadRecentActivities();
-            showToast('Activités actualisées', 'success');
-        }
-
-        function showGradeAnalysis() {
-            showToast('Analyse des notes - Fonctionnalité en développement', 'info');
-        }
-
-        function showAttendanceReport() {
-            showToast('Génération du rapport PDF...', 'info');
-        }
-
-        function createGalleryAlbum() {
-            showToast('Création d\'album - Fonctionnalité en développement', 'info');
-        }
-
-        function exportCalendar() {
-            showToast('Export calendrier - Fonctionnalité en développement', 'info');
-        }
-
-        function addCalendarEvent() {
-            showToast('Ajout événement - Fonctionnalité en développement', 'info');
-        }
+        // Fermer le menu en cliquant à l'extérieur
+        document.addEventListener('click', (event) => {
+            const userMenu = document.getElementById('userMenu');
+            const userAvatar = document.getElementById('userAvatar');
+            
+            if (userMenu && userAvatar) {
+                if (!userMenu.contains(event.target) && !userAvatar.contains(event.target)) {
+                    userMenu.style.display = 'none';
+                }
+            }
+        });
 
         function logout() {
             if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
@@ -3157,22 +2069,13 @@
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
             // Gestionnaire de recherche globale
-            document.getElementById('globalSearch').addEventListener('input', function(e) {
-                const searchTerm = e.target.value.toLowerCase();
-                // Implémenter la recherche selon la section active
-            });
-            
-            // Gestionnaire de recherche élèves
-            document.getElementById('studentSearch').addEventListener('input', function(e) {
-                const searchTerm = e.target.value.toLowerCase();
-                // Filtrer les élèves selon le terme de recherche
-            });
-            
-            // Initialiser les tooltips Bootstrap
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
+            const globalSearch = document.getElementById('globalSearch');
+            if (globalSearch) {
+                globalSearch.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    // Recherche à implémenter
+                });
+            }
         });
     </script>
 </body>
