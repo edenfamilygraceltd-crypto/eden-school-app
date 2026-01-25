@@ -1,0 +1,126 @@
+{
+  "rules": {
+   
+    "users": {
+      "$uid": {
+     
+        ".read": "auth.uid == $uid || root.child('users').child($uid).child('role').val() === 'admin'",
+        
+  
+        ".write": "auth.uid == $uid || root.child('users').child($uid).child('role').val() === 'admin'",
+      
+        ".validate": "newData.hasChildren(['email', 'name', 'role'])",
+        
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/)"
+        },
+        "role": {
+          ".validate": "newData.isString() && newData.val() in ['director', 'admin', 'secretary', 'accountant', 'teacher']"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        }
+      }
+    },
+
+    "secretaries": {
+      "$uid": {
+        ".read": "auth.uid == $uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".write": "auth.uid == $uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['email', 'name', 'role'])",
+        
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/)"
+        },
+        "role": {
+          ".validate": "newData.isString() && newData.val() in ['secretary', 'accountant']"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        }
+      }
+    },
+
+
+    "teachers": {
+      "$uid": {
+        ".read": "auth.uid == $uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".write": "auth.uid == $uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['email', 'name', 'role'])",
+        
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/)"
+        },
+        "role": {
+          ".validate": "newData.isString() && newData.val() === 'teacher'"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        }
+      }
+    },
+
+
+    "parents": {
+      "$uid": {
+        ".read": "auth.uid == $uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".write": "auth.uid == $uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['email', 'name', 'role'])",
+        
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/)"
+        },
+        "role": {
+          ".validate": "newData.isString() && newData.val() === 'parent'"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        }
+      }
+    },
+
+    "students": {
+      ".read": "auth != null",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'director'"
+    },
+
+    "reports": {
+      ".read": "auth != null",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'director'"
+    },
+
+    "monthlyReports": {
+      ".read": "auth != null",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'director'"
+    },
+
+    "weeklyReports": {
+      ".read": "auth != null",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'director'"
+    },
+
+    "studentFees": {
+      ".read": "auth != null",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+
+    "messages": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "presentations": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "settings": {
+      ".read": "auth != null",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+
+  
+    ".read": false,
+    ".write": false
+  }
+}

@@ -22,18 +22,33 @@
       align-items: center; 
       justify-content: center; 
       padding: 20px;
+      opacity: 0;
+      animation: pageFadeIn 0.8s ease-out forwards;
+    }
+    
+    @keyframes pageFadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     
     .auth-container { 
       background: white; 
-      border-radius: 25px; 
+      border-radius: 20px; 
       box-shadow: 0 25px 70px rgba(0,0,0,0.3); 
       width: 100%; 
-      max-width: 500px; 
-      padding: 3rem 2.5rem; 
+      max-width: 450px; 
+      padding: 2.5rem 2rem; 
       margin: 1rem;
       overflow: hidden;
       position: relative;
+      transform: scale(0.95);
+      animation: containerPopIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.3s forwards;
+    }
+    
+    @keyframes containerPopIn {
+      0% { transform: scale(0.95) translateY(30px); opacity: 0; }
+      60% { transform: scale(1.02) translateY(-5px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
     }
     
     .auth-container::before {
@@ -44,84 +59,157 @@
       right: 0;
       height: 4px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      animation: borderGrow 1s ease-out 0.5s forwards;
+      transform-origin: left;
+      transform: scaleX(0);
+    }
+    
+    @keyframes borderGrow {
+      to { transform: scaleX(1); }
     }
     
     .auth-header { 
       text-align: center; 
-      margin-bottom: 2rem; 
+      margin-bottom: 1.5rem; 
+      animation: slideDownFade 0.8s ease-out 0.5s forwards;
+      opacity: 0;
+      transform: translateY(-20px);
     }
+    
+    @keyframes slideDownFade {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
     .auth-header h1 { 
       color: #667eea; 
-      font-size: 2.5rem; 
-      margin-bottom: 0.5rem;
+      font-size: 2rem; 
+      margin-bottom: 0.35rem;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      position: relative;
+      display: inline-block;
     }
+    
+    .auth-header h1::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 2px;
+      animation: lineExpand 0.8s ease-out 1s forwards;
+      transform-origin: center;
+      transform: translateX(-50%) scaleX(0);
+    }
+    
+    @keyframes lineExpand {
+      to { transform: translateX(-50%) scaleX(1); }
+    }
+    
     .auth-header p { 
       color: #666; 
-      font-size: 1.1rem; 
+      font-size: 0.95rem; 
+      animation: fadeIn 0.8s ease-out 1.2s forwards;
+      opacity: 0;
     }
     
     .role-badges {
       display: flex;
       justify-content: center;
-      gap: 1rem;
-      margin-bottom: 2rem;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
       flex-wrap: wrap;
+      animation: fadeInUp 0.8s ease-out 1.4s forwards;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    
+    @keyframes fadeInUp {
+      to { opacity: 1; transform: translateY(0); }
     }
     
     .role-badge {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
       background: #f8f9fa;
-      border-radius: 20px;
-      font-size: 0.9rem;
+      border-radius: 18px;
+      font-size: 0.75rem;
       color: #667eea;
-      border: 2px solid #e0e0e0;
+      border: 1.5px solid #e0e0e0;
       transition: all 0.3s ease;
+      animation: badgePulse 2s infinite 2s;
+    }
+    
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1); }
     }
     
     .role-badge:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+      transform: translateY(-2px) scale(1.1);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
       border-color: #667eea;
+      animation: none;
     }
     
     .role-badge i {
-      font-size: 1rem;
+      font-size: 0.8rem;
     }
     
     .role-badge.accountant {
       color: #10b981;
       border-color: #a7f3d0;
+      animation-delay: 2.1s;
     }
     
     .role-badge.director {
       color: #667eea;
       border-color: #c7d2fe;
+      animation-delay: 1.8s;
     }
     
     .role-badge.secretary {
       color: #8b5cf6;
       border-color: #ddd6fe;
+      animation-delay: 2.4s;
     }
     
     .role-badge.teacher {
       color: #f59e0b;
       border-color: #fde68a;
+      animation-delay: 2.7s;
     }
     
     .auth-form { 
-      animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0;
+      animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) 1.6s forwards;
+    }
+    
+    @keyframes fadeIn {
+      to { opacity: 1; }
     }
     
     .input-group { 
       margin-bottom: 1.8rem; 
       position: relative;
+      animation: slideIn 0.6s ease-out forwards;
+      opacity: 0;
+      transform: translateX(-20px);
     }
+    
+    .input-group:nth-child(1) { animation-delay: 1.8s; }
+    .input-group:nth-child(2) { animation-delay: 2s; }
+    
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
     .input-group label { 
       display: block; 
       margin-bottom: 0.8rem; 
@@ -152,6 +240,29 @@
       transform: translateY(-2px);
     }
     
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+      animation: fadeIn 0.8s ease-out 2.2s forwards;
+      opacity: 0;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #667eea;
+      cursor: pointer;
+    }
+    
+    .checkbox-group label {
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: #666;
+      user-select: none;
+    }
+    
     .btn-primary { 
       width: 100%; 
       padding: 1.2rem; 
@@ -171,7 +282,33 @@
       position: relative;
       overflow: hidden;
       z-index: 1;
+      opacity: 0;
+      animation: buttonAppear 0.8s ease-out 2.4s forwards, buttonFloat 3s ease-in-out 3s infinite;
+      /* SÉCURITÉ : Le bouton reste toujours visible et fonctionnel */
+      visibility: visible !important;
+      display: flex !important;
     }
+    
+    @keyframes buttonAppear {
+      0% { 
+        opacity: 0; 
+        transform: translateY(20px) scale(0.9); 
+      }
+      70% { 
+        opacity: 1; 
+        transform: translateY(-5px) scale(1.05); 
+      }
+      100% { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+      }
+    }
+    
+    @keyframes buttonFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+    
     .btn-primary::before {
       content: '';
       position: absolute;
@@ -189,11 +326,24 @@
     .btn-primary:hover { 
       transform: translateY(-4px); 
       box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4); 
+      animation: buttonFloatHover 2s ease-in-out infinite;
+    }
+    
+    @keyframes buttonFloatHover {
+      0%, 100% { transform: translateY(-4px); }
+      50% { transform: translateY(-6px); }
+    }
+    
+    .btn-primary:active { 
+      transform: translateY(-2px) scale(0.98);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3); 
     }
     .btn-primary:disabled { 
       opacity: 0.6; 
       cursor: not-allowed; 
       transform: none !important;
+      box-shadow: none;
+      animation: none;
     }
     
     .alert { 
@@ -203,7 +353,14 @@
       display: none; 
       position: relative;
       overflow: hidden;
+      animation: alertSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
+    
+    @keyframes alertSlideIn {
+      from { transform: translateX(-100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
     .alert::before {
       content: '';
       position: absolute;
@@ -233,6 +390,11 @@
       animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
     }
     
+    @keyframes slideDown { 
+      from { transform: translateY(-30px); opacity: 0; } 
+      to { transform: translateY(0); opacity: 1; } 
+    }
+    
     .info-box { 
       background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); 
       border-left: 5px solid #667eea; 
@@ -241,7 +403,15 @@
       margin-bottom: 2rem; 
       position: relative;
       overflow: hidden;
+      animation: infoBoxPulse 4s ease-in-out infinite 1.2s, fadeIn 0.8s ease-out 1.2s forwards;
+      opacity: 0;
     }
+    
+    @keyframes infoBoxPulse {
+      0%, 100% { box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1); }
+      50% { box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2); }
+    }
+    
     .info-box::before {
       content: '';
       position: absolute;
@@ -297,43 +467,73 @@
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
+      animation: fadeIn 0.8s ease-out 2.6s forwards;
+      opacity: 0;
     }
     
     .access-portal-btn:hover {
       color: #764ba2;
       text-decoration: underline;
-    }
-    
-    @keyframes fadeIn { 
-      from { opacity: 0; transform: translateY(20px); } 
-      to { opacity: 1; transform: translateY(0); } 
-    }
-    @keyframes slideDown { 
-      from { transform: translateY(-30px); opacity: 0; } 
-      to { transform: translateY(0); opacity: 1; } 
+      transform: translateY(-2px);
     }
     
     .loader {
       display: none;
-      text-align: center;
-      padding: 2rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      backdrop-filter: blur(2px);
     }
     
     .loader.active {
-      display: block;
+      display: flex;
+      animation: fadeInLoader 0.3s ease-in-out;
     }
     
     .spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
+      width: 80px;
+      height: 80px;
+      border: 6px solid rgba(255, 255, 255, 0.2);
+      border-top: 6px solid #667eea;
+      border-right: 6px solid #764ba2;
       border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 1rem auto;
+      animation: spin 1.2s linear infinite;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .loader-text {
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 1px;
+      animation: pulse 1.5s ease-in-out infinite;
     }
     
     @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes fadeInLoader {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+    
+    @keyframes spinIt {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
@@ -353,7 +553,6 @@
       }
     }
 
-    /* Téléphones petits (320px - 480px) */
     @media (max-width: 480px) {
       body {
         padding: 10px;
@@ -387,7 +586,7 @@
         text-align: center;
       }
 
-      .form-group {
+      .input-group {
         margin-bottom: 1rem;
       }
 
@@ -396,55 +595,21 @@
       }
 
       input[type="email"],
-      input[type="password"],
-      select {
+      input[type="password"] {
         font-size: 16px;
         padding: 0.75rem;
         width: 100%;
         border-radius: 8px;
       }
 
-      .remember-forgot {
-        flex-direction: column;
-        gap: 0.5rem;
-        font-size: 0.85rem;
-      }
-
-      button {
+      .btn-primary {
         padding: 0.9rem;
         font-size: 1rem;
         width: 100%;
         border-radius: 8px;
       }
-
-      .divider {
-        margin: 1rem 0;
-        font-size: 0.9rem;
-      }
-
-      .social-login {
-        flex-direction: column;
-        gap: 0.75rem;
-      }
-
-      .social-btn {
-        width: 100%;
-        padding: 0.75rem;
-        font-size: 0.9rem;
-      }
-
-      .footer-links {
-        flex-direction: column;
-        gap: 0.5rem;
-        font-size: 0.8rem;
-      }
-
-      .footer-links a {
-        display: inline-block;
-      }
     }
 
-    /* Tablettes (481px - 768px) */
     @media (min-width: 481px) and (max-width: 768px) {
       .auth-container {
         padding: 2rem 1.5rem;
@@ -456,18 +621,109 @@
       }
 
       input[type="email"],
-      input[type="password"],
-      select {
+      input[type="password"] {
         font-size: 15px;
       }
 
-      button {
+      .btn-primary {
         padding: 0.85rem;
+      }
+    }
+
+    .it-button-container {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1000;
+      animation: slideInLeft 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 3s forwards;
+      opacity: 0;
+      transform: translateX(-100px);
+    }
+    
+    @keyframes slideInLeft {
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    .it-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 50%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      position: relative;
+      animation: pulseIt 2s infinite 3.5s;
+    }
+    
+    .it-button i {
+      font-size: 1.5rem;
+    }
+    
+    .it-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-bottom: 10px;
+      background: #333;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    @keyframes pulseIt {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+      }
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.8);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .it-button-container {
+        bottom: 15px;
+        left: 15px;
+      }
+      .it-button {
+        width: 45px;
+        height: 45px;
+      }
+      .it-button i {
+        font-size: 1.3rem;
+      }
+      .it-tooltip {
+        font-size: 0.75rem;
+        padding: 5px 10px;
       }
     }
   </style>
 </head>
 <body>
+  <!-- Loader de chargement -->
+  <div id="loadingLoader" class="loader">
+    <div class="spinner"></div>
+    <div class="loader-text">Connexion en cours...</div>
+  </div>
+
   <div class="auth-container">
     <div class="auth-header">
       <h1><i class="fas fa-graduation-cap"></i> EDEN FAMILY SCHOOL</h1>
@@ -501,7 +757,7 @@
     </div>
 
     <!-- Formulaire de Connexion -->
-    <div class="auth-form active">
+    <div class="auth-form">
       <div class="input-group">
         <label for="loginEmail"><i class="fas fa-envelope"></i> Email professionnel</label>
         <input type="email" id="loginEmail" placeholder="prenom.nom@edenschool.edu" required>
@@ -511,32 +767,26 @@
         <input type="password" id="loginPassword" placeholder="Votre mot de passe professionnel" required>
       </div>
       
-      <div class="checkbox-group" style="margin-bottom: 1.5rem;">
-        <input type="checkbox" id="rememberMe">
-        <label for="rememberMe">Se souvenir de moi sur cet appareil</label>
-      </div>
-      
-      <button class="btn-primary" onclick="login()">
+      <button class="btn-primary" onclick="login(this)">
         <i class="fas fa-sign-in-alt"></i> Connexion Staff
       </button>
     </div>
 
-    <div class="separator">
-      <span>OU</span>
-    </div>
-    <!-- Bouton d'initialisation (temporaire pour développement) -->
-    <div style="text-align: center; margin: 1rem 0;">
-      <button type="button" onclick="initializeTestUsers()" 
-              style="background: #f59e0b; color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-        🛠️ Initialiser utilisateurs de test
-      </button>
-    </div>
     <a href="index.html" class="access-portal-btn">
       <i class="fas fa-user-friends"></i> Accéder au portail parents
     </a>
   </div>
 
+  <!-- Bouton IT animé (coin inférieur gauche) -->
+  <div class="it-button-container">
+    <a href="IT.html" class="it-button">
+      <i class="fas fa-cog"></i>
+      <span class="it-tooltip">Accès IT</span>
+    </a>
+  </div>
+
   <script>
+    // Configuration Firebase corrigée
     const firebaseConfig = {
       apiKey: "AIzaSyCx6kmJ59x0tLt4vh_3czvEEQrtw4aWFHs",
       authDomain: "edendatabase-7e1ed.firebaseapp.com",
@@ -548,15 +798,30 @@
       measurementId: "G-XB192PCMV7"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    // Initialiser Firebase
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    
     const auth = firebase.auth();
     const realtimeDB = firebase.database();
+
+    console.log('✅ Firebase initialisé avec succès');
 
     // Gestion des alertes
     function showAlert(message, type) {
       const alertBox = document.getElementById('alertBox');
       alertBox.textContent = message;
       alertBox.className = `alert ${type} show`;
+      
+      // Ajouter un effet de vibration en cas d'erreur
+      if (type === 'error') {
+        const container = document.querySelector('.auth-container');
+        container.style.animation = 'shake 0.5s ease-in-out';
+        setTimeout(() => {
+          container.style.animation = '';
+        }, 500);
+      }
       
       setTimeout(() => {
         hideAlert();
@@ -568,67 +833,219 @@
       alertBox.classList.remove('show');
     }
 
-    // Fonction pour obtenir le rôle de l'utilisateur et rediriger (version staff)
+    // Ajouter l'animation de shake au CSS dynamiquement
+    if (!document.querySelector('#shake-animation')) {
+      const style = document.createElement('style');
+      style.id = 'shake-animation';
+      style.textContent = `
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+          20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Fonction pour obtenir le rôle de l'utilisateur et rediriger
     async function getUserRoleAndRedirect(user, email) {
       const uid = user.uid;
       const emailLower = email.toLowerCase();
 
       try {
-        // Vérifier si c'est un directeur (priorité la plus haute)
-        const directorRef = realtimeDB.ref('directors/' + uid);
-        const directorSnapshot = await directorRef.once('value');
-        if (directorSnapshot.exists()) {
-          const directorData = directorSnapshot.val();
-          if (directorData.role === 'director' || directorData.role === 'admin') {
+        console.log('🔍 Vérification du rôle pour UID:', uid);
+        console.log('📊 Recherche dans les collections Firebase...');
+        
+        // Vérifier d'abord dans "users" (collection principale)
+        console.log('📍 Vérification collection "users"...');
+        const userRef = realtimeDB.ref('users/' + uid);
+        const userSnapshot = await userRef.once('value');
+        console.log('👤 Utilisateur trouvé dans "users"?', userSnapshot.exists());
+        
+        if (userSnapshot.exists()) {
+          const userData = userSnapshot.val();
+          
+          // Vérifier que tous les champs requis existent
+          if (!userData.email || !userData.name || !userData.role) {
+            console.warn('⚠️ Données utilisateur incomplètes');
+            showAlert('Données utilisateur incomplètes. Contactez l\'administrateur.', 'error');
+            return false;
+          }
+          
+          // Vérifier que l'email correspond
+          if (userData.email.toLowerCase() !== email.toLowerCase()) {
+            console.warn('⚠️ Email ne correspond pas aux données Firebase');
+            showAlert('Email ne correspond pas aux données enregistrées.', 'error');
+            return false;
+          }
+          
+          const userRole = userData.role;
+          console.log('📊 Rôle trouvé:', userRole);
+          console.log('✅ Données utilisateur validées:', userData);
+          
+          // Directeur - rôle peut être "director" ou "admin"
+          if (userRole === 'director' || userRole === 'admin') {
+            const secureUser = {
+              uid: uid,
+              email: email,
+              role: userRole,
+              name: userData.name || 'Directeur'
+            };
+            localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            console.log('✅ Directeur authentifié, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail directeur...', 'success');
-            setTimeout(() => {
-              window.location.href = 'director.html';
-            }, 1500);
+            
+            // Rediriger après 1 seconde
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('🔄 Redirection vers director.html...');
+            window.location.href = './director.html';
+            return true;
+          }
+          
+          // Secrétaire
+          if (userRole === 'secretary') {
+            const secureUser = {
+              uid: uid,
+              email: email,
+              role: 'secretary',
+              name: userData.name || 'Secrétaire'
+            };
+            localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            console.log('✅ Secrétaire authentifiée, redirection...');
+            showAlert('Connexion réussie! Redirection vers le portail secrétaire...', 'success');
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('🔄 Redirection vers secretary.html...');
+            window.location.href = './secretary.html';
+            return true;
+          }
+          
+          // Comptable/Accountant
+          if (userRole === 'accountant') {
+            const secureUser = {
+              uid: uid,
+              email: email,
+              role: 'accountant',
+              name: userData.name || 'Comptable'
+            };
+            localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            console.log('✅ Comptable authentifié, redirection...');
+            showAlert('Connexion réussie! Redirection vers le portail comptable...', 'success');
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('🔄 Redirection vers comptable.html...');
+            window.location.href = './comptable.html';
+            return true;
+          }
+          
+          // Enseignant
+          if (userRole === 'teacher') {
+            const secureUser = {
+              uid: uid,
+              email: email,
+              role: 'teacher',
+              name: userData.name || 'Enseignant'
+            };
+            localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            console.log('✅ Enseignant authentifié, redirection...');
+            showAlert('Connexion réussie! Redirection vers le portail enseignant...', 'success');
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('🔄 Redirection vers teacher_clean.html...');
+            window.location.href = './teacher_clean.html';
             return true;
           }
         }
-
-        // Vérifier si c'est un secrétaire ou comptable
+        
+        // Si pas trouvé dans "users", vérifier dans "secretaries"
+        console.log('📍 Vérification collection "secretaries"...');
         const secretaryRef = realtimeDB.ref('secretaries/' + uid);
         const secretarySnapshot = await secretaryRef.once('value');
+        console.log('👤 Secrétaire/Comptable trouvé dans "secretaries"?', secretarySnapshot.exists());
+        
         if (secretarySnapshot.exists()) {
           const secretaryData = secretarySnapshot.val();
-          if (secretaryData.role === 'secretary') {
+          const secretaryRole = secretaryData.role;
+          console.log('📊 Rôle trouvé:', secretaryRole);
+          console.log('📋 Données secrétaire:', secretaryData);
+          
+          if (secretaryRole === 'secretary') {
+            const secureUser = {
+              uid: uid,
+              email: email,
+              role: 'secretary',
+              name: secretaryData.name || 'Secrétaire'
+            };
+            localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            console.log('✅ Secrétaire authentifiée, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail secrétaire...', 'success');
+            
             setTimeout(() => {
-              window.location.href = 'secretary.html';
-            }, 1500);
+              console.log('🔄 Redirection vers secretary.html...');
+              window.location.replace('secretary.html');
+            }, 1000);
             return true;
           }
-          if (secretaryData.role === 'accountant') {
+          
+          if (secretaryRole === 'accountant') {
+            const secureUser = {
+              uid: uid,
+              email: email,
+              role: 'accountant',
+              name: secretaryData.name || 'Comptable'
+            };
+            localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            console.log('✅ Comptable authentifié, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail comptable...', 'success');
+            
             setTimeout(() => {
-              window.location.href = 'comptable.html';
-            }, 1500);
+              console.log('🔄 Redirection vers comptable.html...');
+              window.location.replace('comptable.html');
+            }, 1000);
             return true;
           }
         }
-
-        // Vérifier si c'est un enseignant
+        
+        // Vérifier si c'est un enseignant dans "teachers"
+        console.log('📍 Vérification collection "teachers"...');
         const teacherRef = realtimeDB.ref('teachers/' + uid);
         const teacherSnapshot = await teacherRef.once('value');
+        console.log('👤 Enseignant trouvé dans "teachers"?', teacherSnapshot.exists());
+        
         if (teacherSnapshot.exists()) {
           const teacherData = teacherSnapshot.val();
-          if (teacherData.role === 'teacher') {
+          const teacherRole = teacherData.role;
+          console.log('📊 Rôle trouvé:', teacherRole);
+          console.log('📋 Données enseignant:', teacherData);
+          
+          if (teacherRole === 'teacher') {
+            const secureUser = {
+              uid: uid,
+              email: email,
+              role: 'teacher',
+              name: teacherData.name || 'Enseignant'
+            };
+            localStorage.setItem('currentUser', JSON.stringify(secureUser));
+            console.log('✅ Enseignant authentifié, redirection...');
             showAlert('Connexion réussie! Redirection vers le portail enseignant...', 'success');
+            
             setTimeout(() => {
-              window.location.href = 'teacher_clean.html';
-            }, 1500);
+              console.log('🔄 Redirection vers teacher_clean.html...');
+              window.location.replace('teacher_clean.html');
+            }, 1000);
             return true;
           }
         }
-
+        
         // Vérifier si c'est un parent (interdire l'accès depuis ce portail)
+        console.log('📍 Vérification collection "parents"...');
         const parentRef = realtimeDB.ref('parents/' + uid);
         const parentSnapshot = await parentRef.once('value');
+        
         if (parentSnapshot.exists()) {
           const parentData = parentSnapshot.val();
           if (parentData.role === 'parent') {
+            console.log('❌ Parent - accès refusé');
             showAlert('Accès réservé au personnel uniquement. Veuillez utiliser le portail parents.', 'error');
             await auth.signOut();
             return false;
@@ -636,24 +1053,26 @@
         }
 
         // Si aucun rôle staff trouvé
+        console.log('❌ Aucun rôle staff trouvé dans aucune collection');
         showAlert('Accès refusé. Vos identifiants ne sont pas reconnus comme membre du personnel.', 'error');
         await auth.signOut();
         return false;
 
       } catch (error) {
-        console.error('Erreur lors de la vérification du rôle:', error);
-        showAlert('Erreur technique lors de la vérification des droits d\'accès.', 'error');
+        console.error('❌ Erreur lors de la vérification du rôle:', error);
+        showAlert('Erreur technique lors de la vérification du rôle.', 'error');
         await auth.signOut();
         return false;
       }
     }
 
     // Connexion
-    async function login() {
+    async function login(buttonElement = null) {
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
-      const button = event.currentTarget;
-      const originalText = button.innerHTML;
+      const button = buttonElement || document.querySelector('.btn-primary');
+      const loadingLoader = document.getElementById('loadingLoader');
+      const originalText = button?.innerHTML || '<i class="fas fa-sign-in-alt"></i> Connexion Staff';
 
       if (!email || !password) {
         showAlert('Veuillez remplir tous les champs.', 'error');
@@ -661,157 +1080,93 @@
       }
 
       // Vérifier si l'email est probablement un email professionnel
-      if (!email.includes('@')) {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(email)) {
         showAlert('Veuillez entrer une adresse email valide.', 'error');
         return;
       }
 
+      // Afficher le loader
+      if (loadingLoader) {
+        loadingLoader.classList.add('active');
+      }
+
       // Désactiver le bouton pendant la connexion
-      button.disabled = true;
-      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion en cours...';
+      if (button) {
+        button.disabled = true;
+        button.style.pointerEvents = 'none';
+        button.innerHTML = '<i class="fas fa-spinner" style="animation: spin 1s linear infinite;"></i> Connexion...';
+      }
 
       try {
+        console.log('🔐 Tentative de connexion pour:', email);
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         const user = userCredential.user;
+        console.log('✅ Authentification Firebase réussie');
+        console.log('👤 UID utilisateur:', user.uid);
+        console.log('📧 Email utilisateur:', user.email);
+        console.log('🔍 Vérification du rôle en cours...');
+        
+        // Animation de succès
+        if (button) {
+          button.innerHTML = '<i class="fas fa-check"></i> Connexion réussie!';
+          button.style.background = 'linear-gradient(135deg, #10b981, #047857)';
+        }
+        
         const isStaff = await getUserRoleAndRedirect(user, email);
         
         if (!isStaff) {
           // Réactiver le bouton si la connexion échoue
-          button.disabled = false;
-          button.innerHTML = originalText;
+          if (button) {
+            button.disabled = false;
+            button.innerHTML = originalText;
+            button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+          }
+          if (loadingLoader) {
+            loadingLoader.classList.remove('active');
+          }
         }
       } catch (error) {
-        console.error('Erreur de connexion:', error);
+        console.error('❌ Erreur de connexion:', error.code, error.message);
         
         // Réactiver le bouton
-        button.disabled = false;
-        button.innerHTML = originalText;
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = originalText;
+          button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+        }
+        
+        // Cacher le loader
+        if (loadingLoader) {
+          loadingLoader.classList.remove('active');
+        }
         
         let errorMessage = 'Erreur de connexion. ';
         
         switch(error.code) {
           case 'auth/user-not-found':
-            errorMessage += 'Aucun compte staff trouvé avec cet email.';
+            errorMessage = 'Email non trouvé. Vérifiez votre adresse email.';
             break;
           case 'auth/wrong-password':
-            errorMessage += 'Mot de passe incorrect.';
+            errorMessage = 'Mot de passe incorrect.';
             break;
           case 'auth/invalid-email':
-            errorMessage += 'Format d\'email invalide.';
+            errorMessage = 'Format d\'email invalide.';
             break;
           case 'auth/too-many-requests':
-            errorMessage += 'Trop de tentatives échouées. Veuillez réessayer plus tard.';
+            errorMessage = 'Trop de tentatives échouées. Veuillez réessayer plus tard.';
             break;
           case 'auth/user-disabled':
-            errorMessage += 'Ce compte a été désactivé. Contactez l\'administration.';
+            errorMessage = 'Ce compte a été désactivé. Contactez l\'administration.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
             break;
           default:
-            errorMessage += 'Erreur technique. Contactez l\'administration.';
+            errorMessage = 'Erreur de connexion. Vérifiez vos identifiants.';
         }
         
         showAlert(errorMessage, 'error');
-      }
-    }
-
-    // Fonction d'initialisation des utilisateurs de test (à supprimer en production)
-    async function initializeTestUsers() {
-      try {
-        // Créer un directeur de test
-        const directorEmail = 'director@edenschool.edu';
-        const directorPassword = 'director123';
-        
-        const directorCredential = await auth.createUserWithEmailAndPassword(directorEmail, directorPassword);
-        const directorUid = directorCredential.user.uid;
-        
-        const directorData = {
-          id: directorUid,
-          name: 'Directeur Test',
-          email: directorEmail,
-          role: 'director',
-          createdAt: new Date().toISOString()
-        };
-        
-        await realtimeDB.ref('directors/' + directorUid).set(directorData);
-        console.log('Directeur de test créé:', directorData);
-        
-        // Créer un secrétaire de test
-        await auth.signOut();
-        const secretaryEmail = 'secretary@edenschool.edu';
-        const secretaryPassword = 'secretary123';
-        
-        const secretaryCredential = await auth.createUserWithEmailAndPassword(secretaryEmail, secretaryPassword);
-        const secretaryUid = secretaryCredential.user.uid;
-        
-        const secretaryData = {
-          id: secretaryUid,
-          name: 'Secrétaire Test',
-          email: secretaryEmail,
-          phone: '+250123456789',
-          role: 'secretary',
-          department: 'administration',
-          schoolCode: 'EDF-KA',
-          userRole: 'secretary',
-          createdAt: new Date().toISOString(),
-          status: 'active'
-        };
-        
-        await realtimeDB.ref('secretaries/' + secretaryUid).set(secretaryData);
-        console.log('Secrétaire de test créé:', secretaryData);
-        
-        // Créer un comptable de test
-        await auth.signOut();
-        const accountantEmail = 'accountant@edenschool.edu';
-        const accountantPassword = 'accountant123';
-        
-        const accountantCredential = await auth.createUserWithEmailAndPassword(accountantEmail, accountantPassword);
-        const accountantUid = accountantCredential.user.uid;
-        
-        const accountantData = {
-          id: accountantUid,
-          name: 'Comptable Test',
-          email: accountantEmail,
-          phone: '+250123456789',
-          role: 'accountant',
-          department: 'finance',
-          schoolCode: 'EDF-KA',
-          userRole: 'secretary',
-          createdAt: new Date().toISOString(),
-          status: 'active'
-        };
-        
-        await realtimeDB.ref('secretaries/' + accountantUid).set(accountantData);
-        console.log('Comptable de test créé:', accountantData);
-        
-        // Créer un enseignant de test
-        await auth.signOut();
-        const teacherEmail = 'teacher@edenschool.edu';
-        const teacherPassword = 'teacher123';
-        
-        const teacherCredential = await auth.createUserWithEmailAndPassword(teacherEmail, teacherPassword);
-        const teacherUid = teacherCredential.user.uid;
-        
-        const teacherData = {
-          id: teacherUid,
-          name: 'Enseignant Test',
-          email: teacherEmail,
-          phone: '+250123456789',
-          section: 'maternelle',
-          classe: '1ère A Maternelle',
-          schoolCode: 'EDF-KA',
-          role: 'teacher',
-          createdAt: new Date().toISOString(),
-          status: 'active'
-        };
-        
-        await realtimeDB.ref('teachers/' + teacherUid).set(teacherData);
-        console.log('Enseignant de test créé:', teacherData);
-        
-        await auth.signOut();
-        showAlert('Utilisateurs de test créés avec succès! Vous pouvez maintenant vous connecter.', 'success');
-        
-      } catch (error) {
-        console.error('Erreur lors de l\'initialisation:', error);
-        showAlert('Erreur lors de l\'initialisation des utilisateurs de test.', 'error');
       }
     }
 
@@ -819,6 +1174,123 @@
     document.addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         login();
+      }
+    });
+
+    
+    // Animation pour le bouton IT
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('📋 Page chargée avec succès');
+      
+      // Focus sur le champ email
+      setTimeout(() => {
+        const emailInput = document.getElementById('loginEmail');
+        if (emailInput) {
+          emailInput.focus();
+          // Petit effet de pulse sur le champ email
+          emailInput.style.boxShadow = '0 0 0 2px rgba(102, 126, 234, 0.3)';
+          setTimeout(() => {
+            emailInput.style.boxShadow = '';
+          }, 1000);
+        }
+      }, 500);
+
+      // Animation du bouton IT
+      const itButton = document.querySelector('.it-button');
+      if (itButton) {
+        const itIcon = itButton.querySelector('i');
+        
+        itButton.addEventListener('mouseenter', function() {
+          // Afficher le tooltip
+          const tooltip = this.querySelector('.it-tooltip');
+          tooltip.style.opacity = '1';
+          tooltip.style.visibility = 'visible';
+          tooltip.style.transform = 'translateX(-50%) translateY(-5px)';
+          
+          // Animation de l'icône
+          itIcon.style.animation = 'spinIt 1s linear infinite';
+          this.style.transform = 'scale(1.2) rotate(5deg)';
+          this.style.boxShadow = '0 8px 30px rgba(102, 126, 234, 0.9)';
+        });
+        
+        itButton.addEventListener('mouseleave', function() {
+          // Cacher le tooltip
+          const tooltip = this.querySelector('.it-tooltip');
+          tooltip.style.opacity = '0';
+          tooltip.style.visibility = 'hidden';
+          tooltip.style.transform = 'translateX(-50%) translateY(0)';
+          
+          // Arrêter la rotation et réinitialiser
+          itIcon.style.animation = 'pulseIt 2s infinite 3.5s';
+          this.style.transform = 'scale(1) rotate(0deg)';
+        });
+        
+        // Animation de clic
+        itButton.addEventListener('click', function(e) {
+          // Effet de clic
+          this.style.transform = 'scale(0.9) rotate(-5deg)';
+          setTimeout(() => {
+            this.style.transform = 'scale(1) rotate(0deg)';
+          }, 200);
+        });
+      }
+
+      // Garantir que le bouton de connexion est toujours visible
+      const loginButton = document.querySelector('.btn-primary');
+      if (loginButton) {
+        // Forcer la visibilité du bouton
+        loginButton.style.visibility = 'visible';
+        loginButton.style.opacity = '1';
+        loginButton.style.display = 'flex';
+        
+        // Surveiller les changements de style pour prévenir la disparition
+        const observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && 
+                (mutation.attributeName === 'style' || 
+                 mutation.attributeName === 'class')) {
+              // Vérifier que le bouton reste visible
+              const btn = document.querySelector('.btn-primary');
+              if (btn && (btn.style.visibility === 'hidden' || 
+                          btn.style.display === 'none' || 
+                          btn.style.opacity === '0')) {
+                console.warn('⚠️ Bouton caché détecté - restauration...');
+                btn.style.visibility = 'visible';
+                btn.style.display = 'flex';
+                btn.style.opacity = '1';
+              }
+            }
+          });
+        });
+        
+        observer.observe(loginButton, { 
+          attributes: true, 
+          attributeFilter: ['style', 'class'] 
+        });
+      }
+
+      // Animation de flottement périodique pour les badges
+      setInterval(() => {
+        const badges = document.querySelectorAll('.role-badge');
+        badges.forEach((badge, index) => {
+          setTimeout(() => {
+            badge.style.transform = 'translateY(-3px)';
+            setTimeout(() => {
+              badge.style.transform = 'translateY(0)';
+            }, 300);
+          }, index * 200);
+        });
+      }, 8000);
+    });
+
+    // S'assurer que le bouton est visible au chargement de la page
+    window.addEventListener('load', function() {
+      const loginButton = document.querySelector('.btn-primary');
+      if (loginButton) {
+        // Appliquer un style de secours pour garantir la visibilité
+        loginButton.style.setProperty('visibility', 'visible', 'important');
+        loginButton.style.setProperty('opacity', '1', 'important');
+        loginButton.style.setProperty('display', 'flex', 'important');
       }
     });
   </script>

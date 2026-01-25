@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Eden Family School - Portail Parents</title>
+  <title>Eden Family School</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="responsive.css">
   <style>
     :root {
       --primary-color: #667eea;
@@ -18,6 +19,9 @@
       --white: #ffffff;
       --shadow: 0 5px 20px rgba(0,0,0,0.1);
       --transition: all 0.3s ease;
+      --branch-kimisagara: #4CAF50;
+      --branch-gisozi: #2196F3;
+      --branch-kacyiru: #9C27B0;
     }
 
     * {
@@ -1630,6 +1634,631 @@
         font-size: 15px;
       }
     }
+
+    /* ===== CSS SECTION BRANCHES ===== */
+    :root {
+      --branch-kimisagara: #4CAF50;
+      --branch-gisozi: #2196F3;
+      --branch-kacyiru: #9C27B0;
+    }
+
+    /* Section Branches */
+    #branches {
+      padding: 5rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    }
+
+    .branches-intro {
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto 3rem;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    .branches-intro h2 {
+      font-size: 2.8rem;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    .branches-intro h2::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 4px;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      border-radius: 2px;
+    }
+
+    .branches-intro p {
+      font-size: 1.1rem;
+      color: #666;
+      margin-top: 1.5rem;
+      line-height: 1.8;
+    }
+
+    .branches-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2.5rem;
+      margin: 4rem 0;
+    }
+
+    .branch-card {
+      background: var(--white);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      position: relative;
+      animation: slideUp 0.8s ease-out forwards;
+      opacity: 0;
+      transform: translateY(30px);
+      border: 2px solid transparent;
+    }
+
+    .branch-card:nth-child(1) { animation-delay: 0.2s; }
+    .branch-card:nth-child(2) { animation-delay: 0.4s; }
+    .branch-card:nth-child(3) { animation-delay: 0.6s; }
+
+    .branch-card.kimisagara {
+      border-top: 5px solid var(--branch-kimisagara);
+    }
+
+    .branch-card.gisozi {
+      border-top: 5px solid var(--branch-gisozi);
+    }
+
+    .branch-card.kacyiru {
+      border-top: 5px solid var(--branch-kacyiru);
+    }
+
+    .branch-card:hover {
+      transform: translateY(-15px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      border-color: rgba(0,0,0,0.1);
+    }
+
+    .branch-image {
+      position: relative;
+      height: 250px;
+      overflow: hidden;
+    }
+
+    .branch-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: var(--transition);
+    }
+
+    .branch-card:hover .branch-image img {
+      transform: scale(1.1);
+    }
+
+    .branch-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .branch-card:hover .branch-overlay {
+      opacity: 1;
+    }
+
+    .branch-icon {
+      width: 60px;
+      height: 60px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      animation: pulse 2s infinite;
+    }
+
+    .branch-content {
+      padding: 2rem;
+    }
+
+    .branch-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .branch-badge {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+      color: var(--white);
+      font-size: 1.3rem;
+      font-weight: 600;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .branch-badge.kimisagara {
+      background: linear-gradient(135deg, var(--branch-kimisagara), #2E7D32);
+    }
+
+    .branch-badge.gisozi {
+      background: linear-gradient(135deg, var(--branch-gisozi), #0D47A1);
+    }
+
+    .branch-badge.kacyiru {
+      background: linear-gradient(135deg, var(--branch-kacyiru), #6A1B9A);
+    }
+
+    .branch-title {
+      font-size: 1.8rem;
+      color: var(--dark-text);
+      margin-bottom: 0.5rem;
+    }
+
+    .branch-subtitle {
+      color: #666;
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+
+    .branch-info {
+      margin: 1.5rem 0;
+    }
+
+    .branch-info-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.8rem;
+      color: #555;
+      transition: var(--transition);
+    }
+
+    .branch-info-item:hover {
+      transform: translateX(5px);
+      color: var(--primary-color);
+    }
+
+    .branch-info-item i {
+      width: 20px;
+      margin-right: 10px;
+      transition: var(--transition);
+    }
+
+    .branch-info-item:hover i {
+      color: var(--primary-color);
+      transform: scale(1.2);
+    }
+
+    .branch-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .branch-btn {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .branch-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .branch-btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .branch-btn.gallery {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: var(--white);
+      border: 2px solid transparent;
+    }
+
+    .branch-btn.directions {
+      background: transparent;
+      border: 2px solid var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .branch-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    .branch-btn.gallery:hover {
+      background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+      border-color: var(--secondary-color);
+    }
+
+    .branch-btn.directions:hover {
+      background: var(--primary-color);
+      color: var(--white);
+    }
+
+    /* Features Section */
+    .branches-features {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+      border-radius: 20px;
+      padding: 3rem;
+      margin-top: 4rem;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .branches-features::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: float 20s linear infinite;
+      opacity: 0.5;
+    }
+
+    .features-title {
+      text-align: center;
+      font-size: 2.2rem;
+      color: var(--primary-color);
+      margin-bottom: 3rem;
+      position: relative;
+      z-index: 1;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-item {
+      background: var(--white);
+      padding: 2rem;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      animation: fadeInUp 0.8s ease-out forwards;
+      opacity: 0;
+      border: 2px solid transparent;
+    }
+
+    .feature-item:nth-child(1) { animation-delay: 0.1s; }
+    .feature-item:nth-child(2) { animation-delay: 0.2s; }
+    .feature-item:nth-child(3) { animation-delay: 0.3s; }
+    .feature-item:nth-child(4) { animation-delay: 0.4s; }
+
+    .feature-item:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+      border-color: var(--primary-color);
+    }
+
+    .feature-icon {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 1.5rem;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      font-size: 1.8rem;
+      transition: var(--transition);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .feature-item:hover .feature-icon {
+      transform: rotateY(180deg) scale(1.1);
+    }
+
+    .feature-item h4 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: var(--dark-text);
+      font-weight: 600;
+    }
+
+    .feature-item p {
+      color: #666;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Map Section */
+    .branches-map {
+      margin-top: 4rem;
+      background: var(--white);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      animation: fadeIn 1s ease-out;
+      border: 2px solid rgba(0,0,0,0.1);
+    }
+
+    .map-container {
+      position: relative;
+      height: 400px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+    }
+
+    .map-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 2rem;
+      z-index: 2;
+    }
+
+    .map-title {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .map-description {
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin-bottom: 1rem;
+    }
+
+    .map-marker {
+      position: absolute;
+      width: 25px;
+      height: 25px;
+      background: var(--accent-color);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: var(--transition);
+      animation: bounce 2s infinite;
+      z-index: 3;
+      border: 3px solid white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    .map-marker:hover {
+      transform: scale(1.5);
+      background: var(--warning-color);
+      animation: none;
+    }
+
+    .map-marker.kimisagara { top: 30%; left: 45%; background: var(--branch-kimisagara); }
+    .map-marker.gisozi { top: 35%; left: 50%; background: var(--branch-gisozi); }
+    .map-marker.kacyiru { top: 40%; left: 55%; background: var(--branch-kacyiru); }
+
+    .map-marker::after {
+      content: attr(data-branch);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--white);
+      color: var(--dark-text);
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      opacity: 0;
+      transition: var(--transition);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      font-weight: 600;
+      z-index: 4;
+    }
+
+    .map-marker:hover::after {
+      opacity: 1;
+      bottom: 120%;
+    }
+
+    /* Animations spécifiques */
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+      }
+      70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+      }
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0) scale(1);
+      }
+      50% {
+        transform: translateY(-10px) scale(1.1);
+      }
+    }
+
+    @keyframes float {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+      100% {
+        transform: translate(50px, 50px) rotate(360deg);
+      }
+    }
+
+    @keyframes ripple {
+      0% {
+        transform: scale(0);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .branches-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .branches-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .branch-actions {
+        grid-template-columns: 1fr;
+      }
+      
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .branches-features {
+        padding: 2rem 1rem;
+      }
+      
+      .branches-intro h2 {
+        font-size: 2.2rem;
+      }
+      
+      .map-container {
+        height: 300px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #branches {
+        padding: 3rem 1rem;
+      }
+      
+      .branch-card {
+        margin: 0 0.5rem;
+      }
+      
+      .branch-content {
+        padding: 1.5rem;
+      }
+      
+      .branch-title {
+        font-size: 1.5rem;
+      }
+      
+      .features-title {
+        font-size: 1.8rem;
+      }
+      
+      .map-title {
+        font-size: 1.5rem;
+      }
+      
+      .map-description {
+        font-size: 0.9rem;
+      }
+    }
+
+    /* Animation pour les boutons */
+    @keyframes buttonRipple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1737,7 +2366,7 @@
     <div class="carousel-slide active" style="background-image: url('asset/img/love_eden.jpg');">
       <div class="carousel-overlay">
         <div class="carousel-content">
-          <h1><i class="fas fa-book-reader"></i> Bienvenue au Portail Parents</h1>
+          <h1><i class="fas fa-book-reader"></i> Bienvenue a Eden family school </h1>
           <p>Learning by doing - Excellence et Innovation</p>
           <div>
             <button class="carousel-btn" onclick="scrollToSection('galerie')"><i class="fas fa-images"></i> Voir la Galerie</button>
@@ -1778,6 +2407,251 @@
       <span class="carousel-dot" onclick="goToSlide(2)" aria-label="Aller au slide 3"></span>
     </div>
   </section>
+  
+  <!-- Section Nos Branches -->
+  <section id="branches">
+    <div class="branches-intro">
+      <h2><i class="fas fa-map-marker-alt"></i> Nos Branches</h2>
+      <p>Découvrez les trois campus d'Eden Family School à travers Kigali. Chaque branche offre un environnement d'apprentissage spécialement conçu pour répondre aux besoins des jeunes enfants.</p>
+    </div>
+
+    <div class="branches-grid">
+      <!-- Branche Kimisagara -->
+      <div class="branch-card kimisagara">
+        <div class="branch-image">
+          <img src="asset/img/kimisagara.jpg" alt="Eden Family School Kimisagara">
+          <div class="branch-overlay">
+            <div class="branch-icon">
+              <i class="fas fa-child"></i>
+            </div>
+          </div>
+        </div>
+        <div class="branch-content">
+          <div class="branch-header">
+            <div class="branch-badge kimisagara">K</div>
+            <div>
+              <h3 class="branch-title">Kimisagara</h3>
+              <p class="branch-subtitle">École maternelle</p>
+            </div>
+          </div>
+          
+          <div class="branch-levels">
+            <div class="level-badge maternelle">
+              <i class="fas fa-child"></i> Maternelle
+            </div>
+          </div>
+          
+          <div class="branch-info">
+            <div class="branch-info-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>KG 7 Ave, Kimisagara, Kigali</span>
+            </div>
+            <div class="branch-info-item">
+              <i class="fas fa-phone"></i>
+              <span>+250 788 123 456</span>
+            </div>
+            <div class="branch-info-item">
+              <i class="fas fa-envelope"></i>
+              <span>kimisagara@edenfamily.edu.rw</span>
+            </div>
+            <div class="branch-info-item">
+              <i class="fas fa-clock"></i>
+              <span>Lun-Ven: 7h30 - 17h30</span>
+            </div>
+          </div>
+
+          <div class="branch-actions">
+            <a href="Galerie_Kimisagara.html" class="branch-btn gallery">
+              <i class="fas fa-images"></i> Galerie
+            </a>
+            <a href="https://maps.app.goo.gl/7NTitr14XKeXg9Hf7" target="_blank" class="branch-btn directions">
+              <i class="fas fa-map-marker-alt"></i> Voir sur Maps
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Branche Gisozi -->
+      <div class="branch-card gisozi">
+        <div class="branch-image">
+          <img src="asset/img/gisozi_graduation.JPG" alt="Eden Family School Gisozi">
+          <div class="branch-overlay">
+            <div class="branch-icon">
+              <i class="fas fa-school"></i>
+            </div>
+          </div>
+        </div>
+        <div class="branch-content">
+          <div class="branch-header">
+            <div class="branch-badge gisozi">G</div>
+            <div>
+              <h3 class="branch-title">Gisozi</h3>
+              <p class="branch-subtitle">École maternelle et primaire</p>
+            </div>
+          </div>
+          
+          <div class="branch-levels">
+            <div class="level-badge maternelle">
+              <i class="fas fa-child"></i> Maternelle
+            </div>
+            <div class="level-badge primaire">
+              <i class="fas fa-school"></i> Primaire
+            </div>
+          </div>
+          
+          <div class="branch-info">
+            <div class="branch-info-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>KG 11 Ave, Gisozi, Kigali</span>
+            </div>
+            <div class="branch-info-item">
+              <i class="fas fa-phone"></i>
+              <span>+250 788 234 567</span>
+            </div>
+            <div class="branch-info-item">
+              <i class="fas fa-envelope"></i>
+              <span>gisozi@edenfamily.edu.rw</span>
+            </div>
+            <div class="branch-info-item">
+              <i class="fas fa-clock"></i>
+              <span>Lun-Ven: 7h30 - 18h00</span>
+            </div>
+          </div>
+
+          <div class="branch-actions">
+            <a href="Galerie_Gisozi.html" class="branch-btn gallery">
+              <i class="fas fa-images"></i> Galerie
+            </a>
+            <a href="https://maps.app.goo.gl/EtYYS1SabReRS4zJ9" target="_blank" class="branch-btn directions">
+              <i class="fas fa-map-marker-alt"></i> Voir sur Maps
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Branche Kacyiru -->
+      <div class="branch-card kacyiru">
+        <div class="branch-image">
+          <img src="asset/img/sport.jpg" alt="Eden Family School Kacyiru">
+          <div class="branch-overlay">
+            <div class="branch-icon">
+              <i class="fas fa-child"></i>
+            </div>
+          </div>
+        </div>
+        <div class="branch-content">
+          <div class="branch-header">
+            <div class="branch-badge kacyiru">K</div>
+            <div>
+              <h3 class="branch-title">Kacyiru</h3>
+              <p class="branch-subtitle">École maternelle</p>
+            </div>
+          </div>
+          
+          <div class="branch-levels">
+            <div class="level-badge maternelle">
+              <i class="fas fa-child"></i> Maternelle
+            </div>
+          </div>
+          
+          <div class="branch-info">
+            <div class="branch-info-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>KG 17 Ave, Kacyiru, Kigali</span>
+            </div>
+            <div class="branch-info-item">
+              <i class="fas fa-phone"></i>
+              <span>+250 788 345 678</span>
+            </div>
+            <div class="branch-info-item">
+              <i class="fas fa-envelope"></i>
+              <span>kacyiru@edenfamily.edu.rw</span>
+            </div>
+            <div class="branch-info-item">
+              <i class="fas fa-clock"></i>
+              <span>Lun-Ven: 7h30 - 17h30</span>
+            </div>
+          </div>
+
+          <div class="branch-actions">
+            <a href="Galerie_Kacyiru.html" class="branch-btn gallery">
+              <i class="fas fa-images"></i> Galerie
+            </a>
+            <a href="https://maps.app.goo.gl/qurz5WxxSkL4nkCi9" target="_blank" class="branch-btn directions">
+              <i class="fas fa-map-marker-alt"></i> Voir sur Maps
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="branches-features">
+      <h3 class="features-title"><i class="fas fa-star"></i> Notre Approche Éducative</h3>
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">
+            <i class="fas fa-child"></i>
+          </div>
+          <h4>Éveil précoce</h4>
+          <p>Notre approche maternelle privilégie l'éveil sensoriel et le développement global</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <i class="fas fa-book"></i>
+          </div>
+          <h4>Fondamentaux solides</h4>
+          <p>Au primaire, nous bâtissons des bases académiques solides pour chaque élève</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <i class="fas fa-heart"></i>
+          </div>
+          <h4>Environnement bienveillant</h4>
+          <p>Chaque enfant est accueilli dans un cadre sécurisé et stimulant</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <h4>Suivi personnalisé</h4>
+          <p>Un accompagnement adapté au rythme de développement de chaque enfant</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Section -->
+    <div class="branches-map">
+      <div class="map-container">
+        <div class="map-overlay">
+          <h3 class="map-title"><i class="fas fa-map"></i> Nos Campus à Kigali</h3>
+          <p class="map-description">Trois emplacements stratégiques pour servir les familles de Kigali</p>
+          <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div style="width: 15px; height: 15px; background: var(--branch-kimisagara); border-radius: 50%;"></div>
+              <span>Kimisagara - Maternelle</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div style="width: 15px; height: 15px; background: var(--branch-gisozi); border-radius: 50%;"></div>
+              <span>Gisozi - Maternelle & Primaire</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div style="width: 15px; height: 15px; background: var(--branch-kacyiru); border-radius: 50%;"></div>
+              <span>Kacyiru - Maternelle</span>
+            </div>
+          </div>
+          <div style="margin-top: 1rem;">
+            <button class="branch-btn" onclick="openAllBranchesMap()" style="background: var(--accent-color); color: white; border: none;">
+              <i class="fas fa-map-marked-alt"></i> Voir tous nos emplacements
+            </button>
+          </div>
+        </div>
+        <div class="map-marker kimisagara" data-branch="Kimisagara - Maternelle" onclick="showBranchInfo('kimisagara')"></div>
+        <div class="map-marker gisozi" data-branch="Gisozi - Maternelle & Primaire" onclick="showBranchInfo('gisozi')"></div>
+        <div class="map-marker kacyiru" data-branch="Kacyiru - Maternelle" onclick="showBranchInfo('kacyiru')"></div>
+      </div>
+    </div>
+  </section>
 
   <!-- Section Galerie -->
   <section id="galerie">
@@ -1786,8 +2660,8 @@
       <div class="gallery-item" onclick="openGalleryModal(0)">
         <img src="asset/img/kimisagara.jpg" alt="Nos Salles de Classe Modernes et bien équipées">
         <div class="gallery-overlay">
-          <h3>Nos Salles de Classe</h3>
-          <p>Modernes et bien équipées</p>
+          <h3>Eden Family school kimisagara</h3>
+          <p>École située à Kimisagara, offrant un enseignement de qualité axé sur l’excellence</p>
         </div>
       </div>
       <div class="gallery-item" onclick="openGalleryModal(1)">
@@ -1825,49 +2699,6 @@
           <p>Sécurisée et amusante</p>
         </div>
       </div>
-    </div>
-    <div class="voir-plus-container">
-      <button class="voir-plus-btn" onclick="loadMoreGallery()">
-        <i class="fas fa-plus"></i> Voir plus de photos
-      </button>
-    </div>
-  </section>
-
-  <!-- Section Activités Académiques -->
-  <section id="academique">
-    <h2 class="section-title"><i class="fas fa-graduation-cap"></i> Activités Académiques</h2>
-    <div class="academic-grid">
-      <div class="academic-card" onclick="showHomework()">
-        <i class="fas fa-book"></i>
-        <h3>Devoirs</h3>
-        <p>Consultez et téléchargez les devoirs</p>
-        <span class="badge" id="homeworkCount">5 nouveaux</span>
-      </div>
-      <div class="academic-card" onclick="showTests()">
-        <i class="fas fa-clipboard-check"></i>
-        <h3>Tests</h3>
-        <p>Calendrier et résultats des tests</p>
-      </div>
-      <div class="academic-card" onclick="showExams()">
-        <i class="fas fa-file-alt"></i>
-        <h3>Examens</h3>
-        <p>Informations sur les examens</p>
-      </div>
-      <div class="academic-card" onclick="showVacationWork()">
-        <i class="fas fa-umbrella-beach"></i>
-        <h3>Travaux de Vacances</h3>
-        <p>Activités pendant les vacances</p>
-      </div>
-      <div class="academic-card" onclick="showParentMeetings()">
-        <i class="fas fa-users"></i>
-        <h3>Réunions Parents</h3>
-        <p>Calendrier des rencontres</p>
-      </div>
-    </div>
-    <div class="voir-plus-container">
-      <button class="voir-plus-btn" onclick="loadMoreAcademic()">
-        <i class="fas fa-plus"></i> Voir plus d'activités
-      </button>
     </div>
   </section>
 
@@ -1967,23 +2798,6 @@
           </a>
         </div>
       </div>
-    </div>
-
-    <div style="text-align: center; margin-top: 3rem;">
-      <h3><i class="fas fa-play-circle"></i> Dernières Vidéos</h3>
-      <div class="video-thumbnail" style="margin-top: 2rem; max-width: 800px; margin-left: auto; margin-right: auto;">
-        <iframe width="100%" height="450" src="https://www.youtube.com/embed/videoseries?list=UUedenfamilyschool" 
-                title="Playlist des vidéos Eden Family School" frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-        </iframe>
-      </div>
-    </div>
-    
-    <div class="voir-plus-container">
-      <button class="voir-plus-btn" onclick="loadMoreVideos()">
-        <i class="fas fa-plus"></i> Voir plus de vidéos
-      </button>
     </div>
   </section>
 
@@ -4254,6 +5068,344 @@
       if (event.key === 'Escape') {
         closeModal();
         closeLoginModal();
+      }
+    });
+
+    /* ===== JAVASCRIPT SECTION BRANCHES ===== */
+    
+    // Données des branches avec les vrais liens Google Maps
+    const BRANCHES_DATA = {
+      kimisagara: {
+        name: "Kimisagara",
+        fullName: "Eden Family School - Kimisagara",
+        address: "KG 7 Ave, Kimisagara, Kigali",
+        phone: "+250 788 123 456",
+        email: "kimisagara@edenfamily.edu.rw",
+        hours: "Lun-Ven: 7h30 - 17h30",
+        levels: ["Maternelle"],
+        description: "Notre campus historique, fondé en 2010. Spécialisé dans l'éducation maternelle, offrant un environnement adapté aux jeunes enfants. Un cadre chaleureux qui favorise l'éveil et le développement des tout-petits.",
+        features: [
+          "Classes spécialement conçues pour les jeunes enfants",
+          "Espace de jeux intérieur et extérieur sécurisé",
+          "Activités d'éveil sensoriel",
+          "Ateliers créatifs adaptés à l'âge",
+          "Suivi individualisé du développement"
+        ],
+        specialties: ["Éveil précoce", "Développement moteur", "Socialisation", "Langage oral"],
+        mapLink: "https://maps.app.goo.gl/7NTitr14XKeXg9Hf7"
+      },
+      gisozi: {
+        name: "Gisozi",
+        fullName: "Eden Family School - Gisozi",
+        address: "KG 11 Ave, Gisozi, Kigali",
+        phone: "+250 788 234 567",
+        email: "gisozi@edenfamily.edu.rw",
+        hours: "Lun-Ven: 7h30 - 18h00",
+        levels: ["Maternelle", "Primaire"],
+        description: "Centre d'excellence offrant un enseignement complet de la maternelle au primaire. Nos programmes sont adaptés à chaque niveau d'âge avec une transition progressive vers les apprentissages fondamentaux.",
+        features: [
+          "Programmes éducatifs progressifs",
+          "Bibliothèque adaptée aux différents âges",
+          "Salles spécialisées pour chaque niveau",
+          "Activités parascolaires variées",
+          "Suivi pédagogique régulier"
+        ],
+        specialties: ["Transition maternelle-primaire", "Apprentissages fondamentaux", "Développement complet", "Éveil aux sciences"],
+        mapLink: "https://maps.app.goo.gl/tDQhe2s72jdmqJjC7"
+      },
+      kacyiru: {
+        name: "Kacyiru",
+        fullName: "Eden Family School - Kacyiru",
+        address: "KG 17 Ave, Kacyiru, Kigali",
+        phone: "+250 788 345 678",
+        email: "kacyiru@edenfamily.edu.rw",
+        hours: "Lun-Ven: 7h30 - 17h30",
+        levels: ["Maternelle"],
+        description: "Campus dédié exclusivement à l'éducation maternelle. Un environnement spécialement conçu pour les jeunes enfants avec des installations modernes adaptées à leur développement physique et cognitif.",
+        features: [
+          "Classes spacieuses avec matériel adapté",
+          "Jardins d'éveil et espaces verts",
+          "Ateliers de psychomotricité",
+          "Salle de repos pour les plus petits",
+          "Équipe éducative spécialisée en petite enfance"
+        ],
+        specialties: ["Psychomotricité fine", "Éveil artistique", "Développement affectif", "Autonomie progressive"],
+        mapLink: "https://maps.app.goo.gl/pYVZStha8ui2VSjaA"
+      }
+    };
+
+    // Fonctions spécifiques pour chaque branche
+    function showKimisagaraDirections() {
+      const button = event.currentTarget;
+      const originalHTML = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-map-marker-alt"></i> Ouverture...';
+      
+      setTimeout(() => {
+        window.open(BRANCHES_DATA.kimisagara.mapLink, '_blank');
+        button.innerHTML = originalHTML;
+      }, 800);
+    }
+
+    function showGisoziDirections() {
+      const button = event.currentTarget;
+      const originalHTML = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-map-marker-alt"></i> Ouverture...';
+      
+      setTimeout(() => {
+        window.open(BRANCHES_DATA.gisozi.mapLink, '_blank');
+        button.innerHTML = originalHTML;
+      }, 800);
+    }
+
+    function showKacyiruDirections() {
+      const button = event.currentTarget;
+      const originalHTML = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-map-marker-alt"></i> Ouverture...';
+      
+      setTimeout(() => {
+        window.open(BRANCHES_DATA.kacyiru.mapLink, '_blank');
+        button.innerHTML = originalHTML;
+      }, 800);
+    }
+
+    function openAllBranchesMap() {
+      // Ouvrir une nouvelle page avec les trois emplacements
+      const content = `
+        <div style="text-align: center; padding: 2rem;">
+          <h3><i class="fas fa-map-marked-alt"></i> Tous nos emplacements</h3>
+          <p style="margin: 1rem 0;">Sélectionnez une branche pour voir son emplacement sur Google Maps :</p>
+          
+          <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; max-width: 400px; margin: 0 auto;">
+            <button class="branch-btn" onclick="window.open('${BRANCHES_DATA.kimisagara.mapLink}', '_blank')" style="background: var(--branch-kimisagara); color: white; border: none; padding: 1rem;">
+              <i class="fas fa-map-marker-alt"></i> Kimisagara - Maternelle
+            </button>
+            
+            <button class="branch-btn" onclick="window.open('${BRANCHES_DATA.gisozi.mapLink}', '_blank')" style="background: var(--branch-gisozi); color: white; border: none; padding: 1rem;">
+              <i class="fas fa-map-marker-alt"></i> Gisozi - Maternelle & Primaire
+            </button>
+            
+            <button class="branch-btn" onclick="window.open('${BRANCHES_DATA.kacyiru.mapLink}', '_blank')" style="background: var(--branch-kacyiru); color: white; border: none; padding: 1rem;">
+              <i class="fas fa-map-marker-alt"></i> Kacyiru - Maternelle
+            </button>
+          </div>
+          
+          <div style="margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 10px;">
+            <p><strong>Conseil :</strong> Vous pouvez également utiliser l'application Google Maps et rechercher :</p>
+            <ul style="text-align: left; margin-left: 1.5rem;">
+              <li>Eden Family School Kimisagara</li>
+              <li>Eden Family School Gisozi</li>
+              <li>Eden Family School Kacyiru</li>
+            </ul>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('modalTitle').innerHTML = '<i class="fas fa-map-marked-alt"></i> Nos Emplacements';
+      document.getElementById('modalBody').innerHTML = content;
+      document.getElementById('modal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+      }
+    };
+
+    // Initialisation des animations
+    function initAnimations() {
+      // Animation des cartes au chargement
+      const cards = document.querySelectorAll('.branch-card');
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, index * 200 + 300);
+      });
+
+      // Animation des éléments de features
+      const features = document.querySelectorAll('.feature-item');
+      features.forEach((feature, index) => {
+        setTimeout(() => {
+          feature.style.opacity = '1';
+          feature.style.transform = 'translateY(0)';
+        }, index * 200 + 600);
+      });
+
+      // Effet de ripple sur les boutons
+      const buttons = document.querySelectorAll('.branch-btn');
+      buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+          const ripple = document.createElement('span');
+          const rect = this.getBoundingClientRect();
+          const size = Math.max(rect.width, rect.height);
+          const x = e.clientX - rect.left - size / 2;
+          const y = e.clientY - rect.top - size / 2;
+
+          ripple.style.cssText = `
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.7);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            width: ${size}px;
+            height: ${size}px;
+            top: ${y}px;
+            left: ${x}px;
+            pointer-events: none;
+          `;
+
+          this.appendChild(ripple);
+          setTimeout(() => ripple.remove(), 600);
+        });
+      });
+    }
+
+    // Fonction pour ouvrir la galerie d'une branche
+    function openBranchGallery(branchName) {
+      const button = event.currentTarget;
+      
+      // Animation du bouton
+      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
+      button.disabled = true;
+      
+      // Simulation de chargement
+      setTimeout(() => {
+        // Redirection vers la page de galerie correspondante
+        switch(branchName) {
+          case 'kimisagara':
+            window.location.href = 'Galerie_Kimisagara.html';
+            break;
+          case 'gisozi':
+            window.location.href = 'Galerie_Gisozi.html';
+            break;
+          case 'kacyiru':
+            window.location.href = 'Galerie_Kacyiru.html';
+            break;
+        }
+      }, 1000);
+    }
+
+    // Fonction pour montrer l'itinéraire
+    // Fonction pour afficher les informations d'une branche
+    function showBranchInfo(branchName) {
+      const branch = BRANCHES_DATA[branchName];
+      if (!branch) return;
+      
+      // Animation du marqueur
+      const marker = event.target;
+      marker.style.animation = 'pulse 0.5s ease';
+      
+      setTimeout(() => {
+        marker.style.animation = 'bounce 2s infinite';
+      }, 500);
+      
+      // Créer le contenu modal
+      const content = `
+        <div style="max-width: 600px; margin: 0 auto;">
+          <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, 
+              ${branchName === 'kimisagara' ? '#4CAF50' : branchName === 'gisozi' ? '#2196F3' : '#9C27B0'}, 
+              ${branchName === 'kimisagara' ? '#2E7D32' : branchName === 'gisozi' ? '#0D47A1' : '#6A1B9A'});
+              border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+              <i class="fas fa-school" style="color: white; font-size: 2rem;"></i>
+            </div>
+            <h3 style="color: ${branchName === 'kimisagara' ? '#4CAF50' : branchName === 'gisozi' ? '#2196F3' : '#9C27B0'}; margin-bottom: 0.5rem;">
+              ${branch.fullName}
+            </h3>
+            <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+              ${branch.levels.map(level => `
+                <span style="padding: 0.3rem 0.8rem; border-radius: 15px; background: ${level === 'Maternelle' ? '#FFF3E0' : '#E3F2FD'}; color: ${level === 'Maternelle' ? '#F57C00' : '#1976D2'}; font-size: 0.85rem; font-weight: 600;">
+                  ${level === 'Maternelle' ? '<i class="fas fa-child"></i> ' : '<i class="fas fa-school"></i> '}${level}
+                </span>
+              `).join('')}
+            </div>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem;"><i class="fas fa-info-circle"></i> Description</h4>
+            <p style="line-height: 1.6;">${branch.description}</p>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 10px;">
+              <h4 style="color: #4CAF50; margin-bottom: 1rem;"><i class="fas fa-star"></i> Spécialités</h4>
+              <ul style="margin-left: 1.5rem; color: #555;">
+                ${branch.specialties.map(spec => `<li style="margin-bottom: 0.5rem;">${spec}</li>`).join('')}
+              </ul>
+            </div>
+            
+            <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 10px;">
+              <h4 style="color: #2196F3; margin-bottom: 1rem;"><i class="fas fa-check-circle"></i> Équipements</h4>
+              <ul style="margin-left: 1.5rem; color: #555;">
+                ${branch.features.map(feature => `<li style="margin-bottom: 0.5rem;">${feature}</li>`).join('')}
+              </ul>
+            </div>
+          </div>
+          
+          <div style="background: #fff3e0; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
+            <h4 style="color: #FF9800; margin-bottom: 1rem;"><i class="fas fa-clock"></i> Informations pratiques</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <p style="margin-bottom: 0.5rem;"><strong><i class="fas fa-phone"></i> Téléphone:</strong><br>${branch.phone}</p>
+                <p style="margin-bottom: 0.5rem;"><strong><i class="fas fa-envelope"></i> Email:</strong><br>${branch.email}</p>
+              </div>
+              <div>
+                <p style="margin-bottom: 0.5rem;"><strong><i class="fas fa-clock"></i> Horaires:</strong><br>${branch.hours}</p>
+                <p style="margin-bottom: 0.5rem;"><strong><i class="fas fa-map-marker-alt"></i> Adresse:</strong><br>${branch.address}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <button class="branch-btn gallery" onclick="openBranchGallery('${branchName}')" style="width: 100%; padding: 1rem;">
+              <i class="fas fa-images"></i> Voir la Galerie
+            </button>
+            <button class="branch-btn directions" onclick="window.open('${branch.mapLink}', '_blank')" style="width: 100%; padding: 1rem; background: #ff9800; border-color: #ff9800;">
+              <i class="fas fa-directions"></i> Voir sur Google Maps
+            </button>
+          </div>
+        </div>
+      `;
+      
+      // Ouvrir la modal
+      document.getElementById('modalTitle').innerHTML = `<i class="fas fa-school"></i> ${branch.name}`;
+      document.getElementById('modalBody').innerHTML = content;
+      document.getElementById('modal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    // Fonction pour fermer la modal
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    // Initialiser les animations au chargement
+    window.addEventListener('load', () => {
+      initAnimations();
+      
+      // Ajouter l'animation ripple aux boutons
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes ripple {
+          to {
+            transform: scale(4);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    });
+
+    // Gestion du scroll pour l'animation
+    let hasAnimated = false;
+    window.addEventListener('scroll', () => {
+      const branchesSection = document.getElementById('branches');
+      if (!branchesSection) return;
+      
+      const sectionPosition = branchesSection.getBoundingClientRect().top;
+      const screenPosition = window.innerHeight / 1.3;
+      
+      if (sectionPosition < screenPosition && !hasAnimated) {
+        initAnimations();
+        hasAnimated = true;
       }
     });
   </script>

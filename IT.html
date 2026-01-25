@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Admin - Gestion des Comptes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .tab-active {
+            position: relative;
+        }
+        
+        .tab-active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #4f46e5;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Modal d'authentification -->
+    <div id="authModal" class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden slide-in">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white text-center">
+                <i class="fas fa-shield-alt text-5xl mb-4"></i>
+                <h2 class="text-3xl font-bold">IT Admin</h2>
+                <p class="text-indigo-100 mt-2">Système de Gestion Scolaire</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b">
+                <button id="loginTabBtn" class="flex-1 py-4 font-semibold transition text-indigo-600 border-b-2 border-indigo-600">
+                    Connexion
+                </button>
+                <button id="registerTabBtn" class="flex-1 py-4 font-semibold transition text-gray-500 hover:text-gray-700">
+                    Inscription
+                </button>
+            </div>
+
+            <!-- Formulaire de connexion -->
+            <div id="loginForm" class="p-8 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="email" id="loginEmail" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="votre.email@school.rw">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="password" id="loginPassword" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="••••••••">
+                    </div>
+                </div>
+                <button id="loginBtn" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Se connecter
+                </button>
+                <p class="text-sm text-gray-500 text-center">
+                    Test: utilisez n'importe quel email de la liste
+                </p>
+            </div>
+
+            <!-- Formulaire d'inscription -->
+            <div id="registerForm" class="p-8 space-y-6 hidden">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nom complet</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="registerName" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Votre nom complet">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="email" id="registerEmail" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="votre.email@school.rw">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="password" id="registerPassword" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="••••••••">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="password" id="registerConfirmPassword" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="••••••••">
+                    </div>
+                </div>
+                <button id="registerBtn" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-user-plus"></i>
+                    Créer mon compte IT Admin
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application principale (cachée par défaut) -->
+    <div id="mainApp" class="min-h-screen hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 shadow-lg">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div class="mb-4 md:mb-0">
+                        <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-3">
+                            <i class="fas fa-shield-alt"></i>
+                            IT Admin - Gestion des Comptes
+                        </h1>
+                        <p class="text-indigo-100 mt-2">Connecté en tant que: <span id="currentUserName"></span> (<span id="currentUserRole"></span>)</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button id="reportBugBtn" class="bg-orange-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-orange-600 transition flex items-center justify-center gap-2 shadow-md">
+                            <i class="fas fa-bug"></i>
+                            Reporter un Bug
+                        </button>
+                        <button id="createAccountBtn" class="bg-white text-indigo-600 px-4 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition flex items-center justify-center gap-2 shadow-md">
+                            <i class="fas fa-user-plus"></i>
+                            Créer un Compte
+                        </button>
+                        <button id="logoutBtn" class="bg-red-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-600 transition flex items-center justify-center gap-2 shadow-md">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Déconnexion
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 md:px-6">
+                <div class="flex overflow-x-auto">
+                    <button data-tab="utilisateurs" class="tab-btn px-4 py-4 font-medium flex items-center gap-2 whitespace-nowrap tab-active">
+                        <i class="fas fa-users"></i>
+                        Utilisateurs
+                    </button>
+                    <button data-tab="activites" class="tab-btn px-4 py-4 font-medium flex items-center gap-2 whitespace-nowrap">
+                        <i class="fas fa-chart-line"></i>
+                        Activités
+                    </button>
+                    <button data-tab="parents" class="tab-btn px-4 py-4 font-medium flex items-center gap-2 whitespace-nowrap">
+                        <i class="fas fa-eye"></i>
+                        Parents
+                    </button>
+                    <button data-tab="reports" class="tab-btn px-4 py-4 font-medium flex items-center gap-2 whitespace-nowrap">
+                        <i class="fas fa-bug"></i>
+                        Rapports
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto p-4 md:p-6">
+            <!-- Onglet Utilisateurs -->
+            <div id="utilisateursTab" class="tab-content space-y-6 fade-in">
+                <!-- Filtres -->
+                <div class="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row gap-4 items-center">
+                    <div class="w-full md:flex-1 relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="searchInput" placeholder="Rechercher par nom ou email..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                    <div class="flex items-center gap-2 w-full md:w-auto">
+                        <i class="fas fa-filter text-gray-400"></i>
+                        <select id="roleFilter" class="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full md:w-auto">
+                            <option value="Tous">Tous</option>
+                            <option value="Directeur">Directeur</option>
+                            <option value="Comptable">Comptable</option>
+                            <option value="Secrétaire">Secrétaire</option>
+                            <option value="Enseignant">Enseignant</option>
+                            <option value="IT Admin">IT Admin</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Statistiques -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Directeurs</p>
+                                <p id="directeursCount" class="text-2xl font-bold text-gray-900">1</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Comptables</p>
+                                <p id="comptablesCount" class="text-2xl font-bold text-gray-900">1</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Secrétaires</p>
+                                <p id="secretairesCount" class="text-2xl font-bold text-gray-900">1</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-green-100 text-green-800 flex items-center justify-center">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Enseignants</p>
+                                <p id="enseignantsCount" class="text-2xl font-bold text-gray-900">2</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-800 flex items-center justify-center">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Liste des utilisateurs -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rôle</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Créé le</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Créé par</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody" class="divide-y divide-gray-200">
+                                <!-- Les utilisateurs seront insérés ici par JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Activités -->
+            <div id="activitesTab" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-xl font-bold text-gray-900">Journal des Activités</h2>
+                        <p class="text-gray-500 mt-1">Suivi en temps réel des actions utilisateurs</p>
+                    </div>
+                    <div id="activitiesList" class="divide-y">
+                        <!-- Les activités seront insérées ici par JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Parents -->
+            <div id="parentsTab" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-xl font-bold text-gray-900">Gestion des Parents</h2>
+                        <p class="text-gray-500 mt-1">Visualisation et suivi des comptes parents</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Enfants</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dernier Accès</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="parentsTableBody" class="divide-y divide-gray-200">
+                                <!-- Les parents seront insérés ici par JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Rapports -->
+            <div id="reportsTab" class="tab-content hidden space-y-6">
+                <!-- Statistiques des rapports -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Total Rapports</p>
+                                <p id="totalReports" class="text-2xl font-bold text-gray-900">2</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center">
+                                <i class="fas fa-bug"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Nouveaux</p>
+                                <p id="newReports" class="text-2xl font-bold text-gray-900">1</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-800 flex items-center justify-center">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">En cours</p>
+                                <p id="inProgressReports" class="text-2xl font-bold text-gray-900">1</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-yellow-100 text-yellow-800 flex items-center justify-center">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Résolus</p>
+                                <p id="resolvedReports" class="text-2xl font-bold text-gray-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-green-100 text-green-800 flex items-center justify-center">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Liste des rapports -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-xl font-bold text-gray-900">Liste des Rapports</h2>
+                        <p class="text-gray-500 mt-1">Bugs, suggestions et améliorations</p>
+                    </div>
+                    <div id="reportsList" class="divide-y">
+                        <!-- Les rapports seront insérés ici par JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de création d'utilisateur -->
+        <div id="createUserModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg max-w-md w-full p-6 slide-in">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Créer un Nouveau Compte</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
+                        <input type="text" id="newUserName" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Ex: Mukasa Jean">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="newUserEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="exemple@school.rw">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
+                        <select id="newUserRole" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="Enseignant">Enseignant</option>
+                            <option value="Directeur">Directeur</option>
+                            <option value="Comptable">Comptable</option>
+                            <option value="Secrétaire">Secrétaire</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de Passe</label>
+                        <input type="password" id="newUserPassword" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="••••••••">
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button id="cancelCreateUser" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Annuler
+                        </button>
+                        <button id="confirmCreateUser" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                            Créer le Compte
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de rapport de bug -->
+        <div id="reportBugModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg max-w-md w-full p-6 slide-in">
+                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-bug text-orange-600"></i>
+                    Reporter un Bug ou Suggestion
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Type de Rapport</label>
+                        <select id="reportType" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                            <option value="Bug">Bug</option>
+                            <option value="Suggestion">Suggestion</option>
+                            <option value="Amélioration">Amélioration</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+                        <input type="text" id="reportTitle" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Ex: Erreur lors de la connexion">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="reportDescription" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" rows="4" placeholder="Décrivez le problème ou votre suggestion en détail..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Priorité</label>
+                        <select id="reportPriority" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                            <option value="Moyenne">Moyenne</option>
+                            <option value="Basse">Basse</option>
+                            <option value="Haute">Haute</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button id="cancelReport" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Annuler
+                        </button>
+                        <button id="confirmReport" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
+                            Envoyer le Rapport
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Données initiales
+        const mockFirebaseData = {
+            users: [
+                { id: '1', nom: 'Mukasa Jean', email: 'j.mukasa@school.rw', role: 'Directeur', creeLe: '2025-01-15', creePar: 'System', statut: 'Actif' },
+                { id: '2', nom: 'Uwase Marie', email: 'm.uwase@school.rw', role: 'Comptable', creeLe: '2025-01-16', creePar: 'IT Admin', statut: 'Actif' },
+                { id: '3', nom: 'Nkusi Pierre', email: 'p.nkusi@school.rw', role: 'Secrétaire', creeLe: '2025-01-17', creePar: 'IT Admin', statut: 'Actif' },
+                { id: '4', nom: 'Habimana Paul', email: 'p.habimana@school.rw', role: 'Enseignant', creeLe: '2025-01-18', creePar: 'Directeur', statut: 'Actif' },
+                { id: '5', nom: 'Irakoze Alice', email: 'a.irakoze@school.rw', role: 'Enseignant', creeLe: '2025-01-20', creePar: 'Directeur', statut: 'Actif' }
+            ],
+            activities: [
+                { id: '1', utilisateur: 'Mukasa Jean', action: 'Connexion', timestamp: '2025-01-25 08:30', details: 'Connexion réussie' },
+                { id: '2', utilisateur: 'Uwase Marie', action: 'Consultation', timestamp: '2025-01-25 09:15', details: 'Consultation des finances' },
+                { id: '3', utilisateur: 'Habimana Paul', action: 'Modification', timestamp: '2025-01-25 10:00', details: 'Modification des notes' },
+                { id: '4', utilisateur: 'Nkusi Pierre', action: 'Ajout', timestamp: '2025-01-25 11:20', details: 'Ajout d\'un nouvel élève' }
+            ],
+            parents: [
+                { id: '1', nom: 'Kamanzi Robert', email: 'r.kamanzi@email.rw', enfants: 2, dernierAcces: '2025-01-24', statut: 'Actif' },
+                { id: '2', nom: 'Mukamazimpaka Diane', email: 'd.mukamazimpaka@email.rw', enfants: 1, dernierAcces: '2025-01-25', statut: 'Actif' },
+                { id: '3', nom: 'Ndayisenga Eric', email: 'e.ndayisenga@email.rw', enfants: 3, dernierAcces: '2025-01-23', statut: 'Inactif' }
+            ],
+            reports: [
+                { id: '1', type: 'Bug', titre: 'Erreur de connexion', description: 'Impossible de se connecter avec certains emails', statut: 'En cours', rapportePar: 'Mukasa Jean', date: '2025-01-24', priorite: 'Haute' },
+                { id: '2', type: 'Suggestion', titre: 'Améliorer l\'interface', description: 'Ajouter un mode sombre', statut: 'Nouveau', rapportePar: 'Uwase Marie', date: '2025-01-25', priorite: 'Basse' }
+            ]
+        };
+
+        // État de l'application
+        let state = {
+            currentUser: null,
+            users: [...mockFirebaseData.users],
+            activities: [...mockFirebaseData.activities],
+            parents: [...mockFirebaseData.parents],
+            reports: [...mockFirebaseData.reports],
+            searchTerm: '',
+            filterRole: 'Tous'
+        };
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Éléments d'authentification
+            const loginTabBtn = document.getElementById('loginTabBtn');
+            const registerTabBtn = document.getElementById('registerTabBtn');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const authModal = document.getElementById('authModal');
+            const mainApp = document.getElementById('mainApp');
+            
+            // Éléments principaux
+            const logoutBtn = document.getElementById('logoutBtn');
+            const createAccountBtn = document.getElementById('createAccountBtn');
+            const reportBugBtn = document.getElementById('reportBugBtn');
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            // Filtres et recherche
+            const searchInput = document.getElementById('searchInput');
+            const roleFilter = document.getElementById('roleFilter');
+            
+            // Modales
+            const createUserModal = document.getElementById('createUserModal');
+            const reportBugModal = document.getElementById('reportBugModal');
+            const cancelCreateUser = document.getElementById('cancelCreateUser');
+            const confirmCreateUser = document.getElementById('confirmCreateUser');
+            const cancelReport = document.getElementById('cancelReport');
+            const confirmReport = document.getElementById('confirmReport');
+
+            // Gestion des onglets d'authentification
+            loginTabBtn.addEventListener('click', () => {
+                loginTabBtn.classList.add('border-b-2', 'border-indigo-600', 'text-indigo-600');
+                registerTabBtn.classList.remove('border-b-2', 'border-indigo-600', 'text-indigo-600');
+                registerTabBtn.classList.add('text-gray-500');
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+            });
+
+            registerTabBtn.addEventListener('click', () => {
+                registerTabBtn.classList.add('border-b-2', 'border-indigo-600', 'text-indigo-600');
+                loginTabBtn.classList.remove('border-b-2', 'border-indigo-600', 'text-indigo-600');
+                loginTabBtn.classList.add('text-gray-500');
+                registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+            });
+
+            // Connexion
+            loginBtn.addEventListener('click', handleLogin);
+            
+            // Inscription
+            registerBtn.addEventListener('click', handleRegister);
+            
+            // Déconnexion
+            logoutBtn.addEventListener('click', handleLogout);
+            
+            // Gestion des onglets principaux
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabId = btn.getAttribute('data-tab');
+                    
+                    // Mettre à jour les styles des onglets
+                    tabBtns.forEach(b => {
+                        b.classList.remove('tab-active', 'text-indigo-600');
+                        b.classList.add('text-gray-500');
+                    });
+                    
+                    btn.classList.add('tab-active', 'text-indigo-600');
+                    btn.classList.remove('text-gray-500');
+                    
+                    // Afficher le contenu correspondant
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                        if (content.id === `${tabId}Tab`) {
+                            content.classList.remove('hidden');
+                            content.classList.add('fade-in');
+                        }
+                    });
+                });
+            });
+            
+            // Recherche
+            searchInput.addEventListener('input', (e) => {
+                state.searchTerm = e.target.value;
+                renderUsers();
+            });
+            
+            // Filtre par rôle
+            roleFilter.addEventListener('change', (e) => {
+                state.filterRole = e.target.value;
+                renderUsers();
+            });
+            
+            // Boutons pour ouvrir les modales
+            createAccountBtn.addEventListener('click', () => {
+                createUserModal.classList.remove('hidden');
+                createUserModal.classList.add('flex');
+            });
+            
+            reportBugBtn.addEventListener('click', () => {
+                reportBugModal.classList.remove('hidden');
+                reportBugModal.classList.add('flex');
+            });
+            
+            // Fermer les modales
+            cancelCreateUser.addEventListener('click', () => {
+                createUserModal.classList.add('hidden');
+                createUserModal.classList.remove('flex');
+                resetCreateUserForm();
+            });
+            
+            cancelReport.addEventListener('click', () => {
+                reportBugModal.classList.add('hidden');
+                reportBugModal.classList.remove('flex');
+                resetReportForm();
+            });
+            
+            // Confirmer la création d'utilisateur
+            confirmCreateUser.addEventListener('click', handleCreateUser);
+            
+            // Confirmer le rapport de bug
+            confirmReport.addEventListener('click', handleSubmitReport);
+            
+            // Rendu initial
+            renderUsers();
+            renderActivities();
+            renderParents();
+            renderReports();
+            updateStats();
+        });
+
+        // Fonctions de gestion
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                alert('Veuillez remplir tous les champs');
+                return;
+            }
+            
+            // Vérifier si l'utilisateur existe
+            const user = state.users.find(u => u.email === email);
+            
+            if (user) {
+                state.currentUser = user;
+                
+                // Ajouter une activité
+                const nouvelleActivite = {
+                    id: (state.activities.length + 1).toString(),
+                    utilisateur: user.nom,
+                    action: 'Connexion',
+                    timestamp: new Date().toLocaleString('fr-FR'),
+                    details: 'Connexion réussie au système IT Admin'
+                };
+                
+                state.activities.unshift(nouvelleActivite);
+                
+                // Mettre à jour l'interface
+                document.getElementById('authModal').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('currentUserName').textContent = user.nom;
+                document.getElementById('currentUserRole').textContent = user.role;
+                
+                // Réinitialiser le formulaire
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                
+                // Mettre à jour les activités
+                renderActivities();
+                updateStats();
+            } else {
+                alert('Email ou mot de passe incorrect');
+            }
+        }
+
+        function handleRegister() {
+            const nom = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            
+            if (!nom || !email || !password || !confirmPassword) {
+                alert('Veuillez remplir tous les champs');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                alert('Les mots de passe ne correspondent pas');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('Le mot de passe doit contenir au moins 6 caractères');
+                return;
+            }
+            
+            // Vérifier si l'email existe déjà
+            if (state.users.some(u => u.email === email)) {
+                alert('Cet email est déjà utilisé');
+                return;
+            }
+            
+            // Créer le nouvel utilisateur
+            const nouvelUtilisateur = {
+                id: (state.users.length + 1).toString(),
+                nom: nom,
+                email: email,
+                role: 'IT Admin',
+                creeLe: new Date().toISOString().split('T')[0],
+                creePar: 'System',
+                statut: 'Actif'
+            };
+            
+            state.users.push(nouvelUtilisateur);
+            state.currentUser = nouvelUtilisateur;
+            
+            // Ajouter une activité
+            const nouvelleActivite = {
+                id: (state.activities.length + 1).toString(),
+                utilisateur: nom,
+                action: 'Inscription',
+                timestamp: new Date().toLocaleString('fr-FR'),
+                details: 'Création du compte IT Admin'
+            };
+            
+            state.activities.unshift(nouvelleActivite);
+            
+            // Mettre à jour l'interface
+            document.getElementById('authModal').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('currentUserName').textContent = nom;
+            document.getElementById('currentUserRole').textContent = 'IT Admin';
+            
+            // Réinitialiser le formulaire
+            document.getElementById('registerName').value = '';
+            document.getElementById('registerEmail').value = '';
+            document.getElementById('registerPassword').value = '';
+            document.getElementById('registerConfirmPassword').value = '';
+            
+            // Mettre à jour les données
+            renderUsers();
+            renderActivities();
+            updateStats();
+        }
+
+        function handleLogout() {
+            // Ajouter une activité de déconnexion
+            const nouvelleActivite = {
+                id: (state.activities.length + 1).toString(),
+                utilisateur: state.currentUser.nom,
+                action: 'Déconnexion',
+                timestamp: new Date().toLocaleString('fr-FR'),
+                details: 'Déconnexion du système'
+            };
+            
+            state.activities.unshift(nouvelleActivite);
+            
+            // Réinitialiser l'état
+            state.currentUser = null;
+            
+            // Afficher le modal d'authentification
+            document.getElementById('authModal').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            
+            // Revenir à l'onglet de connexion
+            document.getElementById('loginTabBtn').click();
+        }
+
+        function handleCreateUser() {
+            const nom = document.getElementById('newUserName').value;
+            const email = document.getElementById('newUserEmail').value;
+            const role = document.getElementById('newUserRole').value;
+            const password = document.getElementById('newUserPassword').value;
+            
+            if (!nom || !email || !role || !password) {
+                alert('Veuillez remplir tous les champs');
+                return;
+            }
+            
+            // Créer le nouvel utilisateur
+            const nouvelUtilisateur = {
+                id: (state.users.length + 1).toString(),
+                nom: nom,
+                email: email,
+                role: role,
+                creeLe: new Date().toISOString().split('T')[0],
+                creePar: state.currentUser.nom,
+                statut: 'Actif'
+            };
+            
+            state.users.push(nouvelUtilisateur);
+            
+            // Ajouter une activité
+            const nouvelleActivite = {
+                id: (state.activities.length + 1).toString(),
+                utilisateur: state.currentUser.nom,
+                action: 'Création',
+                timestamp: new Date().toLocaleString('fr-FR'),
+                details: `Création du compte ${role}: ${nom}`
+            };
+            
+            state.activities.unshift(nouvelleActivite);
+            
+            // Fermer le modal
+            document.getElementById('createUserModal').classList.add('hidden');
+            
+            // Réinitialiser le formulaire
+            resetCreateUserForm();
+            
+            // Mettre à jour l'interface
+            renderUsers();
+            renderActivities();
+            updateStats();
+        }
+
+        function handleSubmitReport() {
+            const type = document.getElementById('reportType').value;
+            const titre = document.getElementById('reportTitle').value;
+            const description = document.getElementById('reportDescription').value;
+            const priorite = document.getElementById('reportPriority').value;
+            
+            if (!titre || !description) {
+                alert('Veuillez remplir tous les champs');
+                return;
+            }
+            
+            // Créer le nouveau rapport
+            const nouveauReport = {
+                id: (state.reports.length + 1).toString(),
+                type: type,
+                titre: titre,
+                description: description,
+                priorite: priorite,
+                statut: 'Nouveau',
+                rapportePar: state.currentUser.nom,
+                date: new Date().toISOString().split('T')[0]
+            };
+            
+            state.reports.unshift(nouveauReport);
+            
+            // Ajouter une activité
+            const nouvelleActivite = {
+                id: (state.activities.length + 1).toString(),
+                utilisateur: state.currentUser.nom,
+                action: 'Rapport',
+                timestamp: new Date().toLocaleString('fr-FR'),
+                details: `Rapport de ${type}: ${titre}`
+            };
+            
+            state.activities.unshift(nouvelleActivite);
+            
+            // Fermer le modal
+            document.getElementById('reportBugModal').classList.add('hidden');
+            
+            // Réinitialiser le formulaire
+            resetReportForm();
+            
+            // Mettre à jour l'interface
+            renderReports();
+            renderActivities();
+            updateStats();
+        }
+
+        // Fonctions de rendu
+        function renderUsers() {
+            const usersTableBody = document.getElementById('usersTableBody');
+            
+            // Filtrer les utilisateurs
+            const filteredUsers = state.users.filter(user => {
+                const matchesSearch = user.nom.toLowerCase().includes(state.searchTerm.toLowerCase()) || 
+                                     user.email.toLowerCase().includes(state.searchTerm.toLowerCase());
+                const matchesRole = state.filterRole === 'Tous' || user.role === state.filterRole;
+                return matchesSearch && matchesRole;
+            });
+            
+            // Générer le HTML
+            let html = '';
+            filteredUsers.forEach(user => {
+                const badgeColor = getRoleBadgeColor(user.role);
+                
+                html += `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-4 font-medium text-gray-900">${user.nom}</td>
+                    <td class="px-4 py-4 text-gray-600">${user.email}</td>
+                    <td class="px-4 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ${badgeColor}">
+                            ${user.role}
+                        </span>
+                    </td>
+                    <td class="px-4 py-4 text-gray-600 flex items-center gap-2">
+                        <i class="fas fa-calendar"></i>
+                        ${user.creeLe}
+                    </td>
+                    <td class="px-4 py-4 text-gray-600">${user.creePar}</td>
+                    <td class="px-4 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            ${user.statut}
+                        </span>
+                    </td>
+                </tr>
+                `;
+            });
+            
+            usersTableBody.innerHTML = html;
+        }
+
+        function renderActivities() {
+            const activitiesList = document.getElementById('activitiesList');
+            
+            let html = '';
+            state.activities.forEach(activity => {
+                html += `
+                <div class="p-6 hover:bg-gray-50 transition">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-chart-line text-indigo-600"></i>
+                                <span class="font-medium text-gray-900">${activity.utilisateur}</span>
+                                <span class="text-gray-400 hidden md:inline">•</span>
+                                <span class="text-sm text-gray-600">${activity.action}</span>
+                            </div>
+                            <p class="mt-2 text-gray-600">${activity.details}</p>
+                        </div>
+                        <span class="text-sm text-gray-500 mt-2 md:mt-0">${activity.timestamp}</span>
+                    </div>
+                </div>
+                `;
+            });
+            
+            activitiesList.innerHTML = html;
+        }
+
+        function renderParents() {
+            const parentsTableBody = document.getElementById('parentsTableBody');
+            
+            let html = '';
+            state.parents.forEach(parent => {
+                const statusClass = parent.statut === 'Actif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+                
+                html += `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-4 font-medium text-gray-900">${parent.nom}</td>
+                    <td class="px-4 py-4 text-gray-600">${parent.email}</td>
+                    <td class="px-4 py-4 text-gray-600">${parent.enfants} enfant(s)</td>
+                    <td class="px-4 py-4 text-gray-600">${parent.dernierAcces}</td>
+                    <td class="px-4 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ${statusClass}">
+                            ${parent.statut}
+                        </span>
+                    </td>
+                </tr>
+                `;
+            });
+            
+            parentsTableBody.innerHTML = html;
+        }
+
+        function renderReports() {
+            const reportsList = document.getElementById('reportsList');
+            
+            let html = '';
+            state.reports.forEach(report => {
+                const typeClass = report.type === 'Bug' ? 'bg-red-100 text-red-800' : 
+                                 report.type === 'Suggestion' ? 'bg-blue-100 text-blue-800' : 
+                                 'bg-green-100 text-green-800';
+                
+                const priorityClass = report.priorite === 'Haute' ? 'bg-red-100 text-red-800' : 
+                                     report.priorite === 'Moyenne' ? 'bg-yellow-100 text-yellow-800' : 
+                                     'bg-gray-100 text-gray-800';
+                
+                const statusClass = report.statut === 'Nouveau' ? 'bg-orange-100 text-orange-800' : 
+                                   report.statut === 'En cours' ? 'bg-yellow-100 text-yellow-800' : 
+                                   'bg-green-100 text-green-800';
+                
+                html += `
+                <div class="p-6 hover:bg-gray-50 transition">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-3 mb-2">
+                                <i class="fas fa-bug ${report.type === 'Bug' ? 'text-red-600' : 'text-blue-600'}"></i>
+                                <span class="px-3 py-1 rounded-full text-xs font-medium ${typeClass}">
+                                    ${report.type}
+                                </span>
+                                <span class="px-3 py-1 rounded-full text-xs font-medium ${priorityClass}">
+                                    Priorité: ${report.priorite}
+                                </span>
+                                <span class="px-3 py-1 rounded-full text-xs font-medium ${statusClass}">
+                                    ${report.statut}
+                                </span>
+                            </div>
+                            <h3 class="font-bold text-gray-900 text-lg">${report.titre}</h3>
+                            <p class="mt-2 text-gray-600">${report.description}</p>
+                            <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-user"></i>
+                                    ${report.rapportePar}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-calendar"></i>
+                                    ${report.date}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            
+            reportsList.innerHTML = html;
+        }
+
+        function updateStats() {
+            // Statistiques des utilisateurs
+            document.getElementById('directeursCount').textContent = 
+                state.users.filter(u => u.role === 'Directeur').length;
+            document.getElementById('comptablesCount').textContent = 
+                state.users.filter(u => u.role === 'Comptable').length;
+            document.getElementById('secretairesCount').textContent = 
+                state.users.filter(u => u.role === 'Secrétaire').length;
+            document.getElementById('enseignantsCount').textContent = 
+                state.users.filter(u => u.role === 'Enseignant').length;
+            
+            // Statistiques des rapports
+            document.getElementById('totalReports').textContent = state.reports.length;
+            document.getElementById('newReports').textContent = 
+                state.reports.filter(r => r.statut === 'Nouveau').length;
+            document.getElementById('inProgressReports').textContent = 
+                state.reports.filter(r => r.statut === 'En cours').length;
+            document.getElementById('resolvedReports').textContent = 
+                state.reports.filter(r => r.statut === 'Résolu').length;
+        }
+
+        // Fonctions utilitaires
+        function getRoleBadgeColor(role) {
+            const colors = {
+                'Directeur': 'bg-purple-100 text-purple-800',
+                'Comptable': 'bg-blue-100 text-blue-800',
+                'Secrétaire': 'bg-green-100 text-green-800',
+                'Enseignant': 'bg-orange-100 text-orange-800',
+                'IT Admin': 'bg-red-100 text-red-800'
+            };
+            return colors[role] || 'bg-gray-100 text-gray-800';
+        }
+
+        function resetCreateUserForm() {
+            document.getElementById('newUserName').value = '';
+            document.getElementById('newUserEmail').value = '';
+            document.getElementById('newUserRole').value = 'Enseignant';
+            document.getElementById('newUserPassword').value = '';
+        }
+
+        function resetReportForm() {
+            document.getElementById('reportType').value = 'Bug';
+            document.getElementById('reportTitle').value = '';
+            document.getElementById('reportDescription').value = '';
+            document.getElementById('reportPriority').value = 'Moyenne';
+        }
+    </script>
+</body>
+</html>

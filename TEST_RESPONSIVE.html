@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Responsivité - Eden Family School</title>
+    <link rel="stylesheet" href="responsive.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .test-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .test-section {
+            margin: 40px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+        }
+
+        .test-section h2 {
+            color: #333;
+            margin: 0 0 15px 0;
+            font-size: 1.3rem;
+        }
+
+        .breakpoint-info {
+            display: grid;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .breakpoint-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #764ba2;
+        }
+
+        .breakpoint-card strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .grid-test {
+            display: grid;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .grid-test.grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-test.grid-3 {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-test.grid-4 {
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 768px) {
+            .grid-test.grid-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid-test.grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid-test.grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .grid-test.grid-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid-test.grid-3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .grid-test.grid-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .grid-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            text-align: center;
+        }
+
+        .grid-item h3 {
+            margin: 0;
+            color: #667eea;
+        }
+
+        .test-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .test-buttons button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            min-height: 44px;
+        }
+
+        .test-buttons button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .size-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        .success-badge {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .test-container {
+                padding: 15px;
+            }
+
+            .test-section {
+                padding: 15px;
+            }
+
+            .test-buttons {
+                gap: 5px;
+            }
+
+            .test-buttons button {
+                flex: 1;
+                padding: 10px;
+                min-height: 44px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .test-container {
+                padding: 10px;
+            }
+
+            .test-section {
+                padding: 10px;
+                margin: 20px 0;
+            }
+
+            h1 {
+                font-size: 1.3rem;
+            }
+
+            .test-section h2 {
+                font-size: 1rem;
+            }
+
+            .size-indicator {
+                bottom: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎨 Test de Responsivité - Eden Family School</h1>
+
+        <div class="test-section">
+            <h2>📱 Breakpoints Testés</h2>
+            <div class="breakpoint-info">
+                <div class="breakpoint-card">
+                    <strong>320px - 479px (Très Petits Téléphones)</strong>
+                    iPhone SE, iPhone 11, Samsung A12
+                    <span class="success-badge">✓ Optimisé</span>
+                </div>
+                <div class="breakpoint-card">
+                    <strong>480px - 767px (Petites Tablettes)</strong>
+                    iPhone 12-15, Samsung Galaxy
+                    <span class="success-badge">✓ Optimisé</span>
+                </div>
+                <div class="breakpoint-card">
+                    <strong>768px - 1023px (Tablettes)</strong>
+                    iPad Mini, iPad Standard
+                    <span class="success-badge">✓ Optimisé</span>
+                </div>
+                <div class="breakpoint-card">
+                    <strong>1024px - 1199px (Écrans Larges)</strong>
+                    iPad Pro, petits moniteurs
+                    <span class="success-badge">✓ Optimisé</span>
+                </div>
+                <div class="breakpoint-card">
+                    <strong>1400px+ (Très Grands Écrans)</strong>
+                    Moniteurs desktop, 4K
+                    <span class="success-badge">✓ Optimisé</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 Test Grilles Responsive</h2>
+            <p><strong>Instructions:</strong> Redimensionnez votre fenêtre pour voir les colonnes s'adapter</p>
+            
+            <h3>Grille 2 colonnes (1 col mobile → 2 cols desktop)</h3>
+            <div class="grid-test grid-2">
+                <div class="grid-item">
+                    <h3>Colonne 1</h3>
+                    <p>Responsive</p>
+                </div>
+                <div class="grid-item">
+                    <h3>Colonne 2</h3>
+                    <p>Adaptive</p>
+                </div>
+            </div>
+
+            <h3>Grille 3 colonnes (1 col mobile → 3 cols desktop)</h3>
+            <div class="grid-test grid-3">
+                <div class="grid-item">
+                    <h3>Item 1</h3>
+                    <p>Mobile</p>
+                </div>
+                <div class="grid-item">
+                    <h3>Item 2</h3>
+                    <p>Tablet</p>
+                </div>
+                <div class="grid-item">
+                    <h3>Item 3</h3>
+                    <p>Desktop</p>
+                </div>
+            </div>
+
+            <h3>Grille 4 colonnes (1 col mobile → 4 cols desktop)</h3>
+            <div class="grid-test grid-4">
+                <div class="grid-item">
+                    <h3>1</h3>
+                    <p>320px</p>
+                </div>
+                <div class="grid-item">
+                    <h3>2</h3>
+                    <p>480px</p>
+                </div>
+                <div class="grid-item">
+                    <h3>3</h3>
+                    <p>768px</p>
+                </div>
+                <div class="grid-item">
+                    <h3>4</h3>
+                    <p>1024px+</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Test Formulaires</h2>
+            <form class="test-form">
+                <div class="form-group">
+                    <label for="testInput">Champ Texte (hauteur min 44px)</label>
+                    <input type="text" id="testInput" placeholder="Testez sur mobile">
+                </div>
+                <div class="form-group">
+                    <label for="testSelect">Sélecteur</label>
+                    <select id="testSelect">
+                        <option>Option 1</option>
+                        <option>Option 2</option>
+                        <option>Option 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="testTextarea">Textarea</label>
+                    <textarea id="testTextarea" rows="4" placeholder="Zone de texte..."></textarea>
+                </div>
+            </form>
+        </div>
+
+        <div class="test-section">
+            <h2>🔘 Test Boutons</h2>
+            <div class="test-buttons">
+                <button>Bouton 1</button>
+                <button>Bouton 2</button>
+                <button>Bouton 3</button>
+                <button>Bouton 4</button>
+                <button>Bouton 5</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Checklist Responsivité</h2>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+                <li>✓ Hauteur min boutons: 44px (accessibility)</li>
+                <li>✓ Font size inputs: 16px (prévient zoom)</li>
+                <li>✓ Images: max-width 100%</li>
+                <li>✓ Padding/Margin adaptatifs</li>
+                <li>✓ Grilles flex/grid responsives</li>
+                <li>✓ Navigation mobile-friendly</li>
+                <li>✓ Modales responsive</li>
+                <li>✓ Tables défilables</li>
+                <li>✓ Typographie fluide</li>
+                <li>✓ Paysage/Portrait supportés</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Instructions de Test</h2>
+            <ol style="line-height: 1.8;">
+                <li><strong>Chrome DevTools:</strong> Appuyez sur Ctrl+Shift+M</li>
+                <li><strong>Présets:</strong> iPhone SE (375px), iPad (768px), Desktop (1920px)</li>
+                <li><strong>Redimensionner:</strong> Changez la largeur lentement et observez les adaptations</li>
+                <li><strong>Toucher:</strong> Testez l'espacé des boutons au toucher (min 44px)</li>
+                <li><strong>Orientation:</strong> Basculez entre portrait et paysage</li>
+                <li><strong>Zoom:</strong> Zoomez/dézoomez pour voir la scalabilité</li>
+                <li><strong>Impression:</strong> Appuyez Ctrl+P pour voir l'optimisation impression</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="size-indicator" id="sizeIndicator">
+        📏 Width: <span id="width">0</span>px
+    </div>
+
+    <script>
+        function updateSize() {
+            const width = window.innerWidth;
+            document.getElementById('width').textContent = width;
+            
+            const indicator = document.getElementById('sizeIndicator');
+            if (width < 480) {
+                indicator.style.background = '#FF6B6B';
+            } else if (width < 768) {
+                indicator.style.background = '#FFA500';
+            } else if (width < 1024) {
+                indicator.style.background = '#4CAF50';
+            } else if (width < 1200) {
+                indicator.style.background = '#2196F3';
+            } else {
+                indicator.style.background = '#9C27B0';
+            }
+        }
+
+        window.addEventListener('resize', updateSize);
+        window.addEventListener('load', updateSize);
+        updateSize();
+    </script>
+</body>
+</html>

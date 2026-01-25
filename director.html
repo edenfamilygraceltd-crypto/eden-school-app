@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portail Directeur - Eden Family School</title>
     
+    <!-- 🔒 SÉCURITÉ: Script d'authentification -->
+    <script src="security-auth.js"></script>
+    
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -13,6 +16,9 @@
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Responsive CSS Global -->
+    <link rel="stylesheet" href="responsive.css">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -562,6 +568,7 @@
             .nav-tabs {
                 flex-wrap: nowrap;
                 overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
             
             .stats-grid {
@@ -574,23 +581,30 @@
 
             input, select, textarea, button {
                 font-size: 15px;
+                min-height: 44px;
+            }
+
+            .col-md-4 {
+                margin-bottom: 1rem;
             }
         }
 
-        /* Téléphones petits (320px - 480px) */
-        @media (max-width: 480px) {
+        /* Très petits écrans (320px - 479px) */
+        @media (max-width: 479px) {
             body {
                 font-size: 13px;
+                overflow-x: hidden;
             }
 
             .header-container {
                 padding: 0 0.5rem;
                 flex-wrap: wrap;
                 gap: 0.5rem;
+                flex-direction: column;
             }
 
             .logo-text h1 {
-                font-size: 1.1rem;
+                font-size: 1rem;
             }
 
             .nav-container, .main-content {
@@ -599,8 +613,9 @@
 
             .nav-btn {
                 padding: 8px 10px;
-                font-size: 0.85rem;
+                font-size: 0.8rem;
                 margin: 2px;
+                min-height: 44px;
             }
 
             .nav-tabs {
@@ -611,24 +626,21 @@
 
             .stats-grid {
                 grid-template-columns: 1fr;
-                gap: 0.75rem;
+                gap: 0.5rem;
             }
 
             .stat-card {
                 padding: 0.75rem;
-                margin-bottom: 0.75rem;
+                margin-bottom: 0.5rem;
+                border-radius: 8px;
             }
 
-            h1, h2 {
-                font-size: 1.3rem;
-            }
-
-            h3, h4, h5, h6 {
-                font-size: 1rem;
-            }
+            h1 { font-size: 1.1rem; }
+            h2 { font-size: 1rem; }
+            h3, h4 { font-size: 0.9rem; }
 
             .form-label {
-                font-size: 0.9rem;
+                font-size: 0.85rem;
                 margin-bottom: 0.25rem;
             }
 
@@ -643,13 +655,15 @@
                 padding: 0.75rem;
                 width: 100%;
                 border-radius: 6px;
+                min-height: 44px;
             }
 
             button, .btn {
                 padding: 0.75rem;
-                font-size: 0.95rem;
+                font-size: 0.9rem;
                 width: 100%;
                 border-radius: 6px;
+                min-height: 44px;
             }
 
             .d-flex {
@@ -659,40 +673,47 @@
 
             .row {
                 margin: 0;
-                gap: 0;
+                gap: 0.5rem;
             }
 
             [class*="col-"] {
                 padding: 0.25rem;
                 margin-bottom: 0.5rem;
+                width: 100%;
             }
 
             table {
-                font-size: 0.8rem;
+                font-size: 0.75rem;
             }
 
             table th, table td {
-                padding: 0.5rem;
+                padding: 0.35rem;
             }
 
             .modal-dialog {
                 margin: 0.5rem;
+                width: 95%;
+                max-width: 95%;
             }
 
             .modal-content {
-                border-radius: 10px;
+                border-radius: 8px;
             }
 
             .modal-body {
-                padding: 1rem 0.75rem;
+                padding: 0.75rem;
+            }
+
+            .modal-header, .modal-footer {
+                padding: 0.5rem;
             }
 
             .toast-notification {
                 max-width: 95%;
                 right: 5px;
                 left: 5px;
-                font-size: 0.85rem;
-                padding: 1rem;
+                font-size: 0.8rem;
+                padding: 0.75rem;
             }
 
             .d-grid {
@@ -716,13 +737,13 @@
             .alert {
                 padding: 0.75rem;
                 margin-bottom: 0.75rem;
-                font-size: 0.9rem;
+                font-size: 0.85rem;
                 border-radius: 6px;
             }
 
             .badge {
-                font-size: 0.7rem;
-                padding: 0.3em 0.5em;
+                font-size: 0.65rem;
+                padding: 0.25em 0.4em;
             }
 
             .icon-text-primary {
@@ -749,33 +770,108 @@
             .p-3, .p-4 {
                 padding: 0.75rem !important;
             }
+
+            .card {
+                border-radius: 8px;
+                margin-bottom: 0.75rem;
+            }
+
+            .card-header {
+                padding: 0.5rem;
+                font-size: 0.85rem;
+            }
+
+            .card-body {
+                padding: 0.5rem;
+            }
         }
 
-        /* Tablettes (481px - 768px) */
-        @media (min-width: 481px) and (max-width: 768px) {
+        /* Petites tablettes (480px - 767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+            body {
+                font-size: 14px;
+            }
+
             .header-container {
                 flex-wrap: wrap;
+                gap: 0.75rem;
             }
 
             .logo-text h1 {
-                font-size: 1.2rem;
+                font-size: 1.1rem;
             }
 
             .nav-btn {
-                padding: 10px 12px;
-                font-size: 0.9rem;
+                padding: 8px 12px;
+                font-size: 0.85rem;
+                min-height: 44px;
             }
 
             input, select, textarea, button {
                 font-size: 14px;
+                min-height: 44px;
             }
 
             .stat-card {
-                padding: 1rem;
+                padding: 0.875rem;
+                font-size: 0.9rem;
             }
 
             table {
-                font-size: 0.9rem;
+                font-size: 0.85rem;
+            }
+
+            h1 { font-size: 1.2rem; }
+            h2 { font-size: 1rem; }
+        }
+
+        /* Tablettes moyennes (768px - 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .header-container {
+                padding: 0 1.5rem;
+            }
+
+            .nav-container, .main-content {
+                padding: 0 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .col-md-4 {
+                width: 50%;
+            }
+
+            .col-md-6 {
+                width: 50%;
+            }
+        }
+
+        /* Écrans larges (1024px+) */
+        @media (min-width: 1024px) {
+            .header-container {
+                padding: 0 2rem;
+            }
+
+            .nav-container, .main-content {
+                padding: 0 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .col-md-3 {
+                width: 25%;
+            }
+
+            .col-md-4 {
+                width: 33.33%;
+            }
+
+            .col-md-6 {
+                width: 50%;
             }
         }
         
@@ -4551,6 +4647,11 @@
             }
         }
         
+        // 🔒 VÉRIFICATION DE SÉCURITÉ - Protéger la page
+        if (!protectPage('director.html')) {
+            throw new Error('Accès non autorisé');
+        }
+
         // Initialiser l'application
         function initApp() {
             console.log('Application initialisée');
