@@ -160,6 +160,10 @@ nav {
   font-size: 1.5rem;
   cursor: pointer;
   padding: var(--spacing-sm);
+  color: inherit;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  position: relative;
 }
 
 /* ===== SECTION SPACING ===== */
@@ -221,6 +225,21 @@ section {
     margin: 0;
   }
 
+  body.menu-open {
+    overflow: hidden;
+  }
+
+  body.menu-open::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+  }
+
   section {
     padding: var(--spacing-xl) var(--spacing-md);
   }
@@ -242,6 +261,10 @@ section {
     padding: var(--spacing-lg);
     gap: var(--spacing-md);
     z-index: 999;
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
   }
 
   .nav-links.active {
@@ -322,6 +345,11 @@ section {
     transition: left 0.3s ease;
     padding: var(--spacing-lg);
     gap: var(--spacing-md);
+    z-index: 999;
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
   }
 
   .nav-links.active {

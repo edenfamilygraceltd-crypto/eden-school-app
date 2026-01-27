@@ -148,9 +148,11 @@
     .carousel-container {
       position: relative;
       width: 100%;
-      height: 100vh;
+      height: 120vh;
       overflow: hidden;
-      margin-top: 80px;
+      margin-top: 0;
+      padding-top: 80px;
+      box-sizing: border-box;
     }
 
     .carousel-slide {
@@ -180,7 +182,7 @@
       justify-content: center;
       text-align: center;
       color: var(--white);
-      padding: 2rem;
+      padding: 1rem;
     }
 
     .carousel-content {
@@ -599,7 +601,7 @@
 
     .level-options {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 1rem;
       margin-top: 1rem;
     }
@@ -608,7 +610,7 @@
       background: var(--light-bg);
       border: 2px solid #e0e0e0;
       border-radius: 15px;
-      padding: 1rem;
+      padding: 0.8rem 0.6rem;
       text-align: center;
       cursor: pointer;
       transition: var(--transition);
@@ -628,7 +630,7 @@
     }
 
     .level-option i {
-      font-size: 1.8rem;
+      font-size: 1.4rem;
       margin-bottom: 0.7rem;
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       -webkit-background-clip: text;
@@ -637,12 +639,14 @@
     }
 
     .level-option h5 {
-      font-size: 0.95rem;
+      font-size: 1.05rem;
       margin-bottom: 0.3rem;
+      font-weight: 600;
     }
 
     .level-option small {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
+      color: #666;
     }
 
     .game-categories-grid {
@@ -1405,6 +1409,13 @@
       .carousel-content p {
         font-size: 1rem;
       }
+      
+      .carousel-container {
+        height: 70vh;
+        margin-top: 0;
+        padding-top: 80px;
+        box-sizing: border-box;
+      }
 
       .games-header h1 {
         font-size: 2.5rem;
@@ -1417,6 +1428,15 @@
       .carousel-arrow {
         padding: 0.5rem 1rem;
         font-size: 1.5rem;
+      }
+      
+      .level-options {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+      }
+      
+      .level-option {
+        padding: 0.75rem 0.5rem;
       }
       
       .level-btn {
@@ -1470,8 +1490,36 @@
         font-size: 0.9rem;
       }
       
+      .carousel-container {
+        height: 65vh;
+        margin-top: 0;
+        padding-top: 60px;
+        box-sizing: border-box;
+      }
+      
       .section-title {
         font-size: 1.5rem;
+      }
+      
+      .level-options {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.75rem;
+      }
+      
+      .level-option {
+        padding: 0.6rem 0.4rem;
+      }
+      
+      .level-option i {
+        font-size: 1.1rem;
+      }
+      
+      .level-option h5 {
+        font-size: 0.9rem;
+      }
+      
+      .level-option small {
+        font-size: 0.75rem;
       }
       
       .games-header {
@@ -2471,7 +2519,7 @@
             </div>
             <div class="branch-info-item">
               <i class="fas fa-phone"></i>
-              <span>+250 788 123 456</span>
+              <span>Comptable: 0785892018 | Responsable: 0791826950</span>
             </div>
             <div class="branch-info-item">
               <i class="fas fa-envelope"></i>
@@ -2484,12 +2532,12 @@
           </div>
 
           <div class="branch-actions">
-            <a href="Galerie_Kimisagara.html" class="branch-btn gallery">
+            <button class="branch-btn gallery" onclick="openBranchGallery('kimisagara')">
               <i class="fas fa-images"></i> Galerie
-            </a>
-            <a href="https://maps.app.goo.gl/7NTitr14XKeXg9Hf7" target="_blank" class="branch-btn directions">
-              <i class="fas fa-map-marker-alt"></i> Voir sur Maps
-            </a>
+            </button>
+            <button class="branch-btn directions" onclick="showKimisagaraDirections()">
+              <i class="fas fa-directions"></i> Itinéraire
+            </button>
           </div>
         </div>
       </div>
@@ -2529,7 +2577,7 @@
             </div>
             <div class="branch-info-item">
               <i class="fas fa-phone"></i>
-              <span>+250 788 234 567</span>
+              <span>Directrice: 0788410242 | DOS: 0796145647 | DG: 0788883842</span>
             </div>
             <div class="branch-info-item">
               <i class="fas fa-envelope"></i>
@@ -2542,12 +2590,12 @@
           </div>
 
           <div class="branch-actions">
-            <a href="Galerie_Gisozi.html" class="branch-btn gallery">
+            <button class="branch-btn gallery" onclick="openBranchGallery('gisozi')">
               <i class="fas fa-images"></i> Galerie
-            </a>
-            <a href="https://maps.app.goo.gl/EtYYS1SabReRS4zJ9" target="_blank" class="branch-btn directions">
-              <i class="fas fa-map-marker-alt"></i> Voir sur Maps
-            </a>
+            </button>
+            <button class="branch-btn directions" onclick="showGisoziDirections()">
+              <i class="fas fa-directions"></i> Itinéraire
+            </button>
           </div>
         </div>
       </div>
@@ -2584,11 +2632,11 @@
             </div>
             <div class="branch-info-item">
               <i class="fas fa-phone"></i>
-              <span>+250 788 345 678</span>
+              <span>Directeur: 0791639766 | Comptable: 0792570074</span>
             </div>
             <div class="branch-info-item">
               <i class="fas fa-envelope"></i>
-              <span>kacyiru@edenfamily.edu.rw</span>
+              <span>sergetumbwe@gmail.com</span>
             </div>
             <div class="branch-info-item">
               <i class="fas fa-clock"></i>
@@ -2597,12 +2645,12 @@
           </div>
 
           <div class="branch-actions">
-            <a href="Galerie_Kacyiru.html" class="branch-btn gallery">
+            <button class="branch-btn gallery" onclick="openBranchGallery('kacyiru')">
               <i class="fas fa-images"></i> Galerie
-            </a>
-            <a href="https://maps.app.goo.gl/qurz5WxxSkL4nkCi9" target="_blank" class="branch-btn directions">
-              <i class="fas fa-map-marker-alt"></i> Voir sur Maps
-            </a>
+            </button>
+            <button class="branch-btn directions" onclick="showKacyiruDirections()">
+              <i class="fas fa-directions"></i> Itinéraire
+            </button>
           </div>
         </div>
       </div>
@@ -2986,12 +3034,12 @@
       <div class="contact-card">
         <i class="fas fa-phone"></i>
         <h3>Téléphone</h3>
-        <p>+250 788 123 456</p>
+        <p>+250 788 883 842 (Gisozi)</p>
       </div>
       <div class="contact-card">
         <i class="fas fa-envelope"></i>
         <h3>Email</h3>
-        <p>edenfamily9@gmail.com</p>
+        <p>edengracefamilyltd@gmail.com</p>
       </div>
     </div>
     
@@ -3046,8 +3094,8 @@
       <div class="footer-section">
         <h3>Contact</h3>
         <p><i class="fas fa-map-marker-alt"></i> Kigali, Rwanda<br>
-        <i class="fas fa-envelope"></i> edenfamily9@gmail.com<br>
-        <i class="fas fa-phone"></i> +250 788 123 456</p>
+        <i class="fas fa-envelope"></i> edengracefamilyltd@gmail.com<br>
+        <i class="fas fa-phone"></i> +250 788 883 842</p>
       </div>
       <div class="footer-section">
         <h3>Liens rapides</h3>
@@ -3906,11 +3954,13 @@
     function toggleMenu() {
       const navLinks = document.getElementById('navLinks');
       navLinks.classList.toggle('active');
+      document.body.classList.toggle('menu-open');
       document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
     }
 
     function closeMobileMenu() {
       document.getElementById('navLinks').classList.remove('active');
+      document.body.classList.remove('menu-open');
       document.body.style.overflow = '';
     }
 
@@ -4981,7 +5031,7 @@
         <p>Vous avez le droit d'accéder, modifier et supprimer vos données.</p>
         
         <p style="margin-top: 1rem; color: #666;">
-          <small>Pour exercer vos droits: edenfamily9@gmail.com</small>
+          <small>Pour exercer vos droits: edengracefamilyltd@gmail.com</small>
         </p>
       `;
       
@@ -5168,7 +5218,7 @@
         name: "Kimisagara",
         fullName: "Eden Family School - Kimisagara",
         address: "KG 7 Ave, Kimisagara, Kigali",
-        phone: "+250 788 123 456",
+        phone: "Comptable: 0785892018 | Responsable: 0791826950",
         email: "kimisagara@edenfamily.edu.rw",
         hours: "Lun-Ven: 7h30 - 17h30",
         levels: ["Maternelle"],
@@ -5187,7 +5237,7 @@
         name: "Gisozi",
         fullName: "Eden Family School - Gisozi",
         address: "KG 11 Ave, Gisozi, Kigali",
-        phone: "+250 788 234 567",
+        phone: "Directrice: 0788410242 | DOS: 0796145647 | DG: 0788883842",
         email: "gisozi@edenfamily.edu.rw",
         hours: "Lun-Ven: 7h30 - 18h00",
         levels: ["Maternelle", "Primaire"],
@@ -5206,8 +5256,8 @@
         name: "Kacyiru",
         fullName: "Eden Family School - Kacyiru",
         address: "KG 17 Ave, Kacyiru, Kigali",
-        phone: "+250 788 345 678",
-        email: "kacyiru@edenfamily.edu.rw",
+        phone: "Directeur: 0791639766 | Comptable: 0792570074",
+        email: "sergetumbwe@gmail.com",
         hours: "Lun-Ven: 7h30 - 17h30",
         levels: ["Maternelle"],
         description: "Campus dédié exclusivement à l'éducation maternelle. Un environnement spécialement conçu pour les jeunes enfants avec des installations modernes adaptées à leur développement physique et cognitif.",
@@ -5294,8 +5344,6 @@
       document.getElementById('modal').style.display = 'flex';
       document.body.style.overflow = 'hidden';
     }
-      }
-    };
 
     // Initialisation des animations
     function initAnimations() {
