@@ -1040,8 +1040,8 @@
             e.preventDefault();
             
             try {
-                const name = document.getElementById('createName').value;
-                const email = document.getElementById('createEmail').value;
+                const name = document.getElementById('createName').value?.trim();
+                const email = document.getElementById('createEmail').value?.trim();
                 const password = document.getElementById('createPassword').value;
                 const role = document.getElementById('createRole').value;
                 
@@ -1050,17 +1050,30 @@
                     return;
                 }
 
+                if (password.length < 6) {
+                    alert('Le mot de passe doit contenir au moins 6 caractères');
+                    return;
+                }
+
+                if (!isValidEmail(email)) {
+                    alert('Veuillez entrer un email valide');
+                    return;
+                }
+
+                console.log('Vérification du primary admin...');
                 // Vérifier s'il y a déjà un primary admin
                 const primaryAdmin = await getPrimaryAdmin();
-                let requestId;
+                console.log('Primary admin trouvé:', primaryAdmin);
 
                 if (!primaryAdmin) {
+                    console.log('Premier compte - création du Primary Admin');
                     // Premier compte créé = Primary Admin
                     // Créer directement l'utilisateur sans attendre d'approbation
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    const userCredential = await window.auth.createUserWithEmailAndPassword(email, password);
+                    console.log('Utilisateur Firebase créé:', userCredential.user.uid);
                     
                     // Ajouter les infos dans Firestore
-                    await setDoc(doc(window.db, 'users', userCredential.user.uid), {
+                    await window.setDoc(window.doc(window.db, 'users', userCredential.user.uid), {
                         nom: name,
                         email: email,
                         role: role,
@@ -1068,15 +1081,17 @@
                         status: 'active',
                         isPrimaryAdmin: true
                     });
+                    console.log('Document utilisateur créé dans Firestore');
 
                     // Marquer comme primary admin
-                    await setDoc(doc(window.db, 'account_creation_settings', 'primary'), {
+                    await window.setDoc(window.doc(window.db, 'account_creation_settings', 'primary'), {
                         adminId: userCredential.user.uid,
                         adminEmail: email,
                         createdAt: new Date()
                     });
+                    console.log('Primary admin settings créés');
 
-                    alert('Compte créé avec succès ! Vous êtes maintenant l\'administrateur principal.');
+                    alert('✅ Compte créé avec succès ! Vous êtes maintenant l\'administrateur principal.');
                     document.getElementById('createAccountForm').reset();
                     
                     // Redirection vers la page de contact après 2 secondes
@@ -1084,6 +1099,7 @@
                         window.location.href = 'index.html#contact';
                     }, 2000);
                 } else {
+                    console.log('Compte secondaire - création d\'une demande d\'approbation');
                     // Il existe déjà un primary admin
                     // Créer une demande d'approbation
                     const newRequest = {
@@ -1091,25 +1107,29 @@
                         email: email,
                         password: password,
                         role: role,
-                        requestedBy: state.currentUser.id,
-                        requestedByName: state.currentUser.nom,
+                        requestedBy: state.currentUser?.id || 'anonymous',
+                        requestedByName: state.currentUser?.nom || 'Utilisateur',
                         status: 'pending',
                         createdAt: new Date(),
                         approvedAt: null,
                         approvedBy: null
                     };
 
-                    const docRef = await addDoc(collection(window.db, 'account_requests'), newRequest);
-                    requestId = docRef.id;
+                    console.log('Création de la demande:', newRequest);
+                    const docRef = await window.addDoc(window.collection(window.db, 'account_requests'), newRequest);
+                    console.log('Demande créée avec ID:', docRef.id);
 
                     // Afficher le message d'attente
-                    document.getElementById('authorizationMessage').classList.remove('hidden');
+                    const authMsg = document.getElementById('authorizationMessage');
+                    if (authMsg) {
+                        authMsg.classList.remove('hidden');
+                    }
                     document.getElementById('createAccountForm').reset();
                     
                     // Charger les demandes mises à jour
                     await loadCreateAccountRequests();
 
-                    alert('Votre demande de création de compte a été envoyée pour approbation au responsable principal.');
+                    alert('✅ Votre demande de création de compte a été envoyée pour approbation au responsable principal.');
                     
                     // Redirection après 3 secondes
                     setTimeout(() => {
@@ -1119,7 +1139,7 @@
 
             } catch (error) {
                 console.error('Erreur lors de la création du compte:', error);
-                alert('Erreur: ' + error.message);
+                alert('❌ Erreur: ' + error.message);
             }
         }
 
@@ -1474,8 +1494,8 @@
         }
 
         async function handleRegister() {
-            const nom = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
+            const nom = document.getElementById('registerName').value?.trim();
+            const email = document.getElementById('registerEmail').value?.trim();
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
             const registerMessage = document.getElementById('registerMessage');
@@ -1501,9 +1521,13 @@
             }
             
             try {
+                console.log('Démarrage de l\'inscription pour:', email);
+                showMessage(registerMessage, 'Création du compte en cours...', 'info');
+                
                 // Créer l'utilisateur dans Firebase Authentication
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const userCredential = await window.auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
+                console.log('Utilisateur Firebase créé:', user.uid);
 
                 // Générer OTP
                 const otp = generateOTP();
@@ -1513,21 +1537,26 @@
                     nom: nom,
                     otp: otp
                 };
+                console.log('OTP généré:', otp);
 
                 // Essayer d'envoyer l'OTP par email
                 try {
+                    console.log('Tentative d\'envoi de l\'email OTP...');
                     await sendOTPByEmail(email, otp);
+                    console.log('Email OTP envoyé avec succès');
                 } catch (sendErr) {
                     console.error('Échec envoi OTP lors de l\'inscription:', sendErr);
+                    showMessage(registerMessage, '⚠️ Impossible d\'envoyer l\'email. Suppression du compte...', 'error');
+                    
                     // Tenter de supprimer l'utilisateur créé pour éviter compte orphelin
                     try {
-                        if (auth.currentUser) {
-                            await auth.currentUser.delete();
+                        if (window.auth.currentUser) {
+                            await window.auth.currentUser.delete();
+                            console.log('Compte supprimé après échec d\'envoi OTP');
                         }
                     } catch (delErr) {
                         console.warn('Impossible de supprimer le compte utilisateur après échec d\'envoi OTP:', delErr);
                     }
-                    showMessage(registerMessage, 'Impossible d\'envoyer l\'email OTP. Réessayez plus tard.', 'error');
                     return;
                 }
 
@@ -1535,15 +1564,19 @@
                 document.getElementById('registerForm').classList.add('hidden');
                 document.getElementById('otpForm').classList.remove('hidden');
                 document.getElementById('otpEmail').textContent = email;
-                showMessage('otpMessage', 'Code OTP envoyé à votre email', 'success');
+                showMessage('otpMessage', '✅ Code OTP envoyé à votre email: ' + email, 'success');
 
             } catch (error) {
                 console.error('Erreur d\'inscription:', error);
                 let message = 'Erreur lors de l\'inscription';
                 if (error.code === 'auth/email-already-in-use') {
                     message = 'Cet email est déjà utilisé';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'Email invalide';
+                } else if (error.code === 'auth/weak-password') {
+                    message = 'Le mot de passe est trop faible';
                 }
-                showMessage(registerMessage, message, 'error');
+                showMessage(registerMessage, '❌ ' + message, 'error');
             }
         }
 
