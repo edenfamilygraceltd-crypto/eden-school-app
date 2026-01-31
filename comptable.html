@@ -3473,21 +3473,28 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-        // Firebase Configuration
+    <!-- Firebase (Modern SDK) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+        import { getStorage } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
+
         const firebaseConfig = {
-            apiKey: "AIzaSyCx6kmJ59x0tLt4vh_3czvEEQrtw4aWFHs",
-            authDomain: "edendatabase-7e1ed.firebaseapp.com",
-            databaseURL: "https://edendatabase-7e1ed-default-rtdb.firebaseio.com",
-            projectId: "edendatabase-7e1ed",
-            storageBucket: "edendatabase-7e1ed.firebasestorage.app",
-            messagingSenderId: "147248399046",
-            appId: "1:147248399046:web:d0b433e755772bbe718dc7",
-            measurementId: "G-XB192PCMV7"
+            apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+            authDomain: "edensmart-app.firebaseapp.com",
+            projectId: "edensmart-app",
+            storageBucket: "edensmart-app.firebasestorage.app",
+            messagingSenderId: "1093120876724",
+            appId: "1:1093120876724:web:bc37448cadd18d651c77e1",
+            measurementId: "G-1FL70PZZSW"
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        window.firebaseApp = initializeApp(firebaseConfig);
+        window.auth = getAuth(window.firebaseApp);
+        window.db = getDatabase(window.firebaseApp);
+        window.storage = getStorage(window.firebaseApp);
+    </script>
         const auth = firebase.auth();
         const db = firebase.database();
         const storage = firebase.storage();

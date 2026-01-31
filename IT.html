@@ -6,6 +6,35 @@
     <title>IT Admin - Gestion des Comptes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK (Modern) -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFunctions } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-functions.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+            authDomain: "edensmart-app.firebaseapp.com",
+            projectId: "edensmart-app",
+            storageBucket: "edensmart-app.firebasestorage.app",
+            messagingSenderId: "1093120876724",
+            appId: "1:1093120876724:web:bc37448cadd18d651c77e1",
+            measurementId: "G-1FL70PZZSW"
+        };
+
+        // Initialize Firebase
+        window.firebaseApp = initializeApp(firebaseConfig);
+        window.auth = getAuth(window.firebaseApp);
+        window.db = getFirestore(window.firebaseApp);
+        window.functions = getFunctions(window.firebaseApp);
+        window.analytics = getAnalytics(window.firebaseApp);
+    </script>
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
     <style>
         .fade-in {
             animation: fadeIn 0.3s ease-in-out;
@@ -45,8 +74,11 @@
     <!-- Modal d'authentification -->
     <div id="authModal" class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden slide-in">
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white text-center">
+            <!-- Header avec bouton retour -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white text-center relative">
+                <button id="backBtn" class="absolute left-4 top-4 text-white hover:text-gray-200">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </button>
                 <i class="fas fa-shield-alt text-5xl mb-4"></i>
                 <h2 class="text-3xl font-bold">IT Admin</h2>
                 <p class="text-indigo-100 mt-2">Système de Gestion Scolaire</p>
@@ -82,9 +114,7 @@
                     <i class="fas fa-sign-in-alt"></i>
                     Se connecter
                 </button>
-                <p class="text-sm text-gray-500 text-center">
-                    Test: utilisez n'importe quel email de la liste
-                </p>
+                <div id="loginMessage" class="text-sm text-center hidden"></div>
             </div>
 
             <!-- Formulaire d'inscription -->
@@ -121,6 +151,32 @@
                     <i class="fas fa-user-plus"></i>
                     Créer mon compte IT Admin
                 </button>
+                <div id="registerMessage" class="text-sm text-center hidden"></div>
+            </div>
+
+            <!-- Formulaire OTP -->
+            <div id="otpForm" class="p-8 space-y-6 hidden">
+                <div class="text-center">
+                    <i class="fas fa-shield-alt text-4xl text-indigo-600 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-900">Vérification OTP</h3>
+                    <p class="text-gray-600 mt-2">Un code de vérification a été envoyé à <span id="otpEmail" class="font-semibold"></span></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Code OTP (6 chiffres)</label>
+                    <div class="relative">
+                        <i class="fas fa-key absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="otpCode" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="123456" maxlength="6">
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button id="resendOtpBtn" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                        <i class="fas fa-redo"></i> Renvoyer
+                    </button>
+                    <button id="verifyOtpBtn" class="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-check"></i> Vérifier
+                    </button>
+                </div>
+                <div id="otpMessage" class="text-sm text-center hidden"></div>
             </div>
         </div>
     </div>
@@ -147,10 +203,6 @@
                             <i class="fas fa-user-plus"></i>
                             Créer un Compte
                         </button>
-                        <a href="Auth.html" class="bg-green-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-green-600 transition flex items-center justify-center gap-2 shadow-md">
-                            <i class="fas fa-lock"></i>
-                            Authentification
-                        </a>
                         <button id="logoutBtn" class="bg-red-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-600 transition flex items-center justify-center gap-2 shadow-md">
                             <i class="fas fa-sign-out-alt"></i>
                             Déconnexion
@@ -199,10 +251,8 @@
                         <select id="roleFilter" class="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full md:w-auto">
                             <option value="Tous">Tous</option>
                             <option value="Directeur">Directeur</option>
-                            <option value="Comptable">Comptable</option>
                             <option value="Secrétaire">Secrétaire</option>
                             <option value="Enseignant">Enseignant</option>
-                            <option value="IT Admin">IT Admin</option>
                         </select>
                     </div>
                 </div>
@@ -213,21 +263,10 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-500 text-sm">Directeurs</p>
-                                <p id="directeursCount" class="text-2xl font-bold text-gray-900">1</p>
+                                <p id="directeursCount" class="text-2xl font-bold text-gray-900">0</p>
                             </div>
                             <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center">
-                                <i class="fas fa-users"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-lg shadow p-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm">Comptables</p>
-                                <p id="comptablesCount" class="text-2xl font-bold text-gray-900">1</p>
-                            </div>
-                            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center">
-                                <i class="fas fa-users"></i>
+                                <i class="fas fa-crown"></i>
                             </div>
                         </div>
                     </div>
@@ -235,10 +274,10 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-500 text-sm">Secrétaires</p>
-                                <p id="secretairesCount" class="text-2xl font-bold text-gray-900">1</p>
+                                <p id="secretairesCount" class="text-2xl font-bold text-gray-900">0</p>
                             </div>
                             <div class="w-12 h-12 rounded-full bg-green-100 text-green-800 flex items-center justify-center">
-                                <i class="fas fa-users"></i>
+                                <i class="fas fa-user-tie"></i>
                             </div>
                         </div>
                     </div>
@@ -246,9 +285,20 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-500 text-sm">Enseignants</p>
-                                <p id="enseignantsCount" class="text-2xl font-bold text-gray-900">2</p>
+                                <p id="enseignantsCount" class="text-2xl font-bold text-gray-900">0</p>
                             </div>
                             <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-800 flex items-center justify-center">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Total</p>
+                                <p id="totalUsersCount" class="text-2xl font-bold text-gray-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center">
                                 <i class="fas fa-users"></i>
                             </div>
                         </div>
@@ -264,9 +314,10 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rôle</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Téléphone</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Créé le</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Créé par</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="usersTableBody" class="divide-y divide-gray-200">
@@ -303,6 +354,7 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Téléphone</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Enfants</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dernier Accès</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
@@ -324,7 +376,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-500 text-sm">Total Rapports</p>
-                                <p id="totalReports" class="text-2xl font-bold text-gray-900">2</p>
+                                <p id="totalReports" class="text-2xl font-bold text-gray-900">0</p>
                             </div>
                             <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center">
                                 <i class="fas fa-bug"></i>
@@ -335,7 +387,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-500 text-sm">Nouveaux</p>
-                                <p id="newReports" class="text-2xl font-bold text-gray-900">1</p>
+                                <p id="newReports" class="text-2xl font-bold text-gray-900">0</p>
                             </div>
                             <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-800 flex items-center justify-center">
                                 <i class="fas fa-exclamation-circle"></i>
@@ -346,7 +398,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-500 text-sm">En cours</p>
-                                <p id="inProgressReports" class="text-2xl font-bold text-gray-900">1</p>
+                                <p id="inProgressReports" class="text-2xl font-bold text-gray-900">0</p>
                             </div>
                             <div class="w-12 h-12 rounded-full bg-yellow-100 text-yellow-800 flex items-center justify-center">
                                 <i class="fas fa-chart-line"></i>
@@ -385,25 +437,29 @@
                 <h3 class="text-xl font-bold text-gray-900 mb-4">Créer un Nouveau Compte</h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
-                        <input type="text" id="newUserName" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Ex: Mukasa Jean">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom Complet *</label>
+                        <input type="text" id="newUserName" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Ex: Mukasa Jean" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" id="newUserEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="exemple@school.rw">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <input type="email" id="newUserEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="exemple@school.rw" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
-                        <select id="newUserRole" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                            <option value="Enseignant">Enseignant</option>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                        <input type="tel" id="newUserPhone" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="+250 78 123 4567">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rôle *</label>
+                        <select id="newUserRole" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                            <option value="">Sélectionner un rôle</option>
                             <option value="Directeur">Directeur</option>
-                            <option value="Comptable">Comptable</option>
                             <option value="Secrétaire">Secrétaire</option>
+                            <option value="Enseignant">Enseignant</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de Passe</label>
-                        <input type="password" id="newUserPassword" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="••••••••">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de Passe *</label>
+                        <input type="password" id="newUserPassword" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="••••••••" required>
                     </div>
                     <div class="flex gap-3 mt-6">
                         <button id="cancelCreateUser" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
@@ -411,6 +467,52 @@
                         </button>
                         <button id="confirmCreateUser" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
                             Créer le Compte
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal d'édition d'utilisateur -->
+        <div id="editUserModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg max-w-md w-full p-6 slide-in">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Modifier l'Utilisateur</h3>
+                <div class="space-y-4">
+                    <input type="hidden" id="editUserId">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom Complet *</label>
+                        <input type="text" id="editUserName" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <input type="email" id="editUserEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                        <input type="tel" id="editUserPhone" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rôle *</label>
+                        <select id="editUserRole" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                            <option value="Directeur">Directeur</option>
+                            <option value="Secrétaire">Secrétaire</option>
+                            <option value="Enseignant">Enseignant</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Statut *</label>
+                        <select id="editUserStatus" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                            <option value="Actif">Actif</option>
+                            <option value="Inactif">Inactif</option>
+                            <option value="Suspendu">Suspendu</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button id="cancelEditUser" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Annuler
+                        </button>
+                        <button id="saveEditUser" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                            Enregistrer
                         </button>
                     </div>
                 </div>
@@ -426,7 +528,7 @@
                 </h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Type de Rapport</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Type de Rapport *</label>
                         <select id="reportType" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                             <option value="Bug">Bug</option>
                             <option value="Suggestion">Suggestion</option>
@@ -434,12 +536,12 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Titre</label>
-                        <input type="text" id="reportTitle" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Ex: Erreur lors de la connexion">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
+                        <input type="text" id="reportTitle" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Ex: Erreur lors de la connexion" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <textarea id="reportDescription" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" rows="4" placeholder="Décrivez le problème ou votre suggestion en détail..."></textarea>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                        <textarea id="reportDescription" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" rows="4" placeholder="Décrivez le problème ou votre suggestion en détail..." required></textarea>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Priorité</label>
@@ -460,45 +562,81 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de confirmation de suppression -->
+        <div id="confirmDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg max-w-md w-full p-6 slide-in">
+                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2 text-red-600">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Confirmer la suppression
+                </h3>
+                <p class="text-gray-600 mb-6" id="deleteMessage">Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.</p>
+                <div class="flex gap-3">
+                    <button id="cancelDelete" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                        Annuler
+                    </button>
+                    <button id="confirmDelete" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                        Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Données initiales
-        const mockFirebaseData = {
-            users: [
-                { id: '1', nom: 'Mukasa Jean', email: 'j.mukasa@school.rw', role: 'Directeur', creeLe: '2025-01-15', creePar: 'System', statut: 'Actif' },
-                { id: '2', nom: 'Uwase Marie', email: 'm.uwase@school.rw', role: 'Comptable', creeLe: '2025-01-16', creePar: 'IT Admin', statut: 'Actif' },
-                { id: '3', nom: 'Nkusi Pierre', email: 'p.nkusi@school.rw', role: 'Secrétaire', creeLe: '2025-01-17', creePar: 'IT Admin', statut: 'Actif' },
-                { id: '4', nom: 'Habimana Paul', email: 'p.habimana@school.rw', role: 'Enseignant', creeLe: '2025-01-18', creePar: 'Directeur', statut: 'Actif' },
-                { id: '5', nom: 'Irakoze Alice', email: 'a.irakoze@school.rw', role: 'Enseignant', creeLe: '2025-01-20', creePar: 'Directeur', statut: 'Actif' }
-            ],
-            activities: [
-                { id: '1', utilisateur: 'Mukasa Jean', action: 'Connexion', timestamp: '2025-01-25 08:30', details: 'Connexion réussie' },
-                { id: '2', utilisateur: 'Uwase Marie', action: 'Consultation', timestamp: '2025-01-25 09:15', details: 'Consultation des finances' },
-                { id: '3', utilisateur: 'Habimana Paul', action: 'Modification', timestamp: '2025-01-25 10:00', details: 'Modification des notes' },
-                { id: '4', utilisateur: 'Nkusi Pierre', action: 'Ajout', timestamp: '2025-01-25 11:20', details: 'Ajout d\'un nouvel élève' }
-            ],
-            parents: [
-                { id: '1', nom: 'Kamanzi Robert', email: 'r.kamanzi@email.rw', enfants: 2, dernierAcces: '2025-01-24', statut: 'Actif' },
-                { id: '2', nom: 'Mukamazimpaka Diane', email: 'd.mukamazimpaka@email.rw', enfants: 1, dernierAcces: '2025-01-25', statut: 'Actif' },
-                { id: '3', nom: 'Ndayisenga Eric', email: 'e.ndayisenga@email.rw', enfants: 3, dernierAcces: '2025-01-23', statut: 'Inactif' }
-            ],
-            reports: [
-                { id: '1', type: 'Bug', titre: 'Erreur de connexion', description: 'Impossible de se connecter avec certains emails', statut: 'En cours', rapportePar: 'Mukasa Jean', date: '2025-01-24', priorite: 'Haute' },
-                { id: '2', type: 'Suggestion', titre: 'Améliorer l\'interface', description: 'Ajouter un mode sombre', statut: 'Nouveau', rapportePar: 'Uwase Marie', date: '2025-01-25', priorite: 'Basse' }
-            ]
-        };
-
+        // Configuration Firebase - Utilisée depuis le head (modèle moderne)
+        // Les objets auth, db, functions, analytics sont disponibles globalement
+        
         // État de l'application
         let state = {
             currentUser: null,
-            users: [...mockFirebaseData.users],
-            activities: [...mockFirebaseData.activities],
-            parents: [...mockFirebaseData.parents],
-            reports: [...mockFirebaseData.reports],
+            users: [],
+            activities: [],
+            parents: [],
+            reports: [],
             searchTerm: '',
-            filterRole: 'Tous'
+            filterRole: 'Tous',
+            pendingVerification: null,
+            otpSent: false
         };
+
+        // Générer un OTP aléatoire
+        function generateOTP() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        // Envoyer l'OTP par email via EmailJS
+        function sendOTPByEmail(email, otp) {
+            if (typeof emailjs === 'undefined') {
+                console.error('EmailJS non chargé dans la page.');
+                return Promise.reject(new Error('Email service unavailable'));
+            }
+
+            // Fournir plusieurs clés de template pour correspondre à différents templates
+            const templateParams = {
+                to_email: email,
+                email: email,
+                user_email: email,
+                to_name: '',
+                otp: otp
+            };
+
+            return emailjs.send('service_yvl11d5', 'template_hjw7vbj', templateParams)
+                .then(response => {
+                    console.log(`OTP ${otp} envoyé à ${email} (EmailJS)`, response);
+                    return true;
+                })
+                .catch(err => {
+                    console.error('Erreur EmailJS:', err);
+                    return Promise.reject(err);
+                });
+        }
+
+        // Vérifier si l'email est valide
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
@@ -507,10 +645,24 @@
             const registerTabBtn = document.getElementById('registerTabBtn');
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
+            const otpForm = document.getElementById('otpForm');
+            const backBtn = document.getElementById('backBtn');
             const loginBtn = document.getElementById('loginBtn');
             const registerBtn = document.getElementById('registerBtn');
+            const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+            const resendOtpBtn = document.getElementById('resendOtpBtn');
             const authModal = document.getElementById('authModal');
             const mainApp = document.getElementById('mainApp');
+            // Initialiser EmailJS si la librairie est chargée
+            try {
+                if (typeof emailjs !== 'undefined' && !emailjs.__init_called) {
+                    emailjs.init('Un7snKzeE4AGeorc-');
+                    emailjs.__init_called = true;
+                    console.log('EmailJS initialisé');
+                }
+            } catch (e) {
+                console.warn('EmailJS non disponible ou échec d\'initialisation', e);
+            }
             
             // Éléments principaux
             const logoutBtn = document.getElementById('logoutBtn');
@@ -525,11 +677,17 @@
             
             // Modales
             const createUserModal = document.getElementById('createUserModal');
+            const editUserModal = document.getElementById('editUserModal');
             const reportBugModal = document.getElementById('reportBugModal');
+            const confirmDeleteModal = document.getElementById('confirmDeleteModal');
             const cancelCreateUser = document.getElementById('cancelCreateUser');
             const confirmCreateUser = document.getElementById('confirmCreateUser');
+            const cancelEditUser = document.getElementById('cancelEditUser');
+            const saveEditUser = document.getElementById('saveEditUser');
             const cancelReport = document.getElementById('cancelReport');
             const confirmReport = document.getElementById('confirmReport');
+            const cancelDelete = document.getElementById('cancelDelete');
+            const confirmDelete = document.getElementById('confirmDelete');
 
             // Gestion des onglets d'authentification
             loginTabBtn.addEventListener('click', () => {
@@ -538,6 +696,7 @@
                 registerTabBtn.classList.add('text-gray-500');
                 loginForm.classList.remove('hidden');
                 registerForm.classList.add('hidden');
+                otpForm.classList.add('hidden');
             });
 
             registerTabBtn.addEventListener('click', () => {
@@ -546,6 +705,19 @@
                 loginTabBtn.classList.add('text-gray-500');
                 registerForm.classList.remove('hidden');
                 loginForm.classList.add('hidden');
+                otpForm.classList.add('hidden');
+            });
+
+            // Bouton retour
+            backBtn.addEventListener('click', () => {
+                if (otpForm.classList.contains('hidden')) {
+                    // Retour à la page précédente
+                    window.history.back();
+                } else {
+                    // Retour au formulaire de connexion
+                    otpForm.classList.add('hidden');
+                    loginForm.classList.remove('hidden');
+                }
             });
 
             // Connexion
@@ -553,6 +725,12 @@
             
             // Inscription
             registerBtn.addEventListener('click', handleRegister);
+            
+            // Vérification OTP
+            verifyOtpBtn.addEventListener('click', handleVerifyOTP);
+            
+            // Renvoyer OTP
+            resendOtpBtn.addEventListener('click', handleResendOTP);
             
             // Déconnexion
             logoutBtn.addEventListener('click', handleLogout);
@@ -579,6 +757,17 @@
                             content.classList.add('fade-in');
                         }
                     });
+                    
+                    // Charger les données spécifiques à l'onglet
+                    if (tabId === 'utilisateurs') {
+                        loadUsers();
+                    } else if (tabId === 'activites') {
+                        loadActivities();
+                    } else if (tabId === 'parents') {
+                        loadParents();
+                    } else if (tabId === 'reports') {
+                        loadReports();
+                    }
                 });
             });
             
@@ -612,257 +801,632 @@
                 resetCreateUserForm();
             });
             
+            cancelEditUser.addEventListener('click', () => {
+                editUserModal.classList.add('hidden');
+                editUserModal.classList.remove('flex');
+            });
+            
             cancelReport.addEventListener('click', () => {
                 reportBugModal.classList.add('hidden');
                 reportBugModal.classList.remove('flex');
                 resetReportForm();
             });
             
+            cancelDelete.addEventListener('click', () => {
+                confirmDeleteModal.classList.add('hidden');
+                confirmDeleteModal.classList.remove('flex');
+            });
+            
             // Confirmer la création d'utilisateur
             confirmCreateUser.addEventListener('click', handleCreateUser);
+            
+            // Confirmer l'édition d'utilisateur
+            saveEditUser.addEventListener('click', handleUpdateUser);
             
             // Confirmer le rapport de bug
             confirmReport.addEventListener('click', handleSubmitReport);
             
-            // Rendu initial
-            renderUsers();
-            renderActivities();
-            renderParents();
-            renderReports();
-            updateStats();
+            // Confirmer la suppression
+            confirmDelete.addEventListener('click', handleDeleteUser);
+            
+            // Vérifier l'état d'authentification au chargement
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // L'utilisateur est connecté
+                    loadCurrentUser(user.uid);
+                } else {
+                    // L'utilisateur n'est pas connecté
+                    authModal.classList.remove('hidden');
+                    mainApp.classList.add('hidden');
+                }
+            });
+            
+            // Charger les données initiales
+            loadUsers();
+            loadActivities();
+            loadParents();
+            loadReports();
         });
 
-        // Fonctions de gestion
-        function handleLogin() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            if (!email || !password) {
-                alert('Veuillez remplir tous les champs');
-                return;
-            }
-            
-            // Vérifier si l'utilisateur existe
-            const user = state.users.find(u => u.email === email);
-            
-            if (user) {
-                state.currentUser = user;
-                
-                // Ajouter une activité
-                const nouvelleActivite = {
-                    id: (state.activities.length + 1).toString(),
-                    utilisateur: user.nom,
-                    action: 'Connexion',
-                    timestamp: new Date().toLocaleString('fr-FR'),
-                    details: 'Connexion réussie au système IT Admin'
-                };
-                
-                state.activities.unshift(nouvelleActivite);
-                
-                // Mettre à jour l'interface
-                document.getElementById('authModal').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                document.getElementById('currentUserName').textContent = user.nom;
-                document.getElementById('currentUserRole').textContent = user.role;
-                
-                // Réinitialiser le formulaire
-                document.getElementById('loginEmail').value = '';
-                document.getElementById('loginPassword').value = '';
-                
-                // Mettre à jour les activités
-                renderActivities();
-                updateStats();
-            } else {
-                alert('Email ou mot de passe incorrect');
+        // Fonctions Firebase
+        async function loadCurrentUser(userId) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    state.currentUser = {
+                        id: userDoc.id,
+                        ...userDoc.data()
+                    };
+                    
+                    // Mettre à jour l'interface
+                    document.getElementById('authModal').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    document.getElementById('currentUserName').textContent = state.currentUser.nom;
+                    document.getElementById('currentUserRole').textContent = state.currentUser.role;
+                    
+                    // Enregistrer l'activité de connexion
+                    await logActivity('Connexion', `Connexion réussie au système IT Admin`);
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement de l\'utilisateur:', error);
+                showMessage('loginMessage', 'Erreur lors du chargement du profil', 'error');
             }
         }
 
-        function handleRegister() {
+        async function loadUsers() {
+            try {
+                const users = [];
+                
+                // Charger les directeurs
+                const directorsSnapshot = await db.collection('directors').get();
+                directorsSnapshot.docs.forEach(doc => {
+                    users.push({
+                        id: doc.id,
+                        nom: doc.data().name || 'N/A',
+                        email: doc.data().email || 'N/A',
+                        telephone: doc.data().phone || '',
+                        role: 'Directeur',
+                        statut: 'Actif',
+                        creeLe: doc.data().createdAt || new Date().toISOString()
+                    });
+                });
+                
+                // Charger les secrétaires
+                const secretariesSnapshot = await db.collection('secretaries').get();
+                secretariesSnapshot.docs.forEach(doc => {
+                    users.push({
+                        id: doc.id,
+                        nom: doc.data().name || 'N/A',
+                        email: doc.data().email || 'N/A',
+                        telephone: doc.data().phone || '',
+                        role: 'Secrétaire',
+                        statut: 'Actif',
+                        creeLe: doc.data().createdAt || new Date().toISOString()
+                    });
+                });
+                
+                // Charger les enseignants
+                const teachersSnapshot = await db.collection('teachers').get();
+                teachersSnapshot.docs.forEach(doc => {
+                    users.push({
+                        id: doc.id,
+                        nom: doc.data().name || 'N/A',
+                        email: doc.data().email || 'N/A',
+                        telephone: doc.data().phone || '',
+                        role: 'Enseignant',
+                        statut: doc.data().status === 'active' ? 'Actif' : 'Inactif',
+                        creeLe: doc.data().createdAt || new Date().toISOString()
+                    });
+                });
+                
+                state.users = users;
+                renderUsers();
+                updateStats();
+            } catch (error) {
+                console.error('Erreur lors du chargement des utilisateurs:', error);
+            }
+        }
+
+        async function loadActivities() {
+            try {
+                const snapshot = await db.collection('activities')
+                    .orderBy('timestamp', 'desc')
+                    .limit(50)
+                    .get();
+                state.activities = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderActivities();
+            } catch (error) {
+                console.error('Erreur lors du chargement des activités:', error);
+            }
+        }
+
+        async function loadParents() {
+            try {
+                const snapshot = await db.collection('parents').get();
+                state.parents = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderParents();
+            } catch (error) {
+                console.error('Erreur lors du chargement des parents:', error);
+            }
+        }
+
+        async function loadReports() {
+            try {
+                const snapshot = await db.collection('reports')
+                    .orderBy('date', 'desc')
+                    .get();
+                state.reports = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderReports();
+                updateStats();
+            } catch (error) {
+                console.error('Erreur lors du chargement des rapports:', error);
+            }
+        }
+
+        async function logActivity(action, details) {
+            try {
+                await db.collection('activities').add({
+                    utilisateur: state.currentUser.nom,
+                    action: action,
+                    details: details,
+                    timestamp: new Date().toISOString(),
+                    userId: state.currentUser.id
+                });
+                loadActivities(); // Recharger les activités
+            } catch (error) {
+                console.error('Erreur lors de l\'enregistrement de l\'activité:', error);
+            }
+        }
+
+        // Fonctions de gestion
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginMessage = document.getElementById('loginMessage');
+
+            if (!email || !password) {
+                showMessage(loginMessage, 'Veuillez remplir tous les champs', 'error');
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                showMessage(loginMessage, 'Veuillez entrer un email valide', 'error');
+                return;
+            }
+
+            try {
+                // Authentification avec Firebase
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // Générer OTP et préparer verification
+                const otp = generateOTP();
+                state.pendingVerification = {
+                    userId: user.uid,
+                    email: email,
+                    otp: otp
+                };
+
+                // Essayer d'envoyer l'OTP par email, gérer l'erreur spécifiquement
+                try {
+                    await sendOTPByEmail(email, otp);
+                } catch (sendErr) {
+                    console.error('Échec envoi OTP:', sendErr);
+                    // Déconnecter l'utilisateur pour éviter état inconsistent
+                    try { await auth.signOut(); } catch (e) { /* ignore */ }
+                    showMessage(loginMessage, 'Impossible d\'envoyer l\'email OTP. Vérifiez la configuration.', 'error');
+                    return;
+                }
+
+                // Afficher le formulaire OTP
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('otpForm').classList.remove('hidden');
+                document.getElementById('otpEmail').textContent = email;
+                showMessage('otpMessage', 'Code OTP envoyé à votre email', 'success');
+
+            } catch (error) {
+                console.error('Erreur de connexion:', error);
+                let message = 'Email ou mot de passe incorrect';
+                if (error.code === 'auth/user-not-found') {
+                    message = 'Utilisateur non trouvé';
+                } else if (error.code === 'auth/wrong-password') {
+                    message = 'Mot de passe incorrect';
+                }
+                showMessage(loginMessage, message, 'error');
+            }
+        }
+
+        async function handleRegister() {
             const nom = document.getElementById('registerName').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            const registerMessage = document.getElementById('registerMessage');
             
             if (!nom || !email || !password || !confirmPassword) {
-                alert('Veuillez remplir tous les champs');
+                showMessage(registerMessage, 'Veuillez remplir tous les champs', 'error');
                 return;
             }
             
             if (password !== confirmPassword) {
-                alert('Les mots de passe ne correspondent pas');
+                showMessage(registerMessage, 'Les mots de passe ne correspondent pas', 'error');
                 return;
             }
             
             if (password.length < 6) {
-                alert('Le mot de passe doit contenir au moins 6 caractères');
+                showMessage(registerMessage, 'Le mot de passe doit contenir au moins 6 caractères', 'error');
                 return;
             }
             
-            // Vérifier si l'email existe déjà
-            if (state.users.some(u => u.email === email)) {
-                alert('Cet email est déjà utilisé');
+            if (!isValidEmail(email)) {
+                showMessage(registerMessage, 'Veuillez entrer un email valide', 'error');
                 return;
             }
             
-            // Créer le nouvel utilisateur
-            const nouvelUtilisateur = {
-                id: (state.users.length + 1).toString(),
-                nom: nom,
-                email: email,
-                role: 'IT Admin',
-                creeLe: new Date().toISOString().split('T')[0],
-                creePar: 'System',
-                statut: 'Actif'
-            };
-            
-            state.users.push(nouvelUtilisateur);
-            state.currentUser = nouvelUtilisateur;
-            
-            // Ajouter une activité
-            const nouvelleActivite = {
-                id: (state.activities.length + 1).toString(),
-                utilisateur: nom,
-                action: 'Inscription',
-                timestamp: new Date().toLocaleString('fr-FR'),
-                details: 'Création du compte IT Admin'
-            };
-            
-            state.activities.unshift(nouvelleActivite);
-            
-            // Mettre à jour l'interface
-            document.getElementById('authModal').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
-            document.getElementById('currentUserName').textContent = nom;
-            document.getElementById('currentUserRole').textContent = 'IT Admin';
-            
-            // Réinitialiser le formulaire
-            document.getElementById('registerName').value = '';
-            document.getElementById('registerEmail').value = '';
-            document.getElementById('registerPassword').value = '';
-            document.getElementById('registerConfirmPassword').value = '';
-            
-            // Mettre à jour les données
-            renderUsers();
-            renderActivities();
-            updateStats();
+            try {
+                // Créer l'utilisateur dans Firebase Authentication
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // Générer OTP
+                const otp = generateOTP();
+                state.pendingVerification = {
+                    userId: user.uid,
+                    email: email,
+                    nom: nom,
+                    otp: otp
+                };
+
+                // Essayer d'envoyer l'OTP par email
+                try {
+                    await sendOTPByEmail(email, otp);
+                } catch (sendErr) {
+                    console.error('Échec envoi OTP lors de l\'inscription:', sendErr);
+                    // Tenter de supprimer l'utilisateur créé pour éviter compte orphelin
+                    try {
+                        if (auth.currentUser) {
+                            await auth.currentUser.delete();
+                        }
+                    } catch (delErr) {
+                        console.warn('Impossible de supprimer le compte utilisateur après échec d\'envoi OTP:', delErr);
+                    }
+                    showMessage(registerMessage, 'Impossible d\'envoyer l\'email OTP. Réessayez plus tard.', 'error');
+                    return;
+                }
+
+                // Afficher le formulaire OTP
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('otpForm').classList.remove('hidden');
+                document.getElementById('otpEmail').textContent = email;
+                showMessage('otpMessage', 'Code OTP envoyé à votre email', 'success');
+
+            } catch (error) {
+                console.error('Erreur d\'inscription:', error);
+                let message = 'Erreur lors de l\'inscription';
+                if (error.code === 'auth/email-already-in-use') {
+                    message = 'Cet email est déjà utilisé';
+                }
+                showMessage(registerMessage, message, 'error');
+            }
         }
 
-        function handleLogout() {
-            // Ajouter une activité de déconnexion
-            const nouvelleActivite = {
-                id: (state.activities.length + 1).toString(),
-                utilisateur: state.currentUser.nom,
-                action: 'Déconnexion',
-                timestamp: new Date().toLocaleString('fr-FR'),
-                details: 'Déconnexion du système'
-            };
+        async function handleVerifyOTP() {
+            const enteredOtp = document.getElementById('otpCode').value;
+            const otpMessage = document.getElementById('otpMessage');
             
-            state.activities.unshift(nouvelleActivite);
+            if (!enteredOtp || enteredOtp.length !== 6) {
+                showMessage(otpMessage, 'Veuillez entrer un code OTP valide (6 chiffres)', 'error');
+                return;
+            }
             
-            // Réinitialiser l'état
-            state.currentUser = null;
+            if (!state.pendingVerification) {
+                showMessage(otpMessage, 'Session expirée. Veuillez réessayer', 'error');
+                return;
+            }
             
-            // Afficher le modal d'authentification
-            document.getElementById('authModal').classList.remove('hidden');
-            document.getElementById('mainApp').classList.add('hidden');
-            
-            // Revenir à l'onglet de connexion
-            document.getElementById('loginTabBtn').click();
+            if (enteredOtp === state.pendingVerification.otp) {
+                // OTP correct
+                if (state.pendingVerification.nom) {
+                    // C'est une inscription, créer le profil utilisateur
+                    await createUserProfile(state.pendingVerification);
+                }
+                
+                // Connecter l'utilisateur
+                await loadCurrentUser(state.pendingVerification.userId);
+                showMessage(otpMessage, 'Vérification réussie!', 'success');
+                
+                // Réinitialiser
+                state.pendingVerification = null;
+                state.otpSent = false;
+                
+            } else {
+                showMessage(otpMessage, 'Code OTP incorrect', 'error');
+            }
         }
 
-        function handleCreateUser() {
+        async function handleResendOTP() {
+            if (!state.pendingVerification) {
+                showMessage('otpMessage', 'Session expirée', 'error');
+                return;
+            }
+            
+            // Générer un nouvel OTP
+            const otp = generateOTP();
+            state.pendingVerification.otp = otp;
+            
+            // Renvoyer l'OTP
+            try {
+                await sendOTPByEmail(state.pendingVerification.email, otp);
+                showMessage('otpMessage', 'Nouveau code OTP envoyé', 'success');
+            } catch (err) {
+                console.error('Échec renvoi OTP:', err);
+                showMessage('otpMessage', 'Impossible de renvoyer le code OTP. Vérifiez la configuration.', 'error');
+            }
+        }
+
+        async function createUserProfile(userData) {
+            try {
+                await db.collection('users').doc(userData.userId).set({
+                    nom: userData.nom,
+                    email: userData.email,
+                    role: 'IT Admin',
+                    statut: 'Actif',
+                    creeLe: new Date().toISOString(),
+                    creePar: 'System',
+                    telephone: '',
+                    derniereConnexion: new Date().toISOString()
+                });
+                
+                // Enregistrer l'activité
+                await logActivity('Inscription', `Création du compte IT Admin: ${userData.nom}`);
+                
+            } catch (error) {
+                console.error('Erreur lors de la création du profil:', error);
+                throw error;
+            }
+        }
+
+        async function handleCreateUser() {
             const nom = document.getElementById('newUserName').value;
             const email = document.getElementById('newUserEmail').value;
+            const telephone = document.getElementById('newUserPhone').value;
             const role = document.getElementById('newUserRole').value;
             const password = document.getElementById('newUserPassword').value;
             
             if (!nom || !email || !role || !password) {
-                alert('Veuillez remplir tous les champs');
+                alert('Veuillez remplir tous les champs obligatoires (*)');
                 return;
             }
             
-            // Créer le nouvel utilisateur
-            const nouvelUtilisateur = {
-                id: (state.users.length + 1).toString(),
-                nom: nom,
-                email: email,
-                role: role,
-                creeLe: new Date().toISOString().split('T')[0],
-                creePar: state.currentUser.nom,
-                statut: 'Actif'
-            };
+            if (!isValidEmail(email)) {
+                alert('Veuillez entrer un email valide');
+                return;
+            }
             
-            state.users.push(nouvelUtilisateur);
-            
-            // Ajouter une activité
-            const nouvelleActivite = {
-                id: (state.activities.length + 1).toString(),
-                utilisateur: state.currentUser.nom,
-                action: 'Création',
-                timestamp: new Date().toLocaleString('fr-FR'),
-                details: `Création du compte ${role}: ${nom}`
-            };
-            
-            state.activities.unshift(nouvelleActivite);
-            
-            // Fermer le modal
-            document.getElementById('createUserModal').classList.add('hidden');
-            
-            // Réinitialiser le formulaire
-            resetCreateUserForm();
-            
-            // Mettre à jour l'interface
-            renderUsers();
-            renderActivities();
-            updateStats();
+            try {
+                // Créer l'utilisateur dans Firebase Authentication
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const userId = userCredential.user.uid;
+                
+                // Créer le profil dans Firestore
+                await db.collection('users').doc(userId).set({
+                    nom: nom,
+                    email: email,
+                    telephone: telephone,
+                    role: role,
+                    statut: 'Actif',
+                    creeLe: new Date().toISOString(),
+                    creePar: state.currentUser.nom,
+                    derniereConnexion: null
+                });
+                
+                // Enregistrer l'activité
+                await logActivity('Création', `Création du compte ${role}: ${nom}`);
+                
+                // Fermer le modal
+                document.getElementById('createUserModal').classList.add('hidden');
+                
+                // Réinitialiser le formulaire
+                resetCreateUserForm();
+                
+                // Recharger les utilisateurs
+                await loadUsers();
+                
+                alert('Compte créé avec succès!');
+                
+            } catch (error) {
+                console.error('Erreur lors de la création de l\'utilisateur:', error);
+                alert('Erreur lors de la création du compte: ' + error.message);
+            }
         }
 
-        function handleSubmitReport() {
+        function openEditUserModal(user) {
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUserName').value = user.nom;
+            document.getElementById('editUserEmail').value = user.email;
+            document.getElementById('editUserPhone').value = user.telephone || '';
+            document.getElementById('editUserRole').value = user.role;
+            document.getElementById('editUserStatus').value = user.statut;
+            
+            document.getElementById('editUserModal').classList.remove('hidden');
+            document.getElementById('editUserModal').classList.add('flex');
+        }
+
+        async function handleUpdateUser() {
+            const userId = document.getElementById('editUserId').value;
+            const nom = document.getElementById('editUserName').value;
+            const email = document.getElementById('editUserEmail').value;
+            const telephone = document.getElementById('editUserPhone').value;
+            const role = document.getElementById('editUserRole').value;
+            const statut = document.getElementById('editUserStatus').value;
+            
+            if (!nom || !email || !role || !statut) {
+                alert('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+            
+            try {
+                // Mettre à jour dans Firestore
+                await db.collection('users').doc(userId).update({
+                    nom: nom,
+                    email: email,
+                    telephone: telephone,
+                    role: role,
+                    statut: statut,
+                    modifieLe: new Date().toISOString(),
+                    modifiePar: state.currentUser.nom
+                });
+                
+                // Enregistrer l'activité
+                await logActivity('Modification', `Modification de l'utilisateur ${nom}`);
+                
+                // Fermer le modal
+                document.getElementById('editUserModal').classList.add('hidden');
+                
+                // Recharger les utilisateurs
+                await loadUsers();
+                
+                alert('Utilisateur modifié avec succès!');
+                
+            } catch (error) {
+                console.error('Erreur lors de la modification de l\'utilisateur:', error);
+                alert('Erreur lors de la modification: ' + error.message);
+            }
+        }
+
+        function openDeleteConfirmModal(user) {
+            document.getElementById('deleteMessage').textContent = 
+                `Êtes-vous sûr de vouloir supprimer l'utilisateur ${user.nom} (${user.email}) ? Cette action est irréversible.`;
+            
+            // Stocker l'ID de l'utilisateur à supprimer
+            document.getElementById('confirmDelete').dataset.userId = user.id;
+            
+            document.getElementById('confirmDeleteModal').classList.remove('hidden');
+            document.getElementById('confirmDeleteModal').classList.add('flex');
+        }
+
+        async function handleDeleteUser() {
+            const userId = document.getElementById('confirmDelete').dataset.userId;
+            
+            if (!userId) {
+                alert('Erreur: ID utilisateur non trouvé');
+                return;
+            }
+            
+            try {
+                // Récupérer les informations de l'utilisateur avant suppression
+                const userDoc = await db.collection('users').doc(userId).get();
+                const userData = userDoc.data();
+                
+                // Supprimer l'utilisateur de Firestore
+                await db.collection('users').doc(userId).delete();
+                
+                // Essayer de supprimer le compte Authentication (nécessite des privilèges admin)
+                // Note: Dans la pratique, vous devriez utiliser Cloud Functions pour cela
+                
+                // Enregistrer l'activité
+                await logActivity('Suppression', `Suppression de l'utilisateur ${userData.nom}`);
+                
+                // Fermer le modal
+                document.getElementById('confirmDeleteModal').classList.add('hidden');
+                
+                // Recharger les utilisateurs
+                await loadUsers();
+                
+                alert('Utilisateur supprimé avec succès!');
+                
+            } catch (error) {
+                console.error('Erreur lors de la suppression de l\'utilisateur:', error);
+                alert('Erreur lors de la suppression: ' + error.message);
+            }
+        }
+
+        async function handleSubmitReport() {
             const type = document.getElementById('reportType').value;
             const titre = document.getElementById('reportTitle').value;
             const description = document.getElementById('reportDescription').value;
             const priorite = document.getElementById('reportPriority').value;
             
             if (!titre || !description) {
-                alert('Veuillez remplir tous les champs');
+                alert('Veuillez remplir tous les champs obligatoires');
                 return;
             }
             
-            // Créer le nouveau rapport
-            const nouveauReport = {
-                id: (state.reports.length + 1).toString(),
-                type: type,
-                titre: titre,
-                description: description,
-                priorite: priorite,
-                statut: 'Nouveau',
-                rapportePar: state.currentUser.nom,
-                date: new Date().toISOString().split('T')[0]
-            };
-            
-            state.reports.unshift(nouveauReport);
-            
-            // Ajouter une activité
-            const nouvelleActivite = {
-                id: (state.activities.length + 1).toString(),
-                utilisateur: state.currentUser.nom,
-                action: 'Rapport',
-                timestamp: new Date().toLocaleString('fr-FR'),
-                details: `Rapport de ${type}: ${titre}`
-            };
-            
-            state.activities.unshift(nouvelleActivite);
-            
-            // Fermer le modal
-            document.getElementById('reportBugModal').classList.add('hidden');
-            
-            // Réinitialiser le formulaire
-            resetReportForm();
-            
-            // Mettre à jour l'interface
-            renderReports();
-            renderActivities();
-            updateStats();
+            try {
+                // Créer le rapport dans Firestore
+                await db.collection('reports').add({
+                    type: type,
+                    titre: titre,
+                    description: description,
+                    priorite: priorite,
+                    statut: 'Nouveau',
+                    rapportePar: state.currentUser.nom,
+                    rapporteParId: state.currentUser.id,
+                    date: new Date().toISOString(),
+                    assigneA: '',
+                    resolution: ''
+                });
+                
+                // Enregistrer l'activité
+                await logActivity('Rapport', `Rapport de ${type}: ${titre}`);
+                
+                // Fermer le modal
+                document.getElementById('reportBugModal').classList.add('hidden');
+                
+                // Réinitialiser le formulaire
+                resetReportForm();
+                
+                // Recharger les rapports
+                await loadReports();
+                
+                alert('Rapport envoyé avec succès!');
+                
+            } catch (error) {
+                console.error('Erreur lors de l\'envoi du rapport:', error);
+                alert('Erreur lors de l\'envoi du rapport: ' + error.message);
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                // Enregistrer l'activité avant déconnexion
+                await logActivity('Déconnexion', 'Déconnexion du système');
+                
+                // Déconnecter de Firebase
+                await auth.signOut();
+                
+                // Réinitialiser l'état
+                state.currentUser = null;
+                state.pendingVerification = null;
+                
+                // Afficher le modal d'authentification
+                document.getElementById('authModal').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('hidden');
+                
+                // Revenir à l'onglet de connexion
+                document.getElementById('loginTabBtn').click();
+                
+                // Réinitialiser les formulaires
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('registerName').value = '';
+                document.getElementById('registerEmail').value = '';
+                document.getElementById('registerPassword').value = '';
+                document.getElementById('registerConfirmPassword').value = '';
+                document.getElementById('otpCode').value = '';
+                
+            } catch (error) {
+                console.error('Erreur lors de la déconnexion:', error);
+            }
         }
 
         // Fonctions de rendu
@@ -872,7 +1436,8 @@
             // Filtrer les utilisateurs
             const filteredUsers = state.users.filter(user => {
                 const matchesSearch = user.nom.toLowerCase().includes(state.searchTerm.toLowerCase()) || 
-                                     user.email.toLowerCase().includes(state.searchTerm.toLowerCase());
+                                     user.email.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+                                     (user.telephone && user.telephone.includes(state.searchTerm));
                 const matchesRole = state.filterRole === 'Tous' || user.role === state.filterRole;
                 return matchesSearch && matchesRole;
             });
@@ -881,6 +1446,10 @@
             let html = '';
             filteredUsers.forEach(user => {
                 const badgeColor = getRoleBadgeColor(user.role);
+                const statusColor = getStatusBadgeColor(user.statut);
+                
+                // Formater la date
+                const createdDate = user.creeLe ? new Date(user.creeLe).toLocaleDateString('fr-FR') : 'N/A';
                 
                 html += `
                 <tr class="hover:bg-gray-50 transition">
@@ -891,21 +1460,28 @@
                             ${user.role}
                         </span>
                     </td>
-                    <td class="px-4 py-4 text-gray-600 flex items-center gap-2">
-                        <i class="fas fa-calendar"></i>
-                        ${user.creeLe}
-                    </td>
-                    <td class="px-4 py-4 text-gray-600">${user.creePar}</td>
+                    <td class="px-4 py-4 text-gray-600">${user.telephone || 'Non renseigné'}</td>
+                    <td class="px-4 py-4 text-gray-600">${createdDate}</td>
                     <td class="px-4 py-4">
-                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            ${user.statut}
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ${statusColor}">
+                            ${user.statut || 'Actif'}
                         </span>
+                    </td>
+                    <td class="px-4 py-4">
+                        <div class="flex gap-2">
+                            <button onclick="openEditUserModal(${JSON.stringify(user).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition text-sm">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="openDeleteConfirmModal(${JSON.stringify(user).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition text-sm">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 `;
             });
             
-            usersTableBody.innerHTML = html;
+            usersTableBody.innerHTML = html || '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Aucun utilisateur trouvé</td></tr>';
         }
 
         function renderActivities() {
@@ -913,6 +1489,8 @@
             
             let html = '';
             state.activities.forEach(activity => {
+                const timestamp = new Date(activity.timestamp).toLocaleString('fr-FR');
+                
                 html += `
                 <div class="p-6 hover:bg-gray-50 transition">
                     <div class="flex flex-col md:flex-row md:items-start md:justify-between">
@@ -925,13 +1503,13 @@
                             </div>
                             <p class="mt-2 text-gray-600">${activity.details}</p>
                         </div>
-                        <span class="text-sm text-gray-500 mt-2 md:mt-0">${activity.timestamp}</span>
+                        <span class="text-sm text-gray-500 mt-2 md:mt-0">${timestamp}</span>
                     </div>
                 </div>
                 `;
             });
             
-            activitiesList.innerHTML = html;
+            activitiesList.innerHTML = html || '<div class="p-8 text-center text-gray-500">Aucune activité récente</div>';
         }
 
         function renderParents() {
@@ -940,23 +1518,25 @@
             let html = '';
             state.parents.forEach(parent => {
                 const statusClass = parent.statut === 'Actif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+                const lastAccess = parent.dernierAcces ? new Date(parent.dernierAcces).toLocaleDateString('fr-FR') : 'Jamais';
                 
                 html += `
                 <tr class="hover:bg-gray-50 transition">
                     <td class="px-4 py-4 font-medium text-gray-900">${parent.nom}</td>
                     <td class="px-4 py-4 text-gray-600">${parent.email}</td>
-                    <td class="px-4 py-4 text-gray-600">${parent.enfants} enfant(s)</td>
-                    <td class="px-4 py-4 text-gray-600">${parent.dernierAcces}</td>
+                    <td class="px-4 py-4 text-gray-600">${parent.telephone || 'N/A'}</td>
+                    <td class="px-4 py-4 text-gray-600">${parent.enfants || 0} enfant(s)</td>
+                    <td class="px-4 py-4 text-gray-600">${lastAccess}</td>
                     <td class="px-4 py-4">
                         <span class="px-3 py-1 rounded-full text-xs font-medium ${statusClass}">
-                            ${parent.statut}
+                            ${parent.statut || 'Inactif'}
                         </span>
                     </td>
                 </tr>
                 `;
             });
             
-            parentsTableBody.innerHTML = html;
+            parentsTableBody.innerHTML = html || '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Aucun parent trouvé</td></tr>';
         }
 
         function renderReports() {
@@ -975,6 +1555,8 @@
                 const statusClass = report.statut === 'Nouveau' ? 'bg-orange-100 text-orange-800' : 
                                    report.statut === 'En cours' ? 'bg-yellow-100 text-yellow-800' : 
                                    'bg-green-100 text-green-800';
+                
+                const date = new Date(report.date).toLocaleDateString('fr-FR');
                 
                 html += `
                 <div class="p-6 hover:bg-gray-50 transition">
@@ -1001,7 +1583,7 @@
                                 </span>
                                 <span class="flex items-center gap-1">
                                     <i class="fas fa-calendar"></i>
-                                    ${report.date}
+                                    ${date}
                                 </span>
                             </div>
                         </div>
@@ -1010,19 +1592,20 @@
                 `;
             });
             
-            reportsList.innerHTML = html;
+            reportsList.innerHTML = html || '<div class="p-8 text-center text-gray-500">Aucun rapport trouvé</div>';
         }
 
         function updateStats() {
             // Statistiques des utilisateurs
-            document.getElementById('directeursCount').textContent = 
-                state.users.filter(u => u.role === 'Directeur').length;
-            document.getElementById('comptablesCount').textContent = 
-                state.users.filter(u => u.role === 'Comptable').length;
-            document.getElementById('secretairesCount').textContent = 
-                state.users.filter(u => u.role === 'Secrétaire').length;
-            document.getElementById('enseignantsCount').textContent = 
-                state.users.filter(u => u.role === 'Enseignant').length;
+            const directeurs = state.users.filter(u => u.role === 'Directeur').length;
+            const secretaires = state.users.filter(u => u.role === 'Secrétaire').length;
+            const enseignants = state.users.filter(u => u.role === 'Enseignant').length;
+            const totalUsers = state.users.length;
+            
+            document.getElementById('directeursCount').textContent = directeurs;
+            document.getElementById('secretairesCount').textContent = secretaires;
+            document.getElementById('enseignantsCount').textContent = enseignants;
+            document.getElementById('totalUsersCount').textContent = totalUsers;
             
             // Statistiques des rapports
             document.getElementById('totalReports').textContent = state.reports.length;
@@ -1038,7 +1621,6 @@
         function getRoleBadgeColor(role) {
             const colors = {
                 'Directeur': 'bg-purple-100 text-purple-800',
-                'Comptable': 'bg-blue-100 text-blue-800',
                 'Secrétaire': 'bg-green-100 text-green-800',
                 'Enseignant': 'bg-orange-100 text-orange-800',
                 'IT Admin': 'bg-red-100 text-red-800'
@@ -1046,10 +1628,34 @@
             return colors[role] || 'bg-gray-100 text-gray-800';
         }
 
+        function getStatusBadgeColor(status) {
+            const colors = {
+                'Actif': 'bg-green-100 text-green-800',
+                'Inactif': 'bg-gray-100 text-gray-800',
+                'Suspendu': 'bg-red-100 text-red-800'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = 'text-sm text-center ' + 
+                (type === 'error' ? 'text-red-600' : 
+                 type === 'success' ? 'text-green-600' : 'text-gray-600');
+            element.classList.remove('hidden');
+            
+            // Cacher le message après 5 secondes
+            setTimeout(() => {
+                element.classList.add('hidden');
+            }, 5000);
+        }
+
         function resetCreateUserForm() {
             document.getElementById('newUserName').value = '';
             document.getElementById('newUserEmail').value = '';
-            document.getElementById('newUserRole').value = 'Enseignant';
+            document.getElementById('newUserPhone').value = '';
+            document.getElementById('newUserRole').value = '';
             document.getElementById('newUserPassword').value = '';
         }
 
@@ -1059,6 +1665,10 @@
             document.getElementById('reportDescription').value = '';
             document.getElementById('reportPriority').value = 'Moyenne';
         }
+
+        // Exposer les fonctions globales
+        window.openEditUserModal = openEditUserModal;
+        window.openDeleteConfirmModal = openDeleteConfirmModal;
     </script>
 </body>
 </html>

@@ -6,10 +6,27 @@
   <title>Eden Family School - Portail Staff</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- Firebase SDK (Modern) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getDatabase } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+      authDomain: "edensmart-app.firebaseapp.com",
+      projectId: "edensmart-app",
+      storageBucket: "edensmart-app.firebasestorage.app",
+      messagingSenderId: "1093120876724",
+      appId: "1:1093120876724:web:bc37448cadd18d651c77e1"
+    };
+
+    window.firebaseApp = initializeApp(firebaseConfig);
+    window.auth = getAuth(window.firebaseApp);
+    window.firestore = getFirestore(window.firebaseApp);
+    window.realtimeDB = getDatabase(window.firebaseApp);
+  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
@@ -786,26 +803,7 @@
   </div>
 
   <script>
-    // Configuration Firebase corrigée
-    const firebaseConfig = {
-      apiKey: "AIzaSyCx6kmJ59x0tLt4vh_3czvEEQrtw4aWFHs",
-      authDomain: "edendatabase-7e1ed.firebaseapp.com",
-      databaseURL: "https://edendatabase-7e1ed-default-rtdb.firebaseio.com",
-      projectId: "edendatabase-7e1ed",
-      storageBucket: "edendatabase-7e1ed.firebasestorage.app",
-      messagingSenderId: "147248399046",
-      appId: "1:147248399046:web:d0b433e755772bbe718dc7",
-      measurementId: "G-XB192PCMV7"
-    };
-
-    // Initialiser Firebase
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    
-    const auth = firebase.auth();
-    const realtimeDB = firebase.database();
-
+    // Configuration Firebase - Chargée depuis le head avec le SDK moderne
     console.log('✅ Firebase initialisé avec succès');
 
     // Gestion des alertes

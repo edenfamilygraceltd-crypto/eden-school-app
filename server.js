@@ -14,8 +14,8 @@ const serviceAccount = require('./serviceAccount.json');
 // Initialiser Firebase Admin
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://edendatabase-7e1ed-default-rtdb.firebaseio.com',
-  storageBucket: 'edendatabase-7e1ed.appspot.com' // Ajout du bucket de stockage
+  databaseURL: 'https://edensmart-app-default-rtdb.firebaseio.com',
+  storageBucket: 'edensmart-app.appspot.com' // Bucket de stockage
 });
 
 const db = admin.database(); // Realtime Database

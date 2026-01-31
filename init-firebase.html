@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialisation Firebase - Eden Family School</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        .log-item {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        .log-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border-left: 3px solid #22c55e;
+        }
+        .log-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-left: 3px solid #ef4444;
+        }
+        .log-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border-left: 3px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen p-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">🚀 Initialisation Firebase</h1>
+                    <p class="text-gray-600">Eden Family School - Données de test</p>
+                </div>
+
+                <div class="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-sm text-gray-700 mb-4">
+                        Cette page insère automatiquement les données de test dans Firebase pour l'application IT Admin.
+                    </p>
+                    <button id="startBtn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition font-semibold">
+                        ▶️ Démarrer l'initialisation
+                    </button>
+                    <button id="clearBtn" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition font-semibold ml-2">
+                        🗑️ Effacer toutes les données
+                    </button>
+                </div>
+
+                <div class="mb-8">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">Journal d'exécution</h2>
+                    <div id="logContainer" class="bg-gray-50 border border-gray-200 rounded-lg p-4 h-80 overflow-y-auto">
+                        <div class="log-item log-info">
+                            En attente du démarrage...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <p class="text-gray-600 text-sm">Directeurs</p>
+                        <p id="directorsCount" class="text-2xl font-bold text-purple-600">-</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <p class="text-gray-600 text-sm">Secrétaires</p>
+                        <p id="secretariesCount" class="text-2xl font-bold text-green-600">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded-lg">
+                        <p class="text-gray-600 text-sm">Enseignants</p>
+                        <p id="teachersCount" class="text-2xl font-bold text-orange-600">-</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <p class="text-gray-600 text-sm">Parents</p>
+                        <p id="parentsCount" class="text-2xl font-bold text-blue-600">-</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-gray-700">
+                    <strong>ℹ️ Note:</strong> Après l'initialisation, rendez-vous sur <a href="IT.html" class="text-indigo-600 hover:underline">IT.html</a> pour voir les données en action.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+            authDomain: "edensmart-app.firebaseapp.com",
+            projectId: "edensmart-app",
+            storageBucket: "edensmart-app.firebasestorage.app",
+            messagingSenderId: "1093120876724",
+            appId: "1:1093120876724:web:bc37448cadd18d651c77e1",
+            measurementId: "G-1FL70PZZSW"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const logContainer = document.getElementById('logContainer');
+        const startBtn = document.getElementById('startBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log-item log-${type}`;
+            const timestamp = new Date().toLocaleTimeString('fr-FR');
+            div.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(div);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        async function seedDatabase() {
+            try {
+                startBtn.disabled = true;
+                clearBtn.disabled = true;
+                logContainer.innerHTML = '';
+                addLog('Démarrage de l\'initialisation...', 'info');
+
+                // Directeurs
+                const directorsData = [
+                    {
+                        name: 'Dr. Innocent Nduwimana',
+                        email: 'innocent.nduwimana@edenfamily.rw',
+                        phone: '+250 78 123 4567',
+                        role: 'director',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        name: 'Prof. Marie Uwimana',
+                        email: 'marie.uwimana@edenfamily.rw',
+                        phone: '+250 78 234 5678',
+                        role: 'director',
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+
+                addLog('Ajout des directeurs...', 'info');
+                for (const director of directorsData) {
+                    await db.collection('directors').add(director);
+                }
+                addLog(`✓ ${directorsData.length} directeurs ajoutés`, 'success');
+                document.getElementById('directorsCount').textContent = directorsData.length;
+
+                // Secrétaires
+                const secretariesData = [
+                    {
+                        name: 'Claudette Habimana',
+                        email: 'claudette.habimana@edenfamily.rw',
+                        phone: '+250 78 345 6789',
+                        role: 'secretary',
+                        department: 'administration',
+                        createdAt: new Date().toISOString(),
+                        status: 'active'
+                    },
+                    {
+                        name: 'Jean Kwizera',
+                        email: 'jean.kwizera@edenfamily.rw',
+                        phone: '+250 78 456 7890',
+                        role: 'accountant',
+                        department: 'finance',
+                        createdAt: new Date().toISOString(),
+                        status: 'active'
+                    },
+                    {
+                        name: 'Francine Mukamusoni',
+                        email: 'francine.mukamusoni@edenfamily.rw',
+                        phone: '+250 78 567 8901',
+                        role: 'secretary',
+                        department: 'administration',
+                        createdAt: new Date().toISOString(),
+                        status: 'active'
+                    }
+                ];
+
+                addLog('Ajout des secrétaires...', 'info');
+                for (const secretary of secretariesData) {
+                    await db.collection('secretaries').add(secretary);
+                }
+                addLog(`✓ ${secretariesData.length} secrétaires ajoutés`, 'success');
+                document.getElementById('secretariesCount').textContent = secretariesData.length;
+
+                // Enseignants
+                const teachersData = [
+                    {
+                        name: 'Joseph Niyibizi',
+                        email: 'joseph.niyibizi@edenfamily.rw',
+                        phone: '+250 78 678 9012',
+                        role: 'teacher',
+                        classe: '1ère A Maternelle',
+                        section: 'maternelle',
+                        createdAt: new Date().toISOString(),
+                        status: 'active'
+                    },
+                    {
+                        name: 'Sandrine Nyirubugara',
+                        email: 'sandrine.nyirubugara@edenfamily.rw',
+                        phone: '+250 78 789 0123',
+                        role: 'teacher',
+                        classe: '2ème A Primaire',
+                        section: 'primaire',
+                        createdAt: new Date().toISOString(),
+                        status: 'active'
+                    },
+                    {
+                        name: 'Patrick Mwebaze',
+                        email: 'patrick.mwebaze@edenfamily.rw',
+                        phone: '+250 78 890 1234',
+                        role: 'teacher',
+                        classe: '3ème A Primaire',
+                        section: 'primaire',
+                        createdAt: new Date().toISOString(),
+                        status: 'active'
+                    },
+                    {
+                        name: 'Cécile Mukamurangwa',
+                        email: 'cecile.mukamurangwa@edenfamily.rw',
+                        phone: '+250 78 901 2345',
+                        role: 'teacher',
+                        classe: '4ème A Primaire',
+                        section: 'primaire',
+                        createdAt: new Date().toISOString(),
+                        status: 'active'
+                    },
+                    {
+                        name: 'David Mutoni',
+                        email: 'david.mutoni@edenfamily.rw',
+                        phone: '+250 78 012 3456',
+                        role: 'teacher',
+                        classe: 'Sciences - Tous niveaux',
+                        section: 'primaire',
+                        createdAt: new Date().toISOString(),
+                        status: 'active'
+                    }
+                ];
+
+                addLog('Ajout des enseignants...', 'info');
+                for (const teacher of teachersData) {
+                    await db.collection('teachers').add(teacher);
+                }
+                addLog(`✓ ${teachersData.length} enseignants ajoutés`, 'success');
+                document.getElementById('teachersCount').textContent = teachersData.length;
+
+                // Parents
+                const parentsData = [
+                    {
+                        nom: 'Francois Habimana',
+                        email: 'francois.habimana@gmail.com',
+                        telephone: '+250 78 123 0000',
+                        enfants: 2,
+                        statut: 'Actif',
+                        dernierAcces: new Date().toISOString(),
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        nom: 'Miriam Rwigema',
+                        email: 'miriam.rwigema@gmail.com',
+                        telephone: '+250 78 234 0000',
+                        enfants: 1,
+                        statut: 'Actif',
+                        dernierAcces: new Date(Date.now() - 86400000).toISOString(),
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        nom: 'Pascal Mutabazi',
+                        email: 'pascal.mutabazi@gmail.com',
+                        telephone: '+250 78 345 0000',
+                        enfants: 3,
+                        statut: 'Actif',
+                        dernierAcces: new Date(Date.now() - 172800000).toISOString(),
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+
+                addLog('Ajout des parents...', 'info');
+                for (const parent of parentsData) {
+                    await db.collection('parents').add(parent);
+                }
+                addLog(`✓ ${parentsData.length} parents ajoutés`, 'success');
+                document.getElementById('parentsCount').textContent = parentsData.length;
+
+                // Activités
+                const activitiesData = [
+                    {
+                        utilisateur: 'Système',
+                        action: 'Initialisation',
+                        details: 'Données de test insérées dans la base de données',
+                        timestamp: new Date().toISOString(),
+                        userId: 'system'
+                    }
+                ];
+
+                addLog('Ajout des activités...', 'info');
+                for (const activity of activitiesData) {
+                    await db.collection('activities').add(activity);
+                }
+                addLog(`✓ ${activitiesData.length} activités ajoutées`, 'success');
+
+                // Rapports
+                const reportsData = [
+                    {
+                        type: 'Bug',
+                        titre: 'Erreur affichage des bulletins',
+                        description: 'Les bulletins ne s\'affichent pas correctement pour la classe 1ère A',
+                        priorite: 'Haute',
+                        statut: 'Nouveau',
+                        rapportePar: 'Joseph Niyibizi',
+                        rapporteParId: 'teacher-001',
+                        date: new Date().toISOString(),
+                        assigneA: '',
+                        resolution: ''
+                    },
+                    {
+                        type: 'Suggestion',
+                        titre: 'Ajouter export en PDF',
+                        description: 'Permettre l\'export des rapports en format PDF',
+                        priorite: 'Moyenne',
+                        statut: 'En cours',
+                        rapportePar: 'Claudette Habimana',
+                        rapporteParId: 'secretary-001',
+                        date: new Date(Date.now() - 86400000).toISOString(),
+                        assigneA: 'Jean Kwizera',
+                        resolution: ''
+                    },
+                    {
+                        type: 'Amélioration',
+                        titre: 'Améliorer la recherche d\'élèves',
+                        description: 'Ajouter des filtres supplémentaires pour la recherche',
+                        priorite: 'Basse',
+                        statut: 'Résolu',
+                        rapportePar: 'Marie Uwimana',
+                        rapporteParId: 'director-002',
+                        date: new Date(Date.now() - 172800000).toISOString(),
+                        assigneA: 'Innocent Nduwimana',
+                        resolution: 'Filtres ajoutés: classe, section, nom'
+                    }
+                ];
+
+                addLog('Ajout des rapports...', 'info');
+                for (const report of reportsData) {
+                    await db.collection('reports').add(report);
+                }
+                addLog(`✓ ${reportsData.length} rapports ajoutés`, 'success');
+
+                addLog('', 'info');
+                addLog('✓✓✓ Initialisation terminée avec succès! ✓✓✓', 'success');
+                addLog('Rendez-vous sur IT.html pour voir les données en action', 'info');
+
+            } catch (error) {
+                addLog(`Erreur: ${error.message}`, 'error');
+                console.error(error);
+            } finally {
+                startBtn.disabled = false;
+                clearBtn.disabled = false;
+            }
+        }
+
+        async function clearDatabase() {
+            if (!confirm('Êtes-vous sûr de vouloir effacer toutes les données? Cette action est irréversible!')) {
+                return;
+            }
+
+            try {
+                startBtn.disabled = true;
+                clearBtn.disabled = true;
+                logContainer.innerHTML = '';
+                addLog('Suppression de toutes les données...', 'info');
+
+                const collections = ['directors', 'secretaries', 'teachers', 'parents', 'activities', 'reports'];
+
+                for (const collectionName of collections) {
+                    addLog(`Suppression de la collection ${collectionName}...`, 'info');
+                    const snapshot = await db.collection(collectionName).get();
+                    let count = 0;
+                    for (const doc of snapshot.docs) {
+                        await db.collection(collectionName).doc(doc.id).delete();
+                        count++;
+                    }
+                    addLog(`✓ ${count} documents supprimés de ${collectionName}`, 'success');
+                }
+
+                document.getElementById('directorsCount').textContent = '0';
+                document.getElementById('secretariesCount').textContent = '0';
+                document.getElementById('teachersCount').textContent = '0';
+                document.getElementById('parentsCount').textContent = '0';
+
+                addLog('', 'info');
+                addLog('✓✓✓ Toutes les données ont été supprimées! ✓✓✓', 'success');
+
+            } catch (error) {
+                addLog(`Erreur: ${error.message}`, 'error');
+                console.error(error);
+            } finally {
+                startBtn.disabled = false;
+                clearBtn.disabled = false;
+            }
+        }
+
+        startBtn.addEventListener('click', seedDatabase);
+        clearBtn.addEventListener('click', clearDatabase);
+    </script>
+</body>
+</html>
