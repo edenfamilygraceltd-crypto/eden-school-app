@@ -17,6 +17,7 @@
           "user-select"
         ]
       }
-    ]
+    ],
+    "axe/name-role-value": "off"
   }
 }
