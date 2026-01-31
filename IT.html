@@ -757,7 +757,19 @@
         function sendOTPByEmail(email, otp) {
             if (typeof emailjs === 'undefined') {
                 console.error('EmailJS non chargé dans la page.');
-                return Promise.reject(new Error('Email service unavailable'));
+                return Promise.reject(new Error('Service email non disponible'));
+            }
+
+            // Initialiser EmailJS si pas encore fait
+            if (!emailjs.__init_called) {
+                try {
+                    emailjs.init('Un7snKzeE4AGeorc-');
+                    emailjs.__init_called = true;
+                    console.log('EmailJS réinitialisé');
+                } catch (e) {
+                    console.error('Erreur lors de l\'initialisation EmailJS:', e);
+                    return Promise.reject(new Error('Impossible d\'initialiser le service email'));
+                }
             }
 
             // Fournir plusieurs clés de template pour correspondre à différents templates
@@ -765,17 +777,28 @@
                 to_email: email,
                 email: email,
                 user_email: email,
+                recipient_email: email,
                 to_name: '',
-                otp: otp
+                user_name: '',
+                otp: otp,
+                otp_code: otp,
+                verification_code: otp
             };
+
+            console.log('Envoi email à:', email, 'avec paramètres:', templateParams);
 
             return emailjs.send('service_yvl11d5', 'template_hjw7vbj', templateParams)
                 .then(response => {
-                    console.log(`OTP ${otp} envoyé à ${email} (EmailJS)`, response);
+                    console.log(`✅ OTP ${otp} envoyé avec succès à ${email}`, response);
                     return true;
                 })
                 .catch(err => {
-                    console.error('Erreur EmailJS:', err);
+                    console.error('❌ Erreur EmailJS:', err);
+                    console.error('Détails de l\'erreur:', {
+                        status: err.status,
+                        text: err.text,
+                        message: err.message
+                    });
                     return Promise.reject(err);
                 });
         }
