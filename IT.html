@@ -11,7 +11,7 @@
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-        import { getFirestore, query, where, orderBy, collection, getDocs, getDoc, doc, setDoc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, query, where, orderBy, limit, collection, getDocs, getDoc, doc, setDoc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getFunctions } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-functions.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
 
@@ -37,6 +37,7 @@
         window.query = query;
         window.where = where;
         window.orderBy = orderBy;
+        window.limit = limit;
         window.collection = collection;
         window.getDocs = getDocs;
         window.getDoc = getDoc;
@@ -808,8 +809,8 @@
                         });
                         // Tentative de fallback: enregistrer l'OTP dans Firestore pour vérification
                         try {
-                            const otpDocRef = db.collection('otps').doc(email);
-                            otpDocRef.set({ otp: otp, createdAt: new Date().toISOString(), expiresAt: Date.now() + (10 * 60 * 1000) });
+                            const otpDocRef = doc(window.db, 'otps', email);
+                            await setDoc(otpDocRef, { otp: otp, createdAt: new Date().toISOString(), expiresAt: Date.now() + (10 * 60 * 1000) });
                             console.warn('Fallback OTP enregistré dans Firestore (collection otps)');
                             return true;
                         } catch (fsErr) {
@@ -1338,7 +1339,7 @@
         // Fonctions Firebase
         async function loadCurrentUser(userId) {
             try {
-                const userDoc = await db.collection('users').doc(userId).get();
+                const userDoc = await getDoc(doc(window.db, 'users', userId));
                 if (userDoc.exists) {
                     state.currentUser = {
                         id: userDoc.id,
@@ -1365,7 +1366,7 @@
                 const users = [];
                 
                 // Charger les directeurs
-                const directorsSnapshot = await db.collection('directors').get();
+                const directorsSnapshot = await getDocs(collection(window.db, 'directors'));
                 directorsSnapshot.docs.forEach(doc => {
                     users.push({
                         id: doc.id,
@@ -1379,7 +1380,7 @@
                 });
                 
                 // Charger les secrétaires
-                const secretariesSnapshot = await db.collection('secretaries').get();
+                const secretariesSnapshot = await getDocs(collection(window.db, 'secretaries'));
                 secretariesSnapshot.docs.forEach(doc => {
                     users.push({
                         id: doc.id,
@@ -1393,7 +1394,7 @@
                 });
                 
                 // Charger les enseignants
-                const teachersSnapshot = await db.collection('teachers').get();
+                const teachersSnapshot = await getDocs(collection(window.db, 'teachers'));
                 teachersSnapshot.docs.forEach(doc => {
                     users.push({
                         id: doc.id,
@@ -1416,10 +1417,8 @@
 
         async function loadActivities() {
             try {
-                const snapshot = await db.collection('activities')
-                    .orderBy('timestamp', 'desc')
-                    .limit(50)
-                    .get();
+                const q = query(collection(window.db, 'activities'), orderBy('timestamp', 'desc'), limit(50));
+                const snapshot = await getDocs(q);
                 state.activities = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
@@ -1432,7 +1431,7 @@
 
         async function loadParents() {
             try {
-                const snapshot = await db.collection('parents').get();
+                const snapshot = await getDocs(collection(window.db, 'parents'));
                 state.parents = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
@@ -1445,9 +1444,8 @@
 
         async function loadReports() {
             try {
-                const snapshot = await db.collection('reports')
-                    .orderBy('date', 'desc')
-                    .get();
+                const q = query(collection(window.db, 'reports'), orderBy('date', 'desc'));
+                const snapshot = await getDocs(q);
                 state.reports = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
@@ -1461,7 +1459,7 @@
 
         async function logActivity(action, details) {
             try {
-                await db.collection('activities').add({
+                await addDoc(collection(window.db, 'activities'), {
                     utilisateur: state.currentUser.nom,
                     action: action,
                     details: details,
@@ -1651,11 +1649,10 @@
             } else {
                     // Si OTP local ne correspond pas, vérifier le fallback Firestore
                     try {
-                        const otpDoc = await db.collection('otps').doc(state.pendingVerification.email).get();
-                        if (otpDoc.exists && otpDoc.data().otp === enteredOtp) {
-                            // Supprimer l'OTP stocké
-                            await db.collection('otps').doc(state.pendingVerification.email).delete();
-
+                    const otpDoc = await getDoc(doc(window.db, 'otps', state.pendingVerification.email));
+                    if (otpDoc.exists() && otpDoc.data().otp === enteredOtp) {
+                        // Supprimer l'OTP stocké
+                        await deleteDoc(doc(window.db, 'otps', state.pendingVerification.email));
                             if (state.pendingVerification.nom) {
                                 await createUserProfile(state.pendingVerification);
                             }
@@ -1695,7 +1692,7 @@
 
         async function createUserProfile(userData) {
             try {
-                await db.collection('users').doc(userData.userId).set({
+                await setDoc(doc(window.db, 'users', userData.userId), {
                     nom: userData.nom,
                     email: userData.email,
                     role: 'IT Admin',
@@ -1738,7 +1735,7 @@
                 const userId = userCredential.user.uid;
                 
                 // Créer le profil dans Firestore
-                await db.collection('users').doc(userId).set({
+                await setDoc(doc(window.db, 'users', userId), {
                     nom: nom,
                     email: email,
                     telephone: telephone,
@@ -1796,7 +1793,7 @@
             
             try {
                 // Mettre à jour dans Firestore
-                await db.collection('users').doc(userId).update({
+                await updateDoc(doc(window.db, 'users', userId), {
                     nom: nom,
                     email: email,
                     telephone: telephone,
@@ -1844,11 +1841,11 @@
             
             try {
                 // Récupérer les informations de l'utilisateur avant suppression
-                const userDoc = await db.collection('users').doc(userId).get();
+                const userDoc = await getDoc(doc(window.db, 'users', userId));
                 const userData = userDoc.data();
                 
                 // Supprimer l'utilisateur de Firestore
-                await db.collection('users').doc(userId).delete();
+                await deleteDoc(doc(window.db, 'users', userId));
                 
                 // Essayer de supprimer le compte Authentication (nécessite des privilèges admin)
                 // Note: Dans la pratique, vous devriez utiliser Cloud Functions pour cela
@@ -1883,7 +1880,7 @@
             
             try {
                 // Créer le rapport dans Firestore
-                await db.collection('reports').add({
+                await addDoc(collection(window.db, 'reports'), {
                     type: type,
                     titre: titre,
                     description: description,
