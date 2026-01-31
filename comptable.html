@@ -1665,6 +1665,35 @@
             margin-top: clamp(1rem, 3vw, 2rem);
         }
         
+        /* Password toggle styles */
+        .password-input-container {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #999;
+            font-size: 16px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .password-toggle-btn:hover {
+            color: #667eea;
+        }
+
+        .password-input-container input {
+            padding-right: 40px !important;
+        }
     </style>
     
     <!-- Firebase SDKs -->

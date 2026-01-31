@@ -732,6 +732,36 @@
         padding: 5px 10px;
       }
     }
+
+    /* Password toggle styles */
+    .password-input-container {
+      position: relative;
+    }
+
+    .password-toggle-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #999;
+      font-size: 16px;
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .password-toggle-btn:hover {
+      color: #667eea;
+    }
+
+    .password-input-container input {
+      padding-right: 40px !important;
+    }
   </style>
 </head>
 <body>
@@ -781,7 +811,12 @@
       </div>
       <div class="input-group">
         <label for="loginPassword"><i class="fas fa-lock"></i> Mot de passe</label>
-        <input type="password" id="loginPassword" placeholder="Votre mot de passe professionnel" required>
+        <div class="password-input-container">
+          <input type="password" id="loginPassword" placeholder="Votre mot de passe professionnel" required>
+          <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('loginPassword')">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
       </div>
       
       <button class="btn-primary" onclick="login(this)">
@@ -1115,6 +1150,25 @@
         showAlert('Erreur technique lors de la vérification du rôle.', 'error');
         await auth.signOut();
         return false;
+      }
+    }
+
+    // Fonction pour basculer la visibilité du mot de passe
+    function togglePasswordVisibility(inputId) {
+      const input = document.getElementById(inputId);
+      const button = event.target.closest('.password-toggle-btn');
+      const icon = button.querySelector('i');
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+        button.style.color = '#667eea';
+      } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+        button.style.color = '#999';
       }
     }
 
