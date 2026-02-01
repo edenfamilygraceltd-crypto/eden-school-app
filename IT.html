@@ -290,22 +290,6 @@
                     Se connecter
                 </button>
                 
-                <!-- Divider -->
-                <div class="relative">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white text-gray-500">Ou continuer avec</span>
-                    </div>
-                </div>
-                
-                <!-- Google Sign In -->
-                <button id="googleLoginBtn" class="w-full bg-white border border-gray-300 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2">
-                    <i class="fab fa-google text-red-500"></i>
-                    Se connecter avec Google
-                </button>
-                
                 <div id="loginMessage" class="text-sm text-center hidden"></div>
             </div>
 
@@ -348,22 +332,6 @@
                 <button id="registerBtn" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center gap-2">
                     <i class="fas fa-user-plus"></i>
                     Créer mon compte IT Admin
-                </button>
-                
-                <!-- Divider -->
-                <div class="relative">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white text-gray-500">Ou s'inscrire avec</span>
-                    </div>
-                </div>
-                
-                <!-- Google Sign Up -->
-                <button id="googleRegisterBtn" class="w-full bg-white border border-gray-300 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2">
-                    <i class="fab fa-google text-red-500"></i>
-                    S'inscrire avec Google
                 </button>
                 
                 <div id="registerMessage" class="text-sm text-center hidden"></div>
@@ -825,12 +793,6 @@
             // Inscription email/mot de passe
             registerBtn.addEventListener('click', handleRegister);
             
-            // Connexion Google
-            googleLoginBtn.addEventListener('click', () => handleGoogleSignIn('login'));
-            
-            // Inscription Google
-            googleRegisterBtn.addEventListener('click', () => handleGoogleSignIn('register'));
-            
             // Gestion des onglets principaux
             tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -908,6 +870,8 @@
             const password = document.getElementById('loginPassword').value;
             const loginMessage = document.getElementById('loginMessage');
             const loginBtn = document.getElementById('loginBtn');
+            const authModal = document.getElementById('authModal');
+            const mainApp = document.getElementById('mainApp');
 
             if (!email || !password) {
                 showMessage(loginMessage, 'Veuillez remplir tous les champs', 'error');
@@ -928,7 +892,13 @@
                 const result = await window.signInWithEmailAndPassword(window.auth, email, password);
                 console.log('✅ Authentification réussie:', result.user.uid);
                 showToast('✅ Connexion réussie!', 'success');
-                // La redirection sera gérée par onAuthStateChanged
+                
+                // Afficher l'app et cacher le modal
+                authModal.classList.add('hidden');
+                mainApp.classList.remove('hidden');
+                
+                // Charger les données utilisateur
+                loadCurrentUser(result.user.uid);
             } catch (error) {
                 console.error('❌ Erreur de connexion:', error.code, error.message);
                 let message = 'Email ou mot de passe incorrect';
@@ -998,6 +968,17 @@
 
                 // Connecter automatiquement l'utilisateur
                 showToast('✅ Compte créé avec succès!', 'success');
+                
+                // Rediriger vers l'application principale
+                setTimeout(() => {
+                    const authModal = document.getElementById('authModal');
+                    const mainApp = document.getElementById('mainApp');
+                    if (authModal && mainApp) {
+                        authModal.classList.add('hidden');
+                        mainApp.classList.remove('hidden');
+                        loadCurrentUser(user.uid);
+                    }
+                }, 500);
 
             } catch (error) {
                 console.error('❌ Erreur d\'inscription:', error.code, error.message);
@@ -1016,80 +997,6 @@
                 showMessage(registerMessage, '❌ ' + message, 'error');
                 // IMPORTANT: Arrêter le loading en cas d'erreur
                 setButtonLoading(registerBtn, false);
-            }
-        }
-
-        async function handleGoogleSignIn(context = 'login') {
-            const button = context === 'login' ? 
-                document.getElementById('googleLoginBtn') : 
-                document.getElementById('googleRegisterBtn');
-            
-            const messageElement = context === 'login' ? 
-                document.getElementById('loginMessage') : 
-                document.getElementById('registerMessage');
-            
-            console.log('🔐 Démarrage Google Sign-In (' + context + ')...');
-            setButtonLoading(button, true);
-            
-            try {
-                // Authentification avec Google
-                const result = await window.signInWithPopup(window.auth, window.googleProvider);
-                const user = result.user;
-                
-                console.log('✅ Utilisateur Google authentifié:', user.uid);
-                console.log('📧 Email:', user.email);
-                
-                // Vérifier si l'utilisateur existe déjà dans Firestore
-                const userDoc = await window.getDoc(window.doc(window.db, 'users', user.uid));
-                
-                if (!userDoc.exists()) {
-                    console.log('📝 Création d\'un nouveau profil utilisateur...');
-                    // Créer le profil utilisateur dans Firestore
-                    await createUserProfile({
-                        userId: user.uid,
-                        email: user.email,
-                        nom: user.displayName || 'Utilisateur Google',
-                        authProvider: 'google',
-                        photoURL: user.photoURL
-                    });
-                    
-                    if (context === 'register') {
-                        showToast('✅ Compte créé avec Google!', 'success');
-                    } else {
-                        showToast('✅ Connexion avec Google réussie!', 'success');
-                    }
-                } else {
-                    console.log('👤 Utilisateur existant, mise à jour...');
-                    // Mettre à jour la dernière connexion
-                    await window.updateDoc(window.doc(window.db, 'users', user.uid), {
-                        lastLogin: new Date().toISOString()
-                    });
-                    
-                    showToast('✅ Connexion avec Google réussie!', 'success');
-                }
-                
-            } catch (error) {
-                console.error('❌ Erreur Google Sign-In:', error.code, error.message);
-                
-                let message = 'Erreur lors de la connexion avec Google';
-                
-                if (error.code === 'auth/popup-closed-by-user') {
-                    message = 'Connexion annulée - fenêtre fermée.';
-                } else if (error.code === 'auth/cancelled-popup-request') {
-                    message = 'Requête annulée.';
-                } else if (error.code === 'auth/popup-blocked') {
-                    message = 'Les popups sont bloqués! Autorisez les popups.';
-                } else if (error.code === 'auth/operation-not-allowed') {
-                    message = 'Google Sign-In n\'est pas activé en Firebase.';
-                } else if (error.code === 'auth/unauthorized-domain') {
-                    message = 'Domaine non autorisé en Firebase Console.';
-                } else if (error.message && error.message.includes('CORS')) {
-                    message = 'Erreur CORS - vérifiez la configuration.';
-                }
-                
-                showMessage(messageElement, message, 'error');
-                // IMPORTANT: Arrêter le loading en cas d'erreur
-                setButtonLoading(button, false);
             }
         }
 
