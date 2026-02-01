@@ -1182,18 +1182,27 @@
 
         async function loadCurrentUser(userId) {
             try {
+                console.log('📥 Chargement du profil utilisateur:', userId);
                 const userDoc = await window.getDoc(window.doc(window.db, 'users', userId));
+                
                 if (userDoc.exists()) {
                     state.currentUser = {
                         id: userDoc.id,
                         ...userDoc.data()
                     };
                     
+                    console.log('✅ Profil utilisateur chargé:', state.currentUser);
+                    
                     // Mettre à jour l'interface
-                    document.getElementById('authModal').classList.add('hidden');
-                    document.getElementById('mainApp').classList.remove('hidden');
-                    document.getElementById('currentUserName').textContent = state.currentUser.nom;
-                    document.getElementById('currentUserRole').textContent = state.currentUser.role;
+                    const authModal = document.getElementById('authModal');
+                    const mainApp = document.getElementById('mainApp');
+                    const currentUserName = document.getElementById('currentUserName');
+                    const currentUserRole = document.getElementById('currentUserRole');
+                    
+                    if (authModal) authModal.classList.add('hidden');
+                    if (mainApp) mainApp.classList.remove('hidden');
+                    if (currentUserName) currentUserName.textContent = state.currentUser.nom;
+                    if (currentUserRole) currentUserRole.textContent = state.currentUser.role;
                     
                     // Enregistrer l'activité de connexion
                     await logActivity('Connexion', `Connexion réussie au système IT Admin`);
@@ -1206,21 +1215,36 @@
                     
                     showToast(`Bienvenue ${state.currentUser.nom}!`, 'success');
                 } else {
+                    console.warn('⚠️ Profil utilisateur non trouvé dans Firestore pour:', userId);
+                    
                     // Si l'utilisateur n'existe pas dans Firestore, le créer
-                    const user = await window.auth.currentUser;
+                    const user = window.auth.currentUser;
                     if (user) {
+                        console.log('🔄 Création du profil utilisateur pour:', user.email);
                         await createUserProfile({
                             userId: user.uid,
                             email: user.email,
                             nom: user.displayName || 'Utilisateur',
-                            authProvider: user.providerData[0]?.providerId || 'unknown'
+                            authProvider: user.providerData[0]?.providerId || 'email'
                         });
+                        // Recharger le profil
                         await loadCurrentUser(user.uid);
+                    } else {
+                        throw new Error('Utilisateur non authentifié');
                     }
                 }
             } catch (error) {
-                console.error('Erreur lors du chargement de l\'utilisateur:', error);
-                showMessage('loginMessage', 'Erreur lors du chargement du profil', 'error');
+                console.error('❌ Erreur lors du chargement du profil:', error);
+                console.error('Détails:', error.message, error.code);
+                
+                const mainApp = document.getElementById('mainApp');
+                const authModal = document.getElementById('authModal');
+                
+                // Rediriger vers la page de connexion
+                if (mainApp) mainApp.classList.add('hidden');
+                if (authModal) authModal.classList.remove('hidden');
+                
+                showToast('❌ Erreur: Impossible de charger le profil. Veuillez vous reconnecter.', 'error');
             }
         }
 
