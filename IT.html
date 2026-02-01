@@ -527,6 +527,15 @@
                                 </div>
                             </div>
                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe</label>
+                                <div class="password-input-container relative">
+                                    <input type="password" id="createConfirmPassword" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="••••••••" required>
+                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('createConfirmPassword')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Rôle</label>
                                 <select id="createRole" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
                                     <option value="">Sélectionner un rôle</option>
@@ -1078,20 +1087,30 @@
                 const name = document.getElementById('createName').value?.trim();
                 const email = document.getElementById('createEmail').value?.trim();
                 const password = document.getElementById('createPassword').value;
+                const confirmPassword = document.getElementById('createConfirmPassword').value;
                 const role = document.getElementById('createRole').value;
                 
-                if (!name || !email || !password || !role) {
+                if (!name || !email || !password || !confirmPassword || !role) {
                     showToast('Veuillez remplir tous les champs', 'error');
+                    setButtonLoading(submitBtn, false);
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showToast('Les mots de passe ne correspondent pas', 'error');
+                    setButtonLoading(submitBtn, false);
                     return;
                 }
 
                 if (password.length < 6) {
                     showToast('Le mot de passe doit contenir au moins 6 caractères', 'error');
+                    setButtonLoading(submitBtn, false);
                     return;
                 }
 
                 if (!isValidEmail(email)) {
                     showToast('Veuillez entrer un email valide', 'error');
+                    setButtonLoading(submitBtn, false);
                     return;
                 }
 
