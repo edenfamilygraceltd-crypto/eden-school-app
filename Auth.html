@@ -9,7 +9,13 @@
   <!-- Firebase SDK (Modern) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword,
+      signOut,
+      GoogleAuthProvider,
+      signInWithPopup
+    } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
     import { getDatabase } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
@@ -26,6 +32,20 @@
     window.auth = getAuth(window.firebaseApp);
     window.firestore = getFirestore(window.firebaseApp);
     window.realtimeDB = getDatabase(window.firebaseApp);
+    
+    // Configurer Google Provider
+    const googleProvider = new GoogleAuthProvider();
+    googleProvider.addScope('profile');
+    googleProvider.addScope('email');
+    googleProvider.setCustomParameters({
+      'prompt': 'select_account'
+    });
+    
+    // Exposer globalement
+    window.googleProvider = googleProvider;
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.signInWithPopup = signInWithPopup;
+    window.signOut = signOut;
   </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -494,6 +514,70 @@
       transform: translateY(-2px);
     }
     
+    .btn-google {
+      width: 100%;
+      padding: 1rem 1.2rem;
+      background: white;
+      color: #374151;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      opacity: 0;
+      animation: buttonAppear 0.8s ease-out 2.4s forwards, buttonFloat 3s ease-in-out 3s infinite;
+      visibility: visible !important;
+      display: flex !important;
+    }
+    
+    .btn-google::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+      transition: 0.5s;
+      z-index: -1;
+    }
+    
+    .btn-google:hover::before {
+      left: 100%;
+    }
+    
+    .btn-google:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+    
+    .btn-google:active {
+      transform: translateY(-1px) scale(0.98);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+    
+    .btn-google:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none;
+    }
+    
+    .btn-google i {
+      font-size: 1.2rem;
+      color: #db4437;
+    }
+    
     .loader {
       display: none;
       position: fixed;
@@ -822,6 +906,18 @@
       <button class="btn-primary" onclick="login(this)">
         <i class="fas fa-sign-in-alt"></i> Connexion Staff
       </button>
+
+      <!-- Divider -->
+      <div style="display: flex; align-items: center; margin: 1.5rem 0; gap: 1rem;">
+        <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
+        <span style="color: #999; font-size: 0.9rem;">ou</span>
+        <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
+      </div>
+
+      <!-- Google Sign-In Button -->
+      <button type="button" class="btn-google" id="googleSignInBtn" onclick="handleGoogleSignIn()">
+        <i class="fab fa-google"></i> Se connecter avec Google
+      </button>
     </div>
 
     <a href="index.html" class="access-portal-btn">
@@ -878,6 +974,64 @@
         }
       `;
       document.head.appendChild(style);
+    }
+
+    // Fonction Google Sign-In
+    async function handleGoogleSignIn() {
+      const button = document.getElementById('googleSignInBtn');
+      const originalText = button.innerHTML;
+      
+      try {
+        console.log('🔐 Tentative Google Sign-In...');
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner" style="animation: spin 1s linear infinite;"></i> Connexion...';
+        
+        // Lancer la popup Google Sign-In
+        const result = await window.signInWithPopup(window.auth, window.googleProvider);
+        const user = result.user;
+        
+        console.log('✅ Authentification Google réussie');
+        console.log('👤 UID utilisateur:', user.uid);
+        console.log('📧 Email utilisateur:', user.email);
+        console.log('🔍 Vérification du rôle en cours...');
+        
+        button.innerHTML = '<i class="fas fa-check"></i> Vérification...';
+        
+        // Vérifier le rôle et rediriger
+        const isStaff = await getUserRoleAndRedirect(user, user.email);
+        
+        if (!isStaff) {
+          // Réactiver le bouton si la vérification échoue
+          button.disabled = false;
+          button.innerHTML = originalText;
+        }
+        
+      } catch (error) {
+        console.error('❌ Erreur Google Sign-In:', error.code, error.message);
+        
+        // Réactiver le bouton
+        button.disabled = false;
+        button.innerHTML = originalText;
+        
+        let errorMessage = 'Erreur lors de la connexion avec Google. ';
+        
+        if (error.code === 'auth/popup-closed-by-user') {
+          errorMessage = 'Connexion annulée - La fenêtre a été fermée.';
+        } else if (error.code === 'auth/cancelled-popup-request') {
+          errorMessage = 'Requête annulée.';
+        } else if (error.code === 'auth/popup-blocked') {
+          errorMessage = 'Les popups sont bloqués! Autorisez les popups pour ce site.';
+        } else if (error.code === 'auth/operation-not-allowed') {
+          errorMessage = 'Google Sign-In n\'est pas activé dans Firebase Console.';
+        } else if (error.code === 'auth/unauthorized-domain') {
+          errorMessage = 'Domaine non autorisé. Ajoutez ce domaine dans Firebase Console > Authentication > Settings.';
+        } else if (error.message && error.message.includes('CORS')) {
+          errorMessage = 'Erreur CORS - Vérifiez la configuration CORS du domaine.';
+        }
+        
+        console.error('Message d\'erreur:', errorMessage);
+        showAlert(errorMessage, 'error');
+      }
     }
 
     // Fonction pour obtenir le rôle de l'utilisateur et rediriger

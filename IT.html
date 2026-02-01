@@ -50,6 +50,13 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const googleProvider = new GoogleAuthProvider();
+        
+        // Configurer les paramètres OAuth pour Google
+        googleProvider.addScope('profile');
+        googleProvider.addScope('email');
+        googleProvider.setCustomParameters({
+            'prompt': 'select_account'
+        });
 
         // Exposer globalement
         window.auth = auth;
@@ -986,17 +993,26 @@
                 document.getElementById('googleLoginBtn') : 
                 document.getElementById('googleRegisterBtn');
             
+            const messageElement = context === 'login' ? 
+                document.getElementById('loginMessage') : 
+                document.getElementById('registerMessage');
+            
             setButtonLoading(button, true);
             
             try {
+                console.log('Démarrage Google Sign-In...');
+                
                 // Authentification avec Google
                 const result = await window.signInWithPopup(window.auth, window.googleProvider);
                 const user = result.user;
+                
+                console.log('Utilisateur Google authentifié:', user.uid);
                 
                 // Vérifier si l'utilisateur existe déjà dans Firestore
                 const userDoc = await window.getDoc(window.doc(window.db, 'users', user.uid));
                 
                 if (!userDoc.exists()) {
+                    console.log('Créer un nouveau profil utilisateur...');
                     // Créer le profil utilisateur dans Firestore
                     await createUserProfile({
                         userId: user.uid,
@@ -1007,33 +1023,42 @@
                     });
                     
                     if (context === 'register') {
-                        showToast('Compte créé avec Google avec succès!', 'success');
+                        showToast('✅ Compte créé avec Google avec succès!', 'success');
                     } else {
-                        showToast('Connexion avec Google réussie!', 'success');
+                        showToast('✅ Connexion avec Google réussie!', 'success');
                     }
                 } else {
+                    console.log('Utilisateur existant, mise à jour...');
                     // Mettre à jour la dernière connexion
                     await window.updateDoc(window.doc(window.db, 'users', user.uid), {
                         lastLogin: new Date().toISOString()
                     });
                     
-                    showToast('Connexion avec Google réussie!', 'success');
+                    showToast('✅ Connexion avec Google réussie!', 'success');
                 }
                 
             } catch (error) {
                 console.error('Erreur Google Sign-In:', error);
+                console.error('Error Code:', error.code);
+                console.error('Error Message:', error.message);
+                
                 let message = 'Erreur lors de la connexion avec Google';
+                
                 if (error.code === 'auth/popup-closed-by-user') {
-                    message = 'La fenêtre de connexion a été fermée.';
+                    message = 'Connexion annulée - La fenêtre a été fermée.';
                 } else if (error.code === 'auth/cancelled-popup-request') {
-                    message = 'La requête de connexion a été annulée.';
+                    message = 'Requête annulée.';
                 } else if (error.code === 'auth/popup-blocked') {
-                    message = 'La fenêtre popup a été bloquée. Autorisez les popups pour ce site.';
+                    message = '❌ Les popups sont bloqués! Autorisez les popups pour ce site.';
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    message = '❌ Google Sign-In n\'est pas activé dans Firebase Console.';
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    message = '❌ Domaine non autorisé. Ajoutez ce domaine dans Firebase Console > Authentication > Settings.';
+                } else if (error.message && error.message.includes('CORS')) {
+                    message = '❌ Erreur CORS - Vérifiez la configuration CORS du domaine.';
                 }
                 
-                const messageElement = context === 'login' ? 
-                    document.getElementById('loginMessage') : 
-                    document.getElementById('registerMessage');
+                console.error('Message d\'erreur:', message);
                 showMessage(messageElement, message, 'error');
             } finally {
                 setButtonLoading(button, false);
