@@ -578,6 +578,27 @@
       color: #db4437;
     }
     
+    /* Loading Animation Styles */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .btn-loading {
+      opacity: 0.8 !important;
+    }
+    
+    .spinner-inline {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+    
     .loader {
       display: none;
       position: fixed;
@@ -979,12 +1000,10 @@
     // Fonction Google Sign-In
     async function handleGoogleSignIn() {
       const button = document.getElementById('googleSignInBtn');
-      const originalText = button.innerHTML;
       
       try {
         console.log('🔐 Tentative Google Sign-In...');
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner" style="animation: spin 1s linear infinite;"></i> Connexion...';
+        setAuthButtonLoading(button, true);
         
         // Lancer la popup Google Sign-In
         const result = await window.signInWithPopup(window.auth, window.googleProvider);
@@ -995,23 +1014,19 @@
         console.log('📧 Email utilisateur:', user.email);
         console.log('🔍 Vérification du rôle en cours...');
         
-        button.innerHTML = '<i class="fas fa-check"></i> Vérification...';
-        
         // Vérifier le rôle et rediriger
         const isStaff = await getUserRoleAndRedirect(user, user.email);
         
         if (!isStaff) {
           // Réactiver le bouton si la vérification échoue
-          button.disabled = false;
-          button.innerHTML = originalText;
+          setAuthButtonLoading(button, false);
         }
         
       } catch (error) {
         console.error('❌ Erreur Google Sign-In:', error.code, error.message);
         
         // Réactiver le bouton
-        button.disabled = false;
-        button.innerHTML = originalText;
+        setAuthButtonLoading(button, false);
         
         let errorMessage = 'Erreur lors de la connexion avec Google. ';
         
@@ -1307,6 +1322,25 @@
       }
     }
 
+    // Fonction pour gérer le loading des boutons
+    function setAuthButtonLoading(button, isLoading, originalText = 'Se connecter') {
+      if (isLoading) {
+        button.classList.add('btn-loading');
+        button.disabled = true;
+        button.setAttribute('data-original-text', button.innerHTML);
+        button.innerHTML = '<span class="spinner-inline"></span> Chargement...';
+      } else {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        const original = button.getAttribute('data-original-text');
+        if (original) {
+          button.innerHTML = original;
+        } else {
+          button.innerHTML = originalText;
+        }
+      }
+    }
+
     // Fonction pour basculer la visibilité du mot de passe
     function togglePasswordVisibility(inputId) {
       const input = document.getElementById(inputId);
@@ -1331,7 +1365,6 @@
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
       const button = buttonElement || document.querySelector('.btn-primary');
-      const loadingLoader = document.getElementById('loadingLoader');
       const originalText = button?.innerHTML || '<i class="fas fa-sign-in-alt"></i> Connexion Staff';
 
       if (!email || !password) {
@@ -1346,16 +1379,9 @@
         return;
       }
 
-      // Afficher le loader
-      if (loadingLoader) {
-        loadingLoader.classList.add('active');
-      }
-
-      // Désactiver le bouton pendant la connexion
+      // Afficher le loading
       if (button) {
-        button.disabled = true;
-        button.style.pointerEvents = 'none';
-        button.innerHTML = '<i class="fas fa-spinner" style="animation: spin 1s linear infinite;"></i> Connexion...';
+        setAuthButtonLoading(button, true);
       }
 
       try {
@@ -1367,23 +1393,12 @@
         console.log('📧 Email utilisateur:', user.email);
         console.log('🔍 Vérification du rôle en cours...');
         
-        // Animation de succès
-        if (button) {
-          button.innerHTML = '<i class="fas fa-check"></i> Connexion réussie!';
-          button.style.background = 'linear-gradient(135deg, #10b981, #047857)';
-        }
-        
         const isStaff = await getUserRoleAndRedirect(user, email);
         
         if (!isStaff) {
           // Réactiver le bouton si la connexion échoue
           if (button) {
-            button.disabled = false;
-            button.innerHTML = originalText;
-            button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-          }
-          if (loadingLoader) {
-            loadingLoader.classList.remove('active');
+            setAuthButtonLoading(button, false);
           }
         }
       } catch (error) {
@@ -1391,14 +1406,7 @@
         
         // Réactiver le bouton
         if (button) {
-          button.disabled = false;
-          button.innerHTML = originalText;
-          button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-        }
-        
-        // Cacher le loader
-        if (loadingLoader) {
-          loadingLoader.classList.remove('active');
+          setAuthButtonLoading(button, false);
         }
         
         let errorMessage = 'Erreur de connexion. ';
