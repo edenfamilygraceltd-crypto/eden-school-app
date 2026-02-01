@@ -150,41 +150,21 @@
 
         /* Loading Animation Styles */
         .btn-loading {
-            position: relative;
-            pointer-events: none;
-            opacity: 0.8;
-        }
-
-        .btn-loading::after {
-            content: '';
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            top: 50%;
-            left: 50%;
-            margin-left: -8px;
-            margin-top: -8px;
-            border: 2px solid transparent;
-            border-radius: 50%;
-            border-top-color: currentColor;
-            animation: spin 0.8s linear infinite;
-        }
-
-        .btn-loading span,
-        .btn-loading i:not(.fa-spinner) {
-            opacity: 0;
-            margin-right: 0;
+            opacity: 0.7 !important;
+            pointer-events: none !important;
+            cursor: not-allowed !important;
         }
 
         .spinner-inline {
             display: inline-block;
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             border: 2px solid currentColor;
-            border-top-color: transparent;
+            border-right-color: transparent;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 8px;
+            animation: spin 0.6s linear infinite;
+            margin-right: 6px;
+            vertical-align: middle;
         }
 
         .btn-loading {
@@ -748,18 +728,24 @@
 
         // Fonction pour activer/désactiver le chargement d'un bouton
         function setButtonLoading(button, isLoading) {
+            if (!button) return;
+            
             if (isLoading) {
+                // Sauvegarder le texte original avant de le modifier
+                if (!button.hasAttribute('data-original-html')) {
+                    button.setAttribute('data-original-html', button.innerHTML);
+                }
                 button.classList.add('btn-loading');
                 button.disabled = true;
-                button.setAttribute('data-original-text', button.innerHTML);
-                // Créer un spinner animé
-                button.innerHTML = '<span class="spinner-inline"></span> Chargement...';
+                button.innerHTML = '<span class="spinner-inline"></span>Chargement...';
             } else {
                 button.classList.remove('btn-loading');
                 button.disabled = false;
-                const originalText = button.getAttribute('data-original-text');
+                // Restaurer le texte original
+                const originalText = button.getAttribute('data-original-html');
                 if (originalText) {
                     button.innerHTML = originalText;
+                    button.removeAttribute('data-original-html');
                 }
             }
         }
@@ -918,7 +904,7 @@
         // ====== FONCTIONS D'AUTHENTIFICATION ======
 
         async function handleLogin() {
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             const loginMessage = document.getElementById('loginMessage');
             const loginBtn = document.getElementById('loginBtn');
@@ -933,15 +919,18 @@
                 return;
             }
 
+            // Afficher le loading AVANT de commencer
             setButtonLoading(loginBtn, true);
+            console.log('🔐 Connexion en cours pour:', email);
 
             try {
                 // Authentification avec Firebase
-                await window.signInWithEmailAndPassword(window.auth, email, password);
+                const result = await window.signInWithEmailAndPassword(window.auth, email, password);
+                console.log('✅ Authentification réussie:', result.user.uid);
+                showToast('✅ Connexion réussie!', 'success');
                 // La redirection sera gérée par onAuthStateChanged
-                showToast('Connexion réussie!', 'success');
             } catch (error) {
-                console.error('Erreur de connexion:', error);
+                console.error('❌ Erreur de connexion:', error.code, error.message);
                 let message = 'Email ou mot de passe incorrect';
                 if (error.code === 'auth/user-not-found') {
                     message = 'Utilisateur non trouvé. Créez un compte d\'abord.';
@@ -953,9 +942,11 @@
                     message = 'Trop de tentatives. Réessayez plus tard.';
                 } else if (error.code === 'auth/user-disabled') {
                     message = 'Ce compte a été désactivé.';
+                } else if (error.code === 'auth/network-request-failed') {
+                    message = 'Erreur réseau. Vérifiez votre connexion.';
                 }
-                showMessage(loginMessage, message, 'error');
-            } finally {
+                showMessage(loginMessage, '❌ ' + message, 'error');
+                // IMPORTANT: Arrêter le loading en cas d'erreur
                 setButtonLoading(loginBtn, false);
             }
         }
@@ -989,15 +980,13 @@
             }
             
             setButtonLoading(registerBtn, true);
+            console.log('📝 Inscription en cours pour:', email);
             
             try {
-                console.log('Démarrage de l\'inscription pour:', email);
-                showMessage(registerMessage, 'Création du compte en cours...', 'info');
-                
                 // Créer l'utilisateur dans Firebase Authentication
                 const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
                 const user = userCredential.user;
-                console.log('Utilisateur Firebase créé:', user.uid);
+                console.log('✅ Utilisateur Firebase créé:', user.uid);
 
                 // Créer le profil dans Firestore
                 await createUserProfile({
@@ -1008,10 +997,10 @@
                 });
 
                 // Connecter automatiquement l'utilisateur
-                showToast('Compte créé avec succès! Vous êtes maintenant connecté.', 'success');
+                showToast('✅ Compte créé avec succès!', 'success');
 
             } catch (error) {
-                console.error('Erreur d\'inscription:', error);
+                console.error('❌ Erreur d\'inscription:', error.code, error.message);
                 let message = 'Erreur lors de l\'inscription';
                 if (error.code === 'auth/email-already-in-use') {
                     message = 'Cet email est déjà utilisé. Essayez de vous connecter.';
@@ -1021,9 +1010,11 @@
                     message = 'Le mot de passe est trop faible';
                 } else if (error.code === 'auth/operation-not-allowed') {
                     message = 'L\'inscription par email/mot de passe n\'est pas activée';
+                } else if (error.code === 'auth/network-request-failed') {
+                    message = 'Erreur réseau. Vérifiez votre connexion.';
                 }
                 showMessage(registerMessage, '❌ ' + message, 'error');
-            } finally {
+                // IMPORTANT: Arrêter le loading en cas d'erreur
                 setButtonLoading(registerBtn, false);
             }
         }
@@ -1037,22 +1028,22 @@
                 document.getElementById('loginMessage') : 
                 document.getElementById('registerMessage');
             
+            console.log('🔐 Démarrage Google Sign-In (' + context + ')...');
             setButtonLoading(button, true);
             
             try {
-                console.log('Démarrage Google Sign-In...');
-                
                 // Authentification avec Google
                 const result = await window.signInWithPopup(window.auth, window.googleProvider);
                 const user = result.user;
                 
-                console.log('Utilisateur Google authentifié:', user.uid);
+                console.log('✅ Utilisateur Google authentifié:', user.uid);
+                console.log('📧 Email:', user.email);
                 
                 // Vérifier si l'utilisateur existe déjà dans Firestore
                 const userDoc = await window.getDoc(window.doc(window.db, 'users', user.uid));
                 
                 if (!userDoc.exists()) {
-                    console.log('Créer un nouveau profil utilisateur...');
+                    console.log('📝 Création d\'un nouveau profil utilisateur...');
                     // Créer le profil utilisateur dans Firestore
                     await createUserProfile({
                         userId: user.uid,
@@ -1063,12 +1054,12 @@
                     });
                     
                     if (context === 'register') {
-                        showToast('✅ Compte créé avec Google avec succès!', 'success');
+                        showToast('✅ Compte créé avec Google!', 'success');
                     } else {
                         showToast('✅ Connexion avec Google réussie!', 'success');
                     }
                 } else {
-                    console.log('Utilisateur existant, mise à jour...');
+                    console.log('👤 Utilisateur existant, mise à jour...');
                     // Mettre à jour la dernière connexion
                     await window.updateDoc(window.doc(window.db, 'users', user.uid), {
                         lastLogin: new Date().toISOString()
@@ -1078,29 +1069,26 @@
                 }
                 
             } catch (error) {
-                console.error('Erreur Google Sign-In:', error);
-                console.error('Error Code:', error.code);
-                console.error('Error Message:', error.message);
+                console.error('❌ Erreur Google Sign-In:', error.code, error.message);
                 
                 let message = 'Erreur lors de la connexion avec Google';
                 
                 if (error.code === 'auth/popup-closed-by-user') {
-                    message = 'Connexion annulée - La fenêtre a été fermée.';
+                    message = 'Connexion annulée - fenêtre fermée.';
                 } else if (error.code === 'auth/cancelled-popup-request') {
                     message = 'Requête annulée.';
                 } else if (error.code === 'auth/popup-blocked') {
-                    message = '❌ Les popups sont bloqués! Autorisez les popups pour ce site.';
+                    message = 'Les popups sont bloqués! Autorisez les popups.';
                 } else if (error.code === 'auth/operation-not-allowed') {
-                    message = '❌ Google Sign-In n\'est pas activé dans Firebase Console.';
+                    message = 'Google Sign-In n\'est pas activé en Firebase.';
                 } else if (error.code === 'auth/unauthorized-domain') {
-                    message = '❌ Domaine non autorisé. Ajoutez ce domaine dans Firebase Console > Authentication > Settings.';
+                    message = 'Domaine non autorisé en Firebase Console.';
                 } else if (error.message && error.message.includes('CORS')) {
-                    message = '❌ Erreur CORS - Vérifiez la configuration CORS du domaine.';
+                    message = 'Erreur CORS - vérifiez la configuration.';
                 }
                 
-                console.error('Message d\'erreur:', message);
                 showMessage(messageElement, message, 'error');
-            } finally {
+                // IMPORTANT: Arrêter le loading en cas d'erreur
                 setButtonLoading(button, false);
             }
         }

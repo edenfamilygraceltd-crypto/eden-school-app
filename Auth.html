@@ -585,18 +585,21 @@
     }
     
     .btn-loading {
-      opacity: 0.8 !important;
+      opacity: 0.7 !important;
+      pointer-events: none !important;
+      cursor: not-allowed !important;
     }
     
     .spinner-inline {
       display: inline-block;
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
       border: 2px solid currentColor;
-      border-top-color: transparent;
+      border-right-color: transparent;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-right: 8px;
+      animation: spin 0.6s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
     }
     
     .loader {
@@ -1324,17 +1327,24 @@
 
     // Fonction pour gérer le loading des boutons
     function setAuthButtonLoading(button, isLoading, originalText = 'Se connecter') {
+      if (!button) return;
+      
       if (isLoading) {
+        // Sauvegarder le texte original avant de le modifier
+        if (!button.hasAttribute('data-original-html')) {
+          button.setAttribute('data-original-html', button.innerHTML);
+        }
         button.classList.add('btn-loading');
         button.disabled = true;
-        button.setAttribute('data-original-text', button.innerHTML);
-        button.innerHTML = '<span class="spinner-inline"></span> Chargement...';
+        button.innerHTML = '<span class="spinner-inline"></span>Chargement...';
       } else {
         button.classList.remove('btn-loading');
         button.disabled = false;
-        const original = button.getAttribute('data-original-text');
+        // Restaurer le texte original
+        const original = button.getAttribute('data-original-html');
         if (original) {
           button.innerHTML = original;
+          button.removeAttribute('data-original-html');
         } else {
           button.innerHTML = originalText;
         }
@@ -1386,7 +1396,7 @@
 
       try {
         console.log('🔐 Tentative de connexion pour:', email);
-        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const userCredential = await window.auth.signInWithEmailAndPassword(email, password);
         const user = userCredential.user;
         console.log('✅ Authentification Firebase réussie');
         console.log('👤 UID utilisateur:', user.uid);
