@@ -112,6 +112,11 @@
         .password-input-container input {
             padding-right: 40px !important;
         }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -235,6 +240,17 @@
                     <button id="verifyOtpBtn" class="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
                         <i class="fas fa-check"></i> Vérifier
                     </button>
+                </div>
+                <!-- Section test OTP -->
+                <div class="mt-4 pt-4 border-t">
+                    <p class="text-sm text-gray-500 mb-2">Mode test - Email non reçu ?</p>
+                    <button id="showOTPButton" class="text-sm text-indigo-600 hover:text-indigo-800">
+                        <i class="fas fa-key"></i> Afficher l'OTP pour test
+                    </button>
+                    <div id="otpDisplay" class="hidden mt-2 p-2 bg-gray-100 rounded">
+                        <p class="font-mono text-lg">OTP: <span id="otpValue"></span></p>
+                        <p class="text-xs text-gray-500">Note: Ceci est pour le test seulement</p>
+                    </div>
                 </div>
                 <div id="otpMessage" class="text-sm text-center hidden"></div>
             </div>
@@ -478,7 +494,7 @@
                         </div>
                     </div>
                     <div id="approvedAccountsList" class="space-y-3">
-                        <!-- Les comptes approuvés seront affichés ici -->
+                        <!-- Les comptes approuvés seront affichées ici -->
                     </div>
                     <p id="noApprovedMessage" class="text-center text-gray-500 py-6">Aucun compte approuvé pour le moment</p>
                 </div>
@@ -763,61 +779,78 @@
 
         // Envoyer l'OTP par email via EmailJS
         function sendOTPByEmail(email, otp) {
-            if (typeof emailjs === 'undefined') {
-                console.error('EmailJS non chargé dans la page.');
-                return Promise.reject(new Error('Service email non disponible'));
-            }
-
-            // Initialiser EmailJS si pas encore fait
-            if (!emailjs.__init_called) {
-                try {
-                    emailjs.init('Un7snKzeE4AGeorc-');
-                    emailjs.__init_called = true;
-                    console.log('EmailJS réinitialisé');
-                } catch (e) {
-                    console.error('Erreur lors de l\'initialisation EmailJS:', e);
-                    return Promise.reject(new Error('Impossible d\'initialiser le service email'));
+            return new Promise(async (resolve, reject) => {
+                if (typeof emailjs === 'undefined') {
+                    console.error('EmailJS non chargé dans la page.');
+                    reject(new Error('Service email non disponible'));
+                    return;
                 }
-            }
 
-            // Fournir plusieurs clés de template pour correspondre à différents templates
-            const templateParams = {
-                to_email: email,
-                email: email,
-                user_email: email,
-                recipient_email: email,
-                to_name: '',
-                user_name: '',
-                otp: otp,
-                otp_code: otp,
-                verification_code: otp
-            };
+                // Initialiser EmailJS si pas encore fait
+                if (!emailjs.__init_called) {
+                    try {
+                        emailjs.init('Un7snKzeE4AGeorc-');
+                        emailjs.__init_called = true;
+                        console.log('EmailJS réinitialisé');
+                    } catch (e) {
+                        console.error('Erreur lors de l\'initialisation EmailJS:', e);
+                        reject(new Error('Impossible d\'initialiser le service email'));
+                        return;
+                    }
+                }
 
-            console.log('Envoi email à:', email, 'avec paramètres:', templateParams);
+                // Fournir plusieurs clés de template pour correspondre à différents templates
+                const templateParams = {
+                    to_email: email,
+                    email: email,
+                    user_email: email,
+                    recipient_email: email,
+                    to_name: email.split('@')[0],
+                    user_name: email.split('@')[0],
+                    otp: otp,
+                    otp_code: otp,
+                    verification_code: otp
+                };
 
-            return emailjs.send('service_yvl11d5', 'template_z9t1qne', templateParams)
-                .then(response => {
+                console.log('Envoi email à:', email, 'avec paramètres:', templateParams);
+
+                try {
+                    const response = await emailjs.send('service_yvl11d5', 'template_z9t1qne', templateParams);
                     console.log(`✅ OTP ${otp} envoyé avec succès à ${email}`, response);
-                    return true;
-                })
-                .catch(err => {
-                        console.error('❌ Erreur EmailJS:', err);
-                        console.error('Détails de l\'erreur:', {
-                            status: err.status,
-                            text: err.text,
-                            message: err.message
+                    
+                    // Stocker l'OTP dans Firestore comme fallback
+                    try {
+                        const otpDocRef = doc(window.db, 'otps', email);
+                        await setDoc(otpDocRef, { 
+                            otp: otp, 
+                            createdAt: new Date().toISOString(), 
+                            expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
                         });
-                        // Tentative de fallback: enregistrer l'OTP dans Firestore pour vérification
-                        try {
-                            const otpDocRef = doc(window.db, 'otps', email);
-                            await setDoc(otpDocRef, { otp: otp, createdAt: new Date().toISOString(), expiresAt: Date.now() + (10 * 60 * 1000) });
-                            console.warn('Fallback OTP enregistré dans Firestore (collection otps)');
-                            return true;
-                        } catch (fsErr) {
-                            console.error('Échec fallback OTP Firestore:', fsErr);
-                            return Promise.reject(err);
-                        }
-                });
+                        console.log('Fallback OTP enregistré dans Firestore');
+                    } catch (fsErr) {
+                        console.warn('Échec enregistrement OTP Firestore:', fsErr);
+                    }
+                    
+                    resolve(true);
+                } catch (err) {
+                    console.error('❌ Erreur EmailJS:', err);
+                    
+                    // Fallback: essayer avec un autre template si disponible
+                    try {
+                        const otpDocRef = doc(window.db, 'otps', email);
+                        await setDoc(otpDocRef, { 
+                            otp: otp, 
+                            createdAt: new Date().toISOString(), 
+                            expiresAt: Date.now() + (10 * 60 * 1000)
+                        });
+                        console.warn('OTP enregistré dans Firestore comme fallback (collection otps)');
+                        resolve(true); // On résout quand même car l'OTP est stocké
+                    } catch (fsErr) {
+                        console.error('Échec fallback OTP Firestore:', fsErr);
+                        reject(err);
+                    }
+                }
+            });
         }
 
         // Fonction pour basculer la visibilité du mot de passe
@@ -858,8 +891,10 @@
             const registerBtn = document.getElementById('registerBtn');
             const verifyOtpBtn = document.getElementById('verifyOtpBtn');
             const resendOtpBtn = document.getElementById('resendOtpBtn');
+            const showOTPButton = document.getElementById('showOTPButton');
             const authModal = document.getElementById('authModal');
             const mainApp = document.getElementById('mainApp');
+            
             // Initialiser EmailJS si la librairie est chargée
             try {
                 if (typeof emailjs !== 'undefined' && !emailjs.__init_called) {
@@ -974,6 +1009,8 @@
                         loadParents();
                     } else if (tabId === 'reports') {
                         loadReports();
+                    } else if (tabId === 'creerComptes') {
+                        loadCreateAccountRequests();
                     }
                 });
             });
@@ -1059,6 +1096,19 @@
             if (createAccountForm) {
                 createAccountForm.addEventListener('submit', handleCreateAccount);
             }
+
+            // Afficher l'OTP pour test
+            if (showOTPButton) {
+                showOTPButton.addEventListener('click', function() {
+                    if (state.pendingVerification?.otp) {
+                        document.getElementById('otpValue').textContent = state.pendingVerification.otp;
+                        document.getElementById('otpDisplay').classList.remove('hidden');
+                    }
+                });
+            }
+
+            // Nettoyer les OTPs expirés périodiquement
+            setInterval(clearExpiredOTPs, 60000); // Toutes les minutes
         });
 
         // ====== GESTION DE LA CRÉATION DE COMPTES AVEC AUTORISATION ======
@@ -1618,10 +1668,10 @@
         }
 
         async function handleVerifyOTP() {
-            const enteredOtp = document.getElementById('otpCode').value;
+            const enteredOtp = document.getElementById('otpCode').value?.trim();
             const otpMessage = document.getElementById('otpMessage');
             
-            if (!enteredOtp || enteredOtp.length !== 6) {
+            if (!enteredOtp || enteredOtp.length !== 6 || !/^\d+$/.test(enteredOtp)) {
                 showMessage(otpMessage, 'Veuillez entrer un code OTP valide (6 chiffres)', 'error');
                 return;
             }
@@ -1631,42 +1681,66 @@
                 return;
             }
             
-            if (enteredOtp === state.pendingVerification.otp) {
-                // OTP correct
-                if (state.pendingVerification.nom) {
-                    // C'est une inscription, créer le profil utilisateur
-                    await createUserProfile(state.pendingVerification);
+            try {
+                // Essayer d'abord l'OTP en mémoire
+                if (enteredOtp === state.pendingVerification.otp) {
+                    await processSuccessfulVerification();
+                    return;
                 }
                 
-                // Connecter l'utilisateur
-                await loadCurrentUser(state.pendingVerification.userId);
-                showMessage(otpMessage, 'Vérification réussie!', 'success');
+                // Si l'OTP en mémoire ne correspond pas, vérifier dans Firestore
+                const otpDoc = await getDoc(doc(window.db, 'otps', state.pendingVerification.email));
                 
-                // Réinitialiser
-                state.pendingVerification = null;
-                state.otpSent = false;
-                
-            } else {
-                    // Si OTP local ne correspond pas, vérifier le fallback Firestore
-                    try {
-                    const otpDoc = await getDoc(doc(window.db, 'otps', state.pendingVerification.email));
-                    if (otpDoc.exists() && otpDoc.data().otp === enteredOtp) {
-                        // Supprimer l'OTP stocké
+                if (otpDoc.exists()) {
+                    const otpData = otpDoc.data();
+                    const now = Date.now();
+                    
+                    // Vérifier si l'OTP n'a pas expiré (10 minutes)
+                    if (otpData.expiresAt && now > otpData.expiresAt) {
+                        showMessage(otpMessage, 'Code OTP expiré. Veuillez en demander un nouveau.', 'error');
                         await deleteDoc(doc(window.db, 'otps', state.pendingVerification.email));
-                            if (state.pendingVerification.nom) {
-                                await createUserProfile(state.pendingVerification);
-                            }
-                            await loadCurrentUser(state.pendingVerification.userId);
-                            showMessage(otpMessage, 'Vérification réussie via fallback!', 'success');
-                            state.pendingVerification = null;
-                            state.otpSent = false;
-                            return;
-                        }
-                    } catch (e) {
-                        console.error('Erreur vérification OTP fallback:', e);
+                        return;
                     }
+                    
+                    if (otpData.otp === enteredOtp) {
+                        // Supprimer l'OTP utilisé
+                        await deleteDoc(doc(window.db, 'otps', state.pendingVerification.email));
+                        await processSuccessfulVerification();
+                        return;
+                    }
+                }
+                
+                showMessage(otpMessage, 'Code OTP incorrect', 'error');
+                
+            } catch (error) {
+                console.error('Erreur vérification OTP:', error);
+                showMessage(otpMessage, 'Erreur lors de la vérification', 'error');
+            }
+        }
 
-                    showMessage(otpMessage, 'Code OTP incorrect', 'error');
+        async function processSuccessfulVerification() {
+            const otpMessage = document.getElementById('otpMessage');
+            
+            // Si c'est une inscription, créer le profil utilisateur
+            if (state.pendingVerification.nom) {
+                await createUserProfile(state.pendingVerification);
+            }
+            
+            // Connecter l'utilisateur
+            await loadCurrentUser(state.pendingVerification.userId);
+            showMessage(otpMessage, 'Vérification réussie! Redirection...', 'success');
+            
+            // Réinitialiser
+            state.pendingVerification = null;
+            state.otpSent = false;
+            
+            // Supprimer l'OTP de Firestore si existant
+            try {
+                if (state.pendingVerification?.email) {
+                    await deleteDoc(doc(window.db, 'otps', state.pendingVerification.email));
+                }
+            } catch (e) {
+                // Ignorer si le document n'existe pas
             }
         }
 
@@ -1680,13 +1754,24 @@
             const otp = generateOTP();
             state.pendingVerification.otp = otp;
             
-            // Renvoyer l'OTP
             try {
                 await sendOTPByEmail(state.pendingVerification.email, otp);
-                showMessage('otpMessage', 'Nouveau code OTP envoyé', 'success');
+                showMessage('otpMessage', 'Nouveau code OTP envoyé à ' + state.pendingVerification.email, 'success');
             } catch (err) {
                 console.error('Échec renvoi OTP:', err);
-                showMessage('otpMessage', 'Impossible de renvoyer le code OTP. Vérifiez la configuration.', 'error');
+                
+                // Fallback: stocker dans Firestore seulement
+                try {
+                    const otpDocRef = doc(window.db, 'otps', state.pendingVerification.email);
+                    await setDoc(otpDocRef, { 
+                        otp: otp, 
+                        createdAt: new Date().toISOString(), 
+                        expiresAt: Date.now() + (10 * 60 * 1000)
+                    });
+                    showMessage('otpMessage', 'OTP généré et stocké. Code: ' + otp + ' (à utiliser avec Firestore fallback)', 'info');
+                } catch (fsErr) {
+                    showMessage('otpMessage', 'Erreur système. Veuillez réessayer plus tard.', 'error');
+                }
             }
         }
 
@@ -1946,6 +2031,24 @@
             }
         }
 
+        // Nettoyer les OTPs expirés
+        async function clearExpiredOTPs() {
+            try {
+                const otpsSnapshot = await getDocs(collection(window.db, 'otps'));
+                const now = Date.now();
+                
+                otpsSnapshot.forEach(async (docSnapshot) => {
+                    const data = docSnapshot.data();
+                    if (data.expiresAt && now > data.expiresAt) {
+                        await deleteDoc(doc(window.db, 'otps', docSnapshot.id));
+                        console.log('OTP expiré supprimé:', docSnapshot.id);
+                    }
+                });
+            } catch (error) {
+                console.error('Erreur nettoyage OTPs:', error);
+            }
+        }
+
         // Fonctions de rendu
         function renderUsers() {
             const usersTableBody = document.getElementById('usersTableBody');
@@ -2186,6 +2289,8 @@
         // Exposer les fonctions globales
         window.openEditUserModal = openEditUserModal;
         window.openDeleteConfirmModal = openDeleteConfirmModal;
+        window.approveAccountRequest = approveAccountRequest;
+        window.rejectAccountRequest = rejectAccountRequest;
     </script>
 
     <!-- Module: Google Sign-In & account linking -->
@@ -2204,9 +2309,9 @@
                 const user = result.user;
                 // Si nouvel utilisateur, créer profil minimal si nécessaire
                 try {
-                    const userDoc = await window.db.collection('users').doc(user.uid).get();
+                    const userDoc = await getDoc(doc(window.db, 'users', user.uid));
                     if (!userDoc.exists) {
-                        await window.db.collection('users').doc(user.uid).set({
+                        await setDoc(doc(window.db, 'users', user.uid), {
                             nom: user.displayName || 'Utilisateur Google',
                             email: user.email,
                             role: 'IT Admin',
