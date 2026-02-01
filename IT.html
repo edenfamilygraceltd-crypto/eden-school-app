@@ -6,14 +6,33 @@
     <title>IT Admin - Gestion des Comptes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK (Modern) -->
+    <!-- Firebase SDK -->
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-        import { getFirestore, query, where, orderBy, limit, collection, getDocs, getDoc, doc, setDoc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        import { getFunctions } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-functions.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            GoogleAuthProvider,
+            signInWithPopup
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs, 
+            getDoc, 
+            doc, 
+            setDoc, 
+            updateDoc, 
+            addDoc, 
+            deleteDoc, 
+            query, 
+            where, 
+            orderBy, 
+            limit 
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -27,17 +46,20 @@
         };
 
         // Initialize Firebase
-        window.firebaseApp = initializeApp(firebaseConfig);
-        window.auth = getAuth(window.firebaseApp);
-        window.db = getFirestore(window.firebaseApp);
-        window.functions = getFunctions(window.firebaseApp);
-        window.analytics = getAnalytics(window.firebaseApp);
-        
-        // Expose Firestore functions globally for use in script
-        window.query = query;
-        window.where = where;
-        window.orderBy = orderBy;
-        window.limit = limit;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // Exposer globalement
+        window.auth = auth;
+        window.db = db;
+        window.googleProvider = googleProvider;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.signInWithPopup = signInWithPopup;
+        window.signOut = signOut;
+        window.onAuthStateChanged = onAuthStateChanged;
         window.collection = collection;
         window.getDocs = getDocs;
         window.getDoc = getDoc;
@@ -46,9 +68,11 @@
         window.updateDoc = updateDoc;
         window.addDoc = addDoc;
         window.deleteDoc = deleteDoc;
+        window.query = query;
+        window.where = where;
+        window.orderBy = orderBy;
+        window.limit = limit;
     </script>
-    <!-- EmailJS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
     <style>
         .fade-in {
             animation: fadeIn 0.3s ease-in-out;
@@ -83,7 +107,6 @@
             border-radius: 3px;
         }
 
-        /* Password toggle styles */
         .password-input-container {
             position: relative;
         }
@@ -117,17 +140,91 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1001;
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast-success {
+            background: #10b981;
+        }
+
+        .toast-error {
+            background: #ef4444;
+        }
+
+        .toast-warning {
+            background: #f59e0b;
+        }
+
+        .toast-info {
+            background: #3b82f6;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
+    <!-- Toast Notifications -->
+    <div id="toastContainer"></div>
+
     <!-- Modal d'authentification -->
     <div id="authModal" class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden slide-in">
             <!-- Header avec bouton retour -->
             <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white text-center relative">
-                <button id="backBtn" class="absolute left-4 top-4 text-white hover:text-gray-200">
-                    <i class="fas fa-arrow-left"></i> Retour
-                </button>
                 <i class="fas fa-shield-alt text-5xl mb-4"></i>
                 <h2 class="text-3xl font-bold">IT Admin</h2>
                 <p class="text-indigo-100 mt-2">Système de Gestion Scolaire</p>
@@ -149,7 +246,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
                     <div class="relative">
                         <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                        <input type="email" id="loginEmail" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="votre.email@school.rw">
+                        <input type="email" id="loginEmail" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="admin@school.rw">
                     </div>
                 </div>
                 <div>
@@ -166,13 +263,23 @@
                     <i class="fas fa-sign-in-alt"></i>
                     Se connecter
                 </button>
-                <!-- Google Sign-In -->
-                <div class="mt-3">
-                    <button id="googleLoginBtn" class="w-full bg-white border border-gray-300 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2">
-                        <i class="fab fa-google text-red-500"></i>
-                        Se connecter avec Google
-                    </button>
+                
+                <!-- Divider -->
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">Ou continuer avec</span>
+                    </div>
                 </div>
+                
+                <!-- Google Sign In -->
+                <button id="googleLoginBtn" class="w-full bg-white border border-gray-300 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                    <i class="fab fa-google text-red-500"></i>
+                    Se connecter avec Google
+                </button>
+                
                 <div id="loginMessage" class="text-sm text-center hidden"></div>
             </div>
 
@@ -216,43 +323,24 @@
                     <i class="fas fa-user-plus"></i>
                     Créer mon compte IT Admin
                 </button>
+                
+                <!-- Divider -->
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">Ou s'inscrire avec</span>
+                    </div>
+                </div>
+                
+                <!-- Google Sign Up -->
+                <button id="googleRegisterBtn" class="w-full bg-white border border-gray-300 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                    <i class="fab fa-google text-red-500"></i>
+                    S'inscrire avec Google
+                </button>
+                
                 <div id="registerMessage" class="text-sm text-center hidden"></div>
-            </div>
-
-            <!-- Formulaire OTP -->
-            <div id="otpForm" class="p-8 space-y-6 hidden">
-                <div class="text-center">
-                    <i class="fas fa-shield-alt text-4xl text-indigo-600 mb-4"></i>
-                    <h3 class="text-xl font-bold text-gray-900">Vérification OTP</h3>
-                    <p class="text-gray-600 mt-2">Un code de vérification a été envoyé à <span id="otpEmail" class="font-semibold"></span></p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Code OTP (6 chiffres)</label>
-                    <div class="relative">
-                        <i class="fas fa-key absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" id="otpCode" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="123456" maxlength="6">
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <button id="resendOtpBtn" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                        <i class="fas fa-redo"></i> Renvoyer
-                    </button>
-                    <button id="verifyOtpBtn" class="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-                        <i class="fas fa-check"></i> Vérifier
-                    </button>
-                </div>
-                <!-- Section test OTP -->
-                <div class="mt-4 pt-4 border-t">
-                    <p class="text-sm text-gray-500 mb-2">Mode test - Email non reçu ?</p>
-                    <button id="showOTPButton" class="text-sm text-indigo-600 hover:text-indigo-800">
-                        <i class="fas fa-key"></i> Afficher l'OTP pour test
-                    </button>
-                    <div id="otpDisplay" class="hidden mt-2 p-2 bg-gray-100 rounded">
-                        <p class="font-mono text-lg">OTP: <span id="otpValue"></span></p>
-                        <p class="text-xs text-gray-500">Note: Ceci est pour le test seulement</p>
-                    </div>
-                </div>
-                <div id="otpMessage" class="text-sm text-center hidden"></div>
             </div>
         </div>
     </div>
@@ -271,15 +359,15 @@
                         <p class="text-indigo-100 mt-2">Connecté en tant que: <span id="currentUserName"></span> (<span id="currentUserRole"></span>)</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <button id="reportBugBtn" class="bg-orange-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-orange-600 transition flex items-center justify-center gap-2 shadow-md">
+                        <button onclick="openReportBugModal()" class="bg-orange-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-orange-600 transition flex items-center justify-center gap-2 shadow-md">
                             <i class="fas fa-bug"></i>
                             Reporter un Bug
                         </button>
-                        <button id="createAccountBtn" class="bg-white text-indigo-600 px-4 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition flex items-center justify-center gap-2 shadow-md">
+                        <button onclick="openCreateUserModal()" class="bg-white text-indigo-600 px-4 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition flex items-center justify-center gap-2 shadow-md">
                             <i class="fas fa-user-plus"></i>
                             Créer un Compte
                         </button>
-                        <button id="logoutBtn" class="bg-red-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-600 transition flex items-center justify-center gap-2 shadow-md">
+                        <button onclick="handleLogout()" class="bg-red-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-600 transition flex items-center justify-center gap-2 shadow-md">
                             <i class="fas fa-sign-out-alt"></i>
                             Déconnexion
                         </button>
@@ -333,6 +421,7 @@
                             <option value="Directeur">Directeur</option>
                             <option value="Secrétaire">Secrétaire</option>
                             <option value="Enseignant">Enseignant</option>
+                            <option value="IT Admin">IT Admin</option>
                         </select>
                     </div>
                 </div>
@@ -419,17 +508,6 @@
                         </div>
                     </div>
 
-                    <!-- Message d'autorisation -->
-                    <div id="authorizationMessage" class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded hidden">
-                        <div class="flex items-start gap-3">
-                            <i class="fas fa-exclamation-circle text-yellow-600 mt-0.5"></i>
-                            <div>
-                                <p class="text-sm font-medium text-yellow-800">Autorisation requise</p>
-                                <p class="text-sm text-yellow-700 mt-1">Votre demande de création de compte a été envoyée pour approbation. Vous serez notifié dès que votre demande sera traitée.</p>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Formulaire de création de compte -->
                     <form id="createAccountForm" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -456,9 +534,8 @@
                                     <option value="">Sélectionner un rôle</option>
                                     <option value="Directeur">Directeur</option>
                                     <option value="Secrétaire">Secrétaire</option>
-                                    <option value="Professeur">Professeur</option>
-                                    <option value="Comptable">Comptable</option>
-                                    <option value="IT">IT Admin</option>
+                                    <option value="Enseignant">Enseignant</option>
+                                    <option value="IT Admin">IT Admin</option>
                                 </select>
                             </div>
                         </div>
@@ -469,34 +546,19 @@
                     </form>
                 </div>
 
-                <!-- Demandes en attente -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center gap-3 mb-6">
-                        <i class="fas fa-clock text-2xl text-orange-600"></i>
-                        <div>
-                            <h2 class="text-xl font-bold text-gray-900">Demandes en Attente d'Approbation</h2>
-                            <p class="text-gray-500 mt-1">Comptes créés en attente d'autorisation</p>
-                        </div>
-                    </div>
-                    <div id="pendingRequestsList" class="space-y-3">
-                        <!-- Les demandes en attente seront affichées ici -->
-                    </div>
-                    <p id="noPendingMessage" class="text-center text-gray-500 py-6">Aucune demande en attente</p>
-                </div>
-
-                <!-- Demandes approuvées -->
+                <!-- Liste des comptes créés -->
                 <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center gap-3 mb-6">
                         <i class="fas fa-check-circle text-2xl text-green-600"></i>
                         <div>
-                            <h2 class="text-xl font-bold text-gray-900">Comptes Approuvés</h2>
-                            <p class="text-gray-500 mt-1">Comptes créés et approuvés avec succès</p>
+                            <h2 class="text-xl font-bold text-gray-900">Comptes Créés</h2>
+                            <p class="text-gray-500 mt-1">Liste des comptes créés avec succès</p>
                         </div>
                     </div>
-                    <div id="approvedAccountsList" class="space-y-3">
-                        <!-- Les comptes approuvés seront affichées ici -->
+                    <div id="accountsList" class="space-y-3">
+                        <!-- Les comptes seront affichés ici -->
                     </div>
-                    <p id="noApprovedMessage" class="text-center text-gray-500 py-6">Aucun compte approuvé pour le moment</p>
+                    <p id="noAccountsMessage" class="text-center text-gray-500 py-6">Aucun compte créé pour le moment</p>
                 </div>
             </div>
 
@@ -602,163 +664,9 @@
                 </div>
             </div>
         </div>
-
-        <!-- Modal de création d'utilisateur -->
-        <div id="createUserModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg max-w-md w-full p-6 slide-in">
-                <h3 class="text-xl font-bold text-gray-900 mb-4">Créer un Nouveau Compte</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom Complet *</label>
-                        <input type="text" id="newUserName" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Ex: Mukasa Jean" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                        <input type="email" id="newUserEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="exemple@school.rw" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                        <input type="tel" id="newUserPhone" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="+250 78 123 4567">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Rôle *</label>
-                        <select id="newUserRole" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
-                            <option value="">Sélectionner un rôle</option>
-                            <option value="Directeur">Directeur</option>
-                            <option value="Secrétaire">Secrétaire</option>
-                            <option value="Enseignant">Enseignant</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de Passe *</label>
-                        <input type="password" id="newUserPassword" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="••••••••" required>
-                    </div>
-                    <div class="flex gap-3 mt-6">
-                        <button id="cancelCreateUser" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                            Annuler
-                        </button>
-                        <button id="confirmCreateUser" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-                            Créer le Compte
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal d'édition d'utilisateur -->
-        <div id="editUserModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg max-w-md w-full p-6 slide-in">
-                <h3 class="text-xl font-bold text-gray-900 mb-4">Modifier l'Utilisateur</h3>
-                <div class="space-y-4">
-                    <input type="hidden" id="editUserId">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom Complet *</label>
-                        <input type="text" id="editUserName" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                        <input type="email" id="editUserEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                        <input type="tel" id="editUserPhone" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Rôle *</label>
-                        <select id="editUserRole" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
-                            <option value="Directeur">Directeur</option>
-                            <option value="Secrétaire">Secrétaire</option>
-                            <option value="Enseignant">Enseignant</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Statut *</label>
-                        <select id="editUserStatus" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
-                            <option value="Actif">Actif</option>
-                            <option value="Inactif">Inactif</option>
-                            <option value="Suspendu">Suspendu</option>
-                        </select>
-                    </div>
-                    <div class="flex gap-3 mt-6">
-                        <button id="cancelEditUser" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                            Annuler
-                        </button>
-                        <button id="saveEditUser" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-                            Enregistrer
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal de rapport de bug -->
-        <div id="reportBugModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg max-w-md w-full p-6 slide-in">
-                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="fas fa-bug text-orange-600"></i>
-                    Reporter un Bug ou Suggestion
-                </h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Type de Rapport *</label>
-                        <select id="reportType" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                            <option value="Bug">Bug</option>
-                            <option value="Suggestion">Suggestion</option>
-                            <option value="Amélioration">Amélioration</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
-                        <input type="text" id="reportTitle" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Ex: Erreur lors de la connexion" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-                        <textarea id="reportDescription" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" rows="4" placeholder="Décrivez le problème ou votre suggestion en détail..." required></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Priorité</label>
-                        <select id="reportPriority" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                            <option value="Moyenne">Moyenne</option>
-                            <option value="Basse">Basse</option>
-                            <option value="Haute">Haute</option>
-                        </select>
-                    </div>
-                    <div class="flex gap-3 mt-6">
-                        <button id="cancelReport" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                            Annuler
-                        </button>
-                        <button id="confirmReport" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
-                            Envoyer le Rapport
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal de confirmation de suppression -->
-        <div id="confirmDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg max-w-md w-full p-6 slide-in">
-                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2 text-red-600">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Confirmer la suppression
-                </h3>
-                <p class="text-gray-600 mb-6" id="deleteMessage">Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.</p>
-                <div class="flex gap-3">
-                    <button id="cancelDelete" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                        Annuler
-                    </button>
-                    <button id="confirmDelete" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-                        Supprimer
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
-        // Configuration Firebase - Utilisée depuis le head (modèle moderne)
-        // Les objets auth, db, functions, analytics sont disponibles globalement
-        
         // État de l'application
         let state = {
             currentUser: null,
@@ -767,90 +675,46 @@
             parents: [],
             reports: [],
             searchTerm: '',
-            filterRole: 'Tous',
-            pendingVerification: null,
-            otpSent: false
+            filterRole: 'Tous'
         };
 
-        // Générer un OTP aléatoire
-        function generateOTP() {
-            return Math.floor(100000 + Math.random() * 900000).toString();
+        // Fonction pour afficher les notifications toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Supprimer après 5 secondes
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, 5000);
         }
 
-        // Envoyer l'OTP par email via EmailJS
-        function sendOTPByEmail(email, otp) {
-            return new Promise(async (resolve, reject) => {
-                if (typeof emailjs === 'undefined') {
-                    console.error('EmailJS non chargé dans la page.');
-                    reject(new Error('Service email non disponible'));
-                    return;
+        // Fonction pour activer/désactiver le chargement d'un bouton
+        function setButtonLoading(button, isLoading) {
+            if (isLoading) {
+                button.classList.add('btn-loading');
+                button.disabled = true;
+                button.setAttribute('data-original-text', button.innerHTML);
+                button.innerHTML = '';
+            } else {
+                button.classList.remove('btn-loading');
+                button.disabled = false;
+                const originalText = button.getAttribute('data-original-text');
+                if (originalText) {
+                    button.innerHTML = originalText;
                 }
-
-                // Initialiser EmailJS si pas encore fait
-                if (!emailjs.__init_called) {
-                    try {
-                        emailjs.init('Un7snKzeE4AGeorc-');
-                        emailjs.__init_called = true;
-                        console.log('EmailJS réinitialisé');
-                    } catch (e) {
-                        console.error('Erreur lors de l\'initialisation EmailJS:', e);
-                        reject(new Error('Impossible d\'initialiser le service email'));
-                        return;
-                    }
-                }
-
-                // Fournir plusieurs clés de template pour correspondre à différents templates
-                const templateParams = {
-                    to_email: email,
-                    email: email,
-                    user_email: email,
-                    recipient_email: email,
-                    to_name: email.split('@')[0],
-                    user_name: email.split('@')[0],
-                    otp: otp,
-                    otp_code: otp,
-                    verification_code: otp
-                };
-
-                console.log('Envoi email à:', email, 'avec paramètres:', templateParams);
-
-                try {
-                    const response = await emailjs.send('service_yvl11d5', 'template_z9t1qne', templateParams);
-                    console.log(`✅ OTP ${otp} envoyé avec succès à ${email}`, response);
-                    
-                    // Stocker l'OTP dans Firestore comme fallback
-                    try {
-                        const otpDocRef = doc(window.db, 'otps', email);
-                        await setDoc(otpDocRef, { 
-                            otp: otp, 
-                            createdAt: new Date().toISOString(), 
-                            expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
-                        });
-                        console.log('Fallback OTP enregistré dans Firestore');
-                    } catch (fsErr) {
-                        console.warn('Échec enregistrement OTP Firestore:', fsErr);
-                    }
-                    
-                    resolve(true);
-                } catch (err) {
-                    console.error('❌ Erreur EmailJS:', err);
-                    
-                    // Fallback: essayer avec un autre template si disponible
-                    try {
-                        const otpDocRef = doc(window.db, 'otps', email);
-                        await setDoc(otpDocRef, { 
-                            otp: otp, 
-                            createdAt: new Date().toISOString(), 
-                            expiresAt: Date.now() + (10 * 60 * 1000)
-                        });
-                        console.warn('OTP enregistré dans Firestore comme fallback (collection otps)');
-                        resolve(true); // On résout quand même car l'OTP est stocké
-                    } catch (fsErr) {
-                        console.error('Échec fallback OTP Firestore:', fsErr);
-                        reject(err);
-                    }
-                }
-            });
+            }
         }
 
         // Fonction pour basculer la visibilité du mot de passe
@@ -885,51 +749,25 @@
             const registerTabBtn = document.getElementById('registerTabBtn');
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
-            const otpForm = document.getElementById('otpForm');
-            const backBtn = document.getElementById('backBtn');
-            const loginBtn = document.getElementById('loginBtn');
-            const registerBtn = document.getElementById('registerBtn');
-            const verifyOtpBtn = document.getElementById('verifyOtpBtn');
-            const resendOtpBtn = document.getElementById('resendOtpBtn');
-            const showOTPButton = document.getElementById('showOTPButton');
             const authModal = document.getElementById('authModal');
             const mainApp = document.getElementById('mainApp');
             
-            // Initialiser EmailJS si la librairie est chargée
-            try {
-                if (typeof emailjs !== 'undefined' && !emailjs.__init_called) {
-                    emailjs.init('Un7snKzeE4AGeorc-');
-                    emailjs.__init_called = true;
-                    console.log('EmailJS initialisé');
-                }
-            } catch (e) {
-                console.warn('EmailJS non disponible ou échec d\'initialisation', e);
-            }
+            // Boutons
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const googleLoginBtn = document.getElementById('googleLoginBtn');
+            const googleRegisterBtn = document.getElementById('googleRegisterBtn');
             
             // Éléments principaux
-            const logoutBtn = document.getElementById('logoutBtn');
-            const createAccountBtn = document.getElementById('createAccountBtn');
-            const reportBugBtn = document.getElementById('reportBugBtn');
             const tabBtns = document.querySelectorAll('.tab-btn');
             const tabContents = document.querySelectorAll('.tab-content');
             
             // Filtres et recherche
             const searchInput = document.getElementById('searchInput');
             const roleFilter = document.getElementById('roleFilter');
-            
-            // Modales
-            const createUserModal = document.getElementById('createUserModal');
-            const editUserModal = document.getElementById('editUserModal');
-            const reportBugModal = document.getElementById('reportBugModal');
-            const confirmDeleteModal = document.getElementById('confirmDeleteModal');
-            const cancelCreateUser = document.getElementById('cancelCreateUser');
-            const confirmCreateUser = document.getElementById('confirmCreateUser');
-            const cancelEditUser = document.getElementById('cancelEditUser');
-            const saveEditUser = document.getElementById('saveEditUser');
-            const cancelReport = document.getElementById('cancelReport');
-            const confirmReport = document.getElementById('confirmReport');
-            const cancelDelete = document.getElementById('cancelDelete');
-            const confirmDelete = document.getElementById('confirmDelete');
+
+            // Formulaire de création de compte
+            const createAccountForm = document.getElementById('createAccountForm');
 
             // Gestion des onglets d'authentification
             loginTabBtn.addEventListener('click', () => {
@@ -938,7 +776,6 @@
                 registerTabBtn.classList.add('text-gray-500');
                 loginForm.classList.remove('hidden');
                 registerForm.classList.add('hidden');
-                otpForm.classList.add('hidden');
             });
 
             registerTabBtn.addEventListener('click', () => {
@@ -947,35 +784,19 @@
                 loginTabBtn.classList.add('text-gray-500');
                 registerForm.classList.remove('hidden');
                 loginForm.classList.add('hidden');
-                otpForm.classList.add('hidden');
             });
 
-            // Bouton retour
-            backBtn.addEventListener('click', () => {
-                if (otpForm.classList.contains('hidden')) {
-                    // Retour à la page précédente
-                    window.history.back();
-                } else {
-                    // Retour au formulaire de connexion
-                    otpForm.classList.add('hidden');
-                    loginForm.classList.remove('hidden');
-                }
-            });
-
-            // Connexion
+            // Connexion email/mot de passe
             loginBtn.addEventListener('click', handleLogin);
             
-            // Inscription
+            // Inscription email/mot de passe
             registerBtn.addEventListener('click', handleRegister);
             
-            // Vérification OTP
-            verifyOtpBtn.addEventListener('click', handleVerifyOTP);
+            // Connexion Google
+            googleLoginBtn.addEventListener('click', () => handleGoogleSignIn('login'));
             
-            // Renvoyer OTP
-            resendOtpBtn.addEventListener('click', handleResendOTP);
-            
-            // Déconnexion
-            logoutBtn.addEventListener('click', handleLogout);
+            // Inscription Google
+            googleRegisterBtn.addEventListener('click', () => handleGoogleSignIn('register'));
             
             // Gestion des onglets principaux
             tabBtns.forEach(btn => {
@@ -1010,7 +831,7 @@
                     } else if (tabId === 'reports') {
                         loadReports();
                     } else if (tabId === 'creerComptes') {
-                        loadCreateAccountRequests();
+                        loadAccountsList();
                     }
                 });
             });
@@ -1027,54 +848,8 @@
                 renderUsers();
             });
             
-            // Boutons pour ouvrir les modales
-            createAccountBtn.addEventListener('click', () => {
-                createUserModal.classList.remove('hidden');
-                createUserModal.classList.add('flex');
-            });
-            
-            reportBugBtn.addEventListener('click', () => {
-                reportBugModal.classList.remove('hidden');
-                reportBugModal.classList.add('flex');
-            });
-            
-            // Fermer les modales
-            cancelCreateUser.addEventListener('click', () => {
-                createUserModal.classList.add('hidden');
-                createUserModal.classList.remove('flex');
-                resetCreateUserForm();
-            });
-            
-            cancelEditUser.addEventListener('click', () => {
-                editUserModal.classList.add('hidden');
-                editUserModal.classList.remove('flex');
-            });
-            
-            cancelReport.addEventListener('click', () => {
-                reportBugModal.classList.add('hidden');
-                reportBugModal.classList.remove('flex');
-                resetReportForm();
-            });
-            
-            cancelDelete.addEventListener('click', () => {
-                confirmDeleteModal.classList.add('hidden');
-                confirmDeleteModal.classList.remove('flex');
-            });
-            
-            // Confirmer la création d'utilisateur
-            confirmCreateUser.addEventListener('click', handleCreateUser);
-            
-            // Confirmer l'édition d'utilisateur
-            saveEditUser.addEventListener('click', handleUpdateUser);
-            
-            // Confirmer le rapport de bug
-            confirmReport.addEventListener('click', handleSubmitReport);
-            
-            // Confirmer la suppression
-            confirmDelete.addEventListener('click', handleDeleteUser);
-            
             // Vérifier l'état d'authentification au chargement
-            auth.onAuthStateChanged((user) => {
+            window.onAuthStateChanged(window.auth, (user) => {
                 if (user) {
                     // L'utilisateur est connecté
                     loadCurrentUser(user.uid);
@@ -1085,448 +860,21 @@
                 }
             });
             
-            // Charger les données initiales
-            loadUsers();
-            loadActivities();
-            loadParents();
-            loadReports();
-            
             // Formulaire de création de compte
-            const createAccountForm = document.getElementById('createAccountForm');
             if (createAccountForm) {
                 createAccountForm.addEventListener('submit', handleCreateAccount);
             }
 
-            // Afficher l'OTP pour test
-            if (showOTPButton) {
-                showOTPButton.addEventListener('click', function() {
-                    if (state.pendingVerification?.otp) {
-                        document.getElementById('otpValue').textContent = state.pendingVerification.otp;
-                        document.getElementById('otpDisplay').classList.remove('hidden');
-                    }
-                });
-            }
-
-            // Nettoyer les OTPs expirés périodiquement
-            setInterval(clearExpiredOTPs, 60000); // Toutes les minutes
+            console.log('Application initialisée');
         });
 
-        // ====== GESTION DE LA CRÉATION DE COMPTES AVEC AUTORISATION ======
+        // ====== FONCTIONS D'AUTHENTIFICATION ======
 
-        // Vérifier s'il y a un administrateur primary (premier créateur)
-        async function getPrimaryAdmin() {
-            try {
-                const docRef = doc(window.db, 'account_creation_settings', 'primary');
-                const snapshot = await getDoc(docRef);
-                return snapshot.exists() ? snapshot.data() : null;
-            } catch (error) {
-                console.error('Erreur lors de la récupération de l\'admin primary:', error);
-                return null;
-            }
-        }
-
-        // Créer un nouveau compte avec demande d'autorisation
-        async function handleCreateAccount(e) {
-            e.preventDefault();
-            
-            try {
-                const name = document.getElementById('createName').value?.trim();
-                const email = document.getElementById('createEmail').value?.trim();
-                const password = document.getElementById('createPassword').value;
-                const role = document.getElementById('createRole').value;
-                
-                if (!name || !email || !password || !role) {
-                    alert('Veuillez remplir tous les champs');
-                    return;
-                }
-
-                if (password.length < 6) {
-                    alert('Le mot de passe doit contenir au moins 6 caractères');
-                    return;
-                }
-
-                if (!isValidEmail(email)) {
-                    alert('Veuillez entrer un email valide');
-                    return;
-                }
-
-                console.log('Vérification du primary admin...');
-                // Vérifier s'il y a déjà un primary admin
-                const primaryAdmin = await getPrimaryAdmin();
-                console.log('Primary admin trouvé:', primaryAdmin);
-
-                if (!primaryAdmin) {
-                    console.log('Premier compte - création du Primary Admin');
-                    // Premier compte créé = Primary Admin
-                    // Créer directement l'utilisateur sans attendre d'approbation
-                    const userCredential = await window.auth.createUserWithEmailAndPassword(email, password);
-                    console.log('Utilisateur Firebase créé:', userCredential.user.uid);
-                    
-                    // Ajouter les infos dans Firestore
-                    await window.setDoc(window.doc(window.db, 'users', userCredential.user.uid), {
-                        nom: name,
-                        email: email,
-                        role: role,
-                        createdAt: new Date(),
-                        status: 'active',
-                        isPrimaryAdmin: true
-                    });
-                    console.log('Document utilisateur créé dans Firestore');
-
-                    // Marquer comme primary admin
-                    await window.setDoc(window.doc(window.db, 'account_creation_settings', 'primary'), {
-                        adminId: userCredential.user.uid,
-                        adminEmail: email,
-                        createdAt: new Date()
-                    });
-                    console.log('Primary admin settings créés');
-
-                    alert('✅ Compte créé avec succès ! Vous êtes maintenant l\'administrateur principal.');
-                    document.getElementById('createAccountForm').reset();
-                    
-                    // Redirection vers la page de contact après 2 secondes
-                    setTimeout(() => {
-                        window.location.href = 'index.html#contact';
-                    }, 2000);
-                } else {
-                    console.log('Compte secondaire - création d\'une demande d\'approbation');
-                    // Il existe déjà un primary admin
-                    // Créer une demande d'approbation
-                    const newRequest = {
-                        name: name,
-                        email: email,
-                        password: password,
-                        role: role,
-                        requestedBy: state.currentUser?.id || 'anonymous',
-                        requestedByName: state.currentUser?.nom || 'Utilisateur',
-                        status: 'pending',
-                        createdAt: new Date(),
-                        approvedAt: null,
-                        approvedBy: null
-                    };
-
-                    console.log('Création de la demande:', newRequest);
-                    const docRef = await window.addDoc(window.collection(window.db, 'account_requests'), newRequest);
-                    console.log('Demande créée avec ID:', docRef.id);
-
-                    // Afficher le message d'attente
-                    const authMsg = document.getElementById('authorizationMessage');
-                    if (authMsg) {
-                        authMsg.classList.remove('hidden');
-                    }
-                    document.getElementById('createAccountForm').reset();
-                    
-                    // Charger les demandes mises à jour
-                    await loadCreateAccountRequests();
-
-                    alert('✅ Votre demande de création de compte a été envoyée pour approbation au responsable principal.');
-                    
-                    // Redirection après 3 secondes
-                    setTimeout(() => {
-                        window.location.href = 'index.html#contact';
-                    }, 3000);
-                }
-
-            } catch (error) {
-                console.error('Erreur lors de la création du compte:', error);
-                alert('❌ Erreur: ' + error.message);
-            }
-        }
-
-        // Charger et afficher les demandes en attente et approuvées
-        async function loadCreateAccountRequests() {
-            try {
-                const primaryAdmin = await getPrimaryAdmin();
-                if (!primaryAdmin) return;
-
-                // Charger les demandes en attente
-                const q = query(
-                    collection(window.db, 'account_requests'),
-                    where('status', '==', 'pending'),
-                    orderBy('createdAt', 'desc')
-                );
-                const pendingSnapshot = await getDocs(q);
-
-                const pendingList = document.getElementById('pendingRequestsList');
-                const noPendingMsg = document.getElementById('noPendingMessage');
-                
-                if (pendingSnapshot.empty) {
-                    pendingList.innerHTML = '';
-                    noPendingMsg.style.display = 'block';
-                } else {
-                    noPendingMsg.style.display = 'none';
-                    pendingList.innerHTML = pendingSnapshot.docs.map(doc => {
-                        const data = doc.data();
-                        const isCurrentUserPrimaryAdmin = state.currentUser && state.currentUser.id === primaryAdmin.adminId;
-                        
-                        return `
-                            <div class="border border-orange-200 rounded-lg p-4 bg-orange-50">
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                                    <div>
-                                        <p class="text-sm text-gray-600">Demandeur</p>
-                                        <p class="font-medium text-gray-900">${data.requestedByName}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-600">Email à créer</p>
-                                        <p class="font-medium text-gray-900">${data.email}</p>
-                                        <p class="text-sm text-gray-600">Rôle: ${data.role}</p>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        ${isCurrentUserPrimaryAdmin ? `
-                                            <button onclick="approveAccountRequest('${doc.id}')" class="flex-1 bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm flex items-center justify-center gap-1">
-                                                <i class="fas fa-check"></i> Approuver
-                                            </button>
-                                            <button onclick="rejectAccountRequest('${doc.id}')" class="flex-1 bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm flex items-center justify-center gap-1">
-                                                <i class="fas fa-times"></i> Rejeter
-                                            </button>
-                                        ` : `<p class="text-sm text-orange-700 italic">En attente d'approbation</p>`}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-
-                // Charger les comptes approuvés
-                const q2 = query(
-                    collection(window.db, 'account_requests'),
-                    where('status', '==', 'approved'),
-                    orderBy('approvedAt', 'desc')
-                );
-                const approvedSnapshot = await getDocs(q2);
-
-                const approvedList = document.getElementById('approvedAccountsList');
-                const noApprovedMsg = document.getElementById('noApprovedMessage');
-                
-                if (approvedSnapshot.empty) {
-                    approvedList.innerHTML = '';
-                    noApprovedMsg.style.display = 'block';
-                } else {
-                    noApprovedMsg.style.display = 'none';
-                    approvedList.innerHTML = approvedSnapshot.docs.map(doc => {
-                        const data = doc.data();
-                        return `
-                            <div class="border border-green-200 rounded-lg p-4 bg-green-50">
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <p class="text-sm text-gray-600">Nom</p>
-                                        <p class="font-medium text-gray-900">${data.name}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-600">Email</p>
-                                        <p class="font-medium text-gray-900">${data.email}</p>
-                                        <p class="text-sm text-gray-600">Rôle: ${data.role}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-600">Approuvé par</p>
-                                        <p class="text-sm text-green-700">✓ Compte actif</p>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-
-            } catch (error) {
-                console.error('Erreur lors du chargement des demandes:', error);
-            }
-        }
-
-        // Approuver une demande de création de compte
-        async function approveAccountRequest(requestId) {
-            try {
-                const requestDoc = await getDoc(doc(window.db, 'account_requests', requestId));
-                const data = requestDoc.data();
-
-                // Créer l'utilisateur Firebase Auth
-                const userCredential = await auth.createUserWithEmailAndPassword(data.email, data.password);
-
-                // Ajouter les infos dans Firestore
-                await setDoc(doc(window.db, 'users', userCredential.user.uid), {
-                    nom: data.name,
-                    email: data.email,
-                    role: data.role,
-                    createdAt: new Date(),
-                    status: 'active',
-                    createdBy: state.currentUser.id
-                });
-
-                // Mettre à jour la demande comme approuvée
-                await updateDoc(doc(window.db, 'account_requests', requestId), {
-                    status: 'approved',
-                    approvedAt: new Date(),
-                    approvedBy: state.currentUser.id
-                });
-
-                // Recharger les demandes
-                await loadCreateAccountRequests();
-                alert('Compte approuvé et créé avec succès !');
-            } catch (error) {
-                console.error('Erreur lors de l\'approbation:', error);
-                alert('Erreur: ' + error.message);
-            }
-        }
-
-        // Rejeter une demande de création de compte
-        async function rejectAccountRequest(requestId) {
-            if (!confirm('Êtes-vous sûr de vouloir rejeter cette demande ?')) return;
-
-            try {
-                await updateDoc(doc(window.db, 'account_requests', requestId), {
-                    status: 'rejected',
-                    rejectedAt: new Date(),
-                    rejectedBy: state.currentUser.id
-                });
-
-                await loadCreateAccountRequests();
-                alert('Demande rejetée');
-            } catch (error) {
-                console.error('Erreur lors du rejet:', error);
-                alert('Erreur: ' + error.message);
-            }
-        }
-
-        // Fonctions Firebase
-        async function loadCurrentUser(userId) {
-            try {
-                const userDoc = await getDoc(doc(window.db, 'users', userId));
-                if (userDoc.exists) {
-                    state.currentUser = {
-                        id: userDoc.id,
-                        ...userDoc.data()
-                    };
-                    
-                    // Mettre à jour l'interface
-                    document.getElementById('authModal').classList.add('hidden');
-                    document.getElementById('mainApp').classList.remove('hidden');
-                    document.getElementById('currentUserName').textContent = state.currentUser.nom;
-                    document.getElementById('currentUserRole').textContent = state.currentUser.role;
-                    
-                    // Enregistrer l'activité de connexion
-                    await logActivity('Connexion', `Connexion réussie au système IT Admin`);
-                }
-            } catch (error) {
-                console.error('Erreur lors du chargement de l\'utilisateur:', error);
-                showMessage('loginMessage', 'Erreur lors du chargement du profil', 'error');
-            }
-        }
-
-        async function loadUsers() {
-            try {
-                const users = [];
-                
-                // Charger les directeurs
-                const directorsSnapshot = await getDocs(collection(window.db, 'directors'));
-                directorsSnapshot.docs.forEach(doc => {
-                    users.push({
-                        id: doc.id,
-                        nom: doc.data().name || 'N/A',
-                        email: doc.data().email || 'N/A',
-                        telephone: doc.data().phone || '',
-                        role: 'Directeur',
-                        statut: 'Actif',
-                        creeLe: doc.data().createdAt || new Date().toISOString()
-                    });
-                });
-                
-                // Charger les secrétaires
-                const secretariesSnapshot = await getDocs(collection(window.db, 'secretaries'));
-                secretariesSnapshot.docs.forEach(doc => {
-                    users.push({
-                        id: doc.id,
-                        nom: doc.data().name || 'N/A',
-                        email: doc.data().email || 'N/A',
-                        telephone: doc.data().phone || '',
-                        role: 'Secrétaire',
-                        statut: 'Actif',
-                        creeLe: doc.data().createdAt || new Date().toISOString()
-                    });
-                });
-                
-                // Charger les enseignants
-                const teachersSnapshot = await getDocs(collection(window.db, 'teachers'));
-                teachersSnapshot.docs.forEach(doc => {
-                    users.push({
-                        id: doc.id,
-                        nom: doc.data().name || 'N/A',
-                        email: doc.data().email || 'N/A',
-                        telephone: doc.data().phone || '',
-                        role: 'Enseignant',
-                        statut: doc.data().status === 'active' ? 'Actif' : 'Inactif',
-                        creeLe: doc.data().createdAt || new Date().toISOString()
-                    });
-                });
-                
-                state.users = users;
-                renderUsers();
-                updateStats();
-            } catch (error) {
-                console.error('Erreur lors du chargement des utilisateurs:', error);
-            }
-        }
-
-        async function loadActivities() {
-            try {
-                const q = query(collection(window.db, 'activities'), orderBy('timestamp', 'desc'), limit(50));
-                const snapshot = await getDocs(q);
-                state.activities = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                renderActivities();
-            } catch (error) {
-                console.error('Erreur lors du chargement des activités:', error);
-            }
-        }
-
-        async function loadParents() {
-            try {
-                const snapshot = await getDocs(collection(window.db, 'parents'));
-                state.parents = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                renderParents();
-            } catch (error) {
-                console.error('Erreur lors du chargement des parents:', error);
-            }
-        }
-
-        async function loadReports() {
-            try {
-                const q = query(collection(window.db, 'reports'), orderBy('date', 'desc'));
-                const snapshot = await getDocs(q);
-                state.reports = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                renderReports();
-                updateStats();
-            } catch (error) {
-                console.error('Erreur lors du chargement des rapports:', error);
-            }
-        }
-
-        async function logActivity(action, details) {
-            try {
-                await addDoc(collection(window.db, 'activities'), {
-                    utilisateur: state.currentUser.nom,
-                    action: action,
-                    details: details,
-                    timestamp: new Date().toISOString(),
-                    userId: state.currentUser.id
-                });
-                loadActivities(); // Recharger les activités
-            } catch (error) {
-                console.error('Erreur lors de l\'enregistrement de l\'activité:', error);
-            }
-        }
-
-        // Fonctions de gestion
         async function handleLogin() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
             const loginMessage = document.getElementById('loginMessage');
+            const loginBtn = document.getElementById('loginBtn');
 
             if (!email || !password) {
                 showMessage(loginMessage, 'Veuillez remplir tous les champs', 'error');
@@ -1538,45 +886,30 @@
                 return;
             }
 
+            setButtonLoading(loginBtn, true);
+
             try {
                 // Authentification avec Firebase
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                const user = userCredential.user;
-
-                // Générer OTP et préparer verification
-                const otp = generateOTP();
-                state.pendingVerification = {
-                    userId: user.uid,
-                    email: email,
-                    otp: otp
-                };
-
-                // Essayer d'envoyer l'OTP par email, gérer l'erreur spécifiquement
-                try {
-                    await sendOTPByEmail(email, otp);
-                } catch (sendErr) {
-                    console.error('Échec envoi OTP:', sendErr);
-                    // Déconnecter l'utilisateur pour éviter état inconsistent
-                    try { await auth.signOut(); } catch (e) { /* ignore */ }
-                    showMessage(loginMessage, 'Impossible d\'envoyer l\'email OTP. Vérifiez la configuration.', 'error');
-                    return;
-                }
-
-                // Afficher le formulaire OTP
-                document.getElementById('loginForm').classList.add('hidden');
-                document.getElementById('otpForm').classList.remove('hidden');
-                document.getElementById('otpEmail').textContent = email;
-                showMessage('otpMessage', 'Code OTP envoyé à votre email', 'success');
-
+                await window.signInWithEmailAndPassword(window.auth, email, password);
+                // La redirection sera gérée par onAuthStateChanged
+                showToast('Connexion réussie!', 'success');
             } catch (error) {
                 console.error('Erreur de connexion:', error);
                 let message = 'Email ou mot de passe incorrect';
                 if (error.code === 'auth/user-not-found') {
-                    message = 'Utilisateur non trouvé';
+                    message = 'Utilisateur non trouvé. Créez un compte d\'abord.';
                 } else if (error.code === 'auth/wrong-password') {
                     message = 'Mot de passe incorrect';
+                } else if (error.code === 'auth/invalid-credential') {
+                    message = 'Email ou mot de passe incorrect';
+                } else if (error.code === 'auth/too-many-requests') {
+                    message = 'Trop de tentatives. Réessayez plus tard.';
+                } else if (error.code === 'auth/user-disabled') {
+                    message = 'Ce compte a été désactivé.';
                 }
                 showMessage(loginMessage, message, 'error');
+            } finally {
+                setButtonLoading(loginBtn, false);
             }
         }
 
@@ -1586,6 +919,7 @@
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
             const registerMessage = document.getElementById('registerMessage');
+            const registerBtn = document.getElementById('registerBtn');
             
             if (!nom || !email || !password || !confirmPassword) {
                 showMessage(registerMessage, 'Veuillez remplir tous les champs', 'error');
@@ -1607,55 +941,225 @@
                 return;
             }
             
+            setButtonLoading(registerBtn, true);
+            
             try {
                 console.log('Démarrage de l\'inscription pour:', email);
                 showMessage(registerMessage, 'Création du compte en cours...', 'info');
                 
                 // Créer l'utilisateur dans Firebase Authentication
-                const userCredential = await window.auth.createUserWithEmailAndPassword(email, password);
+                const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
                 const user = userCredential.user;
                 console.log('Utilisateur Firebase créé:', user.uid);
 
-                // Générer OTP
-                const otp = generateOTP();
-                state.pendingVerification = {
+                // Créer le profil dans Firestore
+                await createUserProfile({
                     userId: user.uid,
                     email: email,
                     nom: nom,
-                    otp: otp
-                };
-                console.log('OTP généré:', otp);
+                    authProvider: 'email'
+                });
 
-                // Essayer d'envoyer l'OTP par email
-                try {
-                    console.log('Tentative d\'envoi de l\'email OTP...');
-                    await sendOTPByEmail(email, otp);
-                    console.log('Email OTP envoyé avec succès');
-                } catch (sendErr) {
-                    console.error('Échec envoi OTP lors de l\'inscription:', sendErr);
-                    showMessage(registerMessage, '⚠️ Impossible d\'envoyer l\'email. Suppression du compte...', 'error');
-                    
-                    // Tenter de supprimer l'utilisateur créé pour éviter compte orphelin
-                    try {
-                        if (window.auth.currentUser) {
-                            await window.auth.currentUser.delete();
-                            console.log('Compte supprimé après échec d\'envoi OTP');
-                        }
-                    } catch (delErr) {
-                        console.warn('Impossible de supprimer le compte utilisateur après échec d\'envoi OTP:', delErr);
-                    }
-                    return;
-                }
-
-                // Afficher le formulaire OTP
-                document.getElementById('registerForm').classList.add('hidden');
-                document.getElementById('otpForm').classList.remove('hidden');
-                document.getElementById('otpEmail').textContent = email;
-                showMessage('otpMessage', '✅ Code OTP envoyé à votre email: ' + email, 'success');
+                // Connecter automatiquement l'utilisateur
+                showToast('Compte créé avec succès! Vous êtes maintenant connecté.', 'success');
 
             } catch (error) {
                 console.error('Erreur d\'inscription:', error);
                 let message = 'Erreur lors de l\'inscription';
+                if (error.code === 'auth/email-already-in-use') {
+                    message = 'Cet email est déjà utilisé. Essayez de vous connecter.';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'Email invalide';
+                } else if (error.code === 'auth/weak-password') {
+                    message = 'Le mot de passe est trop faible';
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    message = 'L\'inscription par email/mot de passe n\'est pas activée';
+                }
+                showMessage(registerMessage, '❌ ' + message, 'error');
+            } finally {
+                setButtonLoading(registerBtn, false);
+            }
+        }
+
+        async function handleGoogleSignIn(context = 'login') {
+            const button = context === 'login' ? 
+                document.getElementById('googleLoginBtn') : 
+                document.getElementById('googleRegisterBtn');
+            
+            setButtonLoading(button, true);
+            
+            try {
+                // Authentification avec Google
+                const result = await window.signInWithPopup(window.auth, window.googleProvider);
+                const user = result.user;
+                
+                // Vérifier si l'utilisateur existe déjà dans Firestore
+                const userDoc = await window.getDoc(window.doc(window.db, 'users', user.uid));
+                
+                if (!userDoc.exists()) {
+                    // Créer le profil utilisateur dans Firestore
+                    await createUserProfile({
+                        userId: user.uid,
+                        email: user.email,
+                        nom: user.displayName || 'Utilisateur Google',
+                        authProvider: 'google',
+                        photoURL: user.photoURL
+                    });
+                    
+                    if (context === 'register') {
+                        showToast('Compte créé avec Google avec succès!', 'success');
+                    } else {
+                        showToast('Connexion avec Google réussie!', 'success');
+                    }
+                } else {
+                    // Mettre à jour la dernière connexion
+                    await window.updateDoc(window.doc(window.db, 'users', user.uid), {
+                        lastLogin: new Date().toISOString()
+                    });
+                    
+                    showToast('Connexion avec Google réussie!', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Erreur Google Sign-In:', error);
+                let message = 'Erreur lors de la connexion avec Google';
+                if (error.code === 'auth/popup-closed-by-user') {
+                    message = 'La fenêtre de connexion a été fermée.';
+                } else if (error.code === 'auth/cancelled-popup-request') {
+                    message = 'La requête de connexion a été annulée.';
+                } else if (error.code === 'auth/popup-blocked') {
+                    message = 'La fenêtre popup a été bloquée. Autorisez les popups pour ce site.';
+                }
+                
+                const messageElement = context === 'login' ? 
+                    document.getElementById('loginMessage') : 
+                    document.getElementById('registerMessage');
+                showMessage(messageElement, message, 'error');
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        async function createUserProfile(userData) {
+            try {
+                await window.setDoc(window.doc(window.db, 'users', userData.userId), {
+                    nom: userData.nom || 'Utilisateur',
+                    email: userData.email,
+                    role: 'IT Admin',
+                    status: 'active',
+                    authProvider: userData.authProvider || 'email',
+                    photoURL: userData.photoURL || null,
+                    createdAt: new Date().toISOString(),
+                    createdBy: 'System',
+                    telephone: '',
+                    lastLogin: new Date().toISOString()
+                });
+                
+                // Enregistrer l'activité
+                if (state.currentUser) {
+                    await logActivity('Inscription', `Création du compte IT Admin: ${userData.nom}`);
+                }
+                
+            } catch (error) {
+                console.error('Erreur lors de la création du profil:', error);
+                throw error;
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                // Enregistrer l'activité avant déconnexion
+                if (state.currentUser) {
+                    await logActivity('Déconnexion', 'Déconnexion du système');
+                }
+                
+                // Déconnecter de Firebase
+                await window.signOut(window.auth);
+                
+                // Réinitialiser l'état
+                state.currentUser = null;
+                
+                // Afficher le modal d'authentification
+                document.getElementById('authModal').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('hidden');
+                
+                // Revenir à l'onglet de connexion
+                document.getElementById('loginTabBtn').click();
+                
+                // Réinitialiser les formulaires
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('registerName').value = '';
+                document.getElementById('registerEmail').value = '';
+                document.getElementById('registerPassword').value = '';
+                document.getElementById('registerConfirmPassword').value = '';
+                
+                showToast('Déconnexion réussie', 'success');
+                
+            } catch (error) {
+                console.error('Erreur lors de la déconnexion:', error);
+                showToast('Erreur lors de la déconnexion', 'error');
+            }
+        }
+
+        // ====== GESTION DE LA CRÉATION DE COMPTES ======
+
+        async function handleCreateAccount(e) {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            setButtonLoading(submitBtn, true);
+            
+            try {
+                const name = document.getElementById('createName').value?.trim();
+                const email = document.getElementById('createEmail').value?.trim();
+                const password = document.getElementById('createPassword').value;
+                const role = document.getElementById('createRole').value;
+                
+                if (!name || !email || !password || !role) {
+                    showToast('Veuillez remplir tous les champs', 'error');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showToast('Le mot de passe doit contenir au moins 6 caractères', 'error');
+                    return;
+                }
+
+                if (!isValidEmail(email)) {
+                    showToast('Veuillez entrer un email valide', 'error');
+                    return;
+                }
+
+                // Créer l'utilisateur dans Firebase Authentication
+                const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
+                const userId = userCredential.user.uid;
+                
+                // Créer le profil dans Firestore
+                await window.setDoc(window.doc(window.db, 'users', userId), {
+                    nom: name,
+                    email: email,
+                    role: role,
+                    status: 'active',
+                    authProvider: 'email',
+                    createdAt: new Date().toISOString(),
+                    createdBy: state.currentUser?.nom || 'System',
+                    telephone: '',
+                    lastLogin: null
+                });
+
+                // Enregistrer l'activité
+                await logActivity('Création de compte', `Création du compte ${role}: ${name} (${email})`);
+                
+                document.getElementById('createAccountForm').reset();
+                showToast(`Compte ${role} créé avec succès pour ${name}!`, 'success');
+                
+                // Recharger la liste des comptes
+                await loadAccountsList();
+                
+            } catch (error) {
+                console.error('Erreur lors de la création du compte:', error);
+                let message = 'Erreur lors de la création du compte';
                 if (error.code === 'auth/email-already-in-use') {
                     message = 'Cet email est déjà utilisé';
                 } else if (error.code === 'auth/invalid-email') {
@@ -1663,139 +1167,195 @@
                 } else if (error.code === 'auth/weak-password') {
                     message = 'Le mot de passe est trop faible';
                 }
-                showMessage(registerMessage, '❌ ' + message, 'error');
+                showToast('❌ ' + message, 'error');
+            } finally {
+                setButtonLoading(submitBtn, false);
             }
         }
 
-        async function handleVerifyOTP() {
-            const enteredOtp = document.getElementById('otpCode').value?.trim();
-            const otpMessage = document.getElementById('otpMessage');
-            
-            if (!enteredOtp || enteredOtp.length !== 6 || !/^\d+$/.test(enteredOtp)) {
-                showMessage(otpMessage, 'Veuillez entrer un code OTP valide (6 chiffres)', 'error');
-                return;
-            }
-            
-            if (!state.pendingVerification) {
-                showMessage(otpMessage, 'Session expirée. Veuillez réessayer', 'error');
-                return;
-            }
-            
+        async function loadAccountsList() {
             try {
-                // Essayer d'abord l'OTP en mémoire
-                if (enteredOtp === state.pendingVerification.otp) {
-                    await processSuccessfulVerification();
-                    return;
+                const q = window.query(
+                    window.collection(window.db, 'users'),
+                    window.orderBy('createdAt', 'desc')
+                );
+                const snapshot = await window.getDocs(q);
+
+                const accountsList = document.getElementById('accountsList');
+                const noAccountsMsg = document.getElementById('noAccountsMessage');
+                
+                if (snapshot.empty) {
+                    accountsList.innerHTML = '';
+                    noAccountsMsg.style.display = 'block';
+                } else {
+                    noAccountsMsg.style.display = 'none';
+                    accountsList.innerHTML = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return `
+                            <div class="border border-green-200 rounded-lg p-4 bg-green-50">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <p class="text-sm text-gray-600">Nom</p>
+                                        <p class="font-medium text-gray-900">${data.nom}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Email</p>
+                                        <p class="font-medium text-gray-900">${data.email}</p>
+                                        <p class="text-sm text-gray-600">Rôle: ${data.role}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Créé le</p>
+                                        <p class="text-sm text-green-700">${new Date(data.createdAt).toLocaleDateString('fr-FR')}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
                 }
-                
-                // Si l'OTP en mémoire ne correspond pas, vérifier dans Firestore
-                const otpDoc = await getDoc(doc(window.db, 'otps', state.pendingVerification.email));
-                
-                if (otpDoc.exists()) {
-                    const otpData = otpDoc.data();
-                    const now = Date.now();
-                    
-                    // Vérifier si l'OTP n'a pas expiré (10 minutes)
-                    if (otpData.expiresAt && now > otpData.expiresAt) {
-                        showMessage(otpMessage, 'Code OTP expiré. Veuillez en demander un nouveau.', 'error');
-                        await deleteDoc(doc(window.db, 'otps', state.pendingVerification.email));
-                        return;
-                    }
-                    
-                    if (otpData.otp === enteredOtp) {
-                        // Supprimer l'OTP utilisé
-                        await deleteDoc(doc(window.db, 'otps', state.pendingVerification.email));
-                        await processSuccessfulVerification();
-                        return;
-                    }
-                }
-                
-                showMessage(otpMessage, 'Code OTP incorrect', 'error');
-                
+
             } catch (error) {
-                console.error('Erreur vérification OTP:', error);
-                showMessage(otpMessage, 'Erreur lors de la vérification', 'error');
+                console.error('Erreur lors du chargement des comptes:', error);
             }
         }
 
-        async function processSuccessfulVerification() {
-            const otpMessage = document.getElementById('otpMessage');
-            
-            // Si c'est une inscription, créer le profil utilisateur
-            if (state.pendingVerification.nom) {
-                await createUserProfile(state.pendingVerification);
-            }
-            
-            // Connecter l'utilisateur
-            await loadCurrentUser(state.pendingVerification.userId);
-            showMessage(otpMessage, 'Vérification réussie! Redirection...', 'success');
-            
-            // Réinitialiser
-            state.pendingVerification = null;
-            state.otpSent = false;
-            
-            // Supprimer l'OTP de Firestore si existant
+        // ====== FONCTIONS FIREBASE ======
+
+        async function loadCurrentUser(userId) {
             try {
-                if (state.pendingVerification?.email) {
-                    await deleteDoc(doc(window.db, 'otps', state.pendingVerification.email));
+                const userDoc = await window.getDoc(window.doc(window.db, 'users', userId));
+                if (userDoc.exists()) {
+                    state.currentUser = {
+                        id: userDoc.id,
+                        ...userDoc.data()
+                    };
+                    
+                    // Mettre à jour l'interface
+                    document.getElementById('authModal').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    document.getElementById('currentUserName').textContent = state.currentUser.nom;
+                    document.getElementById('currentUserRole').textContent = state.currentUser.role;
+                    
+                    // Enregistrer l'activité de connexion
+                    await logActivity('Connexion', `Connexion réussie au système IT Admin`);
+                    
+                    // Charger les données initiales
+                    loadUsers();
+                    loadActivities();
+                    loadParents();
+                    loadReports();
+                    
+                    showToast(`Bienvenue ${state.currentUser.nom}!`, 'success');
+                } else {
+                    // Si l'utilisateur n'existe pas dans Firestore, le créer
+                    const user = await window.auth.currentUser;
+                    if (user) {
+                        await createUserProfile({
+                            userId: user.uid,
+                            email: user.email,
+                            nom: user.displayName || 'Utilisateur',
+                            authProvider: user.providerData[0]?.providerId || 'unknown'
+                        });
+                        await loadCurrentUser(user.uid);
+                    }
                 }
-            } catch (e) {
-                // Ignorer si le document n'existe pas
+            } catch (error) {
+                console.error('Erreur lors du chargement de l\'utilisateur:', error);
+                showMessage('loginMessage', 'Erreur lors du chargement du profil', 'error');
             }
         }
 
-        async function handleResendOTP() {
-            if (!state.pendingVerification) {
-                showMessage('otpMessage', 'Session expirée', 'error');
-                return;
-            }
-            
-            // Générer un nouvel OTP
-            const otp = generateOTP();
-            state.pendingVerification.otp = otp;
-            
+        async function loadUsers() {
             try {
-                await sendOTPByEmail(state.pendingVerification.email, otp);
-                showMessage('otpMessage', 'Nouveau code OTP envoyé à ' + state.pendingVerification.email, 'success');
-            } catch (err) {
-                console.error('Échec renvoi OTP:', err);
+                const users = [];
                 
-                // Fallback: stocker dans Firestore seulement
-                try {
-                    const otpDocRef = doc(window.db, 'otps', state.pendingVerification.email);
-                    await setDoc(otpDocRef, { 
-                        otp: otp, 
-                        createdAt: new Date().toISOString(), 
-                        expiresAt: Date.now() + (10 * 60 * 1000)
+                // Charger les utilisateurs de la collection 'users'
+                const usersSnapshot = await window.getDocs(window.collection(window.db, 'users'));
+                usersSnapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    users.push({
+                        id: doc.id,
+                        nom: data.nom || 'N/A',
+                        email: data.email || 'N/A',
+                        telephone: data.telephone || '',
+                        role: data.role || 'Utilisateur',
+                        statut: data.status === 'active' ? 'Actif' : data.status === 'inactive' ? 'Inactif' : 'Inconnu',
+                        creeLe: data.createdAt || new Date().toISOString()
                     });
-                    showMessage('otpMessage', 'OTP généré et stocké. Code: ' + otp + ' (à utiliser avec Firestore fallback)', 'info');
-                } catch (fsErr) {
-                    showMessage('otpMessage', 'Erreur système. Veuillez réessayer plus tard.', 'error');
-                }
-            }
-        }
-
-        async function createUserProfile(userData) {
-            try {
-                await setDoc(doc(window.db, 'users', userData.userId), {
-                    nom: userData.nom,
-                    email: userData.email,
-                    role: 'IT Admin',
-                    statut: 'Actif',
-                    creeLe: new Date().toISOString(),
-                    creePar: 'System',
-                    telephone: '',
-                    derniereConnexion: new Date().toISOString()
                 });
                 
-                // Enregistrer l'activité
-                await logActivity('Inscription', `Création du compte IT Admin: ${userData.nom}`);
-                
+                state.users = users;
+                renderUsers();
+                updateStats();
             } catch (error) {
-                console.error('Erreur lors de la création du profil:', error);
-                throw error;
+                console.error('Erreur lors du chargement des utilisateurs:', error);
             }
         }
+
+        async function loadActivities() {
+            try {
+                const q = window.query(
+                    window.collection(window.db, 'activities'), 
+                    window.orderBy('timestamp', 'desc'), 
+                    window.limit(50)
+                );
+                const snapshot = await window.getDocs(q);
+                state.activities = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderActivities();
+            } catch (error) {
+                console.error('Erreur lors du chargement des activités:', error);
+            }
+        }
+
+        async function loadParents() {
+            try {
+                const snapshot = await window.getDocs(window.collection(window.db, 'parents'));
+                state.parents = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderParents();
+            } catch (error) {
+                console.error('Erreur lors du chargement des parents:', error);
+            }
+        }
+
+        async function loadReports() {
+            try {
+                const q = window.query(
+                    window.collection(window.db, 'reports'), 
+                    window.orderBy('date', 'desc')
+                );
+                const snapshot = await window.getDocs(q);
+                state.reports = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderReports();
+                updateStats();
+            } catch (error) {
+                console.error('Erreur lors du chargement des rapports:', error);
+            }
+        }
+
+        async function logActivity(action, details) {
+            try {
+                await window.addDoc(window.collection(window.db, 'activities'), {
+                    utilisateur: state.currentUser.nom,
+                    action: action,
+                    details: details,
+                    timestamp: new Date().toISOString(),
+                    userId: state.currentUser.id
+                });
+                loadActivities(); // Recharger les activités
+            } catch (error) {
+                console.error('Erreur lors de l\'enregistrement de l\'activité:', error);
+            }
+        }
+
+        // ====== FONCTIONS DE GESTION DES UTILISATEURS ======
 
         async function handleCreateUser() {
             const nom = document.getElementById('newUserName').value;
@@ -1805,62 +1365,94 @@
             const password = document.getElementById('newUserPassword').value;
             
             if (!nom || !email || !role || !password) {
-                alert('Veuillez remplir tous les champs obligatoires (*)');
+                showToast('Veuillez remplir tous les champs obligatoires (*)', 'error');
                 return;
             }
             
             if (!isValidEmail(email)) {
-                alert('Veuillez entrer un email valide');
+                showToast('Veuillez entrer un email valide', 'error');
                 return;
             }
             
             try {
                 // Créer l'utilisateur dans Firebase Authentication
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
                 const userId = userCredential.user.uid;
                 
                 // Créer le profil dans Firestore
-                await setDoc(doc(window.db, 'users', userId), {
+                await window.setDoc(window.doc(window.db, 'users', userId), {
                     nom: nom,
                     email: email,
                     telephone: telephone,
                     role: role,
-                    statut: 'Actif',
-                    creeLe: new Date().toISOString(),
-                    creePar: state.currentUser.nom,
-                    derniereConnexion: null
+                    status: 'active',
+                    authProvider: 'email',
+                    createdAt: new Date().toISOString(),
+                    createdBy: state.currentUser.nom,
+                    lastLogin: null
                 });
                 
                 // Enregistrer l'activité
                 await logActivity('Création', `Création du compte ${role}: ${nom}`);
                 
                 // Fermer le modal
-                document.getElementById('createUserModal').classList.add('hidden');
-                
-                // Réinitialiser le formulaire
-                resetCreateUserForm();
+                closeModal('createUserModal');
                 
                 // Recharger les utilisateurs
                 await loadUsers();
                 
-                alert('Compte créé avec succès!');
+                showToast('Compte créé avec succès!', 'success');
                 
             } catch (error) {
                 console.error('Erreur lors de la création de l\'utilisateur:', error);
-                alert('Erreur lors de la création du compte: ' + error.message);
+                showToast('Erreur lors de la création du compte: ' + error.message, 'error');
             }
         }
 
         function openEditUserModal(user) {
-            document.getElementById('editUserId').value = user.id;
-            document.getElementById('editUserName').value = user.nom;
-            document.getElementById('editUserEmail').value = user.email;
-            document.getElementById('editUserPhone').value = user.telephone || '';
-            document.getElementById('editUserRole').value = user.role;
-            document.getElementById('editUserStatus').value = user.statut;
-            
-            document.getElementById('editUserModal').classList.remove('hidden');
-            document.getElementById('editUserModal').classList.add('flex');
+            openModal('editUserModal', `
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Modifier l'Utilisateur</h3>
+                <div class="space-y-4">
+                    <input type="hidden" id="editUserId" value="${user.id}">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom Complet *</label>
+                        <input type="text" id="editUserName" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" value="${user.nom}" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <input type="email" id="editUserEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" value="${user.email}" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                        <input type="tel" id="editUserPhone" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" value="${user.telephone || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rôle *</label>
+                        <select id="editUserRole" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                            <option value="Directeur" ${user.role === 'Directeur' ? 'selected' : ''}>Directeur</option>
+                            <option value="Secrétaire" ${user.role === 'Secrétaire' ? 'selected' : ''}>Secrétaire</option>
+                            <option value="Enseignant" ${user.role === 'Enseignant' ? 'selected' : ''}>Enseignant</option>
+                            <option value="IT Admin" ${user.role === 'IT Admin' ? 'selected' : ''}>IT Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Statut *</label>
+                        <select id="editUserStatus" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                            <option value="active" ${user.statut === 'Actif' ? 'selected' : ''}>Actif</option>
+                            <option value="inactive" ${user.statut === 'Inactif' ? 'selected' : ''}>Inactif</option>
+                            <option value="suspended" ${user.statut === 'Suspendu' ? 'selected' : ''}>Suspendu</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button onclick="closeModal('editUserModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Annuler
+                        </button>
+                        <button onclick="handleUpdateUser()" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                            Enregistrer
+                        </button>
+                    </div>
+                </div>
+            `);
         }
 
         async function handleUpdateUser() {
@@ -1869,87 +1461,174 @@
             const email = document.getElementById('editUserEmail').value;
             const telephone = document.getElementById('editUserPhone').value;
             const role = document.getElementById('editUserRole').value;
-            const statut = document.getElementById('editUserStatus').value;
+            const status = document.getElementById('editUserStatus').value;
             
-            if (!nom || !email || !role || !statut) {
-                alert('Veuillez remplir tous les champs obligatoires');
+            if (!nom || !email || !role || !status) {
+                showToast('Veuillez remplir tous les champs obligatoires', 'error');
                 return;
             }
             
             try {
                 // Mettre à jour dans Firestore
-                await updateDoc(doc(window.db, 'users', userId), {
+                await window.updateDoc(window.doc(window.db, 'users', userId), {
                     nom: nom,
                     email: email,
                     telephone: telephone,
                     role: role,
-                    statut: statut,
-                    modifieLe: new Date().toISOString(),
-                    modifiePar: state.currentUser.nom
+                    status: status,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: state.currentUser.nom
                 });
                 
                 // Enregistrer l'activité
                 await logActivity('Modification', `Modification de l'utilisateur ${nom}`);
                 
                 // Fermer le modal
-                document.getElementById('editUserModal').classList.add('hidden');
+                closeModal('editUserModal');
                 
                 // Recharger les utilisateurs
                 await loadUsers();
                 
-                alert('Utilisateur modifié avec succès!');
+                showToast('Utilisateur modifié avec succès!', 'success');
                 
             } catch (error) {
                 console.error('Erreur lors de la modification de l\'utilisateur:', error);
-                alert('Erreur lors de la modification: ' + error.message);
+                showToast('Erreur lors de la modification: ' + error.message, 'error');
             }
         }
 
         function openDeleteConfirmModal(user) {
-            document.getElementById('deleteMessage').textContent = 
-                `Êtes-vous sûr de vouloir supprimer l'utilisateur ${user.nom} (${user.email}) ? Cette action est irréversible.`;
-            
-            // Stocker l'ID de l'utilisateur à supprimer
-            document.getElementById('confirmDelete').dataset.userId = user.id;
-            
-            document.getElementById('confirmDeleteModal').classList.remove('hidden');
-            document.getElementById('confirmDeleteModal').classList.add('flex');
+            openModal('confirmDeleteModal', `
+                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2 text-red-600">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Confirmer la suppression
+                </h3>
+                <p class="text-gray-600 mb-6">Êtes-vous sûr de vouloir supprimer l'utilisateur ${user.nom} (${user.email}) ? Cette action est irréversible.</p>
+                <div class="flex gap-3">
+                    <button onclick="closeModal('confirmDeleteModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                        Annuler
+                    </button>
+                    <button onclick="handleDeleteUser('${user.id}')" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                        Supprimer
+                    </button>
+                </div>
+            `);
         }
 
-        async function handleDeleteUser() {
-            const userId = document.getElementById('confirmDelete').dataset.userId;
-            
+        async function handleDeleteUser(userId) {
             if (!userId) {
-                alert('Erreur: ID utilisateur non trouvé');
+                showToast('Erreur: ID utilisateur non trouvé', 'error');
                 return;
             }
             
             try {
                 // Récupérer les informations de l'utilisateur avant suppression
-                const userDoc = await getDoc(doc(window.db, 'users', userId));
+                const userDoc = await window.getDoc(window.doc(window.db, 'users', userId));
                 const userData = userDoc.data();
                 
                 // Supprimer l'utilisateur de Firestore
-                await deleteDoc(doc(window.db, 'users', userId));
-                
-                // Essayer de supprimer le compte Authentication (nécessite des privilèges admin)
-                // Note: Dans la pratique, vous devriez utiliser Cloud Functions pour cela
+                await window.deleteDoc(window.doc(window.db, 'users', userId));
                 
                 // Enregistrer l'activité
                 await logActivity('Suppression', `Suppression de l'utilisateur ${userData.nom}`);
                 
                 // Fermer le modal
-                document.getElementById('confirmDeleteModal').classList.add('hidden');
+                closeModal('confirmDeleteModal');
                 
                 // Recharger les utilisateurs
                 await loadUsers();
                 
-                alert('Utilisateur supprimé avec succès!');
+                showToast('Utilisateur supprimé avec succès!', 'success');
                 
             } catch (error) {
                 console.error('Erreur lors de la suppression de l\'utilisateur:', error);
-                alert('Erreur lors de la suppression: ' + error.message);
+                showToast('Erreur lors de la suppression: ' + error.message, 'error');
             }
+        }
+
+        function openCreateUserModal() {
+            openModal('createUserModal', `
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Créer un Nouveau Compte</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom Complet *</label>
+                        <input type="text" id="newUserName" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Ex: Mukasa Jean" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <input type="email" id="newUserEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="exemple@school.rw" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                        <input type="tel" id="newUserPhone" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="+250 78 123 4567">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rôle *</label>
+                        <select id="newUserRole" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                            <option value="">Sélectionner un rôle</option>
+                            <option value="Directeur">Directeur</option>
+                            <option value="Secrétaire">Secrétaire</option>
+                            <option value="Enseignant">Enseignant</option>
+                            <option value="IT Admin">IT Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de Passe *</label>
+                        <input type="password" id="newUserPassword" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="••••••••" required>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button onclick="closeModal('createUserModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Annuler
+                        </button>
+                        <button onclick="handleCreateUser()" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                            Créer le Compte
+                        </button>
+                    </div>
+                </div>
+            `);
+        }
+
+        function openReportBugModal() {
+            openModal('reportBugModal', `
+                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-bug text-orange-600"></i>
+                    Reporter un Bug ou Suggestion
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Type de Rapport *</label>
+                        <select id="reportType" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                            <option value="Bug">Bug</option>
+                            <option value="Suggestion">Suggestion</option>
+                            <option value="Amélioration">Amélioration</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
+                        <input type="text" id="reportTitle" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Ex: Erreur lors de la connexion" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                        <textarea id="reportDescription" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" rows="4" placeholder="Décrivez le problème ou votre suggestion en détail..." required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Priorité</label>
+                        <select id="reportPriority" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                            <option value="Moyenne">Moyenne</option>
+                            <option value="Basse">Basse</option>
+                            <option value="Haute">Haute</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button onclick="closeModal('reportBugModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Annuler
+                        </button>
+                        <button onclick="handleSubmitReport()" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
+                            Envoyer le Rapport
+                        </button>
+                    </div>
+                </div>
+            `);
         }
 
         async function handleSubmitReport() {
@@ -1959,13 +1638,13 @@
             const priorite = document.getElementById('reportPriority').value;
             
             if (!titre || !description) {
-                alert('Veuillez remplir tous les champs obligatoires');
+                showToast('Veuillez remplir tous les champs obligatoires', 'error');
                 return;
             }
             
             try {
                 // Créer le rapport dans Firestore
-                await addDoc(collection(window.db, 'reports'), {
+                await window.addDoc(window.collection(window.db, 'reports'), {
                     type: type,
                     titre: titre,
                     description: description,
@@ -1982,74 +1661,21 @@
                 await logActivity('Rapport', `Rapport de ${type}: ${titre}`);
                 
                 // Fermer le modal
-                document.getElementById('reportBugModal').classList.add('hidden');
-                
-                // Réinitialiser le formulaire
-                resetReportForm();
+                closeModal('reportBugModal');
                 
                 // Recharger les rapports
                 await loadReports();
                 
-                alert('Rapport envoyé avec succès!');
+                showToast('Rapport envoyé avec succès!', 'success');
                 
             } catch (error) {
                 console.error('Erreur lors de l\'envoi du rapport:', error);
-                alert('Erreur lors de l\'envoi du rapport: ' + error.message);
+                showToast('Erreur lors de l\'envoi du rapport: ' + error.message, 'error');
             }
         }
 
-        async function handleLogout() {
-            try {
-                // Enregistrer l'activité avant déconnexion
-                await logActivity('Déconnexion', 'Déconnexion du système');
-                
-                // Déconnecter de Firebase
-                await auth.signOut();
-                
-                // Réinitialiser l'état
-                state.currentUser = null;
-                state.pendingVerification = null;
-                
-                // Afficher le modal d'authentification
-                document.getElementById('authModal').classList.remove('hidden');
-                document.getElementById('mainApp').classList.add('hidden');
-                
-                // Revenir à l'onglet de connexion
-                document.getElementById('loginTabBtn').click();
-                
-                // Réinitialiser les formulaires
-                document.getElementById('loginEmail').value = '';
-                document.getElementById('loginPassword').value = '';
-                document.getElementById('registerName').value = '';
-                document.getElementById('registerEmail').value = '';
-                document.getElementById('registerPassword').value = '';
-                document.getElementById('registerConfirmPassword').value = '';
-                document.getElementById('otpCode').value = '';
-                
-            } catch (error) {
-                console.error('Erreur lors de la déconnexion:', error);
-            }
-        }
+        // ====== FONCTIONS DE RENDU ======
 
-        // Nettoyer les OTPs expirés
-        async function clearExpiredOTPs() {
-            try {
-                const otpsSnapshot = await getDocs(collection(window.db, 'otps'));
-                const now = Date.now();
-                
-                otpsSnapshot.forEach(async (docSnapshot) => {
-                    const data = docSnapshot.data();
-                    if (data.expiresAt && now > data.expiresAt) {
-                        await deleteDoc(doc(window.db, 'otps', docSnapshot.id));
-                        console.log('OTP expiré supprimé:', docSnapshot.id);
-                    }
-                });
-            } catch (error) {
-                console.error('Erreur nettoyage OTPs:', error);
-            }
-        }
-
-        // Fonctions de rendu
         function renderUsers() {
             const usersTableBody = document.getElementById('usersTableBody');
             
@@ -2220,6 +1846,7 @@
             const directeurs = state.users.filter(u => u.role === 'Directeur').length;
             const secretaires = state.users.filter(u => u.role === 'Secrétaire').length;
             const enseignants = state.users.filter(u => u.role === 'Enseignant').length;
+            const itAdmins = state.users.filter(u => u.role === 'IT Admin').length;
             const totalUsers = state.users.length;
             
             document.getElementById('directeursCount').textContent = directeurs;
@@ -2237,13 +1864,16 @@
                 state.reports.filter(r => r.statut === 'Résolu').length;
         }
 
-        // Fonctions utilitaires
+        // ====== FONCTIONS UTILITAIRES ======
+
         function getRoleBadgeColor(role) {
             const colors = {
                 'Directeur': 'bg-purple-100 text-purple-800',
                 'Secrétaire': 'bg-green-100 text-green-800',
                 'Enseignant': 'bg-orange-100 text-orange-800',
-                'IT Admin': 'bg-red-100 text-red-800'
+                'IT Admin': 'bg-red-100 text-red-800',
+                'Professeur': 'bg-blue-100 text-blue-800',
+                'Comptable': 'bg-yellow-100 text-yellow-800'
             };
             return colors[role] || 'bg-gray-100 text-gray-800';
         }
@@ -2251,8 +1881,11 @@
         function getStatusBadgeColor(status) {
             const colors = {
                 'Actif': 'bg-green-100 text-green-800',
+                'active': 'bg-green-100 text-green-800',
                 'Inactif': 'bg-gray-100 text-gray-800',
-                'Suspendu': 'bg-red-100 text-red-800'
+                'inactive': 'bg-gray-100 text-gray-800',
+                'Suspendu': 'bg-red-100 text-red-800',
+                'suspended': 'bg-red-100 text-red-800'
             };
             return colors[status] || 'bg-gray-100 text-gray-800';
         }
@@ -2271,95 +1904,53 @@
             }, 5000);
         }
 
-        function resetCreateUserForm() {
-            document.getElementById('newUserName').value = '';
-            document.getElementById('newUserEmail').value = '';
-            document.getElementById('newUserPhone').value = '';
-            document.getElementById('newUserRole').value = '';
-            document.getElementById('newUserPassword').value = '';
+        function openModal(id, content) {
+            // Fermer tout modal existant
+            closeAllModals();
+            
+            const modal = document.createElement('div');
+            modal.id = id;
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    ${content}
+                </div>
+            `;
+            
+            // Fermer en cliquant en dehors
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal(id);
+                }
+            });
+            
+            document.body.appendChild(modal);
         }
 
-        function resetReportForm() {
-            document.getElementById('reportType').value = 'Bug';
-            document.getElementById('reportTitle').value = '';
-            document.getElementById('reportDescription').value = '';
-            document.getElementById('reportPriority').value = 'Moyenne';
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function closeAllModals() {
+            const modals = document.querySelectorAll('.modal-overlay');
+            modals.forEach(modal => modal.remove());
         }
 
         // Exposer les fonctions globales
         window.openEditUserModal = openEditUserModal;
         window.openDeleteConfirmModal = openDeleteConfirmModal;
-        window.approveAccountRequest = approveAccountRequest;
-        window.rejectAccountRequest = rejectAccountRequest;
-    </script>
-
-    <!-- Module: Google Sign-In & account linking -->
-    <script type="module">
-        import { GoogleAuthProvider, signInWithPopup, fetchSignInMethodsForEmail, signInWithEmailAndPassword, linkWithCredential } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
-
-        const authModule = window.auth; // initialisé dans head
-
-        async function handleGoogleSignIn() {
-            const provider = new GoogleAuthProvider();
-            const btn = document.getElementById('googleLoginBtn');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner" style="animation: spin 1s linear infinite;"></i> Connexion...'; }
-
-            try {
-                const result = await signInWithPopup(authModule, provider);
-                const user = result.user;
-                // Si nouvel utilisateur, créer profil minimal si nécessaire
-                try {
-                    const userDoc = await getDoc(doc(window.db, 'users', user.uid));
-                    if (!userDoc.exists) {
-                        await setDoc(doc(window.db, 'users', user.uid), {
-                            nom: user.displayName || 'Utilisateur Google',
-                            email: user.email,
-                            role: 'IT Admin',
-                            createdAt: new Date().toISOString(),
-                            status: 'active'
-                        });
-                    }
-                } catch (e) {
-                    console.warn('Erreur création profil Google:', e);
-                }
-
-                // Rediriger / charger utilisateur
-                if (window.loadCurrentUser) await window.loadCurrentUser(user.uid);
-            } catch (error) {
-                console.error('Erreur Google Sign-In:', error);
-                if (error.code === 'auth/account-exists-with-different-credential') {
-                    const email = (error.customData && error.customData.email) || error.email;
-                    const pendingCred = error.credential || null;
-
-                    try {
-                        const methods = await fetchSignInMethodsForEmail(authModule, email);
-                        if (methods.includes('password') && pendingCred) {
-                            const pw = prompt(`Un compte existe déjà pour ${email}. Entrez votre mot de passe pour lier Google à ce compte :`);
-                            if (!pw) { alert('Lien annulé'); return; }
-                            const emailUserCred = await signInWithEmailAndPassword(authModule, email, pw);
-                            await linkWithCredential(emailUserCred.user, pendingCred);
-                            alert('Comptes liés avec succès');
-                            if (window.loadCurrentUser) await window.loadCurrentUser(emailUserCred.user.uid);
-                            return;
-                        } else {
-                            alert('Un compte existe déjà avec un autre fournisseur: ' + methods.join(', '));
-                        }
-                    } catch (e) {
-                        console.error('Erreur lors du linking des providers:', e);
-                        alert('Impossible de lier les comptes: ' + (e.message || e.code));
-                    }
-                } else {
-                    alert('Erreur lors de la connexion Google.');
-                }
-            } finally {
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fab fa-google text-red-500"></i> Se connecter avec Google'; }
-            }
-        }
-
-        document.getElementById('googleLoginBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            handleGoogleSignIn();
-        });
+        window.openCreateUserModal = openCreateUserModal;
+        window.openReportBugModal = openReportBugModal;
+        window.handleCreateUser = handleCreateUser;
+        window.handleUpdateUser = handleUpdateUser;
+        window.handleDeleteUser = handleDeleteUser;
+        window.handleSubmitReport = handleSubmitReport;
+        window.closeModal = closeModal;
+        window.togglePasswordVisibility = togglePasswordVisibility;
+        window.handleLogout = handleLogout;
     </script>
 </body>
 </html>
