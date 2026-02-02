@@ -40,10 +40,13 @@ service cloud.firestore {
              (isDirector() || isTeacher() || isSecretary() || isParent());
     }
 
-    // Users collection - only directors can manage
+    // Users collection - allow owners to read/create their own profile, directors to manage
     match /users/{userId} {
-      allow read: if hasSchoolAccess();
-      allow write: if isDirector();
+      // Allow the user themselves or any school staff (director/teacher/secretary/parent) to read the profile
+      allow read: if isOwner(userId) || hasSchoolAccess();
+      // Allow creation and general writes by the owner or a director
+      allow write: if isDirector() || isOwner(userId);
+      // Allow updates by the owner or director
       allow update: if isDirector() || isOwner(userId);
     }
 

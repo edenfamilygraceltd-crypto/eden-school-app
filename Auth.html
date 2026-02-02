@@ -16,7 +16,7 @@
       signOut
     } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-    import { getDatabase } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+    import { getDatabase, ref as rtdbRef, get as rtdbGet } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
     // Import the functions you need from the SDKs you need
     // Your web app's Firebase configuration
@@ -35,13 +35,13 @@
     // Initialize Firebase
     window.firebaseApp = initializeApp(firebaseConfig);
     const analytics = getAnalytics(window.firebaseApp);
-    window.auth = getAuth(window.firebaseApp);
+    window.auth = getAuth();
     window.firestore = getFirestore(window.firebaseApp);
     window.realtimeDB = getDatabase(window.firebaseApp);
     
-    // Exposer globalement
+    // Exposer globalement (wrappers for modular API)
     window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-    window.signOut = signOut;
+    window.signOut = () => signOut(window.auth);
   </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -960,8 +960,8 @@
         
         // Vérifier d'abord dans "users" (collection principale)
         console.log('📍 Vérification collection "users"...');
-        const userRef = realtimeDB.ref('users/' + uid);
-        const userSnapshot = await userRef.once('value');
+        const userRef = rtdbRef(realtimeDB, 'users/' + uid);
+        const userSnapshot = await rtdbGet(userRef);
         console.log('👤 Utilisateur trouvé dans "users"?', userSnapshot.exists());
         
         if (userSnapshot.exists()) {
@@ -1077,8 +1077,8 @@
         
         // Si pas trouvé dans "users", vérifier dans "secretaries"
         console.log('📍 Vérification collection "secretaries"...');
-        const secretaryRef = realtimeDB.ref('secretaries/' + uid);
-        const secretarySnapshot = await secretaryRef.once('value');
+        const secretaryRef = rtdbRef(realtimeDB, 'secretaries/' + uid);
+        const secretarySnapshot = await rtdbGet(secretaryRef);
         console.log('👤 Secrétaire/Comptable trouvé dans "secretaries"?', secretarySnapshot.exists());
         
         if (secretarySnapshot.exists()) {
@@ -1132,8 +1132,8 @@
         
         // Vérifier si c'est un enseignant dans "teachers"
         console.log('📍 Vérification collection "teachers"...');
-        const teacherRef = realtimeDB.ref('teachers/' + uid);
-        const teacherSnapshot = await teacherRef.once('value');
+        const teacherRef = rtdbRef(realtimeDB, 'teachers/' + uid);
+        const teacherSnapshot = await rtdbGet(teacherRef);
         console.log('👤 Enseignant trouvé dans "teachers"?', teacherSnapshot.exists());
         
         if (teacherSnapshot.exists()) {
@@ -1166,15 +1166,15 @@
         
         // Vérifier si c'est un parent (interdire l'accès depuis ce portail)
         console.log('📍 Vérification collection "parents"...');
-        const parentRef = realtimeDB.ref('parents/' + uid);
-        const parentSnapshot = await parentRef.once('value');
+        const parentRef = rtdbRef(realtimeDB, 'parents/' + uid);
+        const parentSnapshot = await rtdbGet(parentRef);
         
         if (parentSnapshot.exists()) {
           const parentData = parentSnapshot.val();
           if (parentData.role === 'parent') {
             console.log('❌ Parent - accès refusé');
             showAlert('Accès réservé au personnel uniquement. Veuillez utiliser le portail parents.', 'error');
-            await auth.signOut();
+            await window.signOut();
             return false;
           }
         }
@@ -1182,13 +1182,13 @@
         // Si aucun rôle staff trouvé
         console.log('❌ Aucun rôle staff trouvé dans aucune collection');
         showAlert('Accès refusé. Vos identifiants ne sont pas reconnus comme membre du personnel.', 'error');
-        await auth.signOut();
+        await window.signOut();
         return false;
 
       } catch (error) {
         console.error('❌ Erreur lors de la vérification du rôle:', error);
         showAlert('Erreur technique lors de la vérification du rôle.', 'error');
-        await auth.signOut();
+        await window.signOut();
         return false;
       }
     }
@@ -1264,7 +1264,7 @@
 
       try {
         console.log('🔐 Tentative de connexion pour:', email);
-        const userCredential = await window.auth.signInWithEmailAndPassword(email, password);
+        const userCredential = await window.signInWithEmailAndPassword(window.auth, email, password);
         const user = userCredential.user;
         console.log('✅ Authentification Firebase réussie');
         console.log('👤 UID utilisateur:', user.uid);

@@ -2206,6 +2206,9 @@
                     <button class="btn-modern btn-student-search" onclick="loadStudentsFromDatabase()">
                         <i class="fas fa-sync me-2"></i> Actualiser
                     </button>
+                    <button class="btn-modern btn-info" onclick="openImportModal()">
+                        <i class="fas fa-file-import me-2"></i> Importer
+                    </button>
                     <button class="btn-modern btn-primary-modern" onclick="showStudentModal()">
                         <i class="fas fa-plus me-2"></i> Ajouter Élève
                     </button>
@@ -3025,10 +3028,10 @@
                 <!-- Section d'importation (optionnelle) -->
                 <div class="row mt-4">
                     <div class="col-md-12">
-                        <div class="import-section" onclick="importStudents()">
+                        <div class="import-section" onclick="openImportModal()">
                             <i class="fas fa-file-import"></i>
                             <h5>Importer plusieurs élèves</h5>
-                            <p class="text-muted mb-2">Cliquez pour importer un fichier CSV ou Excel</p>
+                            <p class="text-muted mb-2">Cliquez pour importer un fichier CSV ou Excel avec validation automatique</p>
                             <small class="text-muted">Format requis: Nom Complet, Date Naissance, Classe, Parent, Téléphone, Email, Adresse</small>
                         </div>
                     </div>
@@ -3037,6 +3040,11 @@
                 <!-- Template de fichier CSV (lien de téléchargement) -->
                 <div class="row mt-3">
                     <div class="col-md-12 text-center">
+                        <a href="#" onclick="downloadAdvancedTemplate()" class="text-decoration-none">
+                            <i class="fas fa-download me-2"></i>
+                            Télécharger le template Excel
+                        </a>
+                        <span class="text-muted mx-2">|</span>
                         <a href="#" onclick="downloadCSVTemplate()" class="text-decoration-none">
                             <i class="fas fa-download me-2"></i>
                             Télécharger le template CSV
@@ -3494,6 +3502,229 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                     <button type="button" class="btn-modern btn-primary-modern" onclick="saveStudentFee()">
                         <i class="fas fa-save me-2"></i> Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Import Modal -->
+    <div class="modal fade" id="importStudentsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-import me-2"></i>
+                        Importation Avancée d'Élèves
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- File Upload Section -->
+                    <div class="import-section mb-4" id="fileUploadSection" onclick="document.getElementById('importFile').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h5>Sélectionnez un fichier CSV ou Excel</h5>
+                        <p class="text-muted mb-2">Glissez-déposez votre fichier ici ou cliquez pour parcourir</p>
+                        <small class="text-muted">Formats acceptés: CSV (.csv), Excel (.xlsx)</small>
+                        <input type="file" id="importFile" accept=".csv,.xlsx" style="display: none;" onchange="handleAdvancedImport(event)">
+                    </div>
+
+                    <!-- Preview Section -->
+                    <div id="importPreviewSection" style="display: none;">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-table me-2"></i>
+                            Aperçu des données
+                        </h6>
+                        
+                        <!-- Statistics -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <div class="stat-card p-2">
+                                    <div class="text-center">
+                                        <h5 id="importCount" class="text-primary mb-0">0</h5>
+                                        <small class="text-muted">Élèves à importer</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card p-2">
+                                    <div class="text-center">
+                                        <h5 id="validCount" class="text-success mb-0">0</h5>
+                                        <small class="text-muted">Valides</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card p-2">
+                                    <div class="text-center">
+                                        <h5 id="errorCount" class="text-danger mb-0">0</h5>
+                                        <small class="text-muted">Erreurs</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="table-responsive mb-3">
+                            <table class="modern-table" id="importPreviewTable">
+                                <thead>
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Nom</th>
+                                        <th>Date Naissance</th>
+                                        <th>Classe</th>
+                                        <th>Parent</th>
+                                        <th>Détails</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="importPreviewBody">
+                                    <!-- Données générées ici -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Errors Details -->
+                        <div id="importErrorsSection" style="display: none;" class="alert alert-warning">
+                            <h6 class="fw-bold mb-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Problèmes détectés
+                            </h6>
+                            <div id="importErrorsList" style="max-height: 200px; overflow-y: auto;">
+                                <!-- Erreurs listées ici -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cancelImport()">Annuler</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="downloadAdvancedTemplate()">
+                        <i class="fas fa-download me-2"></i> Télécharger Template
+                    </button>
+                    <button type="button" class="btn-modern btn-primary-modern" id="confirmImportBtn" style="display: none;" onclick="confirmAdvancedImport()">
+                        <i class="fas fa-check me-2"></i> Importer <span id="importConfirmCount">0</span> Élèves
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Profile Modal -->
+    <div class="modal fade" id="studentProfileModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-graduate me-2"></i>
+                        Profil Détaillé d'Élève
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <!-- Student Info Section -->
+                        <div class="col-md-4">
+                            <div class="text-center mb-4">
+                                <div class="student-avatar mb-3">
+                                    <i class="fas fa-user-graduate fa-3x"></i>
+                                </div>
+                                <h5 id="profileStudentName">Nom de l'élève</h5>
+                                <p id="profileStudentClass" class="text-muted mb-2">Classe</p>
+                                <p id="profileStudentRef" class="fw-bold text-primary mb-3">Ref: --</p>
+                                
+                                <!-- Key Info Cards -->
+                                <div class="text-start">
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block">Âge</small>
+                                        <strong id="profileStudentAge">--</strong>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block">Date Inscription</small>
+                                        <strong id="profileStudentEnrollment">--</strong>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block">Parent/Tuteur</small>
+                                        <strong id="profileStudentParent">--</strong>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Contact</small>
+                                        <strong id="profileStudentPhone">--</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Summary & Payment History -->
+                        <div class="col-md-8">
+                            <!-- Financial Summary -->
+                            <div class="report-summary-cards mb-4">
+                                <div class="summary-card income">
+                                    <small class="text-muted">Total Payé</small>
+                                    <div class="summary-value" id="profileTotalPaid">0 RWF</div>
+                                </div>
+                                <div class="summary-card balance">
+                                    <small class="text-muted">Solde Restant</small>
+                                    <div class="summary-value" id="profileBalance">0 RWF</div>
+                                </div>
+                                <div class="summary-card expenses">
+                                    <small class="text-muted">Total Attendu</small>
+                                    <div class="summary-value" id="profileExpected">0 RWF</div>
+                                </div>
+                            </div>
+
+                            <!-- Payment History -->
+                            <div class="stat-card mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="fw-bold mb-0">
+                                        <i class="fas fa-history me-2 text-primary"></i>
+                                        Historique des Paiements
+                                    </h6>
+                                    <button class="btn btn-sm btn-primary" onclick="addPaymentFromProfile()">
+                                        <i class="fas fa-money-bill-wave me-1"></i> Ajouter
+                                    </button>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="modern-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Type</th>
+                                                <th>Montant</th>
+                                                <th>Mode</th>
+                                                <th>Reçu par</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="profilePaymentHistory">
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted py-3">
+                                                    Aucun paiement enregistré
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Medical & Additional Info -->
+                            <div class="stat-card">
+                                <h6 class="fw-bold mb-3">
+                                    <i class="fas fa-heartbeat me-2 text-danger"></i>
+                                    Informations Médicales
+                                </h6>
+                                <div id="profileMedicalInfo" class="alert alert-light">
+                                    <p class="mb-0 text-muted">Aucune condition médicale signalée</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button type="button" class="btn btn-outline-info" onclick="generateStudentReport()">
+                        <i class="fas fa-file-pdf me-2"></i> Rapport PDF
+                    </button>
+                    <button type="button" class="btn-modern btn-primary-modern" onclick="addPaymentFromProfile()">
+                        <i class="fas fa-credit-card me-2"></i> Enregistrer Paiement
                     </button>
                 </div>
             </div>
@@ -7693,6 +7924,477 @@
             link.click();
             
             URL.revokeObjectURL(url);
+        }
+
+        // ===== ADVANCED IMPORT FUNCTIONS =====
+        let importedStudentsData = [];
+        let importValidationErrors = [];
+
+        function openImportModal() {
+            importedStudentsData = [];
+            importValidationErrors = [];
+            document.getElementById('fileUploadSection').style.display = 'block';
+            document.getElementById('importPreviewSection').style.display = 'none';
+            document.getElementById('confirmImportBtn').style.display = 'none';
+            const modal = new bootstrap.Modal(document.getElementById('importStudentsModal'));
+            modal.show();
+        }
+
+        function handleAdvancedImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    let data = [];
+                    
+                    if (file.name.endsWith('.csv')) {
+                        data = parseCSVData(e.target.result);
+                    } else if (file.name.endsWith('.xlsx')) {
+                        const arrayBuffer = e.target.result;
+                        const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        data = XLSX.utils.sheet_to_json(worksheet);
+                    }
+                    
+                    displayImportPreview(data);
+                    document.getElementById('fileUploadSection').style.display = 'none';
+                    document.getElementById('importPreviewSection').style.display = 'block';
+                    
+                } catch (error) {
+                    showToast('Erreur lors de la lecture du fichier', 'error');
+                    console.error(error);
+                }
+            };
+            
+            if (file.name.endsWith('.xlsx')) {
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.readAsText(file);
+            }
+        }
+
+        function parseCSVData(csvText) {
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+                
+                const values = lines[i].split(',').map(v => v.trim());
+                const obj = {};
+                
+                headers.forEach((header, index) => {
+                    obj[header] = values[index] || '';
+                });
+                
+                data.push(obj);
+            }
+            
+            return data;
+        }
+
+        function displayImportPreview(rawData) {
+            importedStudentsData = [];
+            importValidationErrors = [];
+            
+            const tbody = document.getElementById('importPreviewBody');
+            tbody.innerHTML = '';
+            
+            rawData.forEach((row, index) => {
+                const validation = validateImportedStudent(row);
+                const student = validation.data || row;
+                
+                if (validation.isValid) {
+                    importedStudentsData.push(student);
+                } else {
+                    importValidationErrors.push({
+                        row: index + 2,
+                        student: row,
+                        errors: validation.errors
+                    });
+                }
+                
+                const tr = document.createElement('tr');
+                const statusBadge = validation.isValid ? 
+                    '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Valide</span>' : 
+                    '<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Erreur</span>';
+                
+                tr.innerHTML = `
+                    <td>${statusBadge}</td>
+                    <td>${row['Nom Complet'] || 'N/A'}</td>
+                    <td>${row['Date Naissance'] || 'N/A'}</td>
+                    <td>${row['Classe'] || 'N/A'}</td>
+                    <td>${row['Parent'] || 'N/A'}</td>
+                    <td>
+                        ${validation.warnings.length > 0 ? 
+                            `<span class="badge bg-warning" title="${validation.warnings.join(', ')}">⚠ ${validation.warnings.length}</span>` : 
+                            ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Update statistics
+            document.getElementById('importCount').textContent = rawData.length;
+            document.getElementById('validCount').textContent = importedStudentsData.length;
+            document.getElementById('errorCount').textContent = importValidationErrors.length;
+            document.getElementById('importConfirmCount').textContent = importedStudentsData.length;
+            
+            // Show errors if any
+            if (importValidationErrors.length > 0) {
+                const errorsList = document.getElementById('importErrorsList');
+                errorsList.innerHTML = '';
+                
+                importValidationErrors.forEach(error => {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'mb-2 p-2 bg-white rounded';
+                    errorDiv.innerHTML = `
+                        <strong>Ligne ${error.row}: ${error.student['Nom Complet'] || 'Données incomplètes'}</strong><br>
+                        <ul class="mb-0 ps-3">
+                            ${error.errors.map(e => `<li class="text-danger"><small>${e}</small></li>`).join('')}
+                        </ul>
+                    `;
+                    errorsList.appendChild(errorDiv);
+                });
+                
+                document.getElementById('importErrorsSection').style.display = 'block';
+            } else {
+                document.getElementById('importErrorsSection').style.display = 'none';
+            }
+            
+            // Show confirm button if there are valid records
+            if (importedStudentsData.length > 0) {
+                document.getElementById('confirmImportBtn').style.display = 'block';
+            }
+        }
+
+        function validateImportedStudent(row) {
+            const errors = [];
+            const warnings = [];
+            
+            // Valider les champs obligatoires
+            if (!row['Nom Complet'] || row['Nom Complet'].trim() === '') {
+                errors.push('Nom complet manquant');
+            }
+            
+            if (!row['Date Naissance'] || row['Date Naissance'].trim() === '') {
+                errors.push('Date de naissance manquante');
+            } else if (!/^\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4}$/.test(row['Date Naissance'])) {
+                errors.push('Format de date invalide (YYYY-MM-DD ou DD/MM/YYYY)');
+            }
+            
+            if (!row['Classe'] || row['Classe'].trim() === '') {
+                errors.push('Classe manquante');
+            }
+            
+            if (!row['Parent'] || row['Parent'].trim() === '') {
+                errors.push('Parent/Tuteur manquant');
+            }
+            
+            if (!row['Téléphone'] || row['Téléphone'].trim() === '') {
+                errors.push('Téléphone manquant');
+            } else if (!/^07\d{8}$/.test(row['Téléphone'].replace(/\s/g, ''))) {
+                warnings.push('Format de téléphone suspect');
+            }
+            
+            // Valider les champs optionnels
+            if (row['Email'] && row['Email'].trim() !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row['Email'])) {
+                warnings.push('Format email invalide');
+            }
+            
+            // Normaliser les données
+            const normalizedData = {
+                fullName: row['Nom Complet'] ? row['Nom Complet'].trim() : '',
+                birthDate: formatDateForImport(row['Date Naissance']),
+                class: row['Classe'] ? row['Classe'].trim().toUpperCase() : '',
+                parent: row['Parent'] ? row['Parent'].trim() : '',
+                parentPhone: formatPhone(row['Téléphone']),
+                parentEmail: row['Email'] ? row['Email'].trim().toLowerCase() : '',
+                address: row['Adresse'] ? row['Adresse'].trim() : '',
+                branch: selectedBranch,
+                enrollmentDate: new Date().toISOString().split('T')[0],
+                enrollmentType: 'Régulier',
+                reference: generateStudentReference()
+            };
+            
+            return {
+                isValid: errors.length === 0,
+                data: normalizedData,
+                errors: errors,
+                warnings: warnings
+            };
+        }
+
+        function formatDateForImport(dateStr) {
+            if (!dateStr) return '';
+            
+            // Try parsing DD/MM/YYYY
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    const [day, month, year] = parts;
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+            }
+            
+            // Already in YYYY-MM-DD format
+            return dateStr;
+        }
+
+        function formatPhone(phoneStr) {
+            if (!phoneStr) return '';
+            return phoneStr.replace(/\s/g, '');
+        }
+
+        function generateStudentReference() {
+            const timestamp = Date.now().toString().slice(-6);
+            const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            return `EDU-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${random}`;
+        }
+
+        async function confirmAdvancedImport() {
+            if (importedStudentsData.length === 0) {
+                showToast('Aucune donnée valide à importer', 'error');
+                return;
+            }
+            
+            if (!confirm(`Êtes-vous sûr d'importer ${importedStudentsData.length} élève(s)?`)) {
+                return;
+            }
+            
+            try {
+                let successCount = 0;
+                
+                for (const student of importedStudentsData) {
+                    await studentsRef.push({
+                        ...student,
+                        timestamp: Date.now(),
+                        createdBy: currentUserName
+                    });
+                    successCount++;
+                }
+                
+                showToast(`${successCount} élève(s) importé(s) avec succès!`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('importStudentsModal')).hide();
+                
+                // Recharger la liste des élèves
+                loadStudents();
+                
+            } catch (error) {
+                console.error('Erreur import:', error);
+                showToast('Erreur lors de l\'importation', 'error');
+            }
+        }
+
+        function downloadAdvancedTemplate() {
+            const headers = ['Nom Complet', 'Date Naissance', 'Classe', 'Parent', 'Téléphone', 'Email', 'Adresse'];
+            const exampleData = [
+                ['Jean Dupont', '2018-05-15', 'P1A', 'Marie Dupont', '0781234567', 'parent@email.com', 'Kigali'],
+                ['Sophie Martin', '2017-08-22', 'N2B', 'Pierre Martin', '0787654321', 'parent2@email.com', 'Kacyiru'],
+                ['Luc Moreau', '2019-03-10', 'P2A', 'Anne Moreau', '0789012345', 'parent3@email.com', 'Gisozi']
+            ];
+            
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...exampleData]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Template");
+            
+            ws['!cols'] = [
+                {wch: 25},  // Nom Complet
+                {wch: 15},  // Date Naissance
+                {wch: 10},  // Classe
+                {wch: 20},  // Parent
+                {wch: 15},  // Téléphone
+                {wch: 25},  // Email
+                {wch: 30}   // Adresse
+            ];
+            
+            XLSX.writeFile(wb, 'template_import_eleves.xlsx');
+            showToast('Template téléchargé', 'success');
+        }
+
+        function cancelImport() {
+            importedStudentsData = [];
+            importValidationErrors = [];
+            document.getElementById('fileUploadSection').style.display = 'block';
+            document.getElementById('importPreviewSection').style.display = 'none';
+            document.getElementById('importFile').value = '';
+        }
+
+        // ===== STUDENT PROFILE FUNCTIONS =====
+        function viewStudentProfile(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            
+            currentStudentId = studentId;
+            
+            // Populate basic info
+            document.getElementById('profileStudentName').textContent = student.fullName;
+            document.getElementById('profileStudentClass').textContent = `Classe: ${student.class || 'N/A'}`;
+            document.getElementById('profileStudentRef').textContent = `Ref: ${student.reference || 'N/A'}`;
+            
+            // Calculate and display age
+            const age = calculateAge(student.birthDate);
+            document.getElementById('profileStudentAge').textContent = `${age} ans`;
+            
+            document.getElementById('profileStudentEnrollment').textContent = student.enrollmentDate ? 
+                new Date(student.enrollmentDate).toLocaleDateString('fr-FR') : 'N/A';
+            
+            document.getElementById('profileStudentParent').textContent = student.parent || 'N/A';
+            document.getElementById('profileStudentPhone').textContent = student.parentPhone || 'N/A';
+            
+            // Financial summary
+            renderPaymentHistory(studentId);
+            
+            // Medical info
+            if (student.medicalConditions) {
+                document.getElementById('profileMedicalInfo').innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Conditions médicales:</strong><br>
+                        ${student.medicalConditions}
+                    </div>
+                `;
+            } else {
+                document.getElementById('profileMedicalInfo').innerHTML = '<p class="mb-0 text-muted">Aucune condition médicale signalée</p>';
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('studentProfileModal'));
+            modal.show();
+        }
+
+        function calculateAge(birthDate) {
+            if (!birthDate) return 0;
+            const birth = new Date(birthDate);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        function renderPaymentHistory(studentId) {
+            const payments = studentFees.filter(f => f.studentId === studentId);
+            const tbody = document.getElementById('profilePaymentHistory');
+            tbody.innerHTML = '';
+            
+            if (payments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Aucun paiement enregistré</td></tr>';
+                document.getElementById('profileTotalPaid').textContent = '0 RWF';
+                document.getElementById('profileBalance').textContent = '0 RWF';
+                document.getElementById('profileExpected').textContent = '0 RWF';
+                return;
+            }
+            
+            let totalPaid = 0;
+            payments.forEach(payment => {
+                totalPaid += payment.amount || 0;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${new Date(payment.paymentDate).toLocaleDateString('fr-FR')}</td>
+                    <td><span class="badge badge-minervale">${payment.paymentType || 'N/A'}</span></td>
+                    <td><strong>${formatCurrencyRWF(payment.amount)}</strong></td>
+                    <td><span class="badge ${payment.paymentMode === 'bank' ? 'badge-bank' : payment.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash'}">${payment.paymentMode || 'N/A'}</span></td>
+                    <td>${payment.receivedBy || 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            document.getElementById('profileTotalPaid').textContent = formatCurrencyRWF(totalPaid);
+            document.getElementById('profileBalance').textContent = formatCurrencyRWF(0);
+            document.getElementById('profileExpected').textContent = formatCurrencyRWF(0);
+        }
+
+        function addPaymentFromProfile() {
+            if (!currentStudentId) {
+                showToast('Veuillez sélectionner un élève', 'error');
+                return;
+            }
+            
+            bootstrap.Modal.getInstance(document.getElementById('studentProfileModal')).hide();
+            showStudentFeeModal();
+            document.getElementById('studentSelect').value = currentStudentId;
+            loadStudentDetails();
+        }
+
+        function generateStudentReport() {
+            const student = students.find(s => s.id === currentStudentId);
+            if (!student) return;
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Header
+                doc.setFillColor(46, 139, 87);
+                doc.rect(0, 0, 210, 30, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(20);
+                doc.text('EdenSmart Finances', 15, 18);
+                
+                // Title
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(16);
+                doc.text('Rapport Détaillé d\'Élève', 15, 45);
+                
+                // Student Info
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.text('Informations de l\'Élève:', 15, 60);
+                doc.setFont(undefined, 'normal');
+                doc.text(`Nom: ${student.fullName}`, 15, 70);
+                doc.text(`Classe: ${student.class}`, 15, 78);
+                doc.text(`Référence: ${student.reference}`, 15, 86);
+                doc.text(`Âge: ${calculateAge(student.birthDate)} ans`, 110, 70);
+                doc.text(`Parent: ${student.parent}`, 110, 78);
+                doc.text(`Téléphone: ${student.parentPhone}`, 110, 86);
+                
+                // Payment History Table
+                const payments = studentFees.filter(f => f.studentId === currentStudentId);
+                const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+                
+                doc.setFont(undefined, 'bold');
+                doc.text('Historique des Paiements:', 15, 105);
+                doc.setFont(undefined, 'normal');
+                
+                const tableData = payments.map(p => [
+                    new Date(p.paymentDate).toLocaleDateString('fr-FR'),
+                    p.paymentType || 'N/A',
+                    formatCurrencyRWF(p.amount).replace('RWF', '').trim(),
+                    p.paymentMode || 'N/A',
+                    p.receivedBy || 'N/A'
+                ]);
+                
+                doc.autoTable({
+                    head: [['Date', 'Type', 'Montant', 'Mode', 'Reçu par']],
+                    body: tableData,
+                    startY: 110,
+                    theme: 'grid',
+                    headStyles: { fillColor: [46, 139, 87], textColor: 255 },
+                    styles: { fontSize: 9 }
+                });
+                
+                // Summary
+                const finalY = doc.lastAutoTable.finalY + 10;
+                doc.setFont(undefined, 'bold');
+                doc.text(`Total Payé: ${formatCurrencyRWF(totalPaid)}`, 15, finalY);
+                
+                // Footer
+                doc.setFontSize(9);
+                doc.setTextColor(128, 128, 128);
+                doc.text(`Généré par: ${currentUserName} | ${new Date().toLocaleDateString('fr-FR')}`, 15, 285);
+                
+                doc.save(`Rapport_${student.fullName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+                showToast('Rapport généré avec succès', 'success');
+                
+            } catch (error) {
+                console.error('Erreur génération PDF:', error);
+                showToast('Erreur lors de la génération du PDF', 'error');
+            }
         }
     </script>
 </body>
