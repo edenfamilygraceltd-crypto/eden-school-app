@@ -15,7 +15,6 @@
       signInWithEmailAndPassword,
       signOut
     } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
     import { getDatabase, ref as rtdbRef, get as rtdbGet } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
     // Import the functions you need from the SDKs you need
@@ -36,12 +35,13 @@
     window.firebaseApp = initializeApp(firebaseConfig);
     const analytics = getAnalytics(window.firebaseApp);
     window.auth = getAuth();
-    window.firestore = getFirestore(window.firebaseApp);
     window.realtimeDB = getDatabase(window.firebaseApp);
     
     // Exposer globalement (wrappers for modular API)
     window.signInWithEmailAndPassword = signInWithEmailAndPassword;
     window.signOut = () => signOut(window.auth);
+    window.rtdbRef = rtdbRef;
+    window.rtdbGet = rtdbGet;
   </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -879,7 +879,7 @@
 
   <script>
     // Configuration Firebase - Chargée depuis le head avec le SDK moderne
-    console.log('✅ Firebase initialisé avec succès');
+    console.log('✅ Firebase initialisé avec succès - Realtime Database uniquement');
 
     // Gestion des alertes
     function showAlert(message, type) {
@@ -920,10 +920,10 @@
       document.head.appendChild(style);
     }
 
-    // Fonction pour obtenir le rôle de l'utilisateur et rediriger
+    // Fonction pour créer une session sécurisée
     async function createSecureSession(user) {
       try {
-        // Créer une session sécurisée dans sessionStorage pour security-auth.js
+        // Créer une session sécurisée dans sessionStorage
         const session = {
           createdAt: Date.now(),
           expiresAt: Date.now() + (30 * 60 * 1000), // 30 minutes
@@ -949,6 +949,43 @@
       }
     }
 
+    // Fonction pour rechercher un utilisateur par email dans Realtime Database
+    async function findUserByEmail(email) {
+      try {
+        console.log('🔍 Recherche utilisateur par email:', email);
+        
+        // Chercher dans tous les utilisateurs
+        const usersRef = window.rtdbRef(window.realtimeDB, 'users');
+        const usersSnapshot = await window.rtdbGet(usersRef);
+        
+        if (!usersSnapshot.exists()) {
+          console.log('❌ Aucun utilisateur trouvé dans la base de données');
+          return null;
+        }
+        
+        const users = usersSnapshot.val();
+        let foundUser = null;
+        
+        // Parcourir tous les utilisateurs pour trouver celui avec l'email correspondant
+        for (const userId in users) {
+          const userData = users[userId];
+          if (userData.email && userData.email.toLowerCase() === email.toLowerCase()) {
+            foundUser = {
+              id: userId,
+              ...userData
+            };
+            console.log('✅ Utilisateur trouvé:', foundUser);
+            break;
+          }
+        }
+        
+        return foundUser;
+      } catch (error) {
+        console.error('❌ Erreur lors de la recherche par email:', error);
+        return null;
+      }
+    }
+
     // Fonction pour obtenir le rôle de l'utilisateur et rediriger
     async function getUserRoleAndRedirect(user, email) {
       const uid = user.uid;
@@ -956,239 +993,117 @@
 
       try {
         console.log('🔍 Vérification du rôle pour UID:', uid);
-        console.log('📊 Recherche dans les collections Firebase...');
+        console.log('📊 Recherche dans Realtime Database...');
         
-        // Vérifier d'abord dans "users" (collection principale)
-        console.log('📍 Vérification collection "users"...');
-        const userRef = rtdbRef(realtimeDB, 'users/' + uid);
-        const userSnapshot = await rtdbGet(userRef);
-        console.log('👤 Utilisateur trouvé dans "users"?', userSnapshot.exists());
+        // Chercher d'abord par UID
+        const userRef = window.rtdbRef(window.realtimeDB, 'users/' + uid);
+        const userSnapshot = await window.rtdbGet(userRef);
+        
+        let userData = null;
+        let userRole = null;
         
         if (userSnapshot.exists()) {
-          const userData = userSnapshot.val();
+          // Utilisateur trouvé par UID
+          userData = userSnapshot.val();
+          console.log('👤 Utilisateur trouvé par UID:', userData);
+        } else {
+          // Si pas trouvé par UID, chercher par email
+          console.log('📍 Utilisateur non trouvé par UID, recherche par email...');
+          const foundUser = await findUserByEmail(email);
           
-          // Vérifier que tous les champs requis existent
-          if (!userData.email || !userData.name || !userData.role) {
-            console.warn('⚠️ Données utilisateur incomplètes');
-            showAlert('Données utilisateur incomplètes. Contactez l\'administrateur.', 'error');
-            return false;
-          }
-          
-          // Vérifier que l'email correspond
-          if (userData.email.toLowerCase() !== email.toLowerCase()) {
-            console.warn('⚠️ Email ne correspond pas aux données Firebase');
-            showAlert('Email ne correspond pas aux données enregistrées.', 'error');
-            return false;
-          }
-          
-          const userRole = userData.role;
-          console.log('📊 Rôle trouvé:', userRole);
-          console.log('✅ Données utilisateur validées:', userData);
-          
-          // Directeur - rôle peut être "director" ou "admin"
-          if (userRole === 'director' || userRole === 'admin') {
-            const secureUser = {
-              uid: uid,
-              email: email,
-              role: userRole,
-              name: userData.name || 'Directeur'
-            };
-            
-            // Sauvegarder dans localStorage et sessionStorage
-            localStorage.setItem('currentUser', JSON.stringify(secureUser));
-            createSecureSession(secureUser);
-            
-            console.log('✅ Directeur authentifié, redirection...');
-            showAlert('Connexion réussie! Redirection vers le portail directeur...', 'success');
-            
-            // Rediriger après 1 seconde
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('🔄 Redirection vers director.html...');
-            window.location.href = './director.html';
-            return true;
-          }
-          
-          // Secrétaire
-          if (userRole === 'secretary') {
-            const secureUser = {
-              uid: uid,
-              email: email,
-              role: 'secretary',
-              name: userData.name || 'Secrétaire'
-            };
-            
-            // Sauvegarder dans localStorage et sessionStorage
-            localStorage.setItem('currentUser', JSON.stringify(secureUser));
-            createSecureSession(secureUser);
-            
-            console.log('✅ Secrétaire authentifiée, redirection...');
-            showAlert('Connexion réussie! Redirection vers le portail secrétaire...', 'success');
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('🔄 Redirection vers secretary.html...');
-            window.location.href = './secretary.html';
-            return true;
-          }
-          
-          // Comptable/Accountant
-          if (userRole === 'accountant') {
-            const secureUser = {
-              uid: uid,
-              email: email,
-              role: 'accountant',
-              name: userData.name || 'Comptable'
-            };
-            
-            // Sauvegarder dans localStorage et sessionStorage
-            localStorage.setItem('currentUser', JSON.stringify(secureUser));
-            createSecureSession(secureUser);
-            
-            console.log('✅ Comptable authentifié, redirection...');
-            showAlert('Connexion réussie! Redirection vers le portail comptable...', 'success');
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('🔄 Redirection vers comptable.html...');
-            window.location.href = './comptable.html';
-            return true;
-          }
-          
-          // Enseignant
-          if (userRole === 'teacher') {
-            const secureUser = {
-              uid: uid,
-              email: email,
-              role: 'teacher',
-              name: userData.name || 'Enseignant'
-            };
-            
-            // Sauvegarder dans localStorage et sessionStorage
-            localStorage.setItem('currentUser', JSON.stringify(secureUser));
-            createSecureSession(secureUser);
-            
-            console.log('✅ Enseignant authentifié, redirection...');
-            showAlert('Connexion réussie! Redirection vers le portail enseignant...', 'success');
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('🔄 Redirection vers teacher_clean.html...');
-            window.location.href = './teacher_clean.html';
-            return true;
+          if (foundUser) {
+            userData = foundUser;
+            console.log('👤 Utilisateur trouvé par email:', userData);
           }
         }
         
-        // Si pas trouvé dans "users", vérifier dans "secretaries"
-        console.log('📍 Vérification collection "secretaries"...');
-        const secretaryRef = rtdbRef(realtimeDB, 'secretaries/' + uid);
-        const secretarySnapshot = await rtdbGet(secretaryRef);
-        console.log('👤 Secrétaire/Comptable trouvé dans "secretaries"?', secretarySnapshot.exists());
-        
-        if (secretarySnapshot.exists()) {
-          const secretaryData = secretarySnapshot.val();
-          const secretaryRole = secretaryData.role;
-          console.log('📊 Rôle trouvé:', secretaryRole);
-          console.log('📋 Données secrétaire:', secretaryData);
-          
-          if (secretaryRole === 'secretary') {
-            const secureUser = {
-              uid: uid,
-              email: email,
-              role: 'secretary',
-              name: secretaryData.name || 'Secrétaire'
-            };
-            
-            // Sauvegarder dans localStorage et sessionStorage
-            localStorage.setItem('currentUser', JSON.stringify(secureUser));
-            createSecureSession(secureUser);
-            
-            console.log('✅ Secrétaire authentifiée, redirection...');
-            showAlert('Connexion réussie! Redirection vers le portail secrétaire...', 'success');
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('🔄 Redirection vers secretary.html...');
-            window.location.href = './secretary.html';
-            return true;
-          }
-          
-          if (secretaryRole === 'accountant') {
-            const secureUser = {
-              uid: uid,
-              email: email,
-              role: 'accountant',
-              name: secretaryData.name || 'Comptable'
-            };
-            
-            // Sauvegarder dans localStorage et sessionStorage
-            localStorage.setItem('currentUser', JSON.stringify(secureUser));
-            createSecureSession(secureUser);
-            
-            console.log('✅ Comptable authentifié, redirection...');
-            showAlert('Connexion réussie! Redirection vers le portail comptable...', 'success');
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('🔄 Redirection vers comptable.html...');
-            window.location.href = './comptable.html';
-            return true;
-          }
+        // Si aucun utilisateur trouvé
+        if (!userData) {
+          console.log('❌ Utilisateur non trouvé dans la base de données');
+          showAlert('Accès refusé. Vos identifiants ne sont pas reconnus comme membre du personnel.', 'error');
+          await window.signOut();
+          return false;
         }
         
-        // Vérifier si c'est un enseignant dans "teachers"
-        console.log('📍 Vérification collection "teachers"...');
-        const teacherRef = rtdbRef(realtimeDB, 'teachers/' + uid);
-        const teacherSnapshot = await rtdbGet(teacherRef);
-        console.log('👤 Enseignant trouvé dans "teachers"?', teacherSnapshot.exists());
+        // Vérifier le rôle
+        userRole = userData.role;
         
-        if (teacherSnapshot.exists()) {
-          const teacherData = teacherSnapshot.val();
-          const teacherRole = teacherData.role;
-          console.log('📊 Rôle trouvé:', teacherRole);
-          console.log('📋 Données enseignant:', teacherData);
+        if (!userRole) {
+          console.log('❌ Aucun rôle défini pour l\'utilisateur');
+          showAlert('Votre compte n\'a pas de rôle défini. Contactez l\'administration.', 'error');
+          await window.signOut();
+          return false;
+        }
+        
+        console.log('📊 Rôle trouvé:', userRole);
+        
+        // Mapper les rôles et rediriger
+        const roleMapping = {
+          'Directeur': {
+            page: 'director.html',
+            roleKey: 'director',
+            name: userData.nom || 'Directeur'
+          },
+          'IT Admin': {
+            page: 'IT.html',
+            roleKey: 'itadmin',
+            name: userData.nom || 'Administrateur IT'
+          },
+          'Secrétaire': {
+            page: 'secretary.html',
+            roleKey: 'secretary',
+            name: userData.nom || 'Secrétaire'
+          },
+          'Enseignant': {
+            page: 'teacher_clean.html',
+            roleKey: 'teacher',
+            name: userData.nom || 'Enseignant'
+          },
+          'Comptable': {
+            page: 'comptable.html',
+            roleKey: 'accountant',
+            name: userData.nom || 'Comptable'
+          },
+          'Administrateur': {
+            page: 'director.html',
+            roleKey: 'admin',
+            name: userData.nom || 'Administrateur'
+          }
+        };
+        
+        if (roleMapping[userRole]) {
+          const mapping = roleMapping[userRole];
+          const secureUser = {
+            uid: userData.id || uid,
+            email: email,
+            role: mapping.roleKey,
+            name: mapping.name,
+            fullData: userData
+          };
           
-          if (teacherRole === 'teacher') {
-            const secureUser = {
-              uid: uid,
-              email: email,
-              role: 'teacher',
-              name: teacherData.name || 'Enseignant'
-            };
-            
-            // Sauvegarder dans localStorage et sessionStorage
-            localStorage.setItem('currentUser', JSON.stringify(secureUser));
-            createSecureSession(secureUser);
-            
-            console.log('✅ Enseignant authentifié, redirection...');
-            showAlert('Connexion réussie! Redirection vers le portail enseignant...', 'success');
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('🔄 Redirection vers teacher_clean.html...');
-            window.location.href = './teacher_clean.html';
-            return true;
-          }
+          // Sauvegarder dans localStorage et sessionStorage
+          localStorage.setItem('currentUser', JSON.stringify(secureUser));
+          createSecureSession(secureUser);
+          
+          console.log(`✅ ${userRole} authentifié, redirection vers ${mapping.page}...`);
+          showAlert(`Connexion réussie! Redirection vers le portail ${userRole}...`, 'success');
+          
+          // Rediriger après 1 seconde
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log(`🔄 Redirection vers ${mapping.page}...`);
+          window.location.href = `./${mapping.page}`;
+          return true;
+        } else {
+          // Rôle non reconnu
+          console.log('❌ Rôle non reconnu:', userRole);
+          showAlert('Votre rôle n\'est pas autorisé à accéder à ce portail.', 'error');
+          await window.signOut();
+          return false;
         }
         
-        // Vérifier si c'est un parent (interdire l'accès depuis ce portail)
-        console.log('📍 Vérification collection "parents"...');
-        const parentRef = rtdbRef(realtimeDB, 'parents/' + uid);
-        const parentSnapshot = await rtdbGet(parentRef);
-        
-        if (parentSnapshot.exists()) {
-          const parentData = parentSnapshot.val();
-          if (parentData.role === 'parent') {
-            console.log('❌ Parent - accès refusé');
-            showAlert('Accès réservé au personnel uniquement. Veuillez utiliser le portail parents.', 'error');
-            await window.signOut();
-            return false;
-          }
-        }
-
-        // Si aucun rôle staff trouvé
-        console.log('❌ Aucun rôle staff trouvé dans aucune collection');
-        showAlert('Accès refusé. Vos identifiants ne sont pas reconnus comme membre du personnel.', 'error');
-        await window.signOut();
-        return false;
-
       } catch (error) {
         console.error('❌ Erreur lors de la vérification du rôle:', error);
-        showAlert('Erreur technique lors de la vérification du rôle.', 'error');
-        await window.signOut();
+        showAlert('Erreur technique lors de la vérification du rôle: ' + error.message, 'error');
         return false;
       }
     }
@@ -1250,7 +1165,7 @@
         return;
       }
 
-      // Vérifier si l'email est probablement un email professionnel
+      // Vérifier si l'email est valide
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailPattern.test(email)) {
         showAlert('Veuillez entrer une adresse email valide.', 'error');
@@ -1323,7 +1238,6 @@
       }
     });
 
-    
     // Animation pour le bouton IT
     document.addEventListener('DOMContentLoaded', function() {
       console.log('📋 Page chargée avec succès');
