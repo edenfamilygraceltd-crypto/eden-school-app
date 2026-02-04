@@ -1,6 +1,5 @@
 {
   "rules": {
-    /* ========== UTILISATEURS - Gestion centralisée des comptes ========== */
     "users": {
       "$userId": {
         ".read": "auth != null && (auth.uid == $userId || root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
@@ -29,7 +28,7 @@
           ".validate": "newData.isString()"
         },
         "createdBy": {
-          ".validate": "newData.isString() || newData.val() === 'System'"
+          ".validate": "newData.isString()"
         },
         "lastLogin": {
           ".validate": "newData.isString() || !newData.exists()"
@@ -37,11 +36,10 @@
       }
     },
 
-    /* ========== RÔLES - Répertoire des utilisateurs par rôle ========== */
     "roles": {
       "$role": {
         "$userId": {
-          ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || $role === 'parent')",
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
           ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'IT Admin'",
           ".validate": "newData.hasChildren(['email', 'nom']) && newData.isString() == false",
           
@@ -61,11 +59,10 @@
       }
     },
 
-    /* ========== ACTIVITÉS - Journal d'audit ========== */
     "activities": {
       "$activityId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
-        ".write": "auth != null",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
         ".validate": "newData.hasChildren(['utilisateur', 'action', 'timestamp']) && newData.isString() == false",
         
         "utilisateur": {
@@ -86,7 +83,6 @@
       }
     },
 
-    /* ========== RAPPORTS - Gestion des bugs et suggestions ========== */
     "reports": {
       "$reportId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director' || root.child('reports').child($reportId).child('rapporteParId').val() === auth.uid)",
@@ -126,7 +122,6 @@
       }
     },
 
-    /* ========== ÉTUDIANTS - Gestion des élèves ========== */
     "students": {
       "$studentId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director' || root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'secretary')",
@@ -137,7 +132,7 @@
           ".validate": "newData.isString() && newData.val().length > 0"
         },
         "email": {
-          ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/) || !newData.exists()"
+          ".validate": "(!newData.exists()) || (newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/))"
         },
         "branch": {
           ".validate": "newData.isString() && newData.val() in ['kacyiru', 'kimisagara', 'gisozi_maternelle', 'gisozi_primaire']"
@@ -151,7 +146,6 @@
       }
     },
 
-    /* ========== FRAIS SCOLAIRES - Paiements étudiants ========== */
     "studentFees": {
       "$feeId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
@@ -179,7 +173,6 @@
       }
     },
 
-    /* ========== SALAIRES - Gestion de la paie ========== */
     "payroll": {
       "$payrollId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
@@ -219,7 +212,6 @@
       }
     },
 
-    /* ========== DETTES - Gestion des dettes du personnel ========== */
     "debts": {
       "$debtId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
@@ -250,7 +242,6 @@
       }
     },
 
-    /* ========== ANNONCES - Messages système ========== */
     "announcements": {
       "$announcementId": {
         ".read": "auth != null",
@@ -272,11 +263,10 @@
       }
     },
 
-    /* ========== MESSAGES - Communications ========== */
     "messages": {
       "$messageId": {
-        ".read": "auth != null",
-        ".write": "auth != null",
+        ".read": "auth != null && (auth.uid == root.child('messages').child($messageId).child('senderId').val() || auth.uid == root.child('messages').child($messageId).child('recipientId').val() || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
+        ".write": "auth != null && auth.uid == root.child('messages').child($messageId).child('senderId').val()",
         ".validate": "newData.hasChildren(['senderId', 'message', 'timestamp']) && newData.isString() == false",
         
         "senderId": {
@@ -297,7 +287,6 @@
       }
     },
 
-    /* ========== PARAMÈTRES - Configuration générale ========== */
     "settings": {
       "$settingId": {
         ".read": "auth != null",
@@ -329,11 +318,10 @@
       }
     },
 
-    /* ========== PRÉSENTATIONS - Galeries et événements ========== */
     "presentations": {
       "$presentationId": {
         ".read": "auth != null",
-        ".write": "auth != null",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
         ".validate": "newData.hasChildren(['title']) && newData.isString() == false",
         
         "title": {
@@ -351,7 +339,6 @@
       }
     },
 
-    /* ========== CONFIGURATIONS - Données statiques ========== */
     "config": {
       "classes": {
         ".read": "auth != null",
@@ -363,7 +350,6 @@
       }
     },
 
-    /* ========== RAPPORTS FINANCIERS ========== */
     "financialReports": {
       "$reportId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
@@ -388,7 +374,6 @@
       }
     },
 
-    /* ========== RAPPORTS MENSUELS ========== */
     "monthlyReports": {
       "$reportId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
@@ -407,7 +392,6 @@
       }
     },
 
-    /* ========== RAPPORTS HEBDOMADAIRES ========== */
     "weeklyReports": {
       "$reportId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
@@ -426,7 +410,6 @@
       }
     },
 
-    /* ========== VALEURS PAR DÉFAUT ========== */
     ".read": false,
     ".write": false,
     ".indexOn": ["timestamp", "date", "userId", "role", "status"]
