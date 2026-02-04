@@ -4249,37 +4249,35 @@
         }
 
         // Navigation
-        function showSection(sectionId) {
+        function showSection(sectionId, evt) {
             const currentSection = document.querySelector('.section.active');
-            if (currentSection) {
-                currentSection.classList.remove('active');
-            }
-            
+            if (currentSection) currentSection.classList.remove('active');
+
             setTimeout(() => {
-                document.querySelectorAll('.section').forEach(section => {
-                    section.classList.remove('active');
-                });
-                
-                document.getElementById(sectionId).classList.add('active');
-                
-                document.querySelectorAll('.nav-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                event.target.closest('.nav-btn').classList.add('active');
-                
+                document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+                const targetSection = document.getElementById(sectionId);
+                if (targetSection) targetSection.classList.add('active');
+
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+                // Robustly find the clicked nav button
+                let clickedBtn = null;
+                if (evt && evt.target) clickedBtn = evt.target.closest('.nav-btn');
+                if (!clickedBtn) clickedBtn = document.querySelector(`.nav-btn[onclick*="showSection('${sectionId}'")`) || document.querySelector(`.nav-btn[data-section="${sectionId}"]`);
+                if (clickedBtn) clickedBtn.classList.add('active');
+
                 if (sectionId === 'teachers') {
-                    loadWorkers();
-                    loadCurrentMonthDebts();
+                    if (typeof loadWorkers === 'function') loadWorkers();
+                    if (typeof loadCurrentMonthDebts === 'function') loadCurrentMonthDebts();
                 } else if (sectionId === 'payroll') {
-                    loadPayroll();
-                    loadCurrentMonthDebts();
+                    if (typeof loadPayroll === 'function') loadPayroll();
+                    if (typeof loadCurrentMonthDebts === 'function') loadCurrentMonthDebts();
                 } else if (sectionId === 'student-fees') {
-                    loadStudentFees();
+                    if (typeof loadStudentFees === 'function') loadStudentFees();
                 } else if (sectionId === 'students') {
-                    loadStudents();
+                    if (typeof loadStudents === 'function') loadStudents();
                 } else if (sectionId === 'reports') {
-                    showDailyReport();
+                    if (typeof showDailyReport === 'function') showDailyReport();
                 }
             }, 300);
         }
