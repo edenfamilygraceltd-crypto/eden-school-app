@@ -477,6 +477,10 @@
             height: 20px;
             animation: spin 1s linear infinite;
         }
+        
+        /* Couleur pour le rôle Comptable */
+        .bg-purple-100 { background-color: #f3e8ff; }
+        .text-purple-800 { color: #6b21a8; }
     </style>
 </head>
 <body class="bg-secondary-50">
@@ -651,12 +655,13 @@
                             <option value="Secrétaire">Secrétaire</option>
                             <option value="Enseignant">Enseignant</option>
                             <option value="IT Admin">IT Admin</option>
+                            <option value="Comptable">Comptable</option>
                         </select>
                     </div>
                 </div>
 
                 <!-- Statistiques -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div class="bg-white rounded-lg shadow-soft p-4">
                         <div class="flex items-center justify-between">
                             <div>
@@ -687,6 +692,17 @@
                             </div>
                             <div class="w-12 h-12 rounded-full bg-warning-100 text-warning-800 flex items-center justify-center">
                                 <i class="fas fa-chalkboard-teacher"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-secondary-500 text-sm">Comptables</p>
+                                <p id="comptablesCount" class="text-2xl font-bold text-secondary-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center">
+                                <i class="fas fa-calculator"></i>
                             </div>
                         </div>
                     </div>
@@ -784,6 +800,7 @@
                                     <option value="Secrétaire">Secrétaire</option>
                                     <option value="Enseignant">Enseignant</option>
                                     <option value="IT Admin">IT Admin</option>
+                                    <option value="Comptable">Comptable</option>
                                 </select>
                             </div>
                             <div class="space-y-2">
@@ -828,6 +845,33 @@
                     <p id="noAccountsMessage" class="text-center text-secondary-500 py-8">
                         <i class="fas fa-users text-3xl text-secondary-300 mb-3 block"></i>
                         Aucun compte créé pour le moment
+                    </p>
+                </div>
+
+                <!-- Liste spéciale des Comptables créés -->
+                <div class="bg-white rounded-xl shadow-medium p-6 border border-secondary-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-gradient-warning flex items-center justify-center">
+                                <i class="fas fa-calculator text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-secondary-900">Comptables Créés</h2>
+                                <p class="text-secondary-500 mt-1">Liste des comptes comptables enregistrés</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-secondary-500">Total</p>
+                            <p id="comptablesCreatesCount" class="text-2xl font-bold text-purple-800">0</p>
+                        </div>
+                    </div>
+                    
+                    <div id="comptablesList" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        <!-- Les comptables créés seront affichés ici -->
+                    </div>
+                    <p id="noComptablesMessage" class="text-center text-secondary-500 py-8">
+                        <i class="fas fa-calculator text-3xl text-secondary-300 mb-3 block"></i>
+                        Aucun comptable créé pour le moment
                     </p>
                 </div>
             </div>
@@ -1420,6 +1464,7 @@
                 
                 // Recharger la liste des comptes
                 renderAccountsList();
+                renderComptablesList();
                 
                 // Recharger la liste des utilisateurs
                 await loadUsers();
@@ -1464,6 +1509,7 @@
                 }
                 
                 renderAccountsList();
+                renderComptablesList();
                 
             } catch (error) {
                 console.error('❌ Erreur lors du chargement des comptes:', error);
@@ -1530,6 +1576,71 @@
                 }).join('');
                 
                 accountsList.innerHTML = html;
+            }
+        }
+
+        function renderComptablesList() {
+            const comptablesList = document.getElementById('comptablesList');
+            const noComptablesMsg = document.getElementById('noComptablesMessage');
+            const comptablesCount = document.getElementById('comptablesCreatesCount');
+            
+            // Filtrer les comptes pour obtenir seulement les Comptables
+            const comptables = state.accounts.filter(account => account.role === 'Comptable');
+            
+            // Mettre à jour le compteur
+            comptablesCount.textContent = comptables.length;
+            
+            if (comptables.length === 0) {
+                comptablesList.innerHTML = '';
+                noComptablesMsg.style.display = 'block';
+            } else {
+                noComptablesMsg.style.display = 'none';
+                
+                const html = comptables.map(comptable => {
+                    const createdDate = new Date(comptable.createdAt).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    return `
+                    <div class="user-card bg-gradient-to-r from-purple-50 to-transparent border border-purple-200 rounded-lg p-4 hover:shadow-medium transition-all duration-300">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <i class="fas fa-calculator text-purple-600"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-secondary-900">${comptable.nom}</h3>
+                                        <p class="text-sm text-secondary-600">${comptable.email}</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2 mt-2">
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        <i class="fas fa-briefcase me-1"></i>
+                                        Comptable
+                                    </span>
+                                    ${comptable.telephone ? `
+                                    <span class="text-xs text-secondary-500 flex items-center gap-1">
+                                        <i class="fas fa-phone"></i>
+                                        ${comptable.telephone}
+                                    </span>` : ''}
+                                </div>
+                            </div>
+                            <div class="mt-3 md:mt-0 md:text-right">
+                                <p class="text-xs text-secondary-500">Créé le</p>
+                                <p class="text-sm font-medium text-secondary-900">${createdDate}</p>
+                                <p class="text-xs text-secondary-500 mt-1">Par ${comptable.createdBy || 'System'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+                
+                comptablesList.innerHTML = html;
             }
         }
 
@@ -1869,11 +1980,13 @@
             const directeurs = state.users.filter(u => u.role === 'Directeur').length;
             const secretaires = state.users.filter(u => u.role === 'Secrétaire').length;
             const enseignants = state.users.filter(u => u.role === 'Enseignant').length;
+            const comptables = state.users.filter(u => u.role === 'Comptable').length;
             const totalUsers = state.users.length;
             
             document.getElementById('directeursCount').textContent = directeurs;
             document.getElementById('secretairesCount').textContent = secretaires;
             document.getElementById('enseignantsCount').textContent = enseignants;
+            document.getElementById('comptablesCount').textContent = comptables;
             document.getElementById('totalUsersCount').textContent = totalUsers;
             
             // Statistiques des rapports
@@ -1893,7 +2006,8 @@
                 'Directeur': 'bg-primary-100 text-primary-800',
                 'Secrétaire': 'bg-success-100 text-success-800',
                 'Enseignant': 'bg-warning-100 text-warning-800',
-                'IT Admin': 'bg-danger-100 text-danger-800'
+                'IT Admin': 'bg-danger-100 text-danger-800',
+                'Comptable': 'bg-purple-100 text-purple-800'
             };
             return colors[role] || 'bg-secondary-100 text-secondary-800';
         }
@@ -1980,6 +2094,7 @@
                                 <option value="Secrétaire" ${user.role === 'Secrétaire' ? 'selected' : ''}>Secrétaire</option>
                                 <option value="Enseignant" ${user.role === 'Enseignant' ? 'selected' : ''}>Enseignant</option>
                                 <option value="IT Admin" ${user.role === 'IT Admin' ? 'selected' : ''}>IT Admin</option>
+                                <option value="Comptable" ${user.role === 'Comptable' ? 'selected' : ''}>Comptable</option>
                             </select>
                         </div>
                         <div>
