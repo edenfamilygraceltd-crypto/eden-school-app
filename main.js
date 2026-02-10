@@ -110,7 +110,7 @@ const SCHOOL_CODE = 'EDF-KA';
                 if (user) {
                     loadDirectorData(user.email);
                 } else {
-                    window.location.href = 'login.html';
+                    window.location.href = 'index.html';
                 }
             });
         }
@@ -1804,7 +1804,7 @@ const SCHOOL_CODE = 'EDF-KA';
         // Logout
         function logout() {
             auth.signOut().then(function() {
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
             });
         }
 

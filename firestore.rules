@@ -22,6 +22,11 @@ service cloud.firestore {
              exists(/databases/$(database)/documents/secretaries/$(request.auth.uid));
     }
 
+    function isComptable() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/comptables/$(request.auth.uid));
+    }
+
     function isParent() {
       return isAuthenticated() &&
              exists(/databases/$(database)/documents/parents/$(request.auth.uid));
@@ -37,14 +42,14 @@ service cloud.firestore {
 
     function hasSchoolAccess() {
       return isAuthenticated() &&
-             (isDirector() || isTeacher() || isSecretary() || isParent());
+             (isDirector() || isTeacher() || isSecretary() || isComptable() || isParent());
     }
 
-    // Users collection - only directors can manage
+    // Users collection - directors and comptables can manage
     match /users/{userId} {
       allow read: if hasSchoolAccess();
-      allow write: if isDirector();
-      allow update: if isDirector() || isOwner(userId);
+      allow write: if isDirector() || isComptable();
+      allow update: if isDirector() || isComptable() || isOwner(userId);
     }
 
     // Directors collection

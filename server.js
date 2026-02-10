@@ -7,8 +7,9 @@ const admin = require('firebase-admin');
 const path = require('path');
 const fs = require('fs');
 
-// Charger le fichier de clé de service
-const serviceAccount = require('./serviceAccountKey.json');
+// Importer les credentials Firebase
+const serviceAccount = require('./serviceAccount.json');
+
 
 // Initialiser Firebase Admin
 admin.initializeApp({

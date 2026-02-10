@@ -60,7 +60,21 @@
 }
 ```
 
-### 5. Bulletins
+### 5. Accounts (Comptes Comptables)
+**Chemin:** `accounts/{accountId}`
+```json
+{
+  "id": "accountId",
+  "number": "1000",
+  "name": "Caisse",
+  "type": "asset" | "liability" | "equity" | "income" | "expense",
+  "description": "Description optionnelle",
+  "createdAt": "timestamp",
+  "updatedAt": "timestamp"
+}
+```
+
+### 6. Bulletins
 **Chemin:** `bulletins/{bulletinId}`
 ```json
 {
