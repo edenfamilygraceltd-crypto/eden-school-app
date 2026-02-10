@@ -1,0 +1,2440 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Admin - Gestion des Comptes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuration des couleurs Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        secondary: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        },
+                        success: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        warning: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                        },
+                        danger: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            200: '#fecaca',
+                            300: '#fca5a5',
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            deleteUser
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs, 
+            getDoc, 
+            doc, 
+            setDoc, 
+            updateDoc, 
+            addDoc, 
+            deleteDoc, 
+            query, 
+            where, 
+            orderBy, 
+            limit 
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import {
+            getDatabase,
+            ref as rtdbRef,
+            set as rtdbSet,
+            push as rtdbPush,
+            update as rtdbUpdate,
+            remove as rtdbRemove,
+            get as rtdbGet,
+            child as rtdbChild,
+            onValue as rtdbOnValue
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+            authDomain: "edensmart-app.firebaseapp.com",
+            databaseURL: "https://edensmart-app-default-rtdb.firebaseio.com",
+            projectId: "edensmart-app",
+            storageBucket: "edensmart-app.firebasestorage.app",
+            messagingSenderId: "1093120876724",
+            appId: "1:1093120876724:web:bc37448cadd18d651c77e1",
+            measurementId: "G-1FL70PZZSW"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const rtdb = getDatabase(app);
+        
+        // Exposer globalement
+        window.auth = auth;
+        window.db = db;
+        window.rtdb = rtdb;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.signOut = signOut;
+        window.deleteUser = deleteUser;
+        window.onAuthStateChanged = onAuthStateChanged;
+        window.collection = collection;
+        window.getDocs = getDocs;
+        window.getDoc = getDoc;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.updateDoc = updateDoc;
+        window.addDoc = addDoc;
+        window.deleteDoc = deleteDoc;
+        window.query = query;
+        window.where = where;
+        window.orderBy = orderBy;
+        window.limit = limit;
+        // Realtime Database helpers
+        window.rtdbRef = rtdbRef;
+        window.rtdbSet = rtdbSet;
+        window.rtdbPush = rtdbPush;
+        window.rtdbUpdate = rtdbUpdate;
+        window.rtdbRemove = rtdbRemove;
+        window.rtdbGet = rtdbGet;
+        window.rtdbChild = rtdbChild;
+        window.rtdbOnValue = rtdbOnValue;
+    </script>
+    <style>
+        /* Reset pour éviter les conflits d'affichage */
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; position: relative; }
+
+        /* S'assurer que la modal prend toute la place */
+        #authModal { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
+
+        /* Important pour cacher/afficher */
+        .hidden { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+
+        /* S'assurer que mainApp est visible quand pas hidden */
+        #mainApp:not(.hidden) { display: block !important; visibility: visible !important; opacity: 1 !important; }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .tab-active {
+            position: relative;
+            color: #0ea5e9 !important;
+        }
+        
+        .tab-active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #0ea5e9;
+            border-radius: 3px;
+        }
+
+        .password-input-container {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 16px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .password-toggle-btn:hover {
+            color: #0ea5e9;
+        }
+
+        .password-input-container input {
+            padding-right: 40px !important;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        #authModal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999; /* Augmentez le z-index */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.35);
+}
+
+#mainApp {
+    position: relative;
+    z-index: 1; /* S'assurer que l'app principale est en dessous */
+}
+
+/* Assurez-vous que la modal est cachée correctement */
+#authModal.hidden {
+    display: none !important;
+}
+
+#mainApp.hidden {
+    display: none !important;
+}
+
+        .auth-modal-content {
+            position: relative;
+            z-index: 2001;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease-out;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .modal-content-lg {
+            max-width: 700px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1001;
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .toast-success {
+            background: #22c55e;
+        }
+
+        .toast-error {
+            background: #ef4444;
+        }
+
+        .toast-warning {
+            background: #f59e0b;
+        }
+
+        .toast-info {
+            background: #0ea5e9;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-info {
+            background-color: #e0f2fe;
+            color: #075985;
+        }
+
+        .badge-primary {
+            background-color: #e0f2fe;
+            color: #075985;
+        }
+
+        .user-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .user-card:hover {
+            border-color: #0ea5e9;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.1);
+        }
+
+        .activity-timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .activity-timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #e2e8f0;
+        }
+
+        .activity-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .activity-item::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #0ea5e9;
+            border: 2px solid white;
+            box-shadow: 0 0 0 3px #0ea5e9;
+        }
+
+        /* Nouvelles classes de couleur */
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        }
+
+        .bg-gradient-secondary {
+            background: linear-gradient(135deg, #475569 0%, #334155 100%);
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .bg-gradient-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .shadow-soft {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .shadow-medium {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .shadow-hard {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0ea5e9;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Couleur pour le rôle Comptable */
+        .bg-purple-100 { background-color: #f3e8ff; }
+        .text-purple-800 { color: #6b21a8; }
+    </style>
+</head>
+<body class="bg-secondary-50">
+    <!-- Toast Notifications -->
+    <div id="toastContainer"></div>
+
+    <!-- Modal d'authentification -->
+    <div id="authModal" class="min-h-screen bg-gradient-primary flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-hard max-w-md w-full overflow-hidden slide-in auth-modal-content">
+            <div class="bg-gradient-primary p-8 text-white text-center relative">
+                <i class="fas fa-shield-alt text-5xl mb-4"></i>
+                <h2 class="text-3xl font-bold">IT Admin</h2>
+                <p class="text-primary-100 mt-2">Système de Gestion Scolaire</p>
+            </div>
+
+            <div class="flex border-b">
+                <button id="loginTabBtn" class="flex-1 py-4 font-semibold text-primary-600 border-b-2 border-primary-600">
+                    Connexion
+                </button>
+                <button id="registerTabBtn" class="flex-1 py-4 font-semibold text-secondary-500 hover:text-secondary-700">
+                    Inscription
+                </button>
+            </div>
+
+            <!-- Formulaire de connexion -->
+            <div id="loginForm" class="p-8 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-secondary-700 mb-2">Email</label>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                        <input type="email" id="loginEmail" class="w-full pl-10 pr-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="admin@school.rw">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-secondary-700 mb-2">Mot de passe</label>
+                    <div class="password-input-container relative">
+                        <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                        <input type="password" id="loginPassword" class="w-full pl-10 pr-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="••••••••">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('loginPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button id="loginBtn" type="button" class="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition flex items-center justify-center gap-2 shadow-medium hover:shadow-hard">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Se connecter
+                </button>
+                
+                <div id="loginMessage" class="text-sm text-center hidden"></div>
+            </div>
+
+            <!-- Formulaire d'inscription -->
+            <div id="registerForm" class="p-8 space-y-6 hidden">
+                <div>
+                    <label class="block text-sm font-medium text-secondary-700 mb-2">Nom complet</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                        <input type="text" id="registerName" class="w-full pl-10 pr-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Votre nom complet">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-secondary-700 mb-2">Email</label>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                        <input type="email" id="registerEmail" class="w-full pl-10 pr-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="votre.email@school.rw">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-secondary-700 mb-2">Mot de passe</label>
+                    <div class="password-input-container relative">
+                        <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                        <input type="password" id="registerPassword" class="w-full pl-10 pr-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="••••••••">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('registerPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-secondary-700 mb-2">Confirmer le mot de passe</label>
+                    <div class="password-input-container relative">
+                        <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                        <input type="password" id="registerConfirmPassword" class="w-full pl-10 pr-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="••••••••">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('registerConfirmPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button id="registerBtn" type="button" class="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition flex items-center justify-center gap-2 shadow-medium hover:shadow-hard">
+                    <i class="fas fa-user-plus"></i>
+                    Créer mon compte IT Admin
+                </button>
+                
+                <div id="registerMessage" class="text-sm text-center hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application principale -->
+    <div id="mainApp" class="min-h-screen hidden">
+        <!-- Header -->
+        <div class="bg-gradient-primary text-white p-6 shadow-hard">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div class="mb-4 md:mb-0">
+                        <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-3">
+                            <i class="fas fa-shield-alt"></i>
+                            IT Admin - Gestion des Comptes
+                        </h1>
+                        <p class="text-primary-100 mt-2">Connecté en tant que: <span id="currentUserName"></span> (<span id="currentUserRole"></span>)</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button id="backToAuthBtn" onclick="window.location.href='Auth.html'" class="bg-white text-secondary-700 px-4 py-3 rounded-lg font-semibold hover:bg-secondary-100 transition flex items-center justify-center gap-2 shadow-sm">
+                            <i class="fas fa-arrow-left"></i>
+                            Retour
+                        </button>
+                        <button onclick="openReportBugModal()" class="bg-warning-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-warning-600 transition flex items-center justify-center gap-2 shadow-medium hover:shadow-hard">
+                            <i class="fas fa-bug"></i>
+                            Reporter un Bug
+                        </button>
+                        <button onclick="openCreateUserModal()" class="bg-white text-primary-600 px-4 py-3 rounded-lg font-semibold hover:bg-primary-50 transition flex items-center justify-center gap-2 shadow-medium hover:shadow-hard">
+                            <i class="fas fa-user-plus"></i>
+                            Créer un Compte
+                        </button>
+                        <button onclick="handleLogout()" class="bg-danger-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-danger-600 transition flex items-center justify-center gap-2 shadow-medium hover:shadow-hard">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Déconnexion
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-white shadow-soft border-b">
+            <div class="max-w-7xl mx-auto px-4 md:px-6">
+                <div class="flex overflow-x-auto">
+                    <button data-tab="utilisateurs" class="tab-btn px-4 py-4 font-medium flex items-center gap-2 whitespace-nowrap tab-active text-primary-600">
+                        <i class="fas fa-users"></i>
+                        Utilisateurs
+                    </button>
+                    <button data-tab="creerComptes" class="tab-btn px-4 py-4 font-medium flex items-center gap-2 whitespace-nowrap text-secondary-500">
+                        <i class="fas fa-user-plus"></i>
+                        Créer Comptes
+                    </button>
+                    <button data-tab="activites" class="tab-btn px-4 py-4 font-medium flex items-center gap-2 whitespace-nowrap text-secondary-500">
+                        <i class="fas fa-chart-line"></i>
+                        Activités
+                    </button>
+                    <button data-tab="reports" class="tab-btn px-4 py-4 font-medium flex items-center gap-2 whitespace-nowrap text-secondary-500">
+                        <i class="fas fa-bug"></i>
+                        Rapports
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto p-4 md:p-6">
+            <!-- Onglet Utilisateurs -->
+            <div id="utilisateursTab" class="tab-content space-y-6 fade-in">
+                <!-- Filtres -->
+                <div class="bg-white rounded-lg shadow-soft p-4 flex flex-col md:flex-row gap-4 items-center">
+                    <div class="w-full md:flex-1 relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                        <input type="text" id="searchInput" placeholder="Rechercher par nom ou email..." class="w-full pl-10 pr-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    </div>
+                    <div class="flex items-center gap-2 w-full md:w-auto">
+                        <i class="fas fa-filter text-secondary-400"></i>
+                        <select id="roleFilter" class="border border-secondary-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent w-full md:w-auto">
+                            <option value="Tous">Tous</option>
+                            <option value="Directeur">Directeur</option>
+                            <option value="Secrétaire">Secrétaire</option>
+                            <option value="Enseignant">Enseignant</option>
+                            <option value="IT Admin">IT Admin</option>
+                            <option value="Comptable">Comptable</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Statistiques -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-secondary-500 text-sm">Directeurs</p>
+                                <p id="directeursCount" class="text-2xl font-bold text-secondary-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-primary-100 text-primary-800 flex items-center justify-center">
+                                <i class="fas fa-crown"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-secondary-500 text-sm">Secrétaires</p>
+                                <p id="secretairesCount" class="text-2xl font-bold text-secondary-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-success-100 text-success-800 flex items-center justify-center">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-secondary-500 text-sm">Enseignants</p>
+                                <p id="enseignantsCount" class="text-2xl font-bold text-secondary-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-warning-100 text-warning-800 flex items-center justify-center">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-secondary-500 text-sm">Comptables</p>
+                                <p id="comptablesCount" class="text-2xl font-bold text-secondary-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-secondary-500 text-sm">Total</p>
+                                <p id="totalUsersCount" class="text-2xl font-bold text-secondary-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-secondary-100 text-secondary-800 flex items-center justify-center">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Liste des utilisateurs -->
+                <div class="bg-white rounded-lg shadow-soft overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-secondary-50 border-b">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-secondary-500 uppercase">Nom</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-secondary-500 uppercase">Email</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-secondary-500 uppercase">Rôle</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-secondary-500 uppercase">Créé le</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-secondary-500 uppercase">Statut</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-secondary-500 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody" class="divide-y divide-secondary-200">
+                                <!-- Les utilisateurs seront insérés ici -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Créer Comptes -->
+            <div id="creerComptesTab" class="tab-content hidden space-y-6 fade-in">
+                <div class="bg-white rounded-xl shadow-medium p-6 border border-secondary-200">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
+                            <i class="fas fa-user-plus text-2xl text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-secondary-900">Création de Nouveau Compte</h2>
+                            <p class="text-secondary-500 mt-1">Créez des comptes pour le personnel scolaire</p>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire amélioré -->
+                    <form id="createAccountForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-secondary-700">Nom complet *</label>
+                                <div class="relative">
+                                    <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                                    <input type="text" id="createName" class="w-full pl-10 pr-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200" placeholder="Nom complet" required>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-secondary-700">Email *</label>
+                                <div class="relative">
+                                    <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                                    <input type="email" id="createEmail" class="w-full pl-10 pr-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="email@school.rw" required>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-secondary-700">Mot de passe *</label>
+                                <div class="password-input-container relative">
+                                    <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                                    <input type="password" id="createPassword" class="w-full pl-10 pr-12 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="••••••••" required>
+                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('createPassword')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-secondary-500">Minimum 6 caractères</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-secondary-700">Confirmer le mot de passe *</label>
+                                <div class="password-input-container relative">
+                                    <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400"></i>
+                                    <input type="password" id="createConfirmPassword" class="w-full pl-10 pr-12 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="••••••••" required>
+                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('createConfirmPassword')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-secondary-700">Rôle *</label>
+                                <select id="createRole" class="w-full px-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white" required>
+                                    <option value="">Sélectionner un rôle</option>
+                                    <option value="Directeur">Directeur</option>
+                                    <option value="Secrétaire">Secrétaire</option>
+                                    <option value="Enseignant">Enseignant</option>
+                                    <option value="IT Admin">IT Admin</option>
+                                    <option value="Comptable">Comptable</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-secondary-700">Téléphone</label>
+                                <input type="tel" id="createPhone" class="w-full px-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="+250 78 123 4567">
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t border-secondary-200">
+                            <div class="text-sm text-secondary-500">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                Un email de confirmation sera envoyé à l'utilisateur
+                            </div>
+                            <button type="submit" class="bg-gradient-primary text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all duration-300 flex items-center justify-center gap-2 shadow-medium hover:shadow-hard">
+                                <i class="fas fa-user-plus"></i>
+                                Créer le compte
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Liste des comptes créés -->
+                <div class="bg-white rounded-xl shadow-medium p-6 border border-secondary-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-gradient-success flex items-center justify-center">
+                                <i class="fas fa-check-circle text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-secondary-900">Comptes Créés Récemment</h2>
+                                <p class="text-secondary-500 mt-1">Historique des comptes créés avec succès</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-secondary-500">Total</p>
+                            <p id="accountsCount" class="text-2xl font-bold text-secondary-900">0</p>
+                        </div>
+                    </div>
+                    
+                    <div id="accountsList" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        <!-- Les comptes seront affichés ici -->
+                    </div>
+                    <p id="noAccountsMessage" class="text-center text-secondary-500 py-8">
+                        <i class="fas fa-users text-3xl text-secondary-300 mb-3 block"></i>
+                        Aucun compte créé pour le moment
+                    </p>
+                </div>
+
+                <!-- Liste spéciale des Comptables créés -->
+                <div class="bg-white rounded-xl shadow-medium p-6 border border-secondary-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-gradient-warning flex items-center justify-center">
+                                <i class="fas fa-calculator text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-secondary-900">Comptables Créés</h2>
+                                <p class="text-secondary-500 mt-1">Liste des comptes comptables enregistrés</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-secondary-500">Total</p>
+                            <p id="comptablesCreatesCount" class="text-2xl font-bold text-purple-800">0</p>
+                        </div>
+                    </div>
+                    
+                    <div id="comptablesList" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        <!-- Les comptables créés seront affichés ici -->
+                    </div>
+                    <p id="noComptablesMessage" class="text-center text-secondary-500 py-8">
+                        <i class="fas fa-calculator text-3xl text-secondary-300 mb-3 block"></i>
+                        Aucun comptable créé pour le moment
+                    </p>
+                </div>
+            </div>
+
+            <!-- Onglet Activités -->
+            <div id="activitesTab" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow-soft">
+                    <div class="p-6 border-b border-secondary-200">
+                        <h2 class="text-xl font-bold text-secondary-900">Journal des Activités</h2>
+                        <p class="text-secondary-500 mt-1">Suivi en temps réel des actions utilisateurs</p>
+                    </div>
+                    <div id="activitiesList" class="p-6 activity-timeline">
+                        <!-- Les activités seront insérées ici -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Rapports -->
+            <div id="reportsTab" class="tab-content hidden space-y-6">
+                <!-- Statistiques des rapports -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-secondary-500 text-sm">Total Rapports</p>
+                                <p id="totalReports" class="text-2xl font-bold text-secondary-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-primary-100 text-primary-800 flex items-center justify-center">
+                                <i class="fas fa-bug"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-secondary-500 text-sm">Nouveaux</p>
+                                <p id="newReports" class="text-2xl font-bold text-secondary-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-warning-100 text-warning-800 flex items-center justify-center">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-secondary-500 text-sm">En cours</p>
+                                <p id="inProgressReports" class="text-2xl font-bold text-secondary-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-warning-100 text-warning-800 flex items-center justify-center">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-secondary-500 text-sm">Résolus</p>
+                                <p id="resolvedReports" class="text-2xl font-bold text-secondary-900">0</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-success-100 text-success-800 flex items-center justify-center">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Liste des rapports -->
+                <div class="bg-white rounded-lg shadow-soft">
+                    <div class="p-6 border-b border-secondary-200">
+                        <h2 class="text-xl font-bold text-secondary-900">Liste des Rapports</h2>
+                        <p class="text-secondary-500 mt-1">Bugs, suggestions et améliorations</p>
+                    </div>
+                    <div id="reportsList" class="divide-y divide-secondary-200">
+                        <!-- Les rapports seront insérés ici -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // État de l'application
+        let state = {
+            currentUser: null,
+            users: [],
+            activities: [],
+            reports: [],
+            accounts: [],
+            searchTerm: '',
+            filterRole: 'Tous'
+        };
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            initApp();
+        });
+
+        async function initApp() {
+            try {
+                // Éléments d'authentification
+                const loginTabBtn = document.getElementById('loginTabBtn');
+                const registerTabBtn = document.getElementById('registerTabBtn');
+                
+                // Gestion des onglets d'authentification
+                loginTabBtn.addEventListener('click', () => {
+                    switchAuthTab('login');
+                });
+
+                registerTabBtn.addEventListener('click', () => {
+                    switchAuthTab('register');
+                });
+
+                // Connexion email/mot de passe
+                document.getElementById('loginBtn').addEventListener('click', handleLogin);
+                
+                // Inscription email/mot de passe
+                document.getElementById('registerBtn').addEventListener('click', handleRegister);
+                
+                // Gestion des onglets principaux
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const tabId = btn.getAttribute('data-tab');
+                        switchMainTab(tabId);
+                    });
+                });
+                
+                // Recherche
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    state.searchTerm = e.target.value;
+                    renderUsers();
+                });
+                
+                // Filtre par rôle
+                document.getElementById('roleFilter').addEventListener('change', (e) => {
+                    state.filterRole = e.target.value;
+                    renderUsers();
+                });
+                
+                // Formulaire de création de compte
+                const createAccountForm = document.getElementById('createAccountForm');
+                if (createAccountForm) {
+                    createAccountForm.addEventListener('submit', handleCreateAccount);
+                }
+
+                // Vérifier l'état d'authentification
+                window.onAuthStateChanged(window.auth, async (user) => {
+                    console.log('📊 État d\'authentification changé:', user ? 'Connecté' : 'Déconnecté');
+                    if (user) {
+                        await loadCurrentUser(user.uid);
+                    } else {
+                        showAuthModal();
+                    }
+                });
+
+                console.log('✅ Application initialisée');
+            } catch (error) {
+                console.error('❌ Erreur lors de l\'initialisation:', error);
+                showToast('Erreur d\'initialisation de l\'application', 'error');
+            }
+        }
+
+        // ====== FONCTIONS UTILITAIRES ======
+
+        function showToast(message, type = 'info', duration = 5000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 
+                                type === 'error' ? 'fa-exclamation-circle' : 
+                                type === 'warning' ? 'fa-exclamation-triangle' : 
+                                'fa-info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, duration);
+        }
+
+        function setButtonLoading(button, isLoading) {
+            if (!button) return;
+            
+            if (isLoading) {
+                button.setAttribute('data-original-text', button.innerHTML);
+                button.classList.add('btn-loading');
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-inline"></span>Chargement...';
+            } else {
+                button.classList.remove('btn-loading');
+                button.disabled = false;
+                const originalText = button.getAttribute('data-original-text');
+                if (originalText) {
+                    button.innerHTML = originalText;
+                    button.removeAttribute('data-original-text');
+                }
+            }
+        }
+
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const button = event.target.closest('.password-toggle-btn');
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+                button.style.color = '#0ea5e9';
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+                button.style.color = '#64748b';
+            }
+        }
+
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function isValidPhone(phone) {
+            // Validation simple pour les numéros Rwandais
+            const re = /^(\+250|250)?[78]\d{7}$/;
+            return re.test(phone.replace(/\s/g, ''));
+        }
+
+        function switchAuthTab(tab) {
+            const loginTabBtn = document.getElementById('loginTabBtn');
+            const registerTabBtn = document.getElementById('registerTabBtn');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            
+            if (tab === 'login') {
+                loginTabBtn.classList.add('border-b-2', 'border-primary-600', 'text-primary-600');
+                registerTabBtn.classList.remove('border-b-2', 'border-primary-600', 'text-primary-600');
+                registerTabBtn.classList.add('text-secondary-500');
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+            } else {
+                registerTabBtn.classList.add('border-b-2', 'border-primary-600', 'text-primary-600');
+                loginTabBtn.classList.remove('border-b-2', 'border-primary-600', 'text-primary-600');
+                loginTabBtn.classList.add('text-secondary-500');
+                registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+            }
+        }
+
+        function switchMainTab(tabId) {
+            // Mettre à jour les styles des onglets
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('tab-active', 'text-primary-600');
+                b.classList.add('text-secondary-500');
+            });
+            
+            const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
+            activeBtn.classList.add('tab-active', 'text-primary-600');
+            activeBtn.classList.remove('text-secondary-500');
+            
+            // Afficher le contenu correspondant
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+                if (content.id === `${tabId}Tab`) {
+                    content.classList.remove('hidden');
+                    content.classList.add('fade-in');
+                }
+            });
+            
+            // Charger les données spécifiques à l'onglet
+            if (tabId === 'utilisateurs') {
+                loadUsers();
+            } else if (tabId === 'activites') {
+                loadActivities();
+            } else if (tabId === 'reports') {
+                loadReports();
+            } else if (tabId === 'creerComptes') {
+                loadAccountsList();
+            }
+        }
+
+        function showAuthModal() {
+            const authModal = document.getElementById('authModal');
+            const mainApp = document.getElementById('mainApp');
+            // S'assurer que la modal est complètement visible
+            if (authModal) {
+                authModal.classList.remove('hidden');
+                authModal.style.display = 'flex';
+            }
+
+            // S'assurer que l'application est cachée
+            if (mainApp) {
+                mainApp.classList.add('hidden');
+                mainApp.style.display = 'none';
+            }
+
+            // Réinitialiser les formulaires (si existants)
+            const safeSet = (id, value = '') => { const el = document.getElementById(id); if (el) el.value = value; };
+            safeSet('loginEmail');
+            safeSet('loginPassword');
+            safeSet('registerName');
+            safeSet('registerEmail');
+            safeSet('registerPassword');
+            safeSet('registerConfirmPassword');
+
+            // Reset messages
+            const safeHide = id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); };
+            safeHide('loginMessage');
+            safeHide('registerMessage');
+        }
+
+        // ====== FONCTIONS D'AUTHENTIFICATION ======
+
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const loginMessage = document.getElementById('loginMessage');
+            const loginBtn = document.getElementById('loginBtn');
+
+            // Validation
+            if (!email || !password) {
+                showMessage(loginMessage, 'Veuillez remplir tous les champs', 'error');
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                showMessage(loginMessage, 'Veuillez entrer un email valide', 'error');
+                return;
+            }
+
+            setButtonLoading(loginBtn, true);
+
+            try {
+                const result = await window.signInWithEmailAndPassword(window.auth, email, password);
+                console.log('✅ Authentification réussie:', result.user.uid);
+                
+                // Attendre un peu pour s'assurer que l'état d'auth est mis à jour
+                setTimeout(async () => {
+                    const authModal = document.getElementById('authModal');
+                    const mainApp = document.getElementById('mainApp');
+                    
+                    if (authModal) {
+                        authModal.classList.add('hidden');
+                        authModal.style.display = 'none'; // Forcer le display: none
+                    }
+                    
+                    if (mainApp) {
+                        mainApp.classList.remove('hidden');
+                        mainApp.style.display = 'block'; // Forcer l'affichage
+                    }
+                    
+                    await loadCurrentUser(result.user.uid);
+                    showToast('✅ Connexion réussie!', 'success');
+                    setButtonLoading(loginBtn, false);
+                }, 500);
+                
+            } catch (error) {
+                console.error('❌ Erreur de connexion:', error.code, error.message);
+                let message = 'Email ou mot de passe incorrect';
+                if (error.code === 'auth/user-not-found') {
+                    message = 'Utilisateur non trouvé';
+                } else if (error.code === 'auth/wrong-password') {
+                    message = 'Mot de passe incorrect';
+                } else if (error.code === 'auth/invalid-credential') {
+                    message = 'Email ou mot de passe incorrect';
+                } else if (error.code === 'auth/too-many-requests') {
+                    message = 'Trop de tentatives. Réessayez plus tard.';
+                } else if (error.code === 'auth/user-disabled') {
+                    message = 'Ce compte a été désactivé.';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'Email invalide';
+                }
+                showMessage(loginMessage, '❌ ' + message, 'error');
+                setButtonLoading(loginBtn, false);
+            }
+        }
+
+        async function handleRegister() {
+            const nom = document.getElementById('registerName').value?.trim();
+            const email = document.getElementById('registerEmail').value?.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            const registerMessage = document.getElementById('registerMessage');
+            const registerBtn = document.getElementById('registerBtn');
+            
+            // Validation
+            if (!nom || !email || !password || !confirmPassword) {
+                showMessage(registerMessage, 'Veuillez remplir tous les champs', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showMessage(registerMessage, 'Les mots de passe ne correspondent pas', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage(registerMessage, 'Le mot de passe doit contenir au moins 6 caractères', 'error');
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                showMessage(registerMessage, 'Veuillez entrer un email valide', 'error');
+                return;
+            }
+            
+            setButtonLoading(registerBtn, true);
+            
+            try {
+                // Créer l'utilisateur dans Firebase Authentication
+                const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
+                const user = userCredential.user;
+
+                // Créer le profil dans Realtime Database
+                await createUserProfile({
+                    userId: user.uid,
+                    email: email,
+                    nom: nom,
+                    role: 'IT Admin',
+                    authProvider: 'email'
+                });
+
+                showToast('✅ Compte IT Admin créé avec succès!', 'success');
+                
+                // Rediriger automatiquement
+                setTimeout(() => {
+                    const authModal = document.getElementById('authModal');
+                    const mainApp = document.getElementById('mainApp');
+                    if (authModal && mainApp) {
+                        authModal.classList.add('hidden');
+                        mainApp.classList.remove('hidden');
+                        loadCurrentUser(user.uid);
+                    }
+                }, 1000);
+
+            } catch (error) {
+                console.error('❌ Erreur d\'inscription:', error.code, error.message);
+                let message = 'Erreur lors de l\'inscription';
+                if (error.code === 'auth/email-already-in-use') {
+                    message = 'Cet email est déjà utilisé';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'Email invalide';
+                } else if (error.code === 'auth/weak-password') {
+                    message = 'Le mot de passe est trop faible';
+                } else if (error.code === 'auth/network-request-failed') {
+                    message = 'Erreur réseau. Vérifiez votre connexion.';
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    message = 'L\'inscription par email/mot de passe n\'est pas activée';
+                }
+                showMessage(registerMessage, '❌ ' + message, 'error');
+                setButtonLoading(registerBtn, false);
+            }
+        }
+
+        async function createUserProfile(userData) {
+            try {
+                // Write to Realtime Database under /users/{userId}
+                await window.rtdbSet(window.rtdbRef(window.rtdb, `users/${userData.userId}`), {
+                    nom: userData.nom || 'Utilisateur',
+                    email: userData.email,
+                    role: userData.role || 'IT Admin',
+                    status: 'active',
+                    authProvider: userData.authProvider || 'email',
+                    createdAt: new Date().toISOString(),
+                    createdBy: userData.createdBy || 'System',
+                    telephone: userData.telephone || '',
+                    lastLogin: new Date().toISOString()
+                });
+
+                // Enregistrer l'activité
+                if (state.currentUser) {
+                    await logActivity('Inscription', `Création du compte ${userData.role}: ${userData.nom}`);
+                }
+
+            } catch (error) {
+                console.error('Erreur lors de la création du profil (RTDB):', error);
+                throw error;
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                if (state.currentUser) {
+                    await logActivity('Déconnexion', 'Déconnexion du système');
+                }
+                
+                await window.signOut(window.auth);
+                state.currentUser = null;
+                showAuthModal();
+                showToast('Déconnexion réussie', 'success');
+                
+            } catch (error) {
+                console.error('Erreur lors de la déconnexion:', error);
+                showToast('Erreur lors de la déconnexion', 'error');
+            }
+        }
+
+        // ====== GESTION DE LA CRÉATION DE COMPTES ======
+
+        async function handleCreateAccount(e) {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            setButtonLoading(submitBtn, true);
+            
+            try {
+                const name = document.getElementById('createName').value?.trim();
+                const email = document.getElementById('createEmail').value?.trim();
+                const password = document.getElementById('createPassword').value;
+                const confirmPassword = document.getElementById('createConfirmPassword').value;
+                const role = document.getElementById('createRole').value;
+                const phone = document.getElementById('createPhone').value?.trim();
+                
+                // Validation
+                if (!name || !email || !password || !confirmPassword || !role) {
+                    showToast('Veuillez remplir tous les champs obligatoires', 'error');
+                    setButtonLoading(submitBtn, false);
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showToast('Les mots de passe ne correspondent pas', 'error');
+                    setButtonLoading(submitBtn, false);
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showToast('Le mot de passe doit contenir au moins 6 caractères', 'error');
+                    setButtonLoading(submitBtn, false);
+                    return;
+                }
+
+                if (!isValidEmail(email)) {
+                    showToast('Veuillez entrer un email valide', 'error');
+                    setButtonLoading(submitBtn, false);
+                    return;
+                }
+
+                if (phone && !isValidPhone(phone)) {
+                    showToast('Veuillez entrer un numéro de téléphone valide (format: +250 78 123 4567)', 'error');
+                    setButtonLoading(submitBtn, false);
+                    return;
+                }
+
+                // Créer l'utilisateur dans Firebase Authentication
+                const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
+                const userId = userCredential.user.uid;
+
+                // Créer le profil dans Realtime Database
+                await window.rtdbSet(window.rtdbRef(window.rtdb, `users/${userId}`), {
+                    nom: name,
+                    email: email,
+                    role: role,
+                    telephone: phone || '',
+                    status: 'active',
+                    authProvider: 'email',
+                    createdAt: new Date().toISOString(),
+                    createdBy: state.currentUser?.nom || 'System',
+                    lastLogin: null
+                });
+
+                // Enregistrer l'activité
+                await logActivity('Création de compte', `Création du compte ${role}: ${name} (${email})`);
+                
+                // Réinitialiser le formulaire
+                document.getElementById('createAccountForm').reset();
+                
+                // Afficher un message de succès
+                showToast(`✅ Compte ${role} créé avec succès pour ${name}!`, 'success', 3000);
+                
+                // Ajouter le compte à la liste locale
+                const newAccount = {
+                    id: userId,
+                    nom: name,
+                    email: email,
+                    role: role,
+                    telephone: phone,
+                    createdAt: new Date().toISOString(),
+                    createdBy: state.currentUser?.nom || 'System'
+                };
+                
+                state.accounts.unshift(newAccount);
+                
+                // Recharger la liste des comptes
+                renderAccountsList();
+                renderComptablesList();
+                
+                // Recharger la liste des utilisateurs
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('❌ Erreur lors de la création du compte:', error);
+                let message = 'Erreur lors de la création du compte';
+                if (error.code === 'auth/email-already-in-use') {
+                    message = 'Cet email est déjà utilisé';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'Email invalide';
+                } else if (error.code === 'auth/weak-password') {
+                    message = 'Le mot de passe est trop faible';
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    message = 'L\'inscription par email/mot de passe n\'est pas activée';
+                } else if (error.code === 'auth/network-request-failed') {
+                    message = 'Erreur réseau. Vérifiez votre connexion.';
+                }
+                showToast('❌ ' + message, 'error');
+            } finally {
+                setButtonLoading(submitBtn, false);
+            }
+        }
+
+        async function loadAccountsList() {
+            try {
+                // Load accounts from Realtime Database
+                const snap = await window.rtdbGet(window.rtdbRef(window.rtdb, 'users'));
+                const accounts = [];
+                if (snap && snap.exists()) {
+                    const data = snap.val();
+                    Object.keys(data).forEach(k => {
+                        accounts.push({ id: k, ...data[k] });
+                    });
+                    // sort by createdAt desc if present
+                    accounts.sort((a, b) => {
+                        return (new Date(b.createdAt || 0)) - (new Date(a.createdAt || 0));
+                    });
+                    state.accounts = accounts.slice(0, 20);
+                } else {
+                    state.accounts = [];
+                }
+                
+                renderAccountsList();
+                renderComptablesList();
+                
+            } catch (error) {
+                console.error('❌ Erreur lors du chargement des comptes:', error);
+            }
+        }
+
+        function renderAccountsList() {
+            const accountsList = document.getElementById('accountsList');
+            const noAccountsMsg = document.getElementById('noAccountsMessage');
+            const accountsCount = document.getElementById('accountsCount');
+            
+            // Mettre à jour le compteur
+            accountsCount.textContent = state.accounts.length;
+            
+            if (state.accounts.length === 0) {
+                accountsList.innerHTML = '';
+                noAccountsMsg.style.display = 'block';
+            } else {
+                noAccountsMsg.style.display = 'none';
+                
+                const html = state.accounts.map(account => {
+                    const createdDate = new Date(account.createdAt).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const roleColor = getRoleBadgeColor(account.role);
+                    
+                    return `
+                    <div class="user-card bg-white border border-secondary-200 rounded-lg p-4 hover:shadow-medium transition-all duration-300">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
+                                        <i class="fas fa-user text-primary-600"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-secondary-900">${account.nom}</h3>
+                                        <p class="text-sm text-secondary-600">${account.email}</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2 mt-2">
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium ${roleColor}">
+                                        ${account.role}
+                                    </span>
+                                    ${account.telephone ? `
+                                    <span class="text-xs text-secondary-500 flex items-center gap-1">
+                                        <i class="fas fa-phone"></i>
+                                        ${account.telephone}
+                                    </span>` : ''}
+                                </div>
+                            </div>
+                            <div class="mt-3 md:mt-0 md:text-right">
+                                <p class="text-xs text-secondary-500">Créé le</p>
+                                <p class="text-sm font-medium text-secondary-900">${createdDate}</p>
+                                <p class="text-xs text-secondary-500 mt-1">Par ${account.createdBy || 'System'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+                
+                accountsList.innerHTML = html;
+            }
+        }
+
+        function renderComptablesList() {
+            const comptablesList = document.getElementById('comptablesList');
+            const noComptablesMsg = document.getElementById('noComptablesMessage');
+            const comptablesCount = document.getElementById('comptablesCreatesCount');
+            
+            // Filtrer les comptes pour obtenir seulement les Comptables
+            const comptables = state.accounts.filter(account => account.role === 'Comptable');
+            
+            // Mettre à jour le compteur
+            comptablesCount.textContent = comptables.length;
+            
+            if (comptables.length === 0) {
+                comptablesList.innerHTML = '';
+                noComptablesMsg.style.display = 'block';
+            } else {
+                noComptablesMsg.style.display = 'none';
+                
+                const html = comptables.map(comptable => {
+                    const createdDate = new Date(comptable.createdAt).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    return `
+                    <div class="user-card bg-gradient-to-r from-purple-50 to-transparent border border-purple-200 rounded-lg p-4 hover:shadow-medium transition-all duration-300">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <i class="fas fa-calculator text-purple-600"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-secondary-900">${comptable.nom}</h3>
+                                        <p class="text-sm text-secondary-600">${comptable.email}</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2 mt-2">
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        <i class="fas fa-briefcase me-1"></i>
+                                        Comptable
+                                    </span>
+                                    ${comptable.telephone ? `
+                                    <span class="text-xs text-secondary-500 flex items-center gap-1">
+                                        <i class="fas fa-phone"></i>
+                                        ${comptable.telephone}
+                                    </span>` : ''}
+                                </div>
+                            </div>
+                            <div class="mt-3 md:mt-0 md:text-right">
+                                <p class="text-xs text-secondary-500">Créé le</p>
+                                <p class="text-sm font-medium text-secondary-900">${createdDate}</p>
+                                <p class="text-xs text-secondary-500 mt-1">Par ${comptable.createdBy || 'System'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+                
+                comptablesList.innerHTML = html;
+            }
+        }
+
+        // ====== FONCTIONS FIREBASE ======
+
+        async function loadCurrentUser(userId) {
+            try {
+                console.log('🔄 Chargement du profil utilisateur:', userId);
+                
+                // Charger le profil depuis Realtime Database
+                const snap = await window.rtdbGet(window.rtdbRef(window.rtdb, `users/${userId}`));
+                
+                if (snap && snap.exists()) {
+                    const data = snap.val();
+                    state.currentUser = { id: userId, ...data };
+                    
+                    console.log('✅ Profil chargé:', state.currentUser);
+                    
+                    // Mettre à jour l'interface
+                    const currentUserName = document.getElementById('currentUserName');
+                    const currentUserRole = document.getElementById('currentUserRole');
+                    
+                    if (currentUserName) currentUserName.textContent = state.currentUser.nom || 'Utilisateur';
+                    if (currentUserRole) currentUserRole.textContent = state.currentUser.role || 'Utilisateur';
+                    
+                    // Enregistrer l'activité de connexion
+                    await logActivity('Connexion', `Connexion réussie au système IT Admin`);
+
+                    // Charger les données initiales
+                    await loadUsers();
+                    await loadActivities();
+                    await loadReports();
+                    await loadAccountsList();
+
+                    console.log('✅ Données initiales chargées');
+                    
+                } else {
+                    console.log('⚠️ Profil non trouvé dans RTDB, création d\'un profil par défaut');
+
+                    // Si le profil n'existe pas, en créer un avec les informations d'auth
+                    const user = window.auth.currentUser;
+                    if (user) {
+                        await createUserProfile({
+                            userId: user.uid,
+                            email: user.email,
+                            nom: user.displayName || 'Utilisateur',
+                            role: 'IT Admin',
+                            authProvider: user.providerData[0]?.providerId || 'email'
+                        });
+
+                        // Recharger le profil
+                        await loadCurrentUser(user.uid);
+                    } else {
+                        console.error('❌ Aucun utilisateur authentifié trouvé');
+                        showToast('Erreur de chargement du profil', 'error');
+                        // Ne pas afficher automatiquement la modal ici — laisser le flux d'auth gérer l'affichage
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Erreur lors du chargement du profil:', error);
+                const errCode = error && error.code ? error.code : 'unknown_error';
+                const errMsg = error && error.message ? error.message : '';
+                showToast(`❌ Erreur chargement profil: ${errMsg}`, 'error');
+                
+                // En cas d'erreur critique, déconnecter et afficher la modal d'auth
+                if (errCode === 'permission-denied' || /permission/i.test(errMsg)) {
+                    await window.signOut(window.auth);
+                    showAuthModal();
+                }
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                console.log('🔄 Chargement des utilisateurs...');
+                const users = [];
+                const snap = await window.rtdbGet(window.rtdbRef(window.rtdb, 'users'));
+                if (snap && snap.exists()) {
+                    const data = snap.val();
+                    Object.keys(data).forEach(k => {
+                        const d = data[k];
+                        users.push({
+                            id: k,
+                            nom: d.nom || 'N/A',
+                            email: d.email || 'N/A',
+                            telephone: d.telephone || '',
+                            role: d.role || 'Utilisateur',
+                            status: d.status === 'active' ? 'Actif' : 
+                                   d.status === 'inactive' ? 'Inactif' : 'Inconnu',
+                            createdAt: d.createdAt || new Date().toISOString()
+                        });
+                    });
+                }
+
+                state.users = users;
+                renderUsers();
+                updateStats();
+                console.log(`✅ ${users.length} utilisateurs chargés`);
+                
+            } catch (error) {
+                console.error('❌ Erreur lors du chargement des utilisateurs:', error);
+                showToast('Erreur lors du chargement des utilisateurs', 'error');
+            }
+        }
+
+        async function loadActivities() {
+            try {
+                const snapshot = await window.rtdbGet(window.rtdbRef(window.rtdb, 'activities'));
+                if (snapshot && snapshot.exists()) {
+                    const data = snapshot.val();
+                    // Convert object to array and sort by timestamp desc
+                    state.activities = Object.entries(data).map(([id, doc]) => ({
+                        id: id,
+                        ...doc
+                    })).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                } else {
+                    state.activities = [];
+                }
+                renderActivities();
+            } catch (error) {
+                console.error('❌ Erreur lors du chargement des activités:', error);
+            }
+        }
+
+        async function loadReports() {
+            try {
+                const snapshot = await window.rtdbGet(window.rtdbRef(window.rtdb, 'reports'));
+                if (snapshot && snapshot.exists()) {
+                    const data = snapshot.val();
+                    // Convert object to array and sort by date desc
+                    state.reports = Object.entries(data).map(([id, doc]) => ({
+                        id: id,
+                        ...doc
+                    })).sort((a, b) => new Date(b.date) - new Date(a.date));
+                } else {
+                    state.reports = [];
+                }
+                renderReports();
+                updateStats();
+            } catch (error) {
+                console.error('❌ Erreur lors du chargement des rapports:', error);
+            }
+        }
+
+        async function logActivity(action, details) {
+            try {
+                await window.rtdbPush(window.rtdbRef(window.rtdb, 'activities'), {
+                    utilisateur: state.currentUser?.nom || 'System',
+                    action: action,
+                    details: details,
+                    timestamp: new Date().toISOString(),
+                    userId: state.currentUser?.id || 'system'
+                });
+                // Recharger les activités
+                await loadActivities();
+            } catch (error) {
+                console.error('❌ Erreur lors de l\'enregistrement de l\'activité:', error);
+            }
+        }
+
+        // ====== FONCTIONS DE RENDU ======
+
+        function renderUsers() {
+            const usersTableBody = document.getElementById('usersTableBody');
+            
+            // Filtrer les utilisateurs
+            const filteredUsers = state.users.filter(user => {
+                const matchesSearch = user.nom.toLowerCase().includes(state.searchTerm.toLowerCase()) || 
+                                     user.email.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+                                     (user.telephone && user.telephone.includes(state.searchTerm));
+                const matchesRole = state.filterRole === 'Tous' || user.role === state.filterRole;
+                return matchesSearch && matchesRole;
+            });
+            
+            // Générer le HTML
+            let html = '';
+            
+            if (filteredUsers.length === 0) {
+                html = '<tr><td colspan="6" class="px-4 py-8 text-center text-secondary-500">Aucun utilisateur trouvé</td></tr>';
+            } else {
+                filteredUsers.forEach(user => {
+                    const badgeColor = getRoleBadgeColor(user.role);
+                    const statusColor = getStatusBadgeColor(user.status);
+                    const createdDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR') : 'N/A';
+                    
+                    html += `
+                    <tr class="hover:bg-secondary-50 transition">
+                        <td class="px-4 py-4 font-medium text-secondary-900">${user.nom}</td>
+                        <td class="px-4 py-4 text-secondary-600">${user.email}</td>
+                        <td class="px-4 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium ${badgeColor}">
+                                ${user.role}
+                            </span>
+                        </td>
+                        <td class="px-4 py-4 text-secondary-600">${createdDate}</td>
+                        <td class="px-4 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium ${statusColor}">
+                                ${user.status || 'Actif'}
+                            </span>
+                        </td>
+                        <td class="px-4 py-4">
+                            <div class="flex gap-2">
+                                <button onclick="editUser('${user.id}')" class="px-3 py-1 bg-primary-100 text-primary-800 rounded-lg hover:bg-primary-200 transition text-sm flex items-center gap-1">
+                                    <i class="fas fa-edit text-xs"></i>
+                                    <span class="hidden md:inline">Modifier</span>
+                                </button>
+                                <button onclick="toggleUserStatus('${user.id}', '${user.status}')" class="px-3 py-1 ${user.status === 'Actif' ? 'bg-warning-100 text-warning-800 hover:bg-warning-200' : 'bg-success-100 text-success-800 hover:bg-success-200'} rounded-lg transition text-sm flex items-center gap-1">
+                                    <i class="fas ${user.status === 'Actif' ? 'fa-ban' : 'fa-check'} text-xs"></i>
+                                    <span class="hidden md:inline">${user.status === 'Actif' ? 'Désactiver' : 'Activer'}</span>
+                                </button>
+                                <button onclick="resetUserPassword('${user.id}', '${user.email}')" class="px-3 py-1 bg-secondary-100 text-secondary-800 rounded-lg hover:bg-secondary-200 transition text-sm flex items-center gap-1">
+                                    <i class="fas fa-key text-xs"></i>
+                                    <span class="hidden md:inline">Réinit. MDP</span>
+                                </button>
+                                <button onclick="deleteUser('${user.id}')" class="px-3 py-1 bg-danger-100 text-danger-800 rounded-lg hover:bg-danger-200 transition text-sm flex items-center gap-1">
+                                    <i class="fas fa-trash text-xs"></i>
+                                    <span class="hidden md:inline">Supprimer</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                });
+            }
+            
+            usersTableBody.innerHTML = html;
+        }
+
+        function renderActivities() {
+            const activitiesList = document.getElementById('activitiesList');
+            
+            let html = '';
+            
+            if (state.activities.length === 0) {
+                html = '<div class="p-8 text-center text-secondary-500">Aucune activité récente</div>';
+            } else {
+                state.activities.forEach(activity => {
+                    const timestamp = new Date(activity.timestamp).toLocaleString('fr-FR', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    html += `
+                    <div class="activity-item">
+                        <div class="bg-white p-4 rounded-lg border border-secondary-200 shadow-soft">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center">
+                                    <i class="fas fa-user text-primary-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <span class="font-medium text-secondary-900">${activity.utilisateur}</span>
+                                    <span class="text-secondary-400 mx-2">•</span>
+                                    <span class="text-sm text-secondary-600">${activity.action}</span>
+                                </div>
+                            </div>
+                            <p class="text-secondary-700 ml-11">${activity.details}</p>
+                            <div class="flex justify-between items-center mt-3">
+                                <span class="text-xs text-secondary-500">${timestamp}</span>
+                                <span class="text-xs px-2 py-1 bg-secondary-100 text-secondary-700 rounded">ID: ${activity.userId?.substring(0, 8)}...</span>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+            }
+            
+            activitiesList.innerHTML = html;
+        }
+
+        function renderReports() {
+            const reportsList = document.getElementById('reportsList');
+            
+            let html = '';
+            
+            if (state.reports.length === 0) {
+                html = '<div class="p-8 text-center text-secondary-500">Aucun rapport trouvé</div>';
+            } else {
+                state.reports.forEach(report => {
+                    const date = new Date(report.date).toLocaleDateString('fr-FR');
+                    const typeClass = report.type === 'Bug' ? 'bg-danger-100 text-danger-800' : 
+                                     report.type === 'Suggestion' ? 'bg-primary-100 text-primary-800' : 
+                                     'bg-success-100 text-success-800';
+                    
+                    html += `
+                    <div class="p-6 hover:bg-secondary-50 transition border-b border-secondary-200 last:border-b-0">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex flex-wrap items-center gap-3 mb-3">
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium ${typeClass}">
+                                        ${report.type}
+                                    </span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
+                                        ${report.priorite || 'Moyenne'}
+                                    </span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium ${
+                                        report.statut === 'Nouveau' ? 'bg-warning-100 text-warning-800' : 
+                                        report.statut === 'En cours' ? 'bg-warning-100 text-warning-800' : 
+                                        'bg-success-100 text-success-800'
+                                    }">
+                                        ${report.statut || 'Nouveau'}
+                                    </span>
+                                </div>
+                                <h3 class="font-bold text-secondary-900 text-lg mb-2">${report.titre}</h3>
+                                <p class="text-secondary-600 mb-3">${report.description}</p>
+                                <div class="flex flex-wrap items-center gap-4 text-sm text-secondary-500">
+                                    <span class="flex items-center gap-1">
+                                        <i class="fas fa-user"></i>
+                                        ${report.rapportePar}
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <i class="fas fa-calendar"></i>
+                                        ${date}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 ml-4">
+                                <button onclick="updateReportStatus('${report.id}', 'En cours')" class="px-3 py-1 bg-primary-100 text-primary-800 rounded-lg hover:bg-primary-200 transition text-sm">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button onclick="updateReportStatus('${report.id}', 'Résolu')" class="px-3 py-1 bg-success-100 text-success-800 rounded-lg hover:bg-success-200 transition text-sm">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+            }
+            
+            reportsList.innerHTML = html;
+        }
+
+        function updateStats() {
+            // Statistiques des utilisateurs
+            const directeurs = state.users.filter(u => u.role === 'Directeur').length;
+            const secretaires = state.users.filter(u => u.role === 'Secrétaire').length;
+            const enseignants = state.users.filter(u => u.role === 'Enseignant').length;
+            const comptables = state.users.filter(u => u.role === 'Comptable').length;
+            const totalUsers = state.users.length;
+            
+            document.getElementById('directeursCount').textContent = directeurs;
+            document.getElementById('secretairesCount').textContent = secretaires;
+            document.getElementById('enseignantsCount').textContent = enseignants;
+            document.getElementById('comptablesCount').textContent = comptables;
+            document.getElementById('totalUsersCount').textContent = totalUsers;
+            
+            // Statistiques des rapports
+            document.getElementById('totalReports').textContent = state.reports.length;
+            document.getElementById('newReports').textContent = 
+                state.reports.filter(r => r.statut === 'Nouveau').length;
+            document.getElementById('inProgressReports').textContent = 
+                state.reports.filter(r => r.statut === 'En cours').length;
+            document.getElementById('resolvedReports').textContent = 
+                state.reports.filter(r => r.statut === 'Résolu').length;
+        }
+
+        // ====== FONCTIONS UTILITAIRES ======
+
+        function getRoleBadgeColor(role) {
+            const colors = {
+                'Directeur': 'bg-primary-100 text-primary-800',
+                'Secrétaire': 'bg-success-100 text-success-800',
+                'Enseignant': 'bg-warning-100 text-warning-800',
+                'IT Admin': 'bg-danger-100 text-danger-800',
+                'Comptable': 'bg-purple-100 text-purple-800'
+            };
+            return colors[role] || 'bg-secondary-100 text-secondary-800';
+        }
+
+        function getStatusBadgeColor(status) {
+            const colors = {
+                'Actif': 'bg-success-100 text-success-800',
+                'active': 'bg-success-100 text-success-800',
+                'Inactif': 'bg-secondary-100 text-secondary-800',
+                'inactive': 'bg-secondary-100 text-secondary-800',
+                'Suspendu': 'bg-danger-100 text-danger-800',
+                'suspended': 'bg-danger-100 text-danger-800'
+            };
+            return colors[status] || 'bg-secondary-100 text-secondary-800';
+        }
+
+        function showMessage(element, message, type) {
+            element.textContent = message;
+            element.className = `text-sm text-center ${
+                type === 'error' ? 'text-danger-600' : 
+                type === 'success' ? 'text-success-600' : 
+                'text-secondary-600'
+            }`;
+            element.classList.remove('hidden');
+            
+            setTimeout(() => {
+                element.classList.add('hidden');
+            }, 5000);
+        }
+
+        function openModal(id, content, size = 'normal') {
+            const modal = document.createElement('div');
+            modal.id = id;
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content ${size === 'lg' ? 'modal-content-lg' : ''}">
+                    ${content}
+                </div>
+            `;
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+            
+            document.body.appendChild(modal);
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.remove();
+        }
+
+        // ====== FONCTIONS DE GESTION DES UTILISATEURS ======
+
+        async function editUser(userId) {
+            try {
+                // Récupérer les informations de l'utilisateur
+                const user = state.users.find(u => u.id === userId);
+                if (!user) {
+                    showToast('Utilisateur non trouvé', 'error');
+                    return;
+                }
+
+                openModal('editUserModal', `
+                    <h3 class="text-xl font-bold text-secondary-900 mb-4 flex items-center gap-2">
+                        <i class="fas fa-user-edit text-primary-600"></i>
+                        Modifier l'utilisateur
+                    </h3>
+                    <form id="editUserForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-secondary-700 mb-1">Nom complet *</label>
+                            <input type="text" id="editName" value="${user.nom}" class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-secondary-700 mb-1">Email *</label>
+                            <input type="email" id="editEmail" value="${user.email}" class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-secondary-700 mb-1">Rôle *</label>
+                            <select id="editRole" class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" required>
+                                <option value="Directeur" ${user.role === 'Directeur' ? 'selected' : ''}>Directeur</option>
+                                <option value="Secrétaire" ${user.role === 'Secrétaire' ? 'selected' : ''}>Secrétaire</option>
+                                <option value="Enseignant" ${user.role === 'Enseignant' ? 'selected' : ''}>Enseignant</option>
+                                <option value="IT Admin" ${user.role === 'IT Admin' ? 'selected' : ''}>IT Admin</option>
+                                <option value="Comptable" ${user.role === 'Comptable' ? 'selected' : ''}>Comptable</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-secondary-700 mb-1">Téléphone</label>
+                            <input type="tel" id="editPhone" value="${user.telephone || ''}" class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="+250 78 123 4567">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-secondary-700 mb-1">Statut *</label>
+                            <select id="editStatus" class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" required>
+                                <option value="active" ${user.status === 'Actif' ? 'selected' : ''}>Actif</option>
+                                <option value="inactive" ${user.status === 'Inactif' ? 'selected' : ''}>Inactif</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-3 mt-6">
+                            <button type="button" onclick="closeModal('editUserModal')" class="flex-1 px-4 py-2 border border-secondary-300 rounded-lg text-secondary-700 hover:bg-secondary-50 transition">
+                                Annuler
+                            </button>
+                            <button type="submit" class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition">
+                                Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                `);
+
+                // Ajouter l'événement submit
+                document.getElementById('editUserForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await updateUser(userId);
+                });
+
+            } catch (error) {
+                console.error('Erreur lors de l\'édition:', error);
+                showToast('Erreur lors de l\'édition', 'error');
+            }
+        }
+
+        async function updateUser(userId) {
+            try {
+                const name = document.getElementById('editName').value?.trim();
+                const email = document.getElementById('editEmail').value?.trim();
+                const role = document.getElementById('editRole').value;
+                const phone = document.getElementById('editPhone').value?.trim();
+                const status = document.getElementById('editStatus').value;
+
+                // Validation
+                if (!name || !email || !role) {
+                    showToast('Veuillez remplir tous les champs obligatoires', 'error');
+                    return;
+                }
+
+                if (!isValidEmail(email)) {
+                    showToast('Veuillez entrer un email valide', 'error');
+                    return;
+                }
+
+                if (phone && !isValidPhone(phone)) {
+                    showToast('Veuillez entrer un numéro de téléphone valide', 'error');
+                    return;
+                }
+
+                // Mettre à jour dans Firebase
+                await window.rtdbUpdate(window.rtdbRef(window.rtdb, `users/${userId}`), {
+                    nom: name,
+                    email: email,
+                    role: role,
+                    telephone: phone || '',
+                    status: status,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: state.currentUser?.nom || 'System'
+                });
+
+                // Enregistrer l'activité
+                await logActivity('Modification', `Modification du compte ${role}: ${name}`);
+
+                closeModal('editUserModal');
+                await loadUsers();
+                await loadAccountsList();
+                showToast('✅ Utilisateur modifié avec succès', 'success');
+
+            } catch (error) {
+                console.error('Erreur lors de la modification:', error);
+                showToast('❌ Erreur lors de la modification', 'error');
+            }
+        }
+
+        async function toggleUserStatus(userId, currentStatus) {
+            const newStatus = currentStatus === 'Actif' ? 'inactive' : 'active';
+            const statusText = newStatus === 'active' ? 'activé' : 'désactivé';
+            
+            if (!confirm(`Êtes-vous sûr de vouloir ${statusText} cet utilisateur ?`)) {
+                return;
+            }
+            
+            try {
+                await window.rtdbUpdate(window.rtdbRef(window.rtdb, `users/${userId}`), {
+                    status: newStatus,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: state.currentUser?.nom || 'System'
+                });
+
+                // Enregistrer l'activité
+                const user = state.users.find(u => u.id === userId);
+                await logActivity('Changement de statut', `Statut ${statusText} pour: ${user?.nom}`);
+
+                await loadUsers();
+                await loadAccountsList();
+                showToast(`✅ Utilisateur ${statusText} avec succès`, 'success');
+
+            } catch (error) {
+                console.error('Erreur lors du changement de statut:', error);
+                showToast('❌ Erreur lors du changement de statut', 'error');
+            }
+        }
+
+        async function resetUserPassword(userId, email) {
+            if (!confirm(`Êtes-vous sûr de vouloir réinitialiser le mot de passe de ${email} ? Un nouveau mot de passe sera généré et affiché.`)) {
+                return;
+            }
+            
+            try {
+                // Générer un nouveau mot de passe
+                const newPassword = generatePassword();
+                
+                // Note: Dans Firebase, vous ne pouvez pas réinitialiser le mot de passe directement
+                // sans que l'utilisateur ait accès à son email. Pour un vrai système, 
+                // vous devriez utiliser Firebase Admin SDK côté serveur.
+                
+                // Pour cette démo, nous affichons seulement le nouveau mot de passe
+                showModalWithPassword(newPassword, email);
+                
+                // Enregistrer l'activité
+                await logActivity('Réinitialisation MDP', `Nouveau mot de passe généré pour: ${email}`);
+
+            } catch (error) {
+                console.error('Erreur lors de la réinitialisation:', error);
+                showToast('❌ Erreur lors de la réinitialisation', 'error');
+            }
+        }
+
+        function generatePassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+        }
+
+        function showModalWithPassword(password, email) {
+            openModal('passwordModal', `
+                <h3 class="text-xl font-bold text-secondary-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-key text-primary-600"></i>
+                    Nouveau mot de passe généré
+                </h3>
+                <div class="space-y-4">
+                    <p class="text-secondary-600">
+                        Le nouveau mot de passe pour <strong>${email}</strong> est:
+                    </p>
+                    <div class="bg-secondary-50 p-4 rounded-lg border border-secondary-200">
+                        <div class="flex items-center justify-between">
+                            <code class="text-lg font-mono font-bold text-primary-600">${password}</code>
+                            <button onclick="copyToClipboard('${password}')" class="px-3 py-1 bg-primary-100 text-primary-800 rounded-lg hover:bg-primary-200 transition text-sm">
+                                <i class="fas fa-copy"></i> Copier
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-warning-50 border border-warning-200 rounded-lg p-3">
+                        <p class="text-warning-800 text-sm flex items-center gap-2">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Important:</strong> Ce mot de passe ne sera pas enregistré. Veuillez le communiquer à l'utilisateur immédiatement.
+                        </p>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button onclick="closeModal('passwordModal')" class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition">
+                            Fermer
+                        </button>
+                    </div>
+                </div>
+            `);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Mot de passe copié dans le presse-papier', 'success');
+            }).catch(err => {
+                console.error('Erreur lors de la copie:', err);
+                showToast('Erreur lors de la copie', 'error');
+            });
+        }
+
+        async function deleteUser(userId) {
+            const user = state.users.find(u => u.id === userId);
+            if (!user) return;
+
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.nom}" ? Cette action est irréversible.`)) {
+                return;
+            }
+            
+            try {
+                // Supprimer de Realtime Database
+                await window.rtdbRemove(window.rtdbRef(window.rtdb, `users/${userId}`));
+                
+                // Note: Pour supprimer de Firebase Authentication, vous avez besoin des privilèges Admin
+                // et d'une fonction backend. Ici, nous supprimons seulement de la base de données.
+                
+                // Enregistrer l'activité
+                await logActivity('Suppression', `Suppression de l'utilisateur: ${user.nom}`);
+                
+                // Recharger les données
+                await loadUsers();
+                await loadAccountsList();
+                
+                showToast('✅ Utilisateur supprimé avec succès', 'success');
+            } catch (error) {
+                console.error('Erreur lors de la suppression:', error);
+                showToast('❌ Erreur lors de la suppression', 'error');
+            }
+        }
+
+        // ====== FONCTIONS DE GESTION DES RAPPORTS ======
+
+        async function updateReportStatus(reportId, status) {
+            try {
+                await window.rtdbUpdate(window.rtdbRef(window.rtdb, `reports/${reportId}`), {
+                    statut: status,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: state.currentUser?.nom || 'System'
+                });
+
+                // Enregistrer l'activité
+                const report = state.reports.find(r => r.id === reportId);
+                await logActivity('Mise à jour rapport', `Statut "${status}" pour: ${report?.titre}`);
+
+                await loadReports();
+                showToast(`✅ Rapport marqué comme "${status}"`, 'success');
+
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour:', error);
+                showToast('❌ Erreur lors de la mise à jour', 'error');
+            }
+        }
+
+        function openCreateUserModal() {
+            // Mettre le focus sur l'onglet de création
+            document.querySelector('[data-tab="creerComptes"]').click();
+            // Scroll vers le formulaire
+            document.getElementById('createAccountForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function openReportBugModal() {
+            openModal('reportBugModal', `
+                <h3 class="text-xl font-bold text-secondary-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-bug text-warning-600"></i>
+                    Reporter un Bug ou Suggestion
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-secondary-700 mb-1">Type de Rapport *</label>
+                        <select id="reportType" class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-warning-500 focus:border-transparent">
+                            <option value="Bug">Bug</option>
+                            <option value="Suggestion">Suggestion</option>
+                            <option value="Amélioration">Amélioration</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-secondary-700 mb-1">Titre *</label>
+                        <input type="text" id="reportTitle" class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-warning-500 focus:border-transparent" placeholder="Ex: Erreur lors de la connexion" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-secondary-700 mb-1">Description *</label>
+                        <textarea id="reportDescription" class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-warning-500 focus:border-transparent" rows="4" placeholder="Décrivez le problème ou votre suggestion en détail..." required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-secondary-700 mb-1">Priorité</label>
+                        <select id="reportPriority" class="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-warning-500 focus:border-transparent">
+                            <option value="Basse">Basse</option>
+                            <option value="Moyenne" selected>Moyenne</option>
+                            <option value="Haute">Haute</option>
+                            <option value="Critique">Critique</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button onclick="closeModal('reportBugModal')" class="flex-1 px-4 py-2 border border-secondary-300 rounded-lg text-secondary-700 hover:bg-secondary-50 transition">
+                            Annuler
+                        </button>
+                        <button onclick="submitReport()" class="flex-1 px-4 py-2 bg-warning-600 text-white rounded-lg hover:bg-warning-700 transition">
+                            Envoyer
+                        </button>
+                    </div>
+                </div>
+            `);
+        }
+
+        async function submitReport() {
+            const type = document.getElementById('reportType').value;
+            const title = document.getElementById('reportTitle').value;
+            const description = document.getElementById('reportDescription').value;
+            const priority = document.getElementById('reportPriority').value;
+            
+            if (!title || !description) {
+                showToast('Veuillez remplir tous les champs obligatoires', 'error');
+                return;
+            }
+            
+            try {
+                await window.rtdbPush(window.rtdbRef(window.rtdb, 'reports'), {
+                    type: type,
+                    titre: title,
+                    description: description,
+                    priorite: priority || 'Moyenne',
+                    statut: 'Nouveau',
+                    rapportePar: state.currentUser.nom,
+                    rapporteParId: state.currentUser.id,
+                    date: new Date().toISOString()
+                });
+                
+                await logActivity('Rapport', `Rapport de ${type}: ${title}`);
+                closeModal('reportBugModal');
+                await loadReports();
+                showToast('✅ Rapport envoyé avec succès!', 'success');
+                
+            } catch (error) {
+                console.error('Erreur lors de l\'envoi du rapport:', error);
+                showToast('❌ Erreur lors de l\'envoi du rapport', 'error');
+            }
+        }
+
+        // Exposer les fonctions globales
+        window.togglePasswordVisibility = togglePasswordVisibility;
+        window.handleLogout = handleLogout;
+        window.openCreateUserModal = openCreateUserModal;
+        window.openReportBugModal = openReportBugModal;
+        window.submitReport = submitReport;
+        window.closeModal = closeModal;
+        window.editUser = editUser;
+        window.toggleUserStatus = toggleUserStatus;
+        window.resetUserPassword = resetUserPassword;
+        window.deleteUser = deleteUser;
+        window.updateReportStatus = updateReportStatus;
+        window.copyToClipboard = copyToClipboard;
+    </script>
+</body>
+</html>

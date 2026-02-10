@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test EmailJS - Système de Création de Compte</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen py-12 px-4">
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">🧪 Test du Système Email</h1>
+            <p class="text-gray-600 mb-6">Testez l'envoi d'email OTP pour la création de compte</p>
+
+            <!-- Status Section -->
+            <div class="grid grid-cols-3 gap-4 mb-8">
+                <div class="bg-blue-50 p-4 rounded-lg text-center">
+                    <p class="text-sm text-gray-600">EmailJS Status</p>
+                    <p id="emailjsStatus" class="text-lg font-bold text-blue-600">Vérification...</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg text-center">
+                    <p class="text-sm text-gray-600">Template</p>
+                    <p id="templateStatus" class="text-lg font-bold text-green-600">template_hjw7vbj</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg text-center">
+                    <p class="text-sm text-gray-600">Service</p>
+                    <p id="serviceStatus" class="text-lg font-bold text-purple-600">service_yvl11d5</p>
+                </div>
+            </div>
+
+            <!-- Test Form -->
+            <form id="testForm" class="space-y-4 mb-8">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email de Test</label>
+                    <input type="email" id="testEmail" placeholder="votre.email@example.com" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           value="">
+                    <p class="text-xs text-gray-500 mt-1">Utilisez votre email pour tester</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">OTP de Test</label>
+                    <input type="text" id="testOTP" placeholder="123456" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           value="">
+                    <p class="text-xs text-gray-500 mt-1">Code OTP à envoyer (ex: 123456)</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <button type="button" onclick="generateTestOTP()" 
+                            class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                        Générer OTP Aléatoire
+                    </button>
+                    <button type="submit" 
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold">
+                        Envoyer Email de Test
+                    </button>
+                </div>
+            </form>
+
+            <!-- Console Output -->
+            <div class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
+                <div id="console" class="space-y-1">
+                    <p class="text-blue-400">> System console prêt...</p>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="mt-8 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                <h3 class="font-bold text-gray-900 mb-2">📋 Instructions</h3>
+                <ul class="text-sm text-gray-700 space-y-1">
+                    <li>✅ Entrez votre email réel</li>
+                    <li>✅ Générez un OTP ou entrez-en un manuellement</li>
+                    <li>✅ Cliquez sur "Envoyer Email de Test"</li>
+                    <li>✅ Consultez la console pour les détails</li>
+                    <li>✅ Vérifiez votre email pour le message</li>
+                </ul>
+            </div>
+
+            <div class="mt-6">
+                <a href="IT.html" class="text-blue-600 hover:text-blue-800 font-medium">
+                    ← Retour à IT.html
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const console_element = document.getElementById('console');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('fr-FR');
+            const color = type === 'error' ? 'text-red-400' : 
+                         type === 'success' ? 'text-green-300' : 
+                         type === 'warning' ? 'text-yellow-400' : 'text-blue-400';
+            const line = document.createElement('p');
+            line.className = color;
+            line.textContent = `[${timestamp}] ${message}`;
+            console_element.appendChild(line);
+            console_element.scrollTop = console_element.scrollHeight;
+        }
+
+        // Vérifier EmailJS au chargement
+        window.addEventListener('load', function() {
+            log('Page chargée - Vérification des services...', 'info');
+            
+            if (typeof emailjs !== 'undefined') {
+                log('✅ EmailJS détecté', 'success');
+                document.getElementById('emailjsStatus').textContent = 'Chargé ✅';
+                document.getElementById('emailjsStatus').classList.remove('text-blue-600');
+                document.getElementById('emailjsStatus').classList.add('text-green-600');
+            } else {
+                log('❌ EmailJS non détecté', 'error');
+                document.getElementById('emailjsStatus').textContent = 'Non chargé ❌';
+                document.getElementById('emailjsStatus').classList.remove('text-blue-600');
+                document.getElementById('emailjsStatus').classList.add('text-red-600');
+            }
+        });
+
+        function generateTestOTP() {
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            document.getElementById('testOTP').value = otp;
+            log(`OTP généré: ${otp}`, 'success');
+        }
+
+        document.getElementById('testForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('testEmail').value;
+            const otp = document.getElementById('testOTP').value;
+
+            if (!email) {
+                log('❌ Email vide', 'error');
+                return;
+            }
+
+            if (!otp) {
+                log('❌ OTP vide', 'error');
+                return;
+            }
+
+            log(`🚀 Tentative d'envoi à ${email}...`, 'info');
+
+            try {
+                // Initialiser EmailJS
+                if (typeof emailjs !== 'undefined') {
+                    emailjs.init('Un7snKzeE4AGeorc-');
+                    log('EmailJS initialisé avec la clé publique', 'success');
+                }
+
+                // Préparer les paramètres
+                const templateParams = {
+                    to_email: email,
+                    email: email,
+                    user_email: email,
+                    recipient_email: email,
+                    to_name: '',
+                    user_name: 'Testeur',
+                    otp: otp,
+                    otp_code: otp,
+                    verification_code: otp
+                };
+
+                log('Paramètres: ' + JSON.stringify(templateParams), 'info');
+
+                // Envoyer l'email
+                const response = await emailjs.send(
+                    'service_yvl11d5',
+                    'template_hjw7vbj',
+                    templateParams
+                );
+
+                log(`✅ Email envoyé avec succès!`, 'success');
+                log(`ID de réponse: ${response.status} - ${response.text}`, 'success');
+
+            } catch (error) {
+                log(`❌ Erreur lors de l'envoi:`, 'error');
+                log(`Status: ${error.status}`, 'error');
+                log(`Message: ${error.text || error.message}`, 'error');
+                log(`Details: ${JSON.stringify(error)}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

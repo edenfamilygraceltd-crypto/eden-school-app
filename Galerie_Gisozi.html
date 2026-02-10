@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galerie GISOZI - École Maternelle et Primaire</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="responsive.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #ff7eb3;
+            --primary-light: #ff9db6;
+            --secondary: #42d395;
+            --secondary-light: #5ae0b8;
+            --accent: #5d6afb;
+            --light: #fff9fb;
+            --dark: #3a2d43;
+            --gray: #ffeef6;
+            --shadow: 0 8px 25px rgba(255, 126, 179, 0.1);
+            --shadow-hover: 0 12px 35px rgba(255, 126, 179, 0.15);
+            --border-radius: 20px;
+            
+            /* Couleurs par section */
+            --maternelle: #ff7eb3;
+            --primaire: #42d395;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #fff9fb 0%, #fef5f9 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header styles */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 3rem 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%);
+            margin-bottom: 2rem;
+            animation: slideDown 0.8s ease-out 0.2s both;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 3;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            animation: bounceIn 1s ease 0.4s both;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .school-name {
+            background: rgba(255, 255, 255, 0.2);
+            display: inline-block;
+            padding: 0.5rem 2rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            animation: fadeInUp 0.8s ease 0.6s both;
+        }
+
+        @keyframes fadeInUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            font-weight: 300;
+            animation: fadeInUp 0.8s ease 0.8s both;
+        }
+
+        .header-decoration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .decoration-item {
+            position: absolute;
+            opacity: 0.1;
+            font-size: 4rem;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(10deg); }
+        }
+
+        .decoration-item:nth-child(1) { top: 10%; left: 8%; animation-delay: 0s; }
+        .decoration-item:nth-child(2) { top: 20%; right: 10%; animation-delay: 1s; }
+        .decoration-item:nth-child(3) { bottom: 30%; left: 15%; animation-delay: 2s; }
+        .decoration-item:nth-child(4) { bottom: 15%; right: 8%; animation-delay: 3s; }
+
+        /* Section tabs (Maternelle/Primaire) */
+        .section-selection {
+            background: white;
+            border-radius: 0 0 20px 20px;
+            padding: 0 1.5rem;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.8s ease 1s both;
+        }
+
+        .section-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem 0;
+        }
+
+        .section-tab {
+            padding: 1rem 2rem;
+            background: var(--gray);
+            border: none;
+            border-radius: 50px;
+            font-weight: 700;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-tab:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 126, 179, 0.2);
+        }
+
+        .section-tab.active {
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(255, 126, 179, 0.3);
+        }
+
+        .section-tab.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--section-color);
+            z-index: -1;
+        }
+
+        .section-tab.maternelle { --section-color: var(--maternelle); }
+        .section-tab.primaire { --section-color: var(--primaire); }
+
+        .section-tab i {
+            font-size: 1.3rem;
+        }
+
+        /* Content tabs (Photos/Vidéos) */
+        .tabs-container {
+            background: white;
+            border-radius: 20px;
+            padding: 0 1.5rem;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.8s ease 1.2s both;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem 0;
+        }
+
+        .tab {
+            padding: 0.8rem 1.8rem;
+            background: var(--gray);
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1rem;
+        }
+
+        .tab:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 126, 179, 0.2);
+        }
+
+        .tab.active {
+            background: var(--section-active-color);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(255, 126, 179, 0.3);
+        }
+
+        .tab i {
+            font-size: 1.2rem;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem 2rem;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-around;
+            position: relative;
+            z-index: 5;
+            animation: fadeInUp 0.8s ease 1.4s both;
+        }
+
+        .stat-item {
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--section-active-color);
+            margin-bottom: 0.3rem;
+            animation: countUp 1s ease;
+        }
+
+        @keyframes countUp {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Main content */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem 3rem;
+        }
+
+        /* Sort options */
+        .sort-options {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            animation: fadeIn 0.8s ease 1.6s both;
+        }
+
+        .sort-btn {
+            padding: 0.8rem 1.5rem;
+            background: white;
+            border: 2px solid var(--gray);
+            border-radius: 50px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sort-btn:hover {
+            border-color: var(--section-active-color);
+            color: var(--section-active-color);
+            transform: translateY(-2px);
+        }
+
+        .sort-btn.active {
+            background: var(--section-active-color);
+            border-color: var(--section-active-color);
+            color: white;
+        }
+
+        /* Gallery grid */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Photo card */
+        .photo-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            animation: cardAppear 0.6s ease backwards;
+            opacity: 0;
+        }
+
+        @keyframes cardAppear {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .photo-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .photo-card.featured::before {
+            content: "🔥 POPULAIRE";
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            z-index: 2;
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .photo-header {
+            padding: 1.3rem 1.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--section-active-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.3rem;
+            box-shadow: 0 4px 12px rgba(255, 126, 179, 0.3);
+        }
+
+        .photo-info h3 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .photo-date {
+            font-size: 0.9rem;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .photo-date i {
+            font-size: 0.8rem;
+        }
+
+        .photo-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            background-color: var(--gray);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.5s ease;
+        }
+
+        .photo-image:hover {
+            transform: scale(1.02);
+        }
+
+        .photo-description {
+            padding: 1.3rem 1.5rem 1rem;
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        /* Section badge */
+        .section-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 10px;
+        }
+
+        .section-badge.maternelle {
+            background-color: rgba(255, 126, 179, 0.1);
+            color: var(--maternelle);
+            border: 1px solid rgba(255, 126, 179, 0.2);
+        }
+
+        .section-badge.primaire {
+            background-color: rgba(66, 211, 149, 0.1);
+            color: var(--primaire);
+            border: 1px solid rgba(66, 211, 149, 0.2);
+        }
+
+        /* Reactions */
+        .reactions {
+            padding: 0 1.5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 238, 246, 0.7);
+        }
+
+        .reaction-counts {
+            display: flex;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .reaction-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .reaction-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .reaction-btn:hover {
+            transform: scale(1.3);
+            background-color: rgba(255, 126, 179, 0.1);
+        }
+
+        .reaction-btn.active {
+            transform: scale(1.4);
+            animation: pop 0.3s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.8); }
+            100% { transform: scale(1.4); }
+        }
+
+        .reaction-btn.like.active { color: #1877F2; }
+        .reaction-btn.love.active { color: #FF3040; }
+        .reaction-btn.haha.active { color: #F7B928; }
+        .reaction-btn.dislike.active { color: #666; }
+        .reaction-btn.cry.active { color: #F7B928; }
+
+        /* Action buttons */
+        .action-buttons {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-around;
+            border-bottom: 1px solid rgba(255, 238, 246, 0.7);
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 8px 15px;
+            border-radius: 10px;
+        }
+
+        .action-btn:hover {
+            color: var(--section-active-color);
+            background-color: rgba(255, 126, 179, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .action-btn i {
+            font-size: 1.3rem;
+        }
+
+        /* Comments section */
+        .comments-section {
+            padding: 1.2rem 1.5rem 1.5rem;
+        }
+
+        .comments-title {
+            font-size: 0.95rem;
+            color: #777;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .comment {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 238, 246, 0.7);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-10px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .comment:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, #7a88fc 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: white;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .comment-content {
+            flex-grow: 1;
+        }
+
+        .comment-author {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .comment-text {
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .comment-time {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        /* Add comment form */
+        .add-comment {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .comment-input {
+            flex-grow: 1;
+            padding: 12px 18px;
+            border: 2px solid var(--gray);
+            border-radius: 50px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background-color: #fffbfd;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--section-active-color);
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(255, 126, 179, 0.1);
+        }
+
+        .comment-btn {
+            background: var(--section-active-color);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 0 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comment-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 126, 179, 0.3);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            background: linear-gradient(135deg, #3a2d43 0%, #5a4f6f 100%);
+            color: white;
+            margin-top: 4rem;
+            clip-path: polygon(0 10%, 100% 0, 100% 100%, 0 100%);
+            animation: fadeInUp 0.8s ease 1.8s both;
+        }
+
+        footer p {
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-contact {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-top: 1.5rem;
+        }
+
+        .footer-icons {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            font-size: 1.5rem;
+            margin-top: 1.8rem;
+        }
+
+        .footer-icons i {
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-icons i:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        /* Loading animation */
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            color: var(--section-active-color);
+            grid-column: 1 / -1;
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Modal for download options */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            animation: modalSlideUp 0.4s ease;
+        }
+
+        @keyframes modalSlideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal h3 {
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .modal-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .modal-btn.primary {
+            background: var(--section-active-color);
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: var(--gray);
+            color: var(--dark);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            grid-column: 1 / -1;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray);
+            margin-bottom: 1rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .gallery {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .section-tabs {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .section-tab {
+                justify-content: center;
+            }
+            
+            .photo-image {
+                height: 250px;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .school-name {
+                font-size: 1rem;
+                padding: 0.5rem 1.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .sort-options {
+                gap: 0.7rem;
+            }
+            
+            .sort-btn {
+                padding: 0.7rem 1.3rem;
+                font-size: 0.9rem;
+            }
+            
+            .gallery {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-decoration">
+            <div class="decoration-item">🏫</div>
+            <div class="decoration-item">🎨</div>
+            <div class="decoration-item">🌟</div>
+            <div class="decoration-item">📚</div>
+        </div>
+        <div class="header-content">
+            <div class="school-name">ÉCOLE GISOZI - MATERNELLE & PRIMAIRE</div>
+            <h1>Galerie des Moments Magiques</h1>
+            <p class="subtitle">Découvrez les activités de nos élèves, partagées par le secrétariat</p>
+        </div>
+    </header>
+
+    <!-- Sélection de section (Maternelle/Primaire) -->
+    <div class="section-selection">
+        <div class="section-tabs">
+            <button class="section-tab maternelle active" data-section="maternelle">
+                <i class="fas fa-child"></i> Section Maternelle
+            </button>
+            <button class="section-tab primaire" data-section="primaire">
+                <i class="fas fa-graduation-cap"></i> Section Primaire
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation tabs (Photos) -->
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab active" data-tab="gallery">
+                <i class="fas fa-images"></i> Galerie Photos
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <div class="stat-number" id="total-photos">0</div>
+            <div class="stat-label">Publications</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="total-likes">0</div>
+            <div class="stat-label">Réactions</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="total-comments">0</div>
+            <div class="stat-label">Commentaires</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="total-shares">0</div>
+            <div class="stat-label">Partages</div>
+        </div>
+    </div>
+
+    <!-- Photos Gallery Section -->
+    <div class="container" id="gallery-section">
+        <div class="sort-options">
+            <button class="sort-btn active" data-sort="recent">
+                <i class="fas fa-clock"></i> Récents
+            </button>
+            <button class="sort-btn" data-sort="popular">
+                <i class="fas fa-fire"></i> Populaires
+            </button>
+            <button class="sort-btn" data-sort="most-liked">
+                <i class="fas fa-heart"></i> Plus aimés
+            </button>
+            <button class="sort-btn" data-sort="most-commented">
+                <i class="fas fa-comments"></i> Plus commentés
+            </button>
+        </div>
+
+        <div class="gallery" id="gallery">
+            <div class="loading">
+                <i class="fas fa-spinner fa-3x"></i>
+                <p>Chargement des publications...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour téléchargement -->
+    <div class="modal" id="downloadModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Télécharger l'image</h3>
+            <p id="modalText">Voulez-vous télécharger cette image?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" id="downloadBtn">Télécharger</button>
+                <button class="modal-btn secondary" id="cancelDownload">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to home button -->
+    <div style="text-align: center; padding: 2rem;">
+        <a href="index.html" style="display: inline-block; background: linear-gradient(135deg, #ff7eb3 0%, #42d395 100%); color: white; padding: 0.8rem 2rem; border-radius: 50px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(255, 126, 179, 0.3);" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(255, 126, 179, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 5px 15px rgba(255, 126, 179, 0.3)';"><i class="fas fa-home"></i> Retour à l'accueil</a>
+    </div>
+
+    <footer>
+        <p>École GISOZI - Maternelle & Primaire</p>
+        <p>Partageons ensemble les moments précieux de nos enfants</p>
+        <p class="footer-contact">Contact: secretariat@ecole-gisozi.rw • Tél: +250 123 456 789</p>
+        <div class="footer-icons">
+            <i class="fas fa-camera"></i>
+            <i class="fas fa-heart"></i>
+            <i class="fas fa-share-alt"></i>
+            <i class="fas fa-envelope"></i>
+            <i class="fas fa-map-marker-alt"></i>
+        </div>
+    </footer>
+
+    <script>
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD6e5HwHvXH4U9M7Z7S6K8J9L0M1N2O3P4Q",
+            authDomain: "ecole-gisozi.firebaseapp.com",
+            projectId: "ecole-gisozi",
+            storageBucket: "ecole-gisozi.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890"
+        };
+
+        // Initialiser Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        const auth = firebase.auth();
+
+        // Variables globales
+        let currentUser = null;
+        let posts = [];
+        let currentSort = 'recent';
+        let currentSection = 'maternelle';
+        let currentDownloadUrl = '';
+        let currentDownloadFilename = '';
+
+        // Mappage des sections
+        const sectionNames = {
+            'maternelle': 'MATERNELLE',
+            'primaire': 'PRIMAIRE'
+        };
+
+        // Couleurs par section
+        const sectionColors = {
+            'maternelle': '#ff7eb3',
+            'primaire': '#42d395'
+        };
+
+        // Lettres d'avatar par section
+        const sectionLetters = {
+            'maternelle': 'GM',
+            'primaire': 'GP'
+        };
+
+        // Initialiser l'authentification anonyme
+        auth.signInAnonymously()
+            .then(() => {
+                currentUser = auth.currentUser;
+                console.log("Utilisateur anonyme connecté:", currentUser.uid);
+                loadPosts();
+            })
+            .catch(error => {
+                console.error("Erreur d'authentification:", error);
+                // Continuer sans authentification
+                loadPosts();
+            });
+
+        // Fonction pour mettre à jour les couleurs de la section sélectionnée
+        function updateSectionColors() {
+            const color = sectionColors[currentSection];
+            document.documentElement.style.setProperty('--section-active-color', color);
+        }
+
+        // Fonction pour charger les posts depuis Firebase pour la section courante
+        async function loadPosts() {
+            try {
+                const snapshot = await db.collection('posts')
+                    .where('school', '==', 'gisozi')
+                    .where('section', '==', currentSection)
+                    .where('type', '==', 'image')
+                    .orderBy('createdAt', 'desc')
+                    .limit(50)
+                    .get();
+                
+                posts = [];
+                snapshot.forEach(doc => {
+                    const post = {
+                        id: doc.id,
+                        ...doc.data(),
+                        createdAt: doc.data().createdAt?.toDate() || new Date()
+                    };
+                    posts.push(post);
+                });
+                
+                updateStats();
+                sortPosts(currentSort);
+                renderPosts();
+            } catch (error) {
+                console.error("Erreur lors du chargement des posts:", error);
+                showErrorMessage("Impossible de charger les publications");
+            }
+        }
+
+        // Fonction pour trier les posts
+        function sortPosts(sortType) {
+            currentSort = sortType;
+            
+            switch(sortType) {
+                case 'recent':
+                    posts.sort((a, b) => b.createdAt - a.createdAt);
+                    break;
+                case 'popular':
+                    posts.sort((a, b) => {
+                        const scoreA = calculatePopularityScore(a);
+                        const scoreB = calculatePopularityScore(b);
+                        return scoreB - scoreA;
+                    });
+                    break;
+                case 'most-liked':
+                    posts.sort((a, b) => {
+                        const likesA = Object.values(a.reactions || {}).filter(r => r === 'like' || r === 'love').length;
+                        const likesB = Object.values(b.reactions || {}).filter(r => r === 'like' || r === 'love').length;
+                        return likesB - likesA;
+                    });
+                    break;
+                case 'most-commented':
+                    posts.sort((a, b) => {
+                        const commentsA = a.comments ? Object.keys(a.comments).length : 0;
+                        const commentsB = b.comments ? Object.keys(b.comments).length : 0;
+                        return commentsB - commentsA;
+                    });
+                    break;
+            }
+        }
+
+        // Fonction pour calculer le score de popularité
+        function calculatePopularityScore(post) {
+            const reactions = post.reactions || {};
+            const comments = post.comments || {};
+            
+            let score = 0;
+            
+            // Points pour les réactions
+            Object.values(reactions).forEach(reaction => {
+                switch(reaction) {
+                    case 'love': score += 3; break;
+                    case 'like': score += 2; break;
+                    case 'haha': score += 1; break;
+                    case 'cry': score += 1; break;
+                    case 'dislike': score -= 1; break;
+                }
+            });
+            
+            // Points pour les commentaires
+            score += Object.keys(comments).length * 2;
+            
+            // Points pour les partages
+            score += (post.shares || 0) * 1.5;
+            
+            // Bonus pour les posts récents (moins de 24h)
+            const hoursSincePost = (new Date() - post.createdAt) / (1000 * 60 * 60);
+            if (hoursSincePost < 24) {
+                score += 5;
+            }
+            
+            // Marquer comme populaire si score > 30
+            post.isPopular = score > 30;
+            
+            return score;
+        }
+
+        // Fonction pour rendre les posts
+        function renderPosts() {
+            const gallery = document.getElementById('gallery');
+            
+            if (posts.length === 0) {
+                gallery.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-images"></i>
+                        <h3>Aucune publication pour le moment</h3>
+                        <p>Les publications apparaîtront ici bientôt</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            gallery.innerHTML = '';
+            
+            posts.forEach((post, index) => {
+                const isPopular = calculatePopularityScore(post) > 30;
+                const userReaction = currentUser ? (post.reactions || {})[currentUser.uid] : null;
+                
+                setTimeout(() => {
+                    const card = createPostCard(post, isPopular, userReaction);
+                    gallery.appendChild(card);
+                    
+                    // Animation d'apparition
+                    card.style.animationDelay = `${index * 0.1}s`;
+                    card.style.animationName = 'cardAppear';
+                }, 0);
+            });
+            
+            attachEventListeners();
+        }
+
+        // Fonction pour créer une carte de post
+        function createPostCard(post, isPopular, userReaction) {
+            const card = document.createElement('div');
+            card.className = `photo-card ${isPopular ? 'featured' : ''}`;
+            card.dataset.id = post.id;
+            
+            // Compter les réactions
+            const reactions = post.reactions || {};
+            const reactionCounts = {
+                like: 0, love: 0, haha: 0, cry: 0, dislike: 0
+            };
+            
+            Object.values(reactions).forEach(reaction => {
+                if (reactionCounts[reaction] !== undefined) {
+                    reactionCounts[reaction]++;
+                }
+            });
+            
+            const totalReactions = Object.values(reactionCounts).reduce((a, b) => a + b, 0);
+            const comments = post.comments || {};
+            const commentCount = Object.keys(comments).length;
+            
+            // Formater la date
+            const date = post.createdAt.toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            card.innerHTML = `
+                <div class="photo-header">
+                    <div class="avatar">${sectionLetters[currentSection]}</div>
+                    <div class="photo-info">
+                        <h3>${post.title || 'Sans titre'}
+                            <span class="section-badge ${currentSection}">${sectionNames[currentSection]}</span>
+                        </h3>
+                        <p class="photo-date">
+                            <i class="far fa-calendar-alt"></i> ${date}
+                        </p>
+                    </div>
+                </div>
+                <img src="${post.imageUrl || 'https://via.placeholder.com/400x300?text=GISOZI+' + sectionNames[currentSection]}" 
+                     alt="${post.title || 'Publication'}" 
+                     class="photo-image"
+                     loading="lazy">
+                <div class="photo-description">
+                    ${post.description || ''}
+                </div>
+                <div class="reactions">
+                    <div class="reaction-counts">
+                        <span>${totalReactions} réactions</span>
+                        <span>•</span>
+                        <span>${commentCount} commentaires</span>
+                        <span>•</span>
+                        <span>${post.shares || 0} partages</span>
+                    </div>
+                    <div class="reaction-buttons">
+                        <button class="reaction-btn like ${userReaction === 'like' ? 'active' : ''}" data-type="like" title="J'aime">
+                            <i class="fas fa-thumbs-up"></i>
+                        </button>
+                        <button class="reaction-btn love ${userReaction === 'love' ? 'active' : ''}" data-type="love" title="J'adore">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <button class="reaction-btn haha ${userReaction === 'haha' ? 'active' : ''}" data-type="haha" title="Haha">
+                            <i class="fas fa-laugh"></i>
+                        </button>
+                        <button class="reaction-btn dislike ${userReaction === 'dislike' ? 'active' : ''}" data-type="dislike" title="Je n'aime pas">
+                            <i class="fas fa-thumbs-down"></i>
+                        </button>
+                        <button class="reaction-btn cry ${userReaction === 'cry' ? 'active' : ''}" data-type="cry" title="Triste">
+                            <i class="fas fa-sad-cry"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="action-btn comment-btn" data-action="comment">
+                        <i class="far fa-comment"></i>
+                        <span>Commenter</span>
+                    </button>
+                    <button class="action-btn share-btn" data-action="share">
+                        <i class="fas fa-share-alt"></i>
+                        <span>Partager</span>
+                    </button>
+                    <button class="action-btn download-btn" data-action="download">
+                        <i class="fas fa-download"></i>
+                        <span>Télécharger</span>
+                    </button>
+                </div>
+                <div class="comments-section" style="display: none;">
+                    <div class="comments-title">
+                        <i class="fas fa-comments"></i>
+                        Commentaires (${commentCount})
+                    </div>
+                    <div class="comments-list" id="comments-${post.id}">
+                        ${Object.entries(comments).slice(0, 5).map(([commentId, comment]) => `
+                            <div class="comment">
+                                <div class="comment-avatar">${comment.authorName?.charAt(0) || 'P'}</div>
+                                <div class="comment-content">
+                                    <div class="comment-author">${comment.authorName || 'Parent'}</div>
+                                    <div class="comment-text">${comment.text}</div>
+                                    <div class="comment-time">${formatTimeAgo(comment.createdAt?.toDate() || new Date())}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="add-comment">
+                        <input type="text" class="comment-input" placeholder="Ajouter un commentaire..." data-post="${post.id}">
+                        <button class="comment-btn post-comment-btn" data-post="${post.id}">
+                            <i class="fas fa-paper-plane"></i> Publier
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Fonction pour mettre à jour les statistiques
+        function updateStats() {
+            let totalLikes = 0;
+            let totalComments = 0;
+            let totalShares = 0;
+            
+            posts.forEach(post => {
+                totalLikes += Object.keys(post.reactions || {}).length;
+                totalComments += Object.keys(post.comments || {}).length;
+                totalShares += post.shares || 0;
+            });
+            
+            document.getElementById('total-photos').textContent = posts.length;
+            document.getElementById('total-likes').textContent = totalLikes;
+            document.getElementById('total-comments').textContent = totalComments;
+            document.getElementById('total-shares').textContent = totalShares;
+        }
+
+        // Fonction pour formater le temps écoulé
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            if (seconds < 60) return 'à l\'instant';
+            if (seconds < 3600) return `il y a ${Math.floor(seconds / 60)} min`;
+            if (seconds < 86400) return `il y a ${Math.floor(seconds / 3600)} h`;
+            if (seconds < 604800) return `il y a ${Math.floor(seconds / 86400)} j`;
+            return `le ${date.toLocaleDateString('fr-FR')}`;
+        }
+
+        // Fonction pour attacher les événements des posts
+        function attachEventListeners() {
+            // Boutons de tri
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const sortType = btn.dataset.sort;
+                    sortPosts(sortType);
+                    renderPosts();
+                });
+            });
+            
+            // Boutons de réaction
+            document.querySelectorAll('.reaction-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    if (!currentUser) {
+                        showNotification("Veuillez vous connecter pour réagir");
+                        return;
+                    }
+                    
+                    const postId = btn.closest('.photo-card').dataset.id;
+                    const reactionType = btn.dataset.type;
+                    const post = posts.find(p => p.id === postId);
+                    
+                    if (!post) return;
+                    
+                    const reactions = post.reactions || {};
+                    const currentReaction = reactions[currentUser.uid];
+                    
+                    // Si l'utilisateur clique sur la même réaction, la retirer
+                    if (currentReaction === reactionType) {
+                        delete reactions[currentUser.uid];
+                    } else {
+                        reactions[currentUser.uid] = reactionType;
+                    }
+                    
+                    // Mettre à jour dans Firebase
+                    try {
+                        await db.collection('posts').doc(postId).update({
+                            reactions: reactions,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        // Mettre à jour localement
+                        post.reactions = reactions;
+                        post.updatedAt = new Date();
+                        updateStats();
+                        sortPosts(currentSort);
+                        renderPosts();
+                        
+                    } catch (error) {
+                        console.error("Erreur lors de la mise à jour de la réaction:", error);
+                        showErrorMessage("Erreur lors de l'enregistrement de la réaction");
+                    }
+                });
+            });
+            
+            // Boutons d'action
+            document.querySelectorAll('.action-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const action = btn.dataset.action;
+                    const postId = btn.closest('.photo-card').dataset.id;
+                    const post = posts.find(p => p.id === postId);
+                    
+                    if (!post) return;
+                    
+                    switch(action) {
+                        case 'comment':
+                            const commentsSection = btn.closest('.photo-card').querySelector('.comments-section');
+                            const isVisible = commentsSection.style.display === 'block';
+                            commentsSection.style.display = isVisible ? 'none' : 'block';
+                            if (!isVisible) {
+                                commentsSection.querySelector('.comment-input').focus();
+                            }
+                            break;
+                            
+                        case 'share':
+                            sharePost(post);
+                            break;
+                            
+                        case 'download':
+                            showDownloadModal(post);
+                            break;
+                    }
+                });
+            });
+            
+            // Boutons de commentaire
+            document.querySelectorAll('.post-comment-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const postId = btn.dataset.post;
+                    const input = document.querySelector(`.comment-input[data-post="${postId}"]`);
+                    const commentText = input.value.trim();
+                    
+                    if (!commentText) {
+                        showNotification("Veuillez écrire un commentaire");
+                        return;
+                    }
+                    
+                    if (!currentUser) {
+                        showNotification("Veuillez vous connecter pour commenter");
+                        return;
+                    }
+                    
+                    const commentId = Date.now().toString();
+                    const comment = {
+                        text: commentText,
+                        authorId: currentUser.uid,
+                        authorName: "Parent",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    try {
+                        await db.collection('posts').doc(postId).update({
+                            [`comments.${commentId}`]: comment,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        // Mettre à jour localement
+                        const post = posts.find(p => p.id === postId);
+                        if (post) {
+                            if (!post.comments) post.comments = {};
+                            post.comments[commentId] = comment;
+                            post.updatedAt = new Date();
+                        }
+                        
+                        updateStats();
+                        sortPosts(currentSort);
+                        renderPosts();
+                        
+                        input.value = '';
+                        showNotification("Commentaire publié avec succès!");
+                        
+                    } catch (error) {
+                        console.error("Erreur lors de l'ajout du commentaire:", error);
+                        showErrorMessage("Erreur lors de la publication du commentaire");
+                    }
+                });
+            });
+            
+            // Entrée pour commenter
+            document.querySelectorAll('.comment-input').forEach(input => {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        const postId = input.dataset.post;
+                        document.querySelector(`.post-comment-btn[data-post="${postId}"]`).click();
+                    }
+                });
+            });
+        }
+
+        // Fonction pour partager un post
+        function sharePost(post) {
+            const shareUrl = window.location.href;
+            const shareText = `GISOZI ${sectionNames[currentSection]} - ${post.title}: ${post.description?.substring(0, 100)}...`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: post.title,
+                    text: shareText,
+                    url: shareUrl
+                }).then(() => {
+                    // Incrémenter le compteur de partages
+                    incrementShareCount(post.id);
+                }).catch(error => {
+                    console.log("Partage annulé:", error);
+                });
+            } else {
+                // Fallback pour les navigateurs qui ne supportent pas l'API Web Share
+                const shareText = `GISOZI ${sectionNames[currentSection]}\n${post.title}\n\n${post.description}\n\n${shareUrl}`;
+                navigator.clipboard.writeText(shareText).then(() => {
+                    showNotification("Lien copié dans le presse-papier!");
+                    incrementShareCount(post.id);
+                }).catch(() => {
+                    prompt("Copiez ce lien pour partager:", shareUrl);
+                    incrementShareCount(post.id);
+                });
+            }
+        }
+
+        // Fonction pour incrémenter le compteur de partages
+        async function incrementShareCount(postId) {
+            try {
+                const postRef = db.collection('posts').doc(postId);
+                await postRef.update({
+                    shares: firebase.firestore.FieldValue.increment(1),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Mettre à jour localement
+                const post = posts.find(p => p.id === postId);
+                if (post) {
+                    post.shares = (post.shares || 0) + 1;
+                    post.updatedAt = new Date();
+                    updateStats();
+                    sortPosts(currentSort);
+                    renderPosts();
+                }
+                
+                showNotification("Partage enregistré!");
+            } catch (error) {
+                console.error("Erreur lors de l'incrémentation des partages:", error);
+            }
+        }
+
+        // Fonction pour afficher le modal de téléchargement
+        function showDownloadModal(post) {
+            currentDownloadUrl = post.imageUrl;
+            currentDownloadFilename = `gisozi-${currentSection}-${post.title || 'image'}-${Date.now()}.jpg`;
+            
+            document.getElementById('modalTitle').textContent = 'Télécharger l\'image';
+            document.getElementById('modalText').textContent = 'Voulez-vous télécharger cette image?';
+            
+            const modal = document.getElementById('downloadModal');
+            modal.style.display = 'flex';
+        }
+
+        // Gestion du modal de téléchargement
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            downloadFile(currentDownloadUrl, currentDownloadFilename);
+            document.getElementById('downloadModal').style.display = 'none';
+            showNotification("Téléchargement commencé!");
+        });
+        
+        document.getElementById('cancelDownload').addEventListener('click', () => {
+            document.getElementById('downloadModal').style.display = 'none';
+        });
+
+        // Fonction pour télécharger un fichier
+        function downloadFile(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Gestion des onglets de section
+        document.querySelectorAll('.section-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Retirer la classe active de tous les onglets de section
+                document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+                
+                // Ajouter la classe active à l'onglet cliqué
+                tab.classList.add('active');
+                
+                // Changer de section
+                currentSection = tab.dataset.section;
+                
+                // Mettre à jour les couleurs
+                updateSectionColors();
+                
+                // Recharger les données
+                loadPosts();
+            });
+        });
+
+        // Cacher le modal quand on clique en dehors
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('downloadModal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Fonction pour afficher une notification
+        function showNotification(message) {
+            // Supprimer les notifications existantes
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notif => notif.remove());
+            
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: var(--section-active-color);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                z-index: 1000;
+                animation: slideInRight 0.3s ease;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Fonction pour afficher un message d'erreur
+        function showErrorMessage(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #ff6b6b;
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                z-index: 1000;
+                animation: slideInRight 0.3s ease;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            `;
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => errorDiv.remove(), 300);
+            }, 3000);
+        }
+
+        // Écouter les mises à jour en temps réel des posts
+        db.collection('posts')
+            .where('school', '==', 'gisozi')
+            .where('section', '==', currentSection)
+            .where('type', '==', 'image')
+            .onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        const postData = change.doc.data();
+                        
+                        const postIndex = posts.findIndex(p => p.id === change.doc.id);
+                        
+                        const post = {
+                            id: change.doc.id,
+                            ...postData,
+                            createdAt: postData.createdAt?.toDate() || new Date()
+                        };
+                        
+                        if (postIndex === -1) {
+                            posts.push(post);
+                        } else {
+                            posts[postIndex] = post;
+                        }
+                    } else if (change.type === 'removed') {
+                        posts = posts.filter(p => p.id !== change.doc.id);
+                    }
+                });
+                
+                updateStats();
+                sortPosts(currentSort);
+                renderPosts();
+            });
+
+        // Initialisation des couleurs
+        updateSectionColors();
+
+        // Ajouter des animations CSS pour les notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            
+            .notification {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: var(--section-active-color);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                z-index: 1000;
+                animation: slideInRight 0.3s ease;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

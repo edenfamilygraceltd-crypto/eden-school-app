@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galerie KACYIRU - École Maternelle</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="responsive.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #5d6afb;
+            --primary-light: #7a88fc;
+            --secondary: #ff7eb3;
+            --accent: #42d395;
+            --light: #f7f9ff;
+            --dark: #2a2d43;
+            --gray: #e8edff;
+            --shadow: 0 8px 25px rgba(93, 106, 251, 0.1);
+            --shadow-hover: 0 12px 35px rgba(93, 106, 251, 0.15);
+            --border-radius: 20px;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f7f9ff 0%, #edf1ff 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Header styles */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #6b7cff 100%);
+            color: white;
+            padding: 3rem 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%);
+            margin-bottom: 3rem;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 3;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            animation: bounceIn 1s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .school-name {
+            background: rgba(255, 255, 255, 0.15);
+            display: inline-block;
+            padding: 0.5rem 2rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease 0.3s both;
+        }
+
+        @keyframes fadeInUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            font-weight: 300;
+            animation: fadeInUp 0.8s ease 0.5s both;
+        }
+
+        .header-decoration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .decoration-item {
+            position: absolute;
+            opacity: 0.1;
+            font-size: 4rem;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        .decoration-item:nth-child(1) { top: 10%; left: 8%; animation-delay: 0s; }
+        .decoration-item:nth-child(2) { top: 20%; right: 10%; animation-delay: 1s; }
+        .decoration-item:nth-child(3) { bottom: 30%; left: 15%; animation-delay: 2s; }
+        .decoration-item:nth-child(4) { bottom: 15%; right: 8%; animation-delay: 3s; }
+
+        /* Stats bar */
+        .stats-bar {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem 2rem;
+            max-width: 800px;
+            margin: -2.5rem auto 3rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-around;
+            position: relative;
+            z-index: 5;
+            animation: fadeInUp 0.8s ease 0.7s both;
+        }
+
+        .stat-item {
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.3rem;
+            animation: countUp 1s ease;
+        }
+
+        @keyframes countUp {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Sort options */
+        .sort-options {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .sort-btn {
+            padding: 0.8rem 1.5rem;
+            background: white;
+            border: 2px solid var(--gray);
+            border-radius: 50px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sort-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .sort-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Main content */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem 3rem;
+        }
+
+        /* Gallery grid */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Photo card */
+        .photo-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            animation: cardAppear 0.6s ease backwards;
+            opacity: 0;
+        }
+
+        @keyframes cardAppear {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .photo-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .photo-card.featured::before {
+            content: "🔥 POPULAIRE";
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            z-index: 2;
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .photo-header {
+            padding: 1.3rem 1.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.3rem;
+            box-shadow: 0 4px 12px rgba(93, 106, 251, 0.3);
+        }
+
+        .photo-info h3 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .photo-date {
+            font-size: 0.9rem;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .photo-date i {
+            font-size: 0.8rem;
+        }
+
+        .photo-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            background-color: var(--gray);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.5s ease;
+        }
+
+        .photo-image:hover {
+            transform: scale(1.02);
+        }
+
+        .photo-description {
+            padding: 1.3rem 1.5rem 1rem;
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        /* Reactions */
+        .reactions {
+            padding: 0 1.5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(232, 237, 255, 0.7);
+        }
+
+        .reaction-counts {
+            display: flex;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .reaction-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .reaction-btn:hover {
+            transform: scale(1.2);
+            background-color: rgba(93, 106, 251, 0.1);
+        }
+
+        .reaction-btn.active {
+            transform: scale(1.3);
+            animation: pop 0.3s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1.3); }
+        }
+
+        .reaction-btn.like.active { color: #1877F2; }
+        .reaction-btn.love.active { color: #FF3040; }
+        .reaction-btn.haha.active { color: #F7B928; }
+        .reaction-btn.dislike.active { color: #666; }
+        .reaction-btn.cry.active { color: #F7B928; }
+
+        .reaction-options {
+            display: flex;
+            gap: 5px;
+        }
+
+        /* Action buttons */
+        .action-buttons {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-around;
+            border-bottom: 1px solid rgba(232, 237, 255, 0.7);
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 8px 15px;
+            border-radius: 10px;
+        }
+
+        .action-btn:hover {
+            color: var(--primary);
+            background-color: rgba(93, 106, 251, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .action-btn i {
+            font-size: 1.3rem;
+        }
+
+        /* Comments section */
+        .comments-section {
+            padding: 1.2rem 1.5rem 1.5rem;
+        }
+
+        .comments-title {
+            font-size: 0.95rem;
+            color: #777;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .comment {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(232, 237, 255, 0.7);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-10px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .comment:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, #5ae0b8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: white;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .comment-content {
+            flex-grow: 1;
+        }
+
+        .comment-author {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .comment-text {
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .comment-time {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        /* Add comment form */
+        .add-comment {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .comment-input {
+            flex-grow: 1;
+            padding: 12px 18px;
+            border: 2px solid var(--gray);
+            border-radius: 50px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background-color: #fbfcff;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(93, 106, 251, 0.1);
+        }
+
+        .comment-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 0 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comment-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(93, 106, 251, 0.3);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            background: linear-gradient(135deg, #2a2d43 0%, #3a3f5f 100%);
+            color: white;
+            margin-top: 4rem;
+            clip-path: polygon(0 10%, 100% 0, 100% 100%, 0 100%);
+            animation: fadeInUp 0.8s ease 1s both;
+        }
+
+        footer p {
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-contact {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-top: 1.5rem;
+        }
+
+        .footer-icons {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            font-size: 1.5rem;
+            margin-top: 1.8rem;
+        }
+
+        .footer-icons i {
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-icons i:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        /* Loading animation */
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            color: var(--primary);
+            grid-column: 1 / -1;
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Modal for download options */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            animation: modalSlideUp 0.4s ease;
+        }
+
+        @keyframes modalSlideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal h3 {
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .modal-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .modal-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: var(--gray);
+            color: var(--dark);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .gallery {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 1.5rem;
+                margin-top: -3.5rem;
+                padding: 1.5rem;
+            }
+            
+            .photo-image {
+                height: 260px;
+            }
+            
+            .gallery {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .school-name {
+                font-size: 1rem;
+                padding: 0.5rem 1.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .sort-options {
+                gap: 0.7rem;
+            }
+            
+            .sort-btn {
+                padding: 0.7rem 1.3rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-decoration">
+            <div class="decoration-item">🏫</div>
+            <div class="decoration-item">🎨</div>
+            <div class="decoration-item">🌟</div>
+            <div class="decoration-item">📚</div>
+        </div>
+        <div class="header-content">
+            <div class="school-name">ÉCOLE MATERNELLE KACYIRU</div>
+            <h1>Galerie des Moments Magiques</h1>
+            <p class="subtitle">Partagez et découvrez les activités de nos élèves</p>
+        </div>
+    </header>
+
+    <div class="stats-bar">
+        <div class="stat-item">
+            <div class="stat-number" id="total-photos">0</div>
+            <div class="stat-label">Publications</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="total-likes">0</div>
+            <div class="stat-label">Réactions</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="total-comments">0</div>
+            <div class="stat-label">Commentaires</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="total-shares">0</div>
+            <div class="stat-label">Partages</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sort-options">
+            <button class="sort-btn active" data-sort="recent">
+                <i class="fas fa-clock"></i> Récents
+            </button>
+            <button class="sort-btn" data-sort="popular">
+                <i class="fas fa-fire"></i> Populaires
+            </button>
+            <button class="sort-btn" data-sort="most-liked">
+                <i class="fas fa-heart"></i> Plus aimés
+            </button>
+            <button class="sort-btn" data-sort="most-commented">
+                <i class="fas fa-comments"></i> Plus commentés
+            </button>
+        </div>
+
+        <div class="gallery" id="gallery">
+            <div class="loading">
+                <i class="fas fa-spinner fa-3x"></i>
+                <p>Chargement des publications...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour téléchargement -->
+    <div class="modal" id="downloadModal">
+        <div class="modal-content">
+            <h3>Télécharger l'image</h3>
+            <p>Choisissez la qualité de téléchargement :</p>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" id="downloadHigh">Haute qualité</button>
+                <button class="modal-btn secondary" id="downloadLow">Basse qualité</button>
+                <button class="modal-btn secondary" id="cancelDownload">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to home button -->
+    <div style="text-align: center; padding: 2rem;">
+        <a href="index.html" style="display: inline-block; background: linear-gradient(135deg, #5d6afb 0%, #7a88fc 100%); color: white; padding: 0.8rem 2rem; border-radius: 50px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(93, 106, 251, 0.3);" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(93, 106, 251, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 5px 15px rgba(93, 106, 251, 0.3);"><i class="fas fa-home"></i> Retour à l'accueil</a>
+    </div>
+
+    <footer>
+        <p>École Maternelle KACYIRU</p>
+        <p>Partageons ensemble les moments précieux de nos enfants</p>
+        <p class="footer-contact">Contact: secretariat@ecole-kacyiru.rw • Tél: +250 123 456 789</p>
+        <div class="footer-icons">
+            <i class="fas fa-camera"></i>
+            <i class="fas fa-heart"></i>
+            <i class="fas fa-share-alt"></i>
+            <i class="fas fa-envelope"></i>
+            <i class="fas fa-map-marker-alt"></i>
+        </div>
+    </footer>
+
+    <script>
+        // Configuration Firebase - Utiliser la config réelle
+        let firebaseConfig = window.FIREBASE_CONFIG;
+        
+        // Si la config n'est pas disponible, utiliser la config par défaut
+        if (!firebaseConfig) {
+            firebaseConfig = {
+                apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+                authDomain: "edensmart-app.firebaseapp.com",
+                projectId: "edensmart-app",
+                storageBucket: "edensmart-app.firebasestorage.app",
+                messagingSenderId: "1093120876724",
+                appId: "1:1093120876724:web:bc37448cadd18d651c77e1"
+            };
+        }
+
+        // Initialiser Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            const storage = firebase.storage();
+            const auth = firebase.auth();
+            
+            console.log("Firebase initialisé avec succès");
+            console.log("Project ID:", firebaseConfig.projectId);
+        } catch (error) {
+            console.error("Erreur lors de l'initialisation de Firebase:", error);
+            showErrorMessage("Impossible de se connecter à la base de données");
+        }
+
+        // Variables globales
+        let currentUser = null;
+        let posts = [];
+        let currentSort = 'recent';
+        let currentDownloadUrl = '';
+        let isLoadingPosts = false;
+        const MAX_RETRIES = 3;
+        let retryCount = 0;
+
+        // Initialiser l'authentification anonyme
+        function initializeAuth() {
+            auth.signInAnonymously()
+                .then(() => {
+                    currentUser = auth.currentUser;
+                    console.log("Utilisateur anonyme connecté:", currentUser.uid);
+                    loadPosts();
+                })
+                .catch(error => {
+                    console.error("Erreur d'authentification:", error);
+                    // Continuer sans authentification
+                    loadPosts();
+                });
+        }
+
+        // Fonction pour charger les posts depuis Firebase avec gestion d'erreur
+        async function loadPosts() {
+            if (isLoadingPosts) return;
+            
+            try {
+                isLoadingPosts = true;
+                console.log("Chargement des posts depuis Firestore...");
+                
+                const snapshot = await db.collection('posts')
+                    .where('branch', '==', 'Kacyiru')
+                    .orderBy('createdAt', 'desc')
+                    .limit(100)
+                    .get();
+                
+                console.log(`${snapshot.size} posts trouvés`);
+                
+                posts = [];
+                snapshot.forEach(doc => {
+                    try {
+                        const data = doc.data();
+                        const post = {
+                            id: doc.id,
+                            ...data,
+                            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
+                            reactions: data.reactions || {},
+                            comments: data.comments || {},
+                            shares: data.shares || 0
+                        };
+                        
+                        // Valider les données du post
+                        if (post.imageUrl && post.title) {
+                            posts.push(post);
+                        }
+                    } catch (error) {
+                        console.error("Erreur lors du traitement du post:", error);
+                    }
+                });
+                
+                retryCount = 0; // Réinitialiser le compteur en cas de succès
+                updateStats();
+                sortPosts(currentSort);
+                renderPosts();
+                
+            } catch (error) {
+                console.error("Erreur lors du chargement des posts:", error);
+                
+                if (error.code === 'permission-denied') {
+                    showErrorMessage("Accès refusé. Vérifiez les permissions Firestore.");
+                } else if (error.code === 'not-found') {
+                    showErrorMessage("Collection 'posts' non trouvée dans Firestore.");
+                    // Afficher un message de test
+                    renderEmptyState();
+                } else {
+                    // Réessayer
+                    if (retryCount < MAX_RETRIES) {
+                        retryCount++;
+                        console.log(`Tentative de reconnexion (${retryCount}/${MAX_RETRIES})...`);
+                        setTimeout(loadPosts, 2000 * retryCount);
+                    } else {
+                        showErrorMessage("Impossible de charger les publications. Veuillez rafraîchir la page.");
+                    }
+                }
+                
+                renderEmptyState();
+            } finally {
+                isLoadingPosts = false;
+            }
+        }
+
+        // Afficher un état vide avec instructions
+        function renderEmptyState() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-exclamation-circle fa-3x" style="color: var(--primary);"></i>
+                    <p>Aucune publication disponible</p>
+                    <p style="font-size: 0.9rem; color: #999; margin-top: 1rem;">
+                        Les publications seront visibles ici une fois que les administrateurs en ajouteront.
+                    </p>
+                </div>
+            `;
+        }
+
+        // Fonction pour trier les posts
+        function sortPosts(sortType) {
+            currentSort = sortType;
+            
+            switch(sortType) {
+                case 'recent':
+                    posts.sort((a, b) => {
+                        const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
+                        const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
+                        return dateB - dateA;
+                    });
+                    break;
+                case 'popular':
+                    posts.sort((a, b) => calculatePopularityScore(b) - calculatePopularityScore(a));
+                    break;
+                case 'most-liked':
+                    posts.sort((a, b) => {
+                        const likesA = Object.values(a.reactions || {}).filter(r => r === 'like' || r === 'love').length;
+                        const likesB = Object.values(b.reactions || {}).filter(r => r === 'like' || r === 'love').length;
+                        return likesB - likesA;
+                    });
+                    break;
+                case 'most-commented':
+                    posts.sort((a, b) => {
+                        const commentsA = a.comments ? Object.keys(a.comments).length : 0;
+                        const commentsB = b.comments ? Object.keys(b.comments).length : 0;
+                        return commentsB - commentsA;
+                    });
+                    break;
+            }
+        }
+
+        // Fonction pour calculer le score de popularité
+        function calculatePopularityScore(post) {
+            const reactions = post.reactions || {};
+            const comments = post.comments || {};
+            
+            let score = 0;
+            
+            // Points pour les réactions
+            Object.values(reactions).forEach(reaction => {
+                switch(reaction) {
+                    case 'love': score += 3; break;
+                    case 'like': score += 2; break;
+                    case 'haha': score += 1; break;
+                    case 'cry': score += 1; break;
+                    case 'dislike': score -= 1; break;
+                }
+            });
+            
+            // Points pour les commentaires
+            score += Object.keys(comments).length * 2;
+            
+            // Points pour les partages
+            score += (post.shares || 0) * 1.5;
+            
+            // Bonus pour les posts récents
+            const createdAt = post.createdAt instanceof Date ? post.createdAt : new Date(post.createdAt);
+            const hoursSincePost = (new Date() - createdAt) / (1000 * 60 * 60);
+            if (hoursSincePost < 24) {
+                score += 5;
+            }
+            
+            return score;
+        }
+
+        // Fonction pour rendre les posts
+        function renderPosts() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            
+            if (posts.length === 0) {
+                renderEmptyState();
+                return;
+            }
+            
+            posts.forEach((post, index) => {
+                const isPopular = calculatePopularityScore(post) > 20;
+                const userReaction = currentUser ? (post.reactions || {})[currentUser.uid] : null;
+                
+                try {
+                    const card = createPostCard(post, isPopular, userReaction);
+                    gallery.appendChild(card);
+                    
+                    // Animation d'apparition avec délai
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        card.style.transition = 'all 0.5s ease';
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 100);
+                } catch (error) {
+                    console.error("Erreur lors de la création de la carte:", error);
+                }
+            });
+            
+            attachEventListeners();
+        }
+
+        // Fonction pour créer une carte de post
+        function createPostCard(post, isPopular, userReaction) {
+            const card = document.createElement('div');
+            card.className = `photo-card ${isPopular ? 'featured' : ''}`;
+            card.dataset.id = post.id;
+            
+            // Valider et compter les réactions
+            const reactions = post.reactions || {};
+            const reactionCounts = {
+                like: 0, love: 0, haha: 0, cry: 0, dislike: 0
+            };
+            
+            Object.values(reactions).forEach(reaction => {
+                if (reactionCounts.hasOwnProperty(reaction)) {
+                    reactionCounts[reaction]++;
+                }
+            });
+            
+            const totalReactions = Object.values(reactionCounts).reduce((a, b) => a + b, 0);
+            const comments = post.comments || {};
+            const commentCount = Object.keys(comments).length;
+            
+            // Formater la date de manière sécurisée
+            let date = 'Date inconnue';
+            try {
+                const createdAt = post.createdAt instanceof Date ? post.createdAt : new Date(post.createdAt);
+                date = createdAt.toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            } catch (error) {
+                console.error("Erreur lors du formatage de la date:", error);
+            }
+            
+            // Nettoyer l'URL de l'image
+            const imageUrl = post.imageUrl || 'https://via.placeholder.com/400x300?text=Image';
+            const title = (post.title || 'Sans titre').substring(0, 100);
+            const description = (post.description || '').substring(0, 500);
+            
+            card.innerHTML = `
+                <div class="photo-header">
+                    <div class="avatar">K</div>
+                    <div class="photo-info">
+                        <h3>${title}</h3>
+                        <p class="photo-date">
+                            <i class="far fa-calendar-alt"></i> ${date}
+                        </p>
+                    </div>
+                </div>
+                <img src="${imageUrl}" 
+                     alt="${title}" 
+                     class="photo-image"
+                     loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/400x300?text=Image+indisponible'">
+                <div class="photo-description">
+                    ${description}
+                </div>
+                <div class="reactions">
+                    <div class="reaction-counts">
+                        <span>${totalReactions} réactions</span>
+                        <span>•</span>
+                        <span>${commentCount} commentaires</span>
+                        <span>•</span>
+                        <span>${post.shares || 0} partages</span>
+                    </div>
+                    <div class="reaction-options">
+                        <button class="reaction-btn like ${userReaction === 'like' ? 'active' : ''}" data-type="like" title="J'aime">
+                            <i class="fas fa-thumbs-up"></i>
+                        </button>
+                        <button class="reaction-btn love ${userReaction === 'love' ? 'active' : ''}" data-type="love" title="J'aime beaucoup">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <button class="reaction-btn haha ${userReaction === 'haha' ? 'active' : ''}" data-type="haha" title="C'est drôle">
+                            <i class="fas fa-laugh"></i>
+                        </button>
+                        <button class="reaction-btn cry ${userReaction === 'cry' ? 'active' : ''}" data-type="cry" title="C'est triste">
+                            <i class="fas fa-sad-cry"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="action-btn comment-btn" data-action="comment">
+                        <i class="far fa-comment"></i>
+                        <span>Commenter</span>
+                    </button>
+                    <button class="action-btn share-btn" data-action="share">
+                        <i class="fas fa-share-alt"></i>
+                        <span>Partager</span>
+                    </button>
+                    <button class="action-btn download-btn" data-action="download">
+                        <i class="fas fa-download"></i>
+                        <span>Télécharger</span>
+                    </button>
+                </div>
+                <div class="comments-section" style="display: none;">
+                    <div class="comments-title">
+                        <i class="fas fa-comments"></i>
+                        Commentaires (${commentCount})
+                    </div>
+                    <div class="comments-list" id="comments-${post.id}">
+                        ${Object.entries(comments).slice(0, 3).map(([commentId, comment]) => {
+                            const commentDate = comment.createdAt?.toDate ? comment.createdAt.toDate() : new Date(comment.createdAt);
+                            return `
+                                <div class="comment">
+                                    <div class="comment-avatar">${(comment.authorName || 'P').charAt(0).toUpperCase()}</div>
+                                    <div class="comment-content">
+                                        <div class="comment-author">${comment.authorName || 'Parent'}</div>
+                                        <div class="comment-text">${comment.text || ''}</div>
+                                        <div class="comment-time">${formatTimeAgo(commentDate)}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="add-comment">
+                        <input type="text" class="comment-input" placeholder="Ajouter un commentaire..." data-post="${post.id}" maxlength="500">
+                        <button class="comment-btn post-comment-btn" data-post="${post.id}">
+                            <i class="fas fa-paper-plane"></i> Publier
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Fonction pour mettre à jour les statistiques
+        function updateStats() {
+            let totalLikes = 0;
+            let totalComments = 0;
+            let totalShares = 0;
+            
+            posts.forEach(post => {
+                totalLikes += Object.keys(post.reactions || {}).length;
+                totalComments += Object.keys(post.comments || {}).length;
+                totalShares += post.shares || 0;
+            });
+            
+            document.getElementById('total-photos').textContent = posts.length;
+            document.getElementById('total-likes').textContent = totalLikes;
+            document.getElementById('total-comments').textContent = totalComments;
+            document.getElementById('total-shares').textContent = totalShares;
+        }
+
+        // Fonction pour formater le temps écoulé
+        function formatTimeAgo(date) {
+            try {
+                const d = date instanceof Date ? date : new Date(date);
+                const seconds = Math.floor((new Date() - d) / 1000);
+                
+                if (seconds < 60) return 'à l\'instant';
+                if (seconds < 3600) return `il y a ${Math.floor(seconds / 60)} min`;
+                if (seconds < 86400) return `il y a ${Math.floor(seconds / 3600)}h`;
+                if (seconds < 604800) return `il y a ${Math.floor(seconds / 86400)}j`;
+                return d.toLocaleDateString('fr-FR');
+            } catch (error) {
+                return 'date inconnue';
+            }
+        }
+
+        // Fonction pour attacher les événements
+        function attachEventListeners() {
+            // Boutons de tri
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.removeEventListener('click', sortClickHandler);
+                btn.addEventListener('click', sortClickHandler);
+            });
+            
+            // Boutons de réaction
+            document.querySelectorAll('.reaction-btn').forEach(btn => {
+                btn.removeEventListener('click', reactionClickHandler);
+                btn.addEventListener('click', reactionClickHandler);
+            });
+            
+            // Boutons d'action
+            document.querySelectorAll('.action-btn').forEach(btn => {
+                btn.removeEventListener('click', actionClickHandler);
+                btn.addEventListener('click', actionClickHandler);
+            });
+            
+            // Boutons de commentaire
+            document.querySelectorAll('.post-comment-btn').forEach(btn => {
+                btn.removeEventListener('click', commentClickHandler);
+                btn.addEventListener('click', commentClickHandler);
+            });
+            
+            // Entrée pour commenter
+            document.querySelectorAll('.comment-input').forEach(input => {
+                input.removeEventListener('keypress', enterKeyHandler);
+                input.addEventListener('keypress', enterKeyHandler);
+            });
+        }
+
+        // Gestionnaires d'événements
+        function sortClickHandler() {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const sortType = this.dataset.sort;
+            sortPosts(sortType);
+            renderPosts();
+        }
+
+        async function reactionClickHandler(e) {
+            if (!currentUser) {
+                alert("Veuillez actualiser la page pour réagir");
+                return;
+            }
+            
+            const postId = this.closest('.photo-card').dataset.id;
+            const reactionType = this.dataset.type;
+            const post = posts.find(p => p.id === postId);
+            
+            if (!post) return;
+            
+            const reactions = post.reactions || {};
+            const currentReaction = reactions[currentUser.uid];
+            
+            // Bascule de la réaction
+            if (currentReaction === reactionType) {
+                delete reactions[currentUser.uid];
+            } else {
+                reactions[currentUser.uid] = reactionType;
+            }
+            
+            try {
+                await db.collection('posts').doc(postId).update({
+                    reactions: reactions
+                });
+                
+                post.reactions = reactions;
+                updateStats();
+                sortPosts(currentSort);
+                renderPosts();
+                
+            } catch (error) {
+                console.error("Erreur lors de la mise à jour de la réaction:", error);
+                showErrorMessage("Impossible de mettre à jour la réaction");
+            }
+        }
+
+        function actionClickHandler(e) {
+            const action = this.dataset.action;
+            const postId = this.closest('.photo-card').dataset.id;
+            const post = posts.find(p => p.id === postId);
+            
+            if (!post) return;
+            
+            switch(action) {
+                case 'comment':
+                    const commentsSection = this.closest('.photo-card').querySelector('.comments-section');
+                    if (commentsSection) {
+                        commentsSection.style.display = commentsSection.style.display === 'none' ? 'block' : 'none';
+                    }
+                    break;
+                    
+                case 'share':
+                    sharePost(post);
+                    break;
+                    
+                case 'download':
+                    showDownloadModal(post);
+                    break;
+            }
+        }
+
+        async function commentClickHandler() {
+            const postId = this.dataset.post;
+            const input = document.querySelector(`.comment-input[data-post="${postId}"]`);
+            const commentText = input?.value?.trim();
+            
+            if (!commentText) {
+                showErrorMessage("Veuillez entrer un commentaire");
+                return;
+            }
+            
+            if (!currentUser) {
+                alert("Veuillez actualiser la page pour commenter");
+                return;
+            }
+            
+            const commentId = Date.now().toString();
+            const comment = {
+                text: commentText,
+                authorId: currentUser.uid,
+                authorName: "Parent",
+                createdAt: new Date()
+            };
+            
+            try {
+                await db.collection('posts').doc(postId).update({
+                    [`comments.${commentId}`]: comment
+                });
+                
+                const post = posts.find(p => p.id === postId);
+                if (post) {
+                    if (!post.comments) post.comments = {};
+                    post.comments[commentId] = comment;
+                }
+                
+                updateStats();
+                sortPosts(currentSort);
+                renderPosts();
+                
+                if (input) input.value = '';
+                
+            } catch (error) {
+                console.error("Erreur lors de l'ajout du commentaire:", error);
+                showErrorMessage("Impossible d'ajouter le commentaire");
+            }
+        }
+
+        function enterKeyHandler(e) {
+            if (e.key === 'Enter') {
+                const postId = this.dataset.post;
+                document.querySelector(`.post-comment-btn[data-post="${postId}"]`)?.click();
+            }
+        }
+
+        // Fonction pour partager un post
+        function sharePost(post) {
+            const shareUrl = window.location.href;
+            const shareText = `${post.title} - Galerie Kacyiru`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: post.title,
+                    text: shareText,
+                    url: shareUrl
+                }).then(() => {
+                    incrementShareCount(post.id);
+                }).catch(console.error);
+            } else {
+                alert("Lien à partager:\n" + shareUrl);
+                incrementShareCount(post.id);
+            }
+        }
+
+        // Fonction pour incrémenter le compteur de partages
+        async function incrementShareCount(postId) {
+            try {
+                const postRef = db.collection('posts').doc(postId);
+                await postRef.update({
+                    shares: firebase.firestore.FieldValue.increment(1)
+                });
+                
+                const post = posts.find(p => p.id === postId);
+                if (post) {
+                    post.shares = (post.shares || 0) + 1;
+                    updateStats();
+                    sortPosts(currentSort);
+                    renderPosts();
+                }
+            } catch (error) {
+                console.error("Erreur lors de l'incrémentation des partages:", error);
+            }
+        }
+
+        // Fonction pour afficher le modal de téléchargement
+        function showDownloadModal(post) {
+            currentDownloadUrl = post.imageUrl;
+            const modal = document.getElementById('downloadModal');
+            modal.style.display = 'flex';
+        }
+
+        // Gestion du modal de téléchargement
+        document.getElementById('downloadHigh').addEventListener('click', () => {
+            downloadImage(currentDownloadUrl, 'haute-qualite');
+            document.getElementById('downloadModal').style.display = 'none';
+        });
+        
+        document.getElementById('downloadLow').addEventListener('click', () => {
+            downloadImage(currentDownloadUrl, 'basse-qualite');
+            document.getElementById('downloadModal').style.display = 'none';
+        });
+        
+        document.getElementById('cancelDownload').addEventListener('click', () => {
+            document.getElementById('downloadModal').style.display = 'none';
+        });
+
+        // Fonction pour télécharger une image
+        function downloadImage(url, quality) {
+            if (!url) {
+                showErrorMessage("Impossible de télécharger cette image");
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `kacyiru-${Date.now()}-${quality}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Fonction pour afficher un message d'erreur
+        function showErrorMessage(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #ff6b6b;
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                animation: slideInRight 0.3s ease;
+            `;
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => errorDiv.remove(), 300);
+            }, 5000);
+        }
+
+        // Cacher le modal quand on clique en dehors
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('downloadModal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Initialiser au chargement de la page
+        window.addEventListener('load', () => {
+            console.log("Page chargée, initialisation de l'authentification...");
+            initializeAuth();
+            
+            // Écouter les mises à jour en temps réel
+            try {
+                const unsubscribe = db.collection('posts')
+                    .where('branch', '==', 'Kacyiru')
+                    .orderBy('createdAt', 'desc')
+                    .onSnapshot(
+                        (snapshot) => {
+                            console.log("Mise à jour en temps réel reçue");
+                            snapshot.docChanges().forEach(change => {
+                                try {
+                                    if (change.type === 'added' || change.type === 'modified') {
+                                        const postData = change.doc.data();
+                                        const postIndex = posts.findIndex(p => p.id === change.doc.id);
+                                        
+                                        const post = {
+                                            id: change.doc.id,
+                                            ...postData,
+                                            createdAt: postData.createdAt?.toDate ? postData.createdAt.toDate() : new Date(postData.createdAt)
+                                        };
+                                        
+                                        if (postIndex === -1) {
+                                            posts.push(post);
+                                        } else {
+                                            posts[postIndex] = post;
+                                        }
+                                    } else if (change.type === 'removed') {
+                                        posts = posts.filter(p => p.id !== change.doc.id);
+                                    }
+                                } catch (error) {
+                                    console.error("Erreur lors du traitement du changement:", error);
+                                }
+                            });
+                            
+                            updateStats();
+                            sortPosts(currentSort);
+                            renderPosts();
+                        },
+                        (error) => {
+                            console.error("Erreur lors de l'écoute en temps réel:", error);
+                        }
+                    );
+            } catch (error) {
+                console.error("Erreur lors de la configuration de l'écoute en temps réel:", error);
+            }
+        });
+
+        // Animation d'apparition
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(400px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(400px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

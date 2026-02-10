@@ -1,0 +1,417 @@
+{
+  "rules": {
+    "users": {
+      "$userId": {
+        ".read": "auth != null && (auth.uid == $userId || root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".write": "auth != null && (auth.uid == $userId || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
+        ".validate": "newData.hasChildren(['email', 'nom', 'role']) && newData.isString() == false",
+        
+        "nom": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/)"
+        },
+        "role": {
+          ".validate": "newData.isString() && newData.val() in ['director', 'IT Admin', 'secretary', 'accountant', 'teacher', 'parent']"
+        },
+        "telephone": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "status": {
+          ".validate": "newData.isString() && newData.val() in ['active', 'inactive', 'suspended']"
+        },
+        "authProvider": {
+          ".validate": "newData.isString() && newData.val() in ['email', 'google', 'facebook']"
+        },
+        "createdAt": {
+          ".validate": "newData.isString()"
+        },
+        "createdBy": {
+          ".validate": "newData.isString()"
+        },
+        "lastLogin": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    "roles": {
+      "$role": {
+        "$userId": {
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'IT Admin'",
+          ".validate": "newData.hasChildren(['email', 'nom']) && newData.isString() == false",
+          
+          "nom": {
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/)"
+          },
+          "status": {
+            ".validate": "newData.isString() && newData.val() in ['active', 'inactive']"
+          },
+          "createdAt": {
+            ".validate": "newData.isString() || !newData.exists()"
+          }
+        }
+      }
+    },
+
+    "activities": {
+      "$activityId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".validate": "newData.hasChildren(['utilisateur', 'action', 'timestamp']) && newData.isString() == false",
+        
+        "utilisateur": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "action": {
+          ".validate": "newData.isString() && newData.val() in ['Connexion', 'Déconnexion', 'Création de compte', 'Modification de compte', 'Suppression de compte', 'Création', 'Modification', 'Suppression', 'Export', 'Autre']"
+        },
+        "details": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "timestamp": {
+          ".validate": "newData.isString() || newData.isNumber()"
+        },
+        "userId": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    "reports": {
+      "$reportId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director' || root.child('reports').child($reportId).child('rapporteParId').val() === auth.uid)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('reports').child($reportId).child('rapporteParId').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['type', 'titre', 'description', 'priorite', 'statut', 'date']) && newData.isString() == false",
+        
+        "type": {
+          ".validate": "newData.isString() && newData.val() in ['Bug', 'Suggestion', 'Amélioration', 'Autre']"
+        },
+        "titre": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+        },
+        "description": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "priorite": {
+          ".validate": "newData.isString() && newData.val() in ['Basse', 'Moyenne', 'Haute', 'Critique']"
+        },
+        "statut": {
+          ".validate": "newData.isString() && newData.val() in ['Nouveau', 'En cours', 'Résolu', 'Fermé']"
+        },
+        "rapportePar": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "rapporteParId": {
+          ".validate": "newData.isString()"
+        },
+        "date": {
+          ".validate": "newData.isString()"
+        },
+        "assigneA": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "resolution": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    "students": {
+      "$studentId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director' || root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'secretary')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".validate": "newData.hasChildren(['name', 'email']) && newData.isString() == false",
+        
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "email": {
+          ".validate": "(!newData.exists()) || (newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/))"
+        },
+        "branch": {
+          ".validate": "newData.isString() && newData.val() in ['kacyiru', 'kimisagara', 'gisozi_maternelle', 'gisozi_primaire']"
+        },
+        "class": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "status": {
+          ".validate": "newData.isString() && newData.val() in ['active', 'inactive', 'graduated']"
+        }
+      }
+    },
+
+    "studentFees": {
+      "$feeId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
+        ".validate": "newData.hasChildren(['studentId', 'amount', 'date']) && newData.isString() == false",
+        
+        "studentId": {
+          ".validate": "newData.isString()"
+        },
+        "studentName": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "amount": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "date": {
+          ".validate": "newData.isString()"
+        },
+        "status": {
+          ".validate": "newData.isString() && newData.val() in ['paid', 'pending', 'overdue']"
+        },
+        "description": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    "payroll": {
+      "$payrollId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
+        ".validate": "newData.hasChildren(['workerId', 'month', 'year']) && newData.isString() == false",
+        
+        "workerId": {
+          ".validate": "newData.isString()"
+        },
+        "workerName": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "month": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "year": {
+          ".validate": "newData.isNumber() && newData.val() >= 2020 && newData.val() <= 2100"
+        },
+        "basicSalary": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "bonuses": {
+          ".validate": "newData.isNumber() || !newData.exists()"
+        },
+        "deductions": {
+          ".validate": "newData.isNumber() || !newData.exists()"
+        },
+        "totalSalary": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "status": {
+          ".validate": "newData.isString() && newData.val() in ['pending', 'processed', 'paid']"
+        },
+        "date": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    "debts": {
+      "$debtId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
+        ".validate": "newData.hasChildren(['workerId', 'amount', 'date']) && newData.isString() == false",
+        
+        "workerId": {
+          ".validate": "newData.isString()"
+        },
+        "workerName": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "amount": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "reason": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "date": {
+          ".validate": "newData.isString()"
+        },
+        "status": {
+          ".validate": "newData.isString() && newData.val() in ['pending', 'paid', 'partial']"
+        },
+        "addedBy": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    "announcements": {
+      "$announcementId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".validate": "newData.hasChildren(['message', 'timestamp']) && newData.isString() == false",
+        
+        "message": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "timestamp": {
+          ".validate": "newData.isString() || newData.isNumber()"
+        },
+        "author": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "type": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    "messages": {
+      "$messageId": {
+        ".read": "auth != null && (auth.uid == root.child('messages').child($messageId).child('senderId').val() || auth.uid == root.child('messages').child($messageId).child('recipientId').val() || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
+        ".write": "auth != null && auth.uid == root.child('messages').child($messageId).child('senderId').val()",
+        ".validate": "newData.hasChildren(['senderId', 'message', 'timestamp']) && newData.isString() == false",
+        
+        "senderId": {
+          ".validate": "newData.isString()"
+        },
+        "senderName": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "message": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "timestamp": {
+          ".validate": "newData.isString() || newData.isNumber()"
+        },
+        "recipientId": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    "settings": {
+      "$settingId": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'IT Admin'",
+        
+        "key": {
+          ".validate": "newData.isString()"
+        },
+        "value": {
+          ".validate": "newData.isString() || newData.isNumber() || newData.isBoolean()"
+        }
+      },
+      "school": {
+        "name": {
+          ".read": "auth != null",
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'IT Admin'",
+          ".validate": "newData.isString()"
+        },
+        "email": {
+          ".read": "auth != null",
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'IT Admin'",
+          ".validate": "newData.isString()"
+        },
+        "phone": {
+          ".read": "auth != null",
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'IT Admin'",
+          ".validate": "newData.isString()"
+        }
+      }
+    },
+
+    "presentations": {
+      "$presentationId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".validate": "newData.hasChildren(['title']) && newData.isString() == false",
+        
+        "title": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "description": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "date": {
+          ".validate": "newData.isString() || !newData.exists()"
+        },
+        "createdBy": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    "config": {
+      "classes": {
+        ".read": "auth != null",
+        ".write": "root.child('users').child(auth.uid).child('role').val() === 'IT Admin'"
+      },
+      "branches": {
+        ".read": "auth != null",
+        ".write": "root.child('users').child(auth.uid).child('role').val() === 'IT Admin'"
+      }
+    },
+
+    "financialReports": {
+      "$reportId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'accountant' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
+        ".validate": "newData.hasChildren(['date', 'month']) && newData.isString() == false",
+        
+        "date": {
+          ".validate": "newData.isString()"
+        },
+        "month": {
+          ".validate": "newData.isNumber() || newData.isString()"
+        },
+        "totalIncome": {
+          ".validate": "newData.isNumber() || !newData.exists()"
+        },
+        "totalExpenses": {
+          ".validate": "newData.isNumber() || !newData.exists()"
+        },
+        "balance": {
+          ".validate": "newData.isNumber() || !newData.exists()"
+        }
+      }
+    },
+
+    "monthlyReports": {
+      "$reportId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".validate": "newData.hasChildren(['month', 'year']) && newData.isString() == false",
+        
+        "month": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "year": {
+          ".validate": "newData.isNumber()"
+        },
+        "data": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    "weeklyReports": {
+      "$reportId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'IT Admin' || root.child('users').child(auth.uid).child('role').val() === 'director')",
+        ".validate": "newData.hasChildren(['week', 'year']) && newData.isString() == false",
+        
+        "week": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 53"
+        },
+        "year": {
+          ".validate": "newData.isNumber()"
+        },
+        "data": {
+          ".validate": "newData.isString() || !newData.exists()"
+        }
+      }
+    },
+
+    ".read": false,
+    ".write": false,
+    ".indexOn": ["timestamp", "date", "userId", "role", "status"]
+  }
+}

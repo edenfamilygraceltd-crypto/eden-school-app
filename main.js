@@ -1,13 +1,12 @@
 // Configuration Firebase réelle (client) pour Eden Family School
 const firebaseConfig = {
-    apiKey: "AIzaSyCx6kmJ59x0tLt4vh_3czvEEQrtw4aWFHs",
-    authDomain: "edendatabase-7e1ed.firebaseapp.com",
-    databaseURL: "https://edendatabase-7e1ed-default-rtdb.firebaseio.com",
-    projectId: "edendatabase-7e1ed",
-    storageBucket: "edendatabase-7e1ed.firebasestorage.app",
-    messagingSenderId: "147248399046",
-    appId: "1:147248399046:web:d0b433e755772bbe718dc7",
-    measurementId: "G-XB192PCMV7"
+    apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+    authDomain: "edensmart-app.firebaseapp.com",
+    projectId: "edensmart-app",
+    storageBucket: "edensmart-app.firebasestorage.app",
+    messagingSenderId: "1093120876724",
+    appId: "1:1093120876724:web:bc37448cadd18d651c77e1",
+    measurementId: "G-1FL70PZZSW"
 };
 
 // Initialisation Firebase côté navigateur (SDK compat chargé via index.html)
