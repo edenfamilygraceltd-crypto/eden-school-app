@@ -12,9 +12,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
-    <!-- Font Awesome -->
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Responsive CSS Global -->
@@ -26,25 +26,11 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Firebase (Modern SDK) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
-            authDomain: "edensmart-app.firebaseapp.com",
-            projectId: "edensmart-app",
-            storageBucket: "edensmart-app.firebasestorage.app",
-            messagingSenderId: "1093120876724",
-            appId: "1:1093120876724:web:bc37448cadd18d651c77e1"
-        };
-
-        window.firebaseApp = initializeApp(firebaseConfig);
-        window.database = getDatabase(window.firebaseApp);
-        window.auth = getAuth(window.firebaseApp);
-    </script>
+    <!-- Firebase v8 (Version stable) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
     
     <style>
         :root {
@@ -950,6 +936,39 @@
         }
     </style>
     <script src="password-visibility.js"></script>
+    <script>
+        // Définir logout de manière précoce pour éviter les problèmes de timing
+        let auth = null;
+        let currentUser = null;
+        let currentUserData = null;
+        
+        function logout() {
+            if (!auth) {
+                console.error('Firebase auth not initialized yet. Please try again.');
+                alert('Erreur: Authentification non initialisée. Veuillez réessayer.');
+                return;
+            }
+            
+            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                auth.signOut().then(() => {
+                    console.log('Déconnexion réussie');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Déconnexion', 'Vous avez été déconnecté avec succès', 'success');
+                    }
+                    setTimeout(() => {
+                        window.location.href = 'Auth.html';
+                    }, 500);
+                }).catch((error) => {
+                    console.error('Erreur lors de la déconnexion:', error);
+                    if (typeof showNotification === 'function') {
+                        showNotification('Erreur', 'Erreur lors de la déconnexion: ' + error.message, 'error');
+                    } else {
+                        alert('Erreur: ' + error.message);
+                    }
+                });
+            }
+        }
+    </script>
 </head>
 <body>
     <!-- Header -->
@@ -957,7 +976,7 @@
         <div class="header-container">
             <div class="logo">
                 <div class="logo-icon">
-                    <i class="fas fa-crown"></i>
+                    <img src="asset/img/logo_eden.png" alt="Logo Eden Family School" style="height: 40px; width: auto; object-fit: contain;">
                 </div>
                 <div class="logo-text">
                     <h1>Portail Directeur</h1>
@@ -2500,8 +2519,8 @@
                     <label class="form-label">Rôle *</label>
                     <select class="form-control-modern" id="newUserRole">
                         <option value="">Sélectionner un rôle</option>
-                        <option value="teacher">Enseignant</option>
                         <option value="secretary">Secrétaire</option>
+                        <option value="teacher">Enseignant</option>
                         <option value="accountant">Comptable</option>
                     </select>
                 </div>
@@ -2966,12 +2985,13 @@
         </div>
     </div>
 
-    <!-- Firebase Configuration -->
+    <!-- Firebase Configuration et Script Principal -->
     <script>
-        // Configuration Firebase - Nouvelle Base de Données
+        // Configuration Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
             authDomain: "edensmart-app.firebaseapp.com",
+            databaseURL: "https://edensmart-app-default-rtdb.firebaseio.com",
             projectId: "edensmart-app",
             storageBucket: "edensmart-app.firebasestorage.app",
             messagingSenderId: "1093120876724",
@@ -2980,11 +3000,10 @@
         };
         
         // Initialiser Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        const auth = firebase.auth();
+        auth = firebase.auth();  // Assigner à la variable globale définie en haut
+        const analytics = firebase.analytics();
         
         // Variables globales
         let currentUser = null;
@@ -2994,13 +3013,11 @@
         let secretariesData = [];
         let teachersData = [];
         let accountantsData = [];
-        let financialData = [];
-        let academicData = [];
         let isInitialized = false;
         
         // Vérifier l'authentification au chargement
         auth.onAuthStateChanged(async (user) => {
-            console.log('Auth State Changed:', user ? user.email : 'No user');
+            console.log('État d\'authentification:', user ? 'Connecté' : 'Déconnecté');
             if (user) {
                 currentUser = user;
                 // Charger les données du directeur
@@ -3011,6 +3028,36 @@
             }
         });
         
+        // [Old logout function removed - now defined in <head> section]
+        
+        // Initialiser la structure de la base de données
+        function initializeDatabaseStructure() {
+            const initialStructure = {
+                users: {},
+                teachers: {},
+                secretaries: {},
+                accountants: {},
+                students: {},
+                directors: {},
+                payments: {},
+                expenses: {},
+                feesConfiguration: {},
+                activities: {},
+                gallery: {},
+                messages: {},
+                reports: {}
+            };
+            
+            // Cette fonction crée la structure si elle n'existe pas
+            database.ref('/').once('value', (snapshot) => {
+                if (!snapshot.exists() || Object.keys(snapshot.val()).length === 0) {
+                    database.ref('/').set(initialStructure)
+                        .then(() => console.log('Structure de base de données initialisée'))
+                        .catch(error => console.error('Erreur:', error));
+                }
+            });
+        }
+        
         // Charger les données du directeur depuis Firebase
         async function loadDirectorData(uid) {
             try {
@@ -3020,6 +3067,9 @@
                         currentUserData = snapshot.val();
                         document.getElementById('directorName').textContent = currentUserData.name || 'Directeur';
                         document.getElementById('userRole').textContent = currentUserData.role || 'Administrateur';
+                        
+                        // Initialiser la structure de la base de données
+                        initializeDatabaseStructure();
                         
                         // Charger toutes les données
                         if (!isInitialized) {
@@ -3050,19 +3100,6 @@
                 console.error('Erreur:', error);
                 showNotification('Erreur', error.message, 'error');
             }
-        }
-        
-        // Fonction de déconnexion - Redirection vers Auth.html
-        function logout() {
-            auth.signOut().then(() => {
-                showNotification('Déconnexion', 'Vous avez été déconnecté avec succès', 'success');
-                setTimeout(() => {
-                    window.location.href = 'Auth.html';
-                }, 1000);
-            }).catch((error) => {
-                console.error('Erreur lors de la déconnexion:', error);
-                showNotification('Erreur', 'Erreur lors de la déconnexion', 'error');
-            });
         }
         
         // Afficher une section
@@ -3174,7 +3211,7 @@
                 .then(async (userCredential) => {
                     const uid = userCredential.user.uid;
                     
-                    // Ajouter les données utilisateur dans Realtime Database
+                    // Structure des données utilisateur
                     const userData = {
                         name: name,
                         email: email,
@@ -3183,27 +3220,40 @@
                         phone: phone,
                         department: department,
                         status: 'active',
-                        createdAt: new Date().toISOString().split('T')[0],
-                        createdBy: currentUser.email
+                        createdAt: new Date().toISOString(),
+                        createdBy: currentUser.email,
+                        uid: uid
                     };
                     
                     try {
-                        // Ajouter l'utilisateur dans /users
+                        // 1. Ajouter dans la collection générale users
                         await database.ref('users/' + uid).set(userData);
                         
-                        // Ajouter aussi dans le répertoire du rôle spécifique
+                        // 2. Ajouter dans la collection spécifique selon le rôle
                         if (role === 'teacher') {
                             await database.ref('teachers/' + uid).set(userData);
+                            showNotification('Succès', `Enseignant ${name} créé avec succès`, 'success');
                         } else if (role === 'secretary') {
                             await database.ref('secretaries/' + uid).set(userData);
+                            showNotification('Succès', `Secrétaire ${name} créé avec succès`, 'success');
                         } else if (role === 'accountant') {
                             await database.ref('accountants/' + uid).set(userData);
+                            showNotification('Succès', `Comptable ${name} créé avec succès`, 'success');
                         }
                         
-                        showNotification('Succès', `Utilisateur ${name} créé avec succès`, 'success');
-                        closeModal('createUserModal');
+                        // 3. Ajouter une activité de journalisation
+                        const activityData = {
+                            user: currentUserData.name || 'Directeur',
+                            action: `Création d'un ${role}: ${name}`,
+                            date: new Date().toLocaleDateString('fr-FR'),
+                            time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                            timestamp: Date.now()
+                        };
                         
-                        // Réinitialiser le formulaire
+                        await database.ref('activities').push().set(activityData);
+                        
+                        // 4. Fermer le modal et réinitialiser le formulaire
+                        closeModal('createUserModal');
                         document.getElementById('newUserName').value = '';
                         document.getElementById('newUserEmail').value = '';
                         document.getElementById('newUserPhone').value = '';
@@ -3211,8 +3261,10 @@
                         document.getElementById('newUserPassword').value = '';
                         document.getElementById('newUserPasswordConfirm').value = '';
                         
-                        // Recharger les utilisateurs
+                        // 5. Recharger les données
                         loadAllUsers();
+                        loadDashboardData();
+                        
                     } catch (error) {
                         console.error('Erreur lors de l\'ajout des données utilisateur:', error);
                         showNotification('Erreur', 'Erreur lors de la sauvegarde des données', 'error');
@@ -3225,6 +3277,8 @@
                         errorMessage = 'Cet email est déjà utilisé';
                     } else if (error.code === 'auth/invalid-email') {
                         errorMessage = 'Email invalide';
+                    } else if (error.code === 'auth/weak-password') {
+                        errorMessage = 'Mot de passe trop faible';
                     }
                     showNotification('Erreur', errorMessage, 'error');
                 });
@@ -3263,13 +3317,25 @@
                         phone: phone,
                         department: department,
                         status: 'active',
-                        createdAt: new Date().toISOString().split('T')[0],
-                        createdBy: currentUser.email
+                        createdAt: new Date().toISOString(),
+                        createdBy: currentUser.email,
+                        uid: uid
                     };
                     
                     try {
                         await database.ref('users/' + uid).set(secretaryData);
                         await database.ref('secretaries/' + uid).set(secretaryData);
+                        
+                        // Ajouter une activité
+                        const activityData = {
+                            user: currentUserData.name || 'Directeur',
+                            action: `Création d'un secrétaire: ${name}`,
+                            date: new Date().toLocaleDateString('fr-FR'),
+                            time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                            timestamp: Date.now()
+                        };
+                        
+                        await database.ref('activities').push().set(activityData);
                         
                         showNotification('Succès', `Secrétaire ${name} créé avec succès`, 'success');
                         closeModal('createSecretaryModal');
@@ -3284,6 +3350,7 @@
                         
                         // Recharger les secrétaires
                         loadSecretaries();
+                        loadDashboardData();
                     } catch (error) {
                         console.error('Erreur:', error);
                         showNotification('Erreur', 'Erreur lors de la sauvegarde', 'error');
@@ -3333,13 +3400,25 @@
                         section: section,
                         class: teacherClass,
                         status: 'active',
-                        createdAt: new Date().toISOString().split('T')[0],
-                        createdBy: currentUser.email
+                        createdAt: new Date().toISOString(),
+                        createdBy: currentUser.email,
+                        uid: uid
                     };
                     
                     try {
                         await database.ref('users/' + uid).set(teacherData);
                         await database.ref('teachers/' + uid).set(teacherData);
+                        
+                        // Ajouter une activité
+                        const activityData = {
+                            user: currentUserData.name || 'Directeur',
+                            action: `Création d'un enseignant: ${name}`,
+                            date: new Date().toLocaleDateString('fr-FR'),
+                            time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                            timestamp: Date.now()
+                        };
+                        
+                        await database.ref('activities').push().set(activityData);
                         
                         showNotification('Succès', `Enseignant ${name} créé avec succès`, 'success');
                         closeModal('createTeacherModal');
@@ -3352,6 +3431,7 @@
                         document.getElementById('teacherConfirmPassword').value = '';
                         
                         loadTeachers();
+                        loadDashboardData();
                     } catch (error) {
                         console.error('Erreur:', error);
                         showNotification('Erreur', 'Erreur lors de la sauvegarde', 'error');
@@ -3430,7 +3510,7 @@
                 section: section,
                 class: selectedClasses.join(', '),
                 status: status,
-                updatedAt: new Date().toISOString().split('T')[0],
+                updatedAt: new Date().toISOString(),
                 updatedBy: currentUser.email
             };
             
@@ -3438,6 +3518,17 @@
                 // Mettre à jour dans Firebase
                 database.ref('teachers/' + currentEditingTeacherUid).update(updatedData);
                 database.ref('users/' + currentEditingTeacherUid).update(updatedData);
+                
+                // Ajouter une activité
+                const activityData = {
+                    user: currentUserData.name || 'Directeur',
+                    action: `Modification d'un enseignant: ${name}`,
+                    date: new Date().toLocaleDateString('fr-FR'),
+                    time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                    timestamp: Date.now()
+                };
+                
+                database.ref('activities').push().set(activityData);
                 
                 showNotification('Succès', 'Enseignant modifié avec succès', 'success');
                 closeModal('editTeacherModal');
@@ -3482,13 +3573,25 @@
                         phone: phone,
                         department: department,
                         status: 'active',
-                        createdAt: new Date().toISOString().split('T')[0],
-                        createdBy: currentUser.email
+                        createdAt: new Date().toISOString(),
+                        createdBy: currentUser.email,
+                        uid: uid
                     };
                     
                     try {
                         await database.ref('users/' + uid).set(accountantData);
                         await database.ref('accountants/' + uid).set(accountantData);
+                        
+                        // Ajouter une activité
+                        const activityData = {
+                            user: currentUserData.name || 'Directeur',
+                            action: `Création d'un comptable: ${name}`,
+                            date: new Date().toLocaleDateString('fr-FR'),
+                            time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                            timestamp: Date.now()
+                        };
+                        
+                        await database.ref('activities').push().set(activityData);
                         
                         showNotification('Succès', `Comptable ${name} créé avec succès`, 'success');
                         closeModal('createAccountantModal');
@@ -3502,6 +3605,7 @@
                         document.getElementById('accountantConfirmPassword').value = '';
                         
                         loadAccountants();
+                        loadDashboardData();
                     } catch (error) {
                         console.error('Erreur:', error);
                         showNotification('Erreur', 'Erreur lors de la sauvegarde', 'error');
@@ -3559,7 +3663,7 @@
                 parentEmail: parentEmail,
                 address: address,
                 status: 'active',
-                createdAt: new Date().toISOString().split('T')[0],
+                createdAt: new Date().toISOString(),
                 createdBy: currentUser.email
             };
             
@@ -3569,6 +3673,17 @@
                         console.error('Erreur:', error);
                         showNotification('Erreur', 'Erreur lors de la création', 'error');
                     } else {
+                        // Ajouter une activité
+                        const activityData = {
+                            user: currentUserData.name || 'Directeur',
+                            action: `Création d'un élève: ${firstName} ${lastName}`,
+                            date: new Date().toLocaleDateString('fr-FR'),
+                            time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                            timestamp: Date.now()
+                        };
+                        
+                        database.ref('activities').push().set(activityData);
+                        
                         showNotification('Succès', `Élève ${firstName} ${lastName} créé. Matricule: ${matricule}`, 'success');
                         closeModal('createStudentModal');
                         
@@ -3582,6 +3697,7 @@
                         document.getElementById('studentAddress').value = '';
                         
                         loadStudents();
+                        loadDashboardData();
                     }
                 });
             } catch (error) {
@@ -3633,6 +3749,17 @@
                         console.error('Erreur:', error);
                         showNotification('Erreur', 'Erreur lors de la sauvegarde', 'error');
                     } else {
+                        // Ajouter une activité
+                        const activityData = {
+                            user: currentUserData.name || 'Directeur',
+                            action: `Configuration des frais pour ${branch} - T${trimester} ${academicYear}`,
+                            date: new Date().toLocaleDateString('fr-FR'),
+                            time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                            timestamp: Date.now()
+                        };
+                        
+                        database.ref('activities').push().set(activityData);
+                        
                         showNotification('Succès', `Configuration enregistrée pour ${branch} - T${trimester} ${academicYear}`, 'success');
                         closeModal('configureFeesModal');
                     }
@@ -3721,6 +3848,7 @@
                     document.getElementById('totalRevenue').textContent = totalRevenue.toLocaleString() + ' RWF';
                 });
                 
+                // Charger les activités récentes depuis Firebase
                 loadRecentActivity();
                 
             } catch (error) {
@@ -3810,7 +3938,7 @@
             }
         }
         
-        // Charger l'activité récente
+        // Charger l'activité récente DEPUIS FIREBASE
         function loadRecentActivity() {
             try {
                 const tbody = document.getElementById('recentActivity');
@@ -3819,39 +3947,34 @@
                 tbody.innerHTML = '';
                 
                 const activitiesRef = database.ref('activities');
-                activitiesRef.limitToLast(5).once('value', (snapshot) => {
+                // Charger les 10 dernières activités triées par timestamp
+                activitiesRef.orderByChild('timestamp').limitToLast(10).once('value', (snapshot) => {
                     if (snapshot.exists()) {
                         const activities = snapshot.val();
-                        Object.values(activities).reverse().forEach(activity => {
+                        // Convertir en tableau et trier par timestamp décroissant
+                        const activitiesArray = Object.values(activities).sort((a, b) => b.timestamp - a.timestamp);
+                        
+                        activitiesArray.forEach(activity => {
                             const row = document.createElement('tr');
                             row.innerHTML = `
                                 <td>${activity.user || 'Système'}</td>
                                 <td>${activity.action || 'Action'}</td>
-                                <td>${activity.date || new Date().toLocaleDateString('fr-FR')}</td>
-                                <td>${activity.time || new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</td>
+                                <td>${activity.date || 'N/A'}</td>
+                                <td>${activity.time || 'N/A'}</td>
                             `;
                             tbody.appendChild(row);
                         });
                     } else {
-                        // Données par défaut
-                        const defaultActivities = [
-                            { user: 'Système', action: 'Initialisation du portail', date: new Date().toLocaleDateString('fr-FR'), time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) }
-                        ];
-                        
-                        defaultActivities.forEach(activity => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${activity.user}</td>
-                                <td>${activity.action}</td>
-                                <td>${activity.date}</td>
-                                <td>${activity.time}</td>
-                            `;
-                            tbody.appendChild(row);
-                        });
+                        // Aucune activité trouvée
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td colspan="4" class="text-center text-muted">Aucune activité récente</td>
+                        `;
+                        tbody.appendChild(row);
                     }
                 });
             } catch (error) {
-                console.error('Erreur:', error);
+                console.error('Erreur lors du chargement des activités:', error);
             }
         }
         
@@ -3870,6 +3993,9 @@
                     if (snapshot.exists()) {
                         const users = snapshot.val();
                         Object.entries(users).forEach(([uid, user]) => {
+                            // Exclure l'utilisateur directeur actuel
+                            if (user.role === 'director') return;
+                            
                             usersData.push({ uid, ...user });
                             
                             const roleLabels = {
@@ -3894,7 +4020,7 @@
                                 <td>${branchNames[user.branch] || user.branch || 'N/A'}</td>
                                 <td>${user.phone || 'N/A'}</td>
                                 <td><span class="badge-modern ${user.status === 'active' ? 'badge-success' : 'badge-danger'}">${user.status === 'active' ? 'Actif' : 'Inactif'}</span></td>
-                                <td>${user.createdAt || 'N/A'}</td>
+                                <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR') : 'N/A'}</td>
                                 <td>
                                     <button class="btn-modern btn-primary-modern btn-sm"><i class="fas fa-edit"></i></button>
                                     <button class="btn-modern btn-danger-modern btn-sm" onclick="deleteUser('${uid}')"><i class="fas fa-trash"></i></button>
@@ -3902,6 +4028,10 @@
                             `;
                             tbody.appendChild(row);
                         });
+                    }
+                    
+                    if (tbody.children.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Aucun utilisateur trouvé</td></tr>';
                     }
                 });
             } catch (error) {
@@ -4659,6 +4789,17 @@
             if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
                 database.ref('users/' + uid).remove();
                 showNotification('Succès', 'Utilisateur supprimé', 'success');
+                
+                // Ajouter une activité
+                const activityData = {
+                    user: currentUserData.name || 'Directeur',
+                    action: 'Suppression d\'un utilisateur',
+                    date: new Date().toLocaleDateString('fr-FR'),
+                    time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                    timestamp: Date.now()
+                };
+                
+                database.ref('activities').push().set(activityData);
             }
         }
         
@@ -4667,6 +4808,17 @@
                 database.ref('secretaries/' + uid).remove();
                 database.ref('users/' + uid).remove();
                 showNotification('Succès', 'Secrétaire supprimé', 'success');
+                
+                // Ajouter une activité
+                const activityData = {
+                    user: currentUserData.name || 'Directeur',
+                    action: 'Suppression d\'un secrétaire',
+                    date: new Date().toLocaleDateString('fr-FR'),
+                    time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                    timestamp: Date.now()
+                };
+                
+                database.ref('activities').push().set(activityData);
             }
         }
         
@@ -4675,6 +4827,17 @@
                 database.ref('teachers/' + uid).remove();
                 database.ref('users/' + uid).remove();
                 showNotification('Succès', 'Enseignant supprimé', 'success');
+                
+                // Ajouter une activité
+                const activityData = {
+                    user: currentUserData.name || 'Directeur',
+                    action: 'Suppression d\'un enseignant',
+                    date: new Date().toLocaleDateString('fr-FR'),
+                    time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                    timestamp: Date.now()
+                };
+                
+                database.ref('activities').push().set(activityData);
             }
         }
         
@@ -4683,6 +4846,17 @@
                 database.ref('accountants/' + uid).remove();
                 database.ref('users/' + uid).remove();
                 showNotification('Succès', 'Comptable supprimé', 'success');
+                
+                // Ajouter une activité
+                const activityData = {
+                    user: currentUserData.name || 'Directeur',
+                    action: 'Suppression d\'un comptable',
+                    date: new Date().toLocaleDateString('fr-FR'),
+                    time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                    timestamp: Date.now()
+                };
+                
+                database.ref('activities').push().set(activityData);
             }
         }
         
@@ -4690,18 +4864,38 @@
             if (confirm('Êtes-vous sûr de vouloir supprimer cet élève ?')) {
                 database.ref('students/' + key).remove();
                 showNotification('Succès', 'Élève supprimé', 'success');
+                
+                // Ajouter une activité
+                const activityData = {
+                    user: currentUserData.name || 'Directeur',
+                    action: 'Suppression d\'un élève',
+                    date: new Date().toLocaleDateString('fr-FR'),
+                    time: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                    timestamp: Date.now()
+                };
+                
+                database.ref('activities').push().set(activityData);
             }
         }
         
         // 🔒 VÉRIFICATION DE SÉCURITÉ - Protéger la page
-        if (!protectPage('director.html')) {
-            throw new Error('Accès non autorisé');
+        if (typeof protectPage === 'function') {
+            if (!protectPage('director.html')) {
+                throw new Error('Accès non autorisé');
+            }
         }
 
         // Initialiser l'application
         function initApp() {
-            console.log('Application initialisée');
-            // Les événements d'authentification Firebase gèrent l'initialisation
+            console.log('Application initialisée - Portail Directeur');
+            // Vérifier si l'utilisateur est déjà connecté
+            const user = auth.currentUser;
+            if (user) {
+                console.log('Utilisateur déjà connecté:', user.email);
+                loadDirectorData(user.uid);
+            } else {
+                console.log('Aucun utilisateur connecté');
+            }
         }
         
         // Initialiser au chargement

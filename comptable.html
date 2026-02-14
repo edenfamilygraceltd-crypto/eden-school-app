@@ -1018,6 +1018,37 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script>
+        // Définir logout de manière précoce pour éviter les problèmes de timing
+        let auth = null;
+        function logout() {
+            if (!auth) {
+                console.error('Firebase auth not initialized yet. Please try again.');
+                alert('Erreur: Authentification non initialisée. Veuillez réessayer.');
+                return;
+            }
+            
+                if (confirm('Êtes-vous sûr de vouloir vous déconnecter?')) {
+                    auth.signOut().then(() => {
+                        console.log('Déconnexion réussie');
+                        if (typeof showToast === 'function') {
+                            showToast('Déconnexion réussie', 'success');
+                        }
+                        // Rediriger directement vers Auth.html sans recharger la page
+                        setTimeout(() => {
+                            window.location.href = 'Auth.html';
+                        }, 500);
+                    }).catch((error) => {
+                    console.error('Erreur déconnexion:', error);
+                    if (typeof showToast === 'function') {
+                        showToast('Erreur lors de la déconnexion: ' + error.message, 'error');
+                    } else {
+                        alert('Erreur: ' + error.message);
+                    }
+                });
+            }
+        }
+    </script>
 </head>
 <body>
     <!-- Toast Container -->
@@ -1028,7 +1059,7 @@
         <div class="header-container">
             <div class="logo">
                 <div class="logo-icon">
-                    <i class="fas fa-seedling"></i>
+                    <img src="asset/img/logo_eden.png" alt="Logo Eden Family School" style="height: 40px; width: auto; object-fit: contain;">
                 </div>
                 <div class="logo-text">
                     <h1>EdenSmart Finances</h1>
@@ -1074,6 +1105,10 @@
                 <button class="nav-btn active" onclick="showSection('dashboard')">
                     <i class="fas fa-tachometer-alt"></i>
                     <span data-i18n="dashboard">Tableau de bord</span>
+                </button>
+                <button class="nav-btn" onclick="showSection('inscription-comptable')">
+                    <i class="fas fa-pen-fancy"></i>
+                    <span data-i18n="inscription">Inscription</span>
                 </button>
                 <button class="nav-btn" onclick="showSection('teachers')">
                     <i class="fas fa-users"></i>
@@ -1192,6 +1227,284 @@
                                 <small class="text-muted">Chargement...</small>
                                 <p class="mb-0">Chargement des annonces...</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Inscription Section -->
+        <section id="inscription-comptable" class="section">
+            <div style="max-width: 1100px; margin: 0 auto;">
+                <h2 class="fw-bold mb-4">
+                    <i class="fas fa-pen-fancy me-3" style="color: var(--primary);"></i>
+                    Formulaire d'Inscription Scolaire - EDEN FAMILY SCHOOL
+                </h2>
+                
+                <div style="background: white; border-radius: var(--border-radius); padding: 3rem 2rem; box-shadow: var(--box-shadow);">
+                    <!-- En-tête -->
+                    <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 2rem; border-radius: 12px; text-align: center; margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 0.5rem; font-size: 1.6em;">FORMULAIRE D'INSCRIPTION SCOLAIRE</h3>
+                        <p style="margin-bottom: 0.3rem;">MATERNELLE (N1, N2, N3) ET PRIMAIRE (P1, P2, P3, P4, P5)</p>
+                        <p style="margin: 0; font-size: 0.95em;">BRANCHE DE KACYIRU, GISOZI, KIMISAGARA</p>
+                    </div>
+
+                    <form id="inscriptionFormComptable">
+                        <!-- Section 1: Information de l'enfant -->
+                        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 1.2rem; margin: 2rem 0 1.5rem 0; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
+                            <i class="fas fa-child me-2"></i>INFORMATION DE L'ENFANT
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">Nom et prénom *</label>
+                                <input type="text" id="nomPrenomComp" name="nomPrenom" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px; transition: all 0.3s ease;">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">Date de naissance *</label>
+                                <input type="date" id="dateNaissanceComp" name="dateNaissance" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px; transition: all 0.3s ease;">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">École de provenance *</label>
+                                <input type="text" id="ecoleProvenanceComp" name="ecoleProvenance" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px; transition: all 0.3s ease;">
+                            </div>
+                        </div>
+
+                        <!-- Sexe -->
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">Sexe *</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="garconComp" name="sexe" value="GARÇON" required>
+                                        <label class="form-check-label" for="garconComp"><i class="fas fa-male me-1"></i> GARÇON</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="filleComp" name="sexe" value="FILLE" required>
+                                        <label class="form-check-label" for="filleComp"><i class="fas fa-female me-1"></i> FILLE</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Niveau Scolaire -->
+                        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 1.2rem; margin: 2rem 0 1.5rem 0; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
+                            <i class="fas fa-graduation-cap me-2"></i>NIVEAU SCOLAIRE
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold mb-2">Section *</label>
+                                <div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" id="materuelleComp" name="section" value="MATERNELLE" required onchange="updateSectionComp()">
+                                        <label class="form-check-label" for="materuelleComp"><i class="fas fa-baby me-1"></i> MATERNELLE</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" id="primaireComp" name="section" value="PRIMAIRE" required onchange="updateSectionComp()">
+                                        <label class="form-check-label" for="primaireComp"><i class="fas fa-child me-1"></i> PRIMAIRE</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3" id="niveauMaternelleGroupComp" style="display: none;">
+                                <label class="form-label fw-bold mb-2">Niveau maternelle *</label>
+                                <select id="niveauMaternelleComp" name="niveauMaternelle" class="form-control-modern" style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                                    <option value="">Sélectionnez</option>
+                                    <option value="N1">N1</option>
+                                    <option value="N2">N2</option>
+                                    <option value="N3">N3</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3" id="niveauPrimaireGroupComp" style="display: none;">
+                                <label class="form-label fw-bold mb-2">Niveau primaire *</label>
+                                <select id="niveauPrimaireComp" name="niveauPrimaire" class="form-control-modern" style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                                    <option value="">Sélectionnez</option>
+                                    <option value="P1">P1</option>
+                                    <option value="P2">P2</option>
+                                    <option value="P3">P3</option>
+                                    <option value="P4">P4</option>
+                                    <option value="P5">P5</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3" id="sdmsGroupComp" style="display: none;">
+                                <label class="form-label fw-bold mb-2">SDMS Code *</label>
+                                <input type="text" id="sdmsCodeComp" name="sdmsCode" class="form-control-modern" placeholder="Code SDMS" style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">Classe affectée</label>
+                                <select id="classeAffecteeComp" name="classeAffectee" class="form-control-modern" style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                                    <option value="">À déterminer</option>
+                                    <option value="N1">N1 - Maternelle 1</option>
+                                    <option value="N2">N2 - Maternelle 2</option>
+                                    <option value="N3">N3 - Maternelle 3</option>
+                                    <option value="P1">P1 - Primaire 1</option>
+                                    <option value="P2">P2 - Primaire 2</option>
+                                    <option value="P3">P3 - Primaire 3</option>
+                                    <option value="P4">P4 - Primaire 4</option>
+                                    <option value="P5">P5 - Primaire 5</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Branche -->
+                        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 1.2rem; margin: 2rem 0 1.5rem 0; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
+                            <i class="fas fa-map-marker-alt me-2"></i>BRANCHE
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold mb-2">Sélectionnez la branche *</label>
+                            <div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="brancheKacyiruComp" name="branche" value="KACYIRU" required onchange="updateContactInfoComp()">
+                                    <label class="form-check-label" for="brancheKacyiruComp"><i class="fas fa-school me-1" style="color: #9C27B0;"></i> KACYIRU</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="brancheGisoziComp" name="branche" value="GISOZI" required onchange="updateContactInfoComp()">
+                                    <label class="form-check-label" for="brancheGisoziComp"><i class="fas fa-school me-1" style="color: #2196F3;"></i> GISOZI</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="brancheKimisagaraComp" name="branche" value="KIMISAGARA" required onchange="updateContactInfoComp()">
+                                    <label class="form-check-label" for="brancheKimisagaraComp"><i class="fas fa-school me-1" style="color: #4CAF50;"></i> KIMISAGARA</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Info -->
+                        <div id="contactInfoComp" style="background: linear-gradient(135deg, rgba(46, 139, 87, 0.15), rgba(30, 107, 78, 0.15)); padding: 1.5rem; border-radius: 10px; margin: 2rem 0; border-left: 5px solid var(--primary); text-align: center; display: none;">
+                            <p id="contactTextComp" style="margin: 0;"></p>
+                        </div>
+
+                        <!-- Section 4: Transport -->
+                        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 1.2rem; margin: 2rem 0 1.5rem 0; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
+                            <i class="fas fa-bus me-2"></i>TRANSPORT
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold mb-2">Transport bus *</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="transportOuiComp" name="transport" value="OUI" required>
+                                    <label class="form-check-label" for="transportOuiComp"><i class="fas fa-check-circle me-1"></i> OUI</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="transportNonComp" name="transport" value="NON" required>
+                                    <label class="form-check-label" for="transportNonComp"><i class="fas fa-times-circle me-1"></i> NON</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 5: Chef de Famille -->
+                        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 1.2rem; margin: 2rem 0 1.5rem 0; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
+                            <i class="fas fa-user-tie me-2"></i>CHEF DE FAMILLE
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">Nom et prénom *</label>
+                                <input type="text" id="chefNomPrenomComp" name="chefNomPrenom" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">Téléphone *</label>
+                                <input type="tel" id="chefTelephoneComp" name="chefTelephone" pattern="[0-9]{10}" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">Pièce d'identité *</label>
+                                <input type="text" id="chefPieceIdentiteComp" name="chefPieceIdentite" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                        </div>
+
+                        <!-- Section 6: Conjoint (Optionnel) -->
+                        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)); color: white; padding: 1.2rem; margin: 2rem 0 1.5rem 0; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
+                            <i class="fas fa-users me-2"></i>CONJOINT(E) (Optionnel)
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">Nom et prénom</label>
+                                <input type="text" id="conjointNomPrenomComp" name="conjointNomPrenom" class="form-control-modern" style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">Téléphone</label>
+                                <input type="tel" id="conjointTelephoneComp" name="conjointTelephone" pattern="[0-9]{10}" class="form-control-modern" style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold mb-2">Pièce d'identité</label>
+                                <input type="text" id="conjointPieceIdentiteComp" name="conjointPieceIdentite" class="form-control-modern" style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                        </div>
+
+                        <!-- Section 7: Adresse -->
+                        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)); color: white; padding: 1.2rem; margin: 2rem 0 1.5rem 0; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
+                            <i class="fas fa-address-book me-2"></i>ADRESSE
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label fw-bold mb-2">Ville *</label>
+                                <select id="villeComp" name="ville" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                                    <option value="">Sélectionnez</option>
+                                    <option value="Kigali">Kigali</option>
+                                    <option value="Butare">Butare</option>
+                                    <option value="Gisenyi">Gisenyi</option>
+                                    <option value="Ruhengeri">Ruhengeri</option>
+                                    <option value="Gitarama">Gitarama</option>
+                                    <option value="Kibungo">Kibungo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label fw-bold mb-2">Secteur *</label>
+                                <input type="text" id="secteurComp" name="secteur" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label fw-bold mb-2">Umurenge *</label>
+                                <input type="text" id="umurengeComp" name="umurenge" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label fw-bold mb-2">Akagari *</label>
+                                <input type="text" id="akagariComp" name="akagari" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label fw-bold mb-2">Umudugudu *</label>
+                                <input type="text" id="umuduguduComp" name="umudugudu" class="form-control-modern" required style="border: 2px solid #ddd; padding: 0.8rem; border-radius: 8px;">
+                            </div>
+                        </div>
+
+                        <!-- Boutons -->
+                        <div class="text-center mt-5">
+                            <button type="button" class="btn-modern btn-primary-modern btn-lg me-2" onclick="submitComptableInscription()" id="submitBtnComp">
+                                <i class="fas fa-paper-plane me-2"></i> Soumettre l'inscription
+                            </button>
+                            <button type="button" class="btn-modern btn-lg" style="background-color: #6c757d; color: white;" onclick="resetFormComp()">
+                                <i class="fas fa-redo me-2"></i> Réinitialiser
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Message d'erreur -->
+                    <div id="missingFieldMessageComp" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #DC143C; color: white; padding: 2rem; border-radius: 15px; z-index: 1000; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: none;">
+                        <h3 id="errorTitleComp">Champ obligatoire manquant !</h3>
+                        <p id="errorMessageComp">Veuillez remplir tous les champs obligatoires.</p>
+                        <button class="btn-modern btn-primary-modern" onclick="hideErrorMessageComp()" style="margin-top: 1rem;">
+                            <i class="fas fa-check me-2"></i> J'ai compris !
+                        </button>
+                    </div>
+
+                    <!-- Message de succès -->
+                    <div id="successMessageComp" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000;">
+                        <div style="background: white; padding: 3rem; border-radius: 15px; text-align: center; max-width: 500px;">
+                            <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; font-size: 3em; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">✓</div>
+                            <h3>Inscription enregistrée avec succès!</h3>
+                            <p>Code unique de l'enfant: <strong id="studentCodeComp"></strong></p>
+                            <p>Les données ont été enregistrées dans notre base de données.</p>
+                            <button class="btn-modern btn-primary-modern" onclick="closeSuccessMessageComp()">
+                                <i class="fas fa-times me-2"></i> Fermer
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2066,25 +2379,9 @@
                             Configuration Payroll
                         </h5>
                         <div class="mb-3">
-                            <label class="form-label">Taux Heures Supplémentaires</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control-modern" value="5000" id="overtimeRate">
-                                <span class="input-group-text">RWF/heure</span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Taux Cotisations Sociales</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control-modern" value="8" id="socialRate">
-                                <span class="input-group-text">%</span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
                             <label class="form-label">Jour de Paiement</label>
                             <select class="form-control-modern" id="paymentDay">
-                                <option value="25">25 du mois</option>
-                                <option value="30">30 du mois</option>
-                                <option value="28">Dernier jour ouvrable</option>
+                                <option value="9" selected>9 du mois</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -2964,7 +3261,7 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        auth = firebase.auth();  // Assigner à la variable globale définie en haut
         const db = firebase.database();
         const storage = firebase.storage();
 
@@ -2980,16 +3277,9 @@
                 // Charger les données utilisateur depuis la collection "users"
                 loadCurrentUserFromDatabase(user.uid);
             } else {
-                console.log('Aucun utilisateur connecté - Accès temporaire autorisé pour diagnostic');
-                currentUser = {
-                    name: "Utilisateur",
-                    email: "utilisateur@edensmart.com",
-                    role: "comptable",
-                    branch: "kacyiru"
-                };
-                currentUserName = "Utilisateur";
-                updateUIWithUserInfo();
-                loadAllData();
+                console.log('Aucun utilisateur connecté - redirection vers Auth.html');
+                // Rediriger vers la page d'authentification
+                window.location.href = 'Auth.html';
             }
         });
 
@@ -3384,8 +3674,6 @@
             settingsRef.on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     const settings = snapshot.val();
-                    if (settings.overtimeRate) document.getElementById('overtimeRate').value = settings.overtimeRate;
-                    if (settings.socialRate) document.getElementById('socialRate').value = settings.socialRate;
                     if (settings.paymentDay) document.getElementById('paymentDay').value = settings.paymentDay;
                     if (settings.currency) document.getElementById('currency').value = settings.currency;
                 }
@@ -3564,8 +3852,22 @@
                 document.querySelectorAll('.nav-btn').forEach(btn => {
                     btn.classList.remove('active');
                 });
-                
-                event.target.closest('.nav-btn').classList.add('active');
+
+                // Marquer le bouton actif. Si l'objet 'event' n'est pas disponible (appel direct),
+                // chercher le bouton ayant l'attribut onclick correspondant.
+                let activeBtn = null;
+                try {
+                    if (event && event.target) activeBtn = event.target.closest('.nav-btn');
+                } catch (e) {
+                    activeBtn = null;
+                }
+                if (!activeBtn) {
+                    activeBtn = Array.from(document.querySelectorAll('.nav-btn')).find(b => {
+                        const handler = b.getAttribute('onclick') || '';
+                        return handler.includes(`showSection('${sectionId}')`);
+                    });
+                }
+                if (activeBtn) activeBtn.classList.add('active');
                 
                 if (sectionId === 'teachers') {
                     loadWorkers();
@@ -4528,6 +4830,24 @@
             const timestamp = now.getTime();
             const random = Math.floor(Math.random() * 1000);
             document.getElementById('studentReference').value = `EDU-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${timestamp.toString().slice(-6)}${random.toString().padStart(3, '0')}`;
+        }
+
+        // Show student modal for adding a new student
+        function showStudentModal() {
+            const form = document.getElementById('studentForm');
+            if (form) form.reset();
+            currentStudentId = null;
+            // Generate a fresh reference
+            generateStudentReference();
+            // Preselect branch
+            if (document.getElementById('studentBranch')) {
+                document.getElementById('studentBranch').value = selectedBranch;
+            }
+            const modalEl = document.getElementById('studentModal');
+            if (modalEl) {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
         }
 
         // Delete student prompt
@@ -5738,8 +6058,6 @@
         // Save settings
         async function saveSettings() {
             const settingsData = {
-                overtimeRate: parseFloat(document.getElementById('overtimeRate').value) || 0,
-                socialRate: parseFloat(document.getElementById('socialRate').value) || 0,
                 paymentDay: document.getElementById('paymentDay').value,
                 currency: document.getElementById('currency').value,
                 updatedBy: currentUserName,
@@ -5925,17 +6243,7 @@
             }
         }
 
-        // Logout
-        function logout() {
-            if (confirm('Êtes-vous sûr de vouloir vous déconnecter?')) {
-                auth.signOut().then(() => {
-                    window.location.reload();
-                }).catch((error) => {
-                    console.error('Erreur déconnexion:', error);
-                    showToast('Erreur lors de la déconnexion', 'error');
-                });
-            }
-        }
+        // [Old logout function removed - now defined in <head> section]
 
         // Toast notification
         function showToast(message, type = 'info') {
@@ -6044,6 +6352,201 @@
                 searchContainer.style.display = 'none';
             }
         });
+
+        // ===== INSCRIPTION COMPTABLE =====
+        const BRANCHES_DATA_COMP = {
+            KACYIRU: { name: "Kacyiru", phone: "0791639766 / 0792570074", email: "sergetumbwe@gmail.com", address: "KG 17 Ave, Kacyiru, Kigali" },
+            GISOZI: { name: "Gisozi", phone: "0788410242 / 0796145647", email: "gisozi@edenfamily.edu.rw", address: "KG 11 Ave, Gisozi, Kigali" },
+            KIMISAGARA: { name: "Kimisagara", phone: "0785892018 / 0791826950", email: "kimisagara@edenfamily.edu.rw", address: "KG 7 Ave, Kimisagara, Kigali" }
+        };
+
+        function updateSectionComp() {
+            const section = document.querySelector('input[name="section"]:checked').value;
+            if (section === 'MATERNELLE') {
+                document.getElementById('niveauMaternelleGroupComp').style.display = 'block';
+                document.getElementById('niveauPrimaireGroupComp').style.display = 'none';
+                document.getElementById('sdmsGroupComp').style.display = 'none';
+            } else {
+                document.getElementById('niveauMaternelleGroupComp').style.display = 'none';
+                document.getElementById('niveauPrimaireGroupComp').style.display = 'block';
+                document.getElementById('sdmsGroupComp').style.display = 'block';
+            }
+        }
+
+        function updateContactInfoComp() {
+            const branche = document.querySelector('input[name="branche"]:checked').value;
+            const contactInfo = document.getElementById('contactInfoComp');
+            const contactText = document.getElementById('contactTextComp');
+            const branchData = BRANCHES_DATA_COMP[branche];
+            
+            if (branchData) {
+                contactText.innerHTML = `
+                    <strong>Contact ${branchData.name}:</strong><br>
+                    <i class="fas fa-phone"></i> ${branchData.phone}<br>
+                    <i class="fas fa-envelope"></i> ${branchData.email}<br>
+                    <i class="fas fa-map-marker-alt"></i> ${branchData.address}
+                `;
+                contactInfo.style.display = 'block';
+            }
+        }
+
+        function generateStudentCodeComp() {
+            const now = new Date();
+            const timestamp = now.getTime();
+            const random = Math.floor(Math.random() * 1000);
+            return `EDU-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${timestamp.toString().slice(-6)}${random.toString().padStart(3, '0')}`;
+        }
+
+        function validateComptableInscription() {
+            let isValid = true;
+            const requiredFields = ['nomPrenomComp', 'dateNaissanceComp', 'ecoleProvenanceComp', 'villeComp', 'secteurComp', 'umurengeComp', 'akagariComp', 'umuduguduComp', 'chefNomPrenomComp', 'chefTelephoneComp', 'chefPieceIdentiteComp'];
+            
+            // Reset border colors first
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) field.style.borderColor = '#ddd';
+            });
+            
+            // Validate required fields
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field && !field.value.trim()) {
+                    isValid = false;
+                    field.style.borderColor = '#DC143C';
+                }
+            });
+            
+            if (!document.querySelector('input[name="sexe"]:checked')) {
+                isValid = false;
+                showErrorMessageComp('Sexe obligatoire', 'Veuillez sélectionner le sexe de l\'enfant');
+            }
+            
+            const section = document.querySelector('input[name="section"]:checked');
+            if (!section) {
+                isValid = false;
+                showErrorMessageComp('Section obligatoire', 'Veuillez sélectionner la section (Maternelle ou Primaire)');
+            } else {
+                // Validate section-dependent fields
+                if (section.value === 'MATERNELLE') {
+                    const niveauMaternelle = document.getElementById('niveauMaternelleComp').value;
+                    if (!niveauMaternelle) {
+                        isValid = false;
+                        document.getElementById('niveauMaternelleComp').style.borderColor = '#DC143C';
+                        showErrorMessageComp('Niveau obligatoire', 'Veuillez sélectionner le niveau maternelle');
+                    }
+                } else if (section.value === 'PRIMAIRE') {
+                    const niveauPrimaire = document.getElementById('niveauPrimaireComp').value;
+                    const sdmsCode = document.getElementById('sdmsCodeComp').value;
+                    if (!niveauPrimaire) {
+                        isValid = false;
+                        document.getElementById('niveauPrimaireComp').style.borderColor = '#DC143C';
+                        showErrorMessageComp('Niveau obligatoire', 'Veuillez sélectionner le niveau primaire');
+                    }
+                    if (!sdmsCode.trim()) {
+                        isValid = false;
+                        document.getElementById('sdmsCodeComp').style.borderColor = '#DC143C';
+                        showErrorMessageComp('SDMS obligatoire', 'Le code SDMS est obligatoire pour le primaire');
+                    }
+                }
+            }
+            
+            if (!document.querySelector('input[name="branche"]:checked')) {
+                isValid = false;
+                showErrorMessageComp('Branche obligatoire', 'Veuillez sélectionner une branche');
+            }
+            
+            if (!document.querySelector('input[name="transport"]:checked')) {
+                isValid = false;
+                showErrorMessageComp('Transport obligatoire', 'Veuillez spécifier si l\'enfant utilise le transport');
+            }
+            
+            // Validate phone format
+            const chefPhone = document.getElementById('chefTelephoneComp').value;
+            if (chefPhone && !/^\d{10}/.test(chefPhone)) {
+                isValid = false;
+                document.getElementById('chefTelephoneComp').style.borderColor = '#DC143C';
+                showErrorMessageComp('Téléphone invalide', 'Le numéro de téléphone doit contenir au moins 10 chiffres');
+            }
+            
+            const conjointPhone = document.getElementById('conjointTelephoneComp').value;
+            if (conjointPhone && !/^\d{10}/.test(conjointPhone)) {
+                isValid = false;
+                document.getElementById('conjointTelephoneComp').style.borderColor = '#DC143C';
+                showErrorMessageComp('Téléphone invalide', 'Le numéro de téléphone du conjoint doit contenir au moins 10 chiffres');
+            }
+            
+            return isValid;
+        }
+
+        async function submitComptableInscription() {
+            if (!validateComptableInscription()) {
+                showToast('Veuillez remplir tous les champs obligatoires', 'error');
+                return;
+            }
+            
+            const formData = {
+                nomPrenom: document.getElementById('nomPrenomComp').value,
+                dateNaissance: document.getElementById('dateNaissanceComp').value,
+                ecoleProvenance: document.getElementById('ecoleProvenanceComp').value,
+                sexe: document.querySelector('input[name="sexe"]:checked').value,
+                section: document.querySelector('input[name="section"]:checked').value,
+                niveau: document.querySelector('input[name="section"]:checked').value === 'MATERNELLE' ? document.getElementById('niveauMaternelleComp').value : document.getElementById('niveauPrimaireComp').value,
+                sdmsCode: document.getElementById('sdmsCodeComp').value || null,
+                branche: document.querySelector('input[name="branche"]:checked').value,
+                transport: document.querySelector('input[name="transport"]:checked').value,
+                chefNomPrenom: document.getElementById('chefNomPrenomComp').value,
+                chefTelephone: document.getElementById('chefTelephoneComp').value,
+                chefPieceIdentite: document.getElementById('chefPieceIdentiteComp').value,
+                conjointNomPrenom: document.getElementById('conjointNomPrenomComp').value || null,
+                conjointTelephone: document.getElementById('conjointTelephoneComp').value || null,
+                conjointPieceIdentite: document.getElementById('conjointPieceIdentiteComp').value || null,
+                ville: document.getElementById('villeComp').value,
+                secteur: document.getElementById('secteurComp').value,
+                umurenge: document.getElementById('umurengeComp').value,
+                akagari: document.getElementById('akagariComp').value,
+                umudugudu: document.getElementById('umuduguduComp').value,
+                codeUnique: generateStudentCodeComp(),
+                dateInscription: new Date().toISOString(),
+                timestamp: Date.now(),
+                statut: 'En attente de validation'
+            };
+            
+            try {
+                await db.ref('inscriptions-scolaires').push(formData);
+                document.getElementById('studentCodeComp').textContent = formData.codeUnique;
+                document.getElementById('successMessageComp').style.display = 'flex';
+                document.getElementById('inscriptionFormComptable').reset();
+            } catch (error) {
+                showErrorMessageComp('Erreur lors de l\'enregistrement', error.message);
+            }
+        }
+
+        function hideErrorMessageComp() {
+            document.getElementById('missingFieldMessageComp').style.display = 'none';
+        }
+
+        function closeSuccessMessageComp() {
+            document.getElementById('successMessageComp').style.display = 'none';
+        }
+
+        function resetFormComp() {
+            document.getElementById('inscriptionFormComptable').reset();
+            document.getElementById('contactInfoComp').style.display = 'none';
+            document.getElementById('niveauMaternelleGroupComp').style.display = 'none';
+            document.getElementById('niveauPrimaireGroupComp').style.display = 'none';
+            document.getElementById('sdmsGroupComp').style.display = 'none';
+            // Reset input border colors
+            const inputs = document.querySelectorAll('#inscriptionFormComptable input, #inscriptionFormComptable select');
+            inputs.forEach(input => {
+                input.style.borderColor = '#ddd';
+            });
+        }
+
+        function showErrorMessageComp(title, message) {
+            document.getElementById('errorTitleComp').textContent = title;
+            document.getElementById('errorMessageComp').textContent = message;
+            document.getElementById('missingFieldMessageComp').style.display = 'block';
+        }
     </script>
 </body>
 </html>

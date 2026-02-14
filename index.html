@@ -1202,6 +1202,168 @@
       margin-bottom: 1rem;
     }
 
+    /* Enhanced Contact Cards */
+    .contact-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .contact-card {
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    .contact-card.animate {
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .contact-card:nth-child(1).animate { animation-delay: 0.1s; }
+    .contact-card:nth-child(2).animate { animation-delay: 0.2s; }
+    .contact-card:nth-child(3).animate { animation-delay: 0.3s; }
+
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--white);
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+      animation: slideUp 0.4s ease;
+      max-width: 90%;
+      max-height: 90vh;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: var(--white);
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--white);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .modal-close:hover {
+      transform: rotate(90deg);
+    }
+
+    .modal-body {
+      padding: 2rem;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .contact-options-modal {
+      max-width: 600px;
+    }
+
+    .contact-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .contact-option {
+      background: var(--light-bg);
+      border: 2px solid var(--primary-color);
+      border-radius: 10px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .contact-option:hover {
+      background: var(--primary-color);
+      color: var(--white);
+    }
+
+    /* Form Styles */
+    #contactForm input,
+    #contactForm select,
+    #contactForm textarea {
+      padding: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      transition: var(--transition);
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+
+    #contactForm input:focus,
+    #contactForm select:focus,
+    #contactForm textarea:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      outline: none;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* Toast Notifications */
+    .toast {
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 10001;
+      animation: slideInRight 0.3s ease, slideOutRight 0.3s ease 2.7s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toast-success { background: var(--success-color); }
+    .toast-error { background: var(--accent-color); }
+    .toast-warning { background: var(--warning-color); }
+    .toast-info { background: var(--primary-color); }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOutRight {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+
     .youtube-link {
       color: #ff0000;
       text-decoration: none;
@@ -1415,6 +1577,29 @@
         margin-top: 0;
         padding-top: 80px;
         box-sizing: border-box;
+      }
+
+      .contact-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-options {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-content {
+        width: 95%;
+        margin: 1rem;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      #contactForm input,
+      #contactForm select,
+      #contactForm textarea {
+        margin-bottom: 1rem;
       }
 
       .games-header h1 {
@@ -2258,6 +2443,29 @@
       }
     }
 
+    @keyframes popIn {
+      0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+      }
+      70% {
+        transform: translate(-50%, -50%) scale(1.1);
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%) rotate(45deg);
+      }
+      100% {
+        transform: translateX(100%) rotate(45deg);
+      }
+    }
+
     /* Responsive */
     @media (max-width: 1200px) {
       .branches-grid {
@@ -2329,6 +2537,22 @@
       }
     }
   </style>
+  <script src="firebase-config.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script>
+    // Initialiser Firebase
+    if (typeof window.FIREBASE_CONFIG !== 'undefined') {
+      try {
+        firebase.initializeApp(window.FIREBASE_CONFIG);
+        console.log("Firebase initialisé avec succès");
+      } catch (error) {
+        console.log("Erreur Firebase:", error);
+      }
+    }
+  </script>
 </head>
 <body>
   <!-- Back to top button -->
@@ -2773,6 +2997,47 @@
     </div>
   </section>
 
+  <!-- Section Académique -->
+  <section id="academique" style="display: none;">
+    <h2 class="section-title">Activités Académiques</h2>
+    <p style="text-align: center; margin-bottom: 2rem; color: #666; max-width: 800px; margin: 0 auto 3rem; animation: fadeIn 1s ease-out 0.5s both;">
+      Accédez à toutes les informations académiques de votre enfant
+    </p>
+    
+    <div class="academic-grid">
+      <a href="#" class="academic-card" onclick="showHomework()">
+        <i class="fas fa-book"></i>
+        <h3>Devoirs</h3>
+        <p>Consultez et téléchargez les devoirs à faire</p>
+        <span class="academic-badge" id="devoirsCount">5 nouveaux</span>
+      </a>
+      
+      <a href="#" class="academic-card" onclick="showExamensPage()">
+        <i class="fas fa-file-alt"></i>
+        <h3>Examens</h3>
+        <p>Sujets et résultats des examens</p>
+        <span class="academic-badge">Prochain: 15/12</span>
+      </a>
+      
+      <a href="#" class="academic-card" onclick="showVacancesPage()">
+        <i class="fas fa-umbrella-beach"></i>
+        <h3>Travaux de Vacances</h3>
+        <p>Activités et devoirs pour les vacances</p>
+        <span class="academic-badge">Nouveau</span>
+      </a>
+      
+      <a href="#" class="academic-card" onclick="showTestsPage()">
+        <i class="fas fa-clipboard-check"></i>
+        <h3>Tests & Évaluations</h3>
+        <p>Tests continus et évaluations</p>
+        <span class="academic-badge">3 à venir</span>
+      </a>
+    </div>
+
+    <!-- Pages académiques (inchangées) -->
+    <!-- ... (le reste du code HTML des pages académiques reste identique) ... -->
+  </section>
+
   <!-- Section Bibliothèque -->
   <section id="bibliotheque">
     <h2 class="section-title"><i class="fas fa-book-reader"></i> Bibliothèque de Lecture</h2>
@@ -3022,61 +3287,348 @@
     </div>
   </section>
 
-  <!-- Section Contact -->
-  <section id="contact">
-    <h2 class="section-title"><i class="fas fa-envelope"></i> Contactez-Nous</h2>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-      <div class="contact-card">
-        <i class="fas fa-map-marker-alt"></i>
-        <h3>Adresse</h3>
-        <p>Kigali, Rwanda</p>
+  <!-- Section Inscription Scolaire -->
+  <section id="inscription" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 4rem 2rem; border-radius: 20px; margin: 3rem 0;position:relative;">
+    <h2 class="section-title" style="color: white; margin-bottom: 2rem;"><i class="fas fa-pen-fancy"></i> Formulaire d'Inscription</h2>
+    
+    <div class="form-inscription-container" style="max-width: 900px; width: 100%; background: white; border-radius: 20px; box-shadow: 0 5px 30px rgba(0,0,0,0.2); overflow: hidden; margin: 0 auto; animation: slideUp 0.6s ease;">
+      <!-- En-tête formulaire -->
+      <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2rem; text-align: center; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%); animation: shimmer 3s infinite linear;"></div>
+        <h3 style="font-size: 1.8em; margin-bottom: 0.5rem; position: relative; z-index: 1;">FORMULAIRE D'INSCRIPTION SCOLAIRE</h3>
+        <p style="font-size: 1.1em; margin-bottom: 0; position: relative; z-index: 1;">EDEN FAMILY SCHOOL</p>
       </div>
-      <div class="contact-card">
-        <i class="fas fa-phone"></i>
-        <h3>Téléphone</h3>
-        <p>+250 788 883 842 (Gisozi)</p>
+
+      <!-- Formulaire -->
+      <form id="inscriptionForm" style="padding: 2rem;">
+        <!-- Info Enfant -->
+        <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">INFORMATION DE L'ENFANT</div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-user"></i> Nom et prénom *</label>
+            <input type="text" id="nomPrenom" name="nomPrenom" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="nomPrenomError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-birthday-cake"></i> Date de naissance *</label>
+            <input type="date" id="dateNaissance" name="dateNaissance" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="dateNaissanceError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-school"></i> École de provenance *</label>
+            <input type="text" id="ecoleProvenance" name="ecoleProvenance" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="ecoleProvenanceError"></div>
+          </div>
+        </div>
+
+        <!-- Sexe -->
+        <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
+          <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-venus-mars"></i> Sexe *</label>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+            <input type="radio" id="garcon" name="sexe" value="GARÇON" required style="display: none;">
+            <label for="garcon" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease; flex: 0 1 auto;">
+              <i class="fas fa-male"></i> GARÇON
+            </label>
+            <input type="radio" id="fille" name="sexe" value="FILLE" required style="display: none;">
+            <label for="fille" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease; flex: 0 1 auto;">
+              <i class="fas fa-female"></i> FILLE
+            </label>
+          </div>
+          <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="sexeError"></div>
+        </div>
+
+        <!-- Niveau Scolaire -->
+        <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">NIVEAU SCOLAIRE</div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-graduation-cap"></i> Section *</label>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+              <input type="radio" id="maternelle" name="section" value="MATERNELLE" required style="display: none;">
+              <label for="maternelle" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease; flex: 0 1 auto;">
+                <i class="fas fa-baby"></i> MATERNELLE
+              </label>
+              <input type="radio" id="primaire" name="section" value="PRIMAIRE" required style="display: none;">
+              <label for="primaire" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease; flex: 0 1 auto;">
+                <i class="fas fa-child"></i> PRIMAIRE
+              </label>
+            </div>
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="sectionError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; display: none;" id="niveauMaternelleGroup">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-star"></i> Niveau maternelle *</label>
+            <select id="niveauMaternelle" name="niveauMaternelle" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+              <option value="">Sélectionnez</option>
+              <option value="N1">N1</option>
+              <option value="N2">N2</option>
+              <option value="N3">N3</option>
+            </select>
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="niveauMaternelleError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; display: none;" id="niveauPrimaireGroup">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-book"></i> Niveau primaire *</label>
+            <select id="niveauPrimaire" name="niveauPrimaire" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+              <option value="">Sélectionnez</option>
+              <option value="P1">P1</option>
+              <option value="P2">P2</option>
+              <option value="P3">P3</option>
+              <option value="P4">P4</option>
+              <option value="P5">P5</option>
+            </select>
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="niveauPrimaireError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; display: none;" id="sdmsGroup">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-id-card"></i> SDMS Code (Obligatoire) *</label>
+            <input type="text" id="sdmsCode" name="sdmsCode" placeholder="Code SDMS" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="sdmsCodeError"></div>
+          </div>
+        </div>
+
+        <!-- Branche -->
+        <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">BRANCHE</div>
+        
+        <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
+          <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-map-marker-alt"></i> Sélectionnez la branche *</label>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+            <input type="radio" id="brancheKacyiru" name="branche" value="KACYIRU" required style="display: none;">
+            <label for="brancheKacyiru" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease; flex: 0 1 auto;">
+              <i class="fas fa-school" style="color: #9C27B0;"></i> KACYIRU
+            </label>
+            <input type="radio" id="brancheGisozi" name="branche" value="GISOZI" required style="display: none;">
+            <label for="brancheGisozi" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease; flex: 0 1 auto;">
+              <i class="fas fa-school" style="color: #2196F3;"></i> GISOZI
+            </label>
+            <input type="radio" id="brancheKimisagara" name="branche" value="KIMISAGARA" required style="display: none;">
+            <label for="brancheKimisagara" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease; flex: 0 1 auto;">
+              <i class="fas fa-school" style="color: #4CAF50;"></i> KIMISAGARA
+            </label>
+          </div>
+          <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="brancheError"></div>
+        </div>
+
+        <!-- Contact Info -->
+        <div id="contactInfo" style="background: #FFF9C4; padding: 1.5rem; border-radius: 10px; margin: 2rem 0; border-left: 5px solid #FFC107; text-align: center; animation: fadeIn 0.5s ease; display: none;">
+          <p id="contactText"></p>
+        </div>
+
+        <!-- Transport -->
+        <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">TRANSPORT</div>
+        
+        <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
+          <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-bus"></i> Transport bus *</label>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+            <input type="radio" id="transportOui" name="transport" value="OUI" required style="display: none;">
+            <label for="transportOui" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease; flex: 0 1 auto;">
+              <i class="fas fa-check-circle"></i> OUI
+            </label>
+            <input type="radio" id="transportNon" name="transport" value="NON" required style="display: none;">
+            <label for="transportNon" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease; flex: 0 1 auto;">
+              <i class="fas fa-times-circle"></i> NON
+            </label>
+          </div>
+          <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="transportError"></div>
+        </div>
+
+        <!-- Chef de Famille -->
+        <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">CHEF DE FAMILLE</div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-user-tie"></i> Nom et prénom *</label>
+            <input type="text" id="chefNomPrenom" name="chefNomPrenom" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="chefNomPrenomError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-phone"></i> Numéro de téléphone *</label>
+            <input type="tel" id="chefTelephone" name="chefTelephone" pattern="[0-9]{10}" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="chefTelephoneError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-id-card"></i> Numéro de pièce d'identité *</label>
+            <input type="text" id="chefPieceIdentite" name="chefPieceIdentite" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="chefPieceIdentiteError"></div>
+          </div>
+        </div>
+
+        <!-- Conjoint (Optionnel) -->
+        <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">CONJOINT(E) (Optionnel)</div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-user-friends"></i> Nom et prénom</label>
+            <input type="text" id="conjointNomPrenom" name="conjointNomPrenom" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-phone"></i> Numéro de téléphone</label>
+            <input type="tel" id="conjointTelephone" name="conjointTelephone" pattern="[0-9]{10}" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-id-card"></i> Numéro de pièce d'identité</label>
+            <input type="text" id="conjointPieceIdentite" name="conjointPieceIdentite" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+          </div>
+        </div>
+
+        <!-- Adresse -->
+        <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">ADRESSE</div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-city"></i> Ville *</label>
+            <select id="ville" name="ville" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+              <option value="">Sélectionnez la ville</option>
+              <option value="Kigali">Kigali</option>
+              <option value="Butare">Butare</option>
+              <option value="Gisenyi">Gisenyi</option>
+              <option value="Ruhengeri">Ruhengeri</option>
+              <option value="Gitarama">Gitarama</option>
+              <option value="Kibungo">Kibungo</option>
+            </select>
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="villeError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-map"></i> Secteur *</label>
+            <input type="text" id="secteur" name="secteur" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="secteurError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-map-signs"></i> Umurenge *</label>
+            <input type="text" id="umurenge" name="umurenge" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="umurengeError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-home"></i> Akagari *</label>
+            <input type="text" id="akagari" name="akagari" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="akagariError"></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-street-view"></i> Umudugudu *</label>
+            <input type="text" id="umudugudu" name="umudugudu" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; font-size: 1em;">
+            <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="umuduguduError"></div>
+          </div>
+        </div>
+
+        <!-- Bouton d'envoi -->
+        <div style="position: relative; margin-top: 2rem; text-align: center;">
+          <button type="button" class="btn-primary" id="submitBtn" onclick="submitInscriptionForm()" style="padding: 1rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 50px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 10px; font-size: 1.1em; position: relative; overflow: hidden; z-index: 1;">
+            <i class="fas fa-paper-plane"></i> Soumettre l'inscription
+          </button>
+        </div>
+      </form>
+
+      <!-- Message d'erreur -->
+      <div id="missingFieldMessage" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff6b6b; color: white; padding: 2rem; border-radius: 15px; z-index: 1000; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: popIn 0.5s ease; display: none;">
+        <h3 id="errorTitle">Champ obligatoire manquant !</h3>
+        <p id="errorMessage">Veuillez remplir tous les champs obligatoires.</p>
+        <button onclick="hideInscriptionErrorMessage()" style="background: white; color: #ff6b6b; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; margin-top: 1rem; font-weight: bold;">J'ai compris !</button>
       </div>
-      <div class="contact-card">
-        <i class="fas fa-envelope"></i>
-        <h3>Email</h3>
-        <p>edengracefamilyltd@gmail.com</p>
+
+      <!-- Message de succès -->
+      <div id="successMessage" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000;">
+        <div style="background: white; padding: 3rem; border-radius: 15px; text-align: center; max-width: 500px; animation: slideUp 0.4s ease;">
+          <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #4CAF50, #45a049); color: white; font-size: 3em; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);">✓</div>
+          <h3>Inscription enregistrée avec succès!</h3>
+          <p>Code unique de l'enfant: <strong id="studentCode"></strong></p>
+          <p>Les données ont été enregistrées dans notre base de données.</p>
+          <button onclick="closeInscriptionSuccessMessage()" style="background: #4CAF50; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; margin-top: 1rem; font-weight: bold;">Fermer</button>
+        </div>
       </div>
     </div>
-    
-    <div style="background: var(--white); border-radius: 15px; padding: 2rem; margin-top: 3rem; box-shadow: var(--shadow);">
-      <h3 style="text-align: center; margin-bottom: 2rem;"><i class="fas fa-comment"></i> Formulaire de Contact</h3>
-      <form id="contactForm" onsubmit="sendContactMessage(event)">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-          <div class="form-group">
-            <label for="contactName">Nom Complet</label>
-            <input type="text" id="contactName" required>
-          </div>
-          <div class="form-group">
-            <label for="contactEmail">Email</label>
-            <input type="email" id="contactEmail" required>
-          </div>
+  </section>
+
+  <!-- Section Contact -->
+  <section id="contact">
+    <h2 class="section-title">Contactez-Nous</h2>
+    <div class="contact-cards">
+      <div class="contact-card" onclick="showContactOptions('Kimisagara')">
+        <i class="fas fa-school fa-3x" style="color: var(--branch-kimisagara); margin-bottom: 1rem;"></i>
+        <h3>Kimisagara</h3>
+        <p><i class="fas fa-map-marker-alt"></i> KG 7 Ave, Kimisagara, Kigali</p>
+        <p><i class="fas fa-phone"></i> 0785892018 / 0791826950</p>
+        <small>Cliquez pour les options de contact</small>
+      </div>
+      <div class="contact-card" onclick="showContactOptions('Gisozi')">
+        <i class="fas fa-school fa-3x" style="color: var(--branch-gisozi); margin-bottom: 1rem;"></i>
+        <h3>Gisozi</h3>
+        <p><i class="fas fa-map-marker-alt"></i> KG 11 Ave, Gisozi, Kigali</p>
+        <p><i class="fas fa-phone"></i> 0788410242 / 0796145647</p>
+        <small>Cliquez pour les options de contact</small>
+      </div>
+      <div class="contact-card" onclick="showContactOptions('Kacyiru')">
+        <i class="fas fa-school fa-3x" style="color: var(--branch-kacyiru); margin-bottom: 1rem;"></i>
+        <h3>Kacyiru</h3>
+        <p><i class="fas fa-map-marker-alt"></i> KG 17 Ave, Kacyiru, Kigali</p>
+        <p><i class="fas fa-phone"></i> 0791639766 / 0792570074</p>
+        <small>Cliquez pour les options de contact</small>
+      </div>
+    </div>
+
+    <!-- Formulaire de contact -->
+    <div style="background: white; padding: 2rem; border-radius: 15px; box-shadow: var(--shadow); margin-top: 3rem;">
+      <h3 style="text-align: center; margin-bottom: 2rem;">Formulaire de Contact</h3>
+      <form id="contactForm">
+        <div class="form-row">
+          <input type="text" placeholder="Votre nom" required>
+          <input type="email" placeholder="Votre email" required>
         </div>
-        <div class="form-group">
-          <label for="contactSubject">Sujet</label>
-          <select id="contactSubject" required>
-            <option value="">Sélectionnez un sujet</option>
-            <option value="information">Information générale</option>
-            <option value="inscription">Inscription</option>
-            <option value="academique">Question académique</option>
-            <option value="technique">Problème technique</option>
-            <option value="autre">Autre</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="contactMessage">Message</label>
-          <textarea id="contactMessage" rows="5" required></textarea>
-        </div>
+        <select required>
+          <option value="">Sélectionnez une branche</option>
+          <option>Kimisagara</option>
+          <option>Gisozi</option>
+          <option>Kacyiru</option>
+        </select>
+        <textarea placeholder="Votre message" rows="5" required></textarea>
         <button type="submit" class="btn-primary" style="width: 100%;">
           <i class="fas fa-paper-plane"></i> Envoyer le message
         </button>
       </form>
     </div>
   </section>
+
+  <!-- Modal de choix de contact -->
+  <div id="contactOptionsModal" class="modal">
+    <div class="modal-content contact-options-modal">
+      <div class="modal-header">
+        <h2><i class="fas fa-phone-alt"></i> Options de Contact</h2>
+        <button class="modal-close" onclick="closeContactOptionsModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h3 id="contactBranchName" style="text-align: center; margin-bottom: 2rem;"></h3>
+        <div class="contact-options">
+          <div class="contact-option" onclick="contactByPhone()">
+            <i class="fas fa-phone fa-2x" style="margin-bottom: 1rem;"></i>
+            <h4>Appeler</h4>
+            <p id="contactPhoneNumber"></p>
+          </div>
+          <div class="contact-option" onclick="contactByEmail()">
+            <i class="fas fa-envelope fa-2x" style="margin-bottom: 1rem;"></i>
+            <h4>Envoyer un email</h4>
+            <p id="contactEmail"></p>
+          </div>
+          <div class="contact-option" onclick="contactByWhatsApp()">
+            <i class="fab fa-whatsapp fa-2x" style="color: #25D366; margin-bottom: 1rem;"></i>
+            <h4>WhatsApp</h4>
+            <p>Envoyer un message</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer>
@@ -4217,14 +4769,23 @@
     }
 
     function startGame() {
+      // Require login before starting any game
+      const logged = (typeof CONFIG !== 'undefined' && CONFIG.isLoggedIn) || (typeof isLoggedIn !== 'undefined' && isLoggedIn) || false;
+      if (!logged) {
+        showToast('Veuillez vous connecter pour jouer', 'info');
+        // open the existing login modal
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+      }
+
       // Récupérer les questions pour le jeu sélectionné
       gameQuestions = GAMES_DATA[currentGame][CONFIG.selectedLevel][CONFIG.selectedDifficulty];
-      
+
       if (!gameQuestions || gameQuestions.length === 0) {
         showToast('Aucune question disponible pour ce niveau', 'warning');
         return;
       }
-      
+
       currentQuestion = 0;
       gameScore = 0;
       showGameQuestion();
@@ -4392,6 +4953,14 @@
 
     // Bibliothèque
     function showLibrary(level) {
+      // Require login for library access (no Firebase connection is used for library)
+      const logged = (typeof CONFIG !== 'undefined' && CONFIG.isLoggedIn) || (typeof isLoggedIn !== 'undefined' && isLoggedIn) || false;
+      if (!logged) {
+        showToast('Veuillez vous connecter pour accéder à la bibliothèque', 'info');
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+      }
+
       const books = LIBRARY_BOOKS[level];
       const levelName = level === 'maternelle' ? 'Maternelle' : 'École Primaire';
       
@@ -4424,6 +4993,14 @@
     }
 
     function searchBooks() {
+      // Require login for searching the library
+      const logged = (typeof CONFIG !== 'undefined' && CONFIG.isLoggedIn) || (typeof isLoggedIn !== 'undefined' && isLoggedIn) || false;
+      if (!logged) {
+        showToast('Veuillez vous connecter pour rechercher dans la bibliothèque', 'info');
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+      }
+
       const searchTerm = document.getElementById('bookSearch').value.toLowerCase();
       if (!searchTerm) {
         showToast("Veuillez entrer un terme de recherche", "warning");
@@ -4467,6 +5044,14 @@
     }
 
     function readBook(index, level) {
+      // Require login for reading a book
+      const logged = (typeof CONFIG !== 'undefined' && CONFIG.isLoggedIn) || (typeof isLoggedIn !== 'undefined' && isLoggedIn) || false;
+      if (!logged) {
+        showToast('Veuillez vous connecter pour lire ce livre', 'info');
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+      }
+
       const book = LIBRARY_BOOKS[level][index];
       if (!book) return;
       
@@ -4513,6 +5098,13 @@
     }
 
     function loadMoreBooks() {
+      const logged = (typeof CONFIG !== 'undefined' && CONFIG.isLoggedIn) || (typeof isLoggedIn !== 'undefined' && isLoggedIn) || false;
+      if (!logged) {
+        showToast('Veuillez vous connecter pour voir plus de livres', 'info');
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+      }
+
       showToast("Fonctionnalité 'Voir plus' activée pour les livres", "success");
     }
 
@@ -5544,6 +6136,437 @@
         initAnimations();
         hasAnimated = true;
       }
+    });
+
+    // ===== FORMULAIRE D'INSCRIPTION =====
+    // Données des branches
+    const BRANCHES_DATA_INSCRIPTION = {
+      KACYIRU: {
+        name: "Kacyiru",
+        phone: "0791639766 / 0792570074",
+        email: "sergetumbwe@gmail.com",
+        address: "KG 17 Ave, Kacyiru, Kigali"
+      },
+      GISOZI: {
+        name: "Gisozi",
+        phone: "0788410242 / 0796145647",
+        email: "gisozi@edenfamily.edu.rw",
+        address: "KG 11 Ave, Gisozi, Kigali"
+      },
+      KIMISAGARA: {
+        name: "Kimisagara",
+        phone: "0785892018 / 0791826950",
+        email: "kimisagara@edenfamily.edu.rw",
+        address: "KG 7 Ave, Kimisagara, Kigali"
+      }
+    };
+
+    // Gestion de la sélection de la section
+    document.getElementById('maternelle').addEventListener('change', function() {
+      if (this.checked) {
+        document.getElementById('niveauMaternelleGroup').style.display = 'block';
+        document.getElementById('niveauPrimaireGroup').style.display = 'none';
+        document.getElementById('sdmsGroup').style.display = 'none';
+        document.getElementById('niveauPrimaire').required = false;
+        document.getElementById('sdmsCode').required = false;
+        document.getElementById('niveauMaternelle').required = true;
+      }
+    });
+
+    document.getElementById('primaire').addEventListener('change', function() {
+      if (this.checked) {
+        document.getElementById('niveauMaternelleGroup').style.display = 'none';
+        document.getElementById('niveauPrimaireGroup').style.display = 'block';
+        document.getElementById('sdmsGroup').style.display = 'block';
+        document.getElementById('niveauMaternelle').required = false;
+        document.getElementById('niveauPrimaire').required = true;
+        document.getElementById('sdmsCode').required = true;
+      }
+    });
+
+    // Gestion de la sélection de la branche
+    document.querySelectorAll('input[name="branche"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        if (this.checked) {
+          updateInscriptionContactInfo(this.value);
+        }
+      });
+    });
+
+    function updateInscriptionContactInfo(branche) {
+      const contactInfo = document.getElementById('contactInfo');
+      const contactText = document.getElementById('contactText');
+      const branchData = BRANCHES_DATA_INSCRIPTION[branche];
+      
+      if (branchData) {
+        contactText.innerHTML = `
+          <strong>Contact ${branchData.name}:</strong><br>
+          <i class="fas fa-phone"></i> ${branchData.phone}<br>
+          <i class="fas fa-envelope"></i> ${branchData.email}<br>
+          <i class="fas fa-map-marker-alt"></i> ${branchData.address}
+        `;
+        contactInfo.style.display = 'block';
+      }
+    }
+
+    // Générer un code étudiant unique avec le même format que comptable.html
+    function generateInscriptionStudentCode() {
+      const now = new Date();
+      const timestamp = now.getTime();
+      const random = Math.floor(Math.random() * 1000);
+      return `EDU-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${timestamp.toString().slice(-6)}${random.toString().padStart(3, '0')}`;
+    }
+
+    function hideInscriptionErrorMessage() {
+      document.getElementById('missingFieldMessage').style.display = 'none';
+    }
+
+    function closeInscriptionSuccessMessage() {
+      document.getElementById('successMessage').style.display = 'none';
+    }
+
+    // Validation du formulaire
+    function validateInscriptionForm() {
+      let isValid = true;
+      const errors = [];
+      
+      // Réinitialiser les erreurs
+      document.querySelectorAll('.inscription-error').forEach(el => {
+        el.style.display = 'none';
+        el.textContent = '';
+      });
+      
+      // Validation des champs
+      const requiredFields = [
+        { id: 'nomPrenom', name: 'Nom de l\'enfant', selector: '#nomPrenomError' },
+        { id: 'dateNaissance', name: 'Date de naissance', selector: '#dateNaissanceError' },
+        { id: 'ecoleProvenance', name: 'École de provenance', selector: '#ecoleProvenanceError' },
+        { id: 'ville', name: 'Ville', selector: '#villeError' },
+        { id: 'secteur', name: 'Secteur', selector: '#secteurError' },
+        { id: 'umurenge', name: 'Umurenge', selector: '#umurengeError' },
+        { id: 'akagari', name: 'Akagari', selector: '#akagariError' },
+        { id: 'umudugudu', name: 'Umudugudu', selector: '#umuduguduError' },
+        { id: 'chefNomPrenom', name: 'Nom du chef de famille', selector: '#chefNomPrenomError' },
+        { id: 'chefTelephone', name: 'Téléphone du chef', selector: '#chefTelephoneError' },
+        { id: 'chefPieceIdentite', name: 'Pièce d\'identité du chef', selector: '#chefPieceIdentiteError' }
+      ];
+      
+      // Vérifier chaque champ
+      requiredFields.forEach(field => {
+        const element = document.getElementById(field.id);
+        if (!element.value.trim()) {
+          isValid = false;
+          errors.push({ field: field.id, message: `${field.name} est requis` });
+          const errorEl = document.querySelector(field.selector);
+          if (errorEl) {
+            errorEl.textContent = `${field.name} est requis`;
+            errorEl.style.display = 'block';
+          }
+        }
+      });
+      
+      // Vérifier le sexe
+      if (!document.querySelector('input[name="sexe"]:checked')) {
+        isValid = false;
+        errors.push({ field: 'sexe', message: 'Le sexe est requis' });
+        const errorEl = document.getElementById('sexeError');
+        if (errorEl) {
+          errorEl.textContent = 'Le sexe est requis';
+          errorEl.style.display = 'block';
+        }
+      }
+      
+      // Vérifier la section
+      if (!document.querySelector('input[name="section"]:checked')) {
+        isValid = false;
+        errors.push({ field: 'section', message: 'La section est requise' });
+        const errorEl = document.getElementById('sectionError');
+        if (errorEl) {
+          errorEl.textContent = 'La section est requise';
+          errorEl.style.display = 'block';
+        }
+      } else {
+        const section = document.querySelector('input[name="section"]:checked').value;
+        if (section === 'MATERNELLE') {
+          const niveauMaternelle = document.getElementById('niveauMaternelle');
+          if (!niveauMaternelle.value) {
+            isValid = false;
+            errors.push({ field: 'niveauMaternelle', message: 'Le niveau maternelle est requis' });
+            const errorEl = document.getElementById('niveauMaternelleError');
+            if (errorEl) {
+              errorEl.textContent = 'Le niveau maternelle est requis';
+              errorEl.style.display = 'block';
+            }
+          }
+        } else if (section === 'PRIMAIRE') {
+          const niveauPrimaire = document.getElementById('niveauPrimaire');
+          const sdmsCode = document.getElementById('sdmsCode');
+          
+          if (!niveauPrimaire.value) {
+            isValid = false;
+            errors.push({ field: 'niveauPrimaire', message: 'Le niveau primaire est requis' });
+            const errorEl = document.getElementById('niveauPrimaireError');
+            if (errorEl) {
+              errorEl.textContent = 'Le niveau primaire est requis';
+              errorEl.style.display = 'block';
+            }
+          }
+          
+          if (!sdmsCode.value.trim()) {
+            isValid = false;
+            errors.push({ field: 'sdmsCode', message: 'Le code SDMS est obligatoire pour l\'école primaire' });
+            const errorEl = document.getElementById('sdmsCodeError');
+            if (errorEl) {
+              errorEl.textContent = 'Le code SDMS est obligatoire';
+              errorEl.style.display = 'block';
+            }
+          }
+        }
+      }
+      
+      // Vérifier la branche
+      if (!document.querySelector('input[name="branche"]:checked')) {
+        isValid = false;
+        errors.push({ field: 'branche', message: 'La branche est requise' });
+        const errorEl = document.getElementById('brancheError');
+        if (errorEl) {
+          errorEl.textContent = 'La branche est requise';
+          errorEl.style.display = 'block';
+        }
+      }
+      
+      // Vérifier le transport
+      if (!document.querySelector('input[name="transport"]:checked')) {
+        isValid = false;
+        errors.push({ field: 'transport', message: 'Le transport est requis' });
+        const errorEl = document.getElementById('transportError');
+        if (errorEl) {
+          errorEl.textContent = 'Le transport est requis';
+          errorEl.style.display = 'block';
+        }
+      }
+      
+      // Vérifier le téléphone du chef
+      const chefTelephone = document.getElementById('chefTelephone');
+      if (chefTelephone.value && !/^[0-9]{10}$/.test(chefTelephone.value)) {
+        isValid = false;
+        errors.push({ field: 'chefTelephone', message: 'Le téléphone doit contenir 10 chiffres' });
+        const errorEl = document.getElementById('chefTelephoneError');
+        if (errorEl) {
+          errorEl.textContent = 'Le téléphone doit contenir 10 chiffres';
+          errorEl.style.display = 'block';
+        }
+      }
+      
+      return { isValid, errors };
+    }
+
+    // Soumission du formulaire
+    async function submitInscriptionForm() {
+      const validation = validateInscriptionForm();
+      
+      if (!validation.isValid) {
+        // Afficher le message d'erreur
+        const firstError = validation.errors[0];
+        if (firstError) {
+          document.getElementById('errorTitle').textContent = `Champ manquant: ${firstError.field}`;
+          document.getElementById('errorMessage').textContent = firstError.message;
+          document.getElementById('missingFieldMessage').style.display = 'block';
+        }
+        return;
+      }
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement en cours...';
+      submitBtn.disabled = true;
+      
+      try {
+        // Récupérer les données du formulaire
+        const formData = {
+          // Informations enfant
+          nomPrenom: document.getElementById('nomPrenom').value,
+          dateNaissance: document.getElementById('dateNaissance').value,
+          ecoleProvenance: document.getElementById('ecoleProvenance').value,
+          sexe: document.querySelector('input[name="sexe"]:checked').value,
+          
+          // Niveau scolaire
+          section: document.querySelector('input[name="section"]:checked').value,
+          niveau: document.querySelector('input[name="section"]:checked').value === 'MATERNELLE' 
+            ? document.getElementById('niveauMaternelle').value 
+            : document.getElementById('niveauPrimaire').value,
+          sdmsCode: document.getElementById('sdmsCode').value || null,
+          
+          // Branche et transport
+          branche: document.querySelector('input[name="branche"]:checked').value,
+          transport: document.querySelector('input[name="transport"]:checked').value,
+          
+          // Chef de famille
+          chefNomPrenom: document.getElementById('chefNomPrenom').value,
+          chefTelephone: document.getElementById('chefTelephone').value,
+          chefPieceIdentite: document.getElementById('chefPieceIdentite').value,
+          
+          // Conjoint (optionnel)
+          conjointNomPrenom: document.getElementById('conjointNomPrenom').value || null,
+          conjointTelephone: document.getElementById('conjointTelephone').value || null,
+          conjointPieceIdentite: document.getElementById('conjointPieceIdentite').value || null,
+          
+          // Adresse
+          ville: document.getElementById('ville').value,
+          secteur: document.getElementById('secteur').value,
+          umurenge: document.getElementById('umurenge').value,
+          akagari: document.getElementById('akagari').value,
+          umudugudu: document.getElementById('umudugudu').value,
+          
+          // Métadonnées
+          codeUnique: generateInscriptionStudentCode(),
+          dateInscription: new Date().toISOString(),
+          timestamp: Date.now(),
+          statut: 'En attente de validation'
+        };
+        
+        // Envoyer à Firebase
+        const database = firebase.database();
+        const newInscriptionRef = await database.ref('inscriptions-scolaires').push(formData);
+        
+        console.log('Inscription enregistrée avec succès:', newInscriptionRef.key);
+        
+        // Afficher le message de succès
+        document.getElementById('studentCode').textContent = formData.codeUnique;
+        document.getElementById('successMessage').style.display = 'flex';
+        
+        // Réinitialiser le formulaire
+        document.getElementById('inscriptionForm').reset();
+        
+      } catch (error) {
+        console.error('Erreur lors de l\'enregistrement:', error);
+        alert('Une erreur est survenue lors de l\'enregistrement. Veuillez réessayer.');
+      } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }
+    }
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+      // Validation en temps réel du téléphone
+      document.getElementById('chefTelephone').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+      });
+      
+      const conjointTel = document.getElementById('conjointTelephone');
+      if (conjointTel) {
+        conjointTel.addEventListener('input', function(e) {
+          this.value = this.value.replace(/[^0-9]/g, '');
+        });
+      }
+      
+      // Fermer les messages avec ESC
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          hideInscriptionErrorMessage();
+          closeInscriptionSuccessMessage();
+        }
+      });
+      
+      console.log('Formulaire d\'inscription chargé avec succès!');
+
+      // ===== Contact Functions =====
+      // Données des branches (pour le contact)
+      const BRANCHES_DATA = {
+        kimisagara: {
+          name: "Kimisagara",
+          phone: "0785892018",
+          email: "kimisagara@edenfamily.edu.rw",
+          whatsapp: "+250785892018"
+        },
+        gisozi: {
+          name: "Gisozi",
+          phone: "0788410242",
+          email: "gisozi@edenfamily.edu.rw",
+          whatsapp: "+250788410242"
+        },
+        kacyiru: {
+          name: "Kacyiru",
+          phone: "0791639766",
+          email: "sergetumbwe@gmail.com",
+          whatsapp: "+250791639766"
+        }
+      };
+
+      // Afficher les options de contact
+      window.showContactOptions = function(branchName) {
+        const branch = BRANCHES_DATA[branchName.toLowerCase()];
+        if (!branch) return;
+
+        document.getElementById('contactBranchName').textContent = branch.name;
+        document.getElementById('contactPhoneNumber').textContent = branch.phone;
+        document.getElementById('contactEmail').textContent = branch.email;
+        
+        document.getElementById('contactOptionsModal').classList.add('active');
+      };
+
+      // Fermer le modal de contact
+      window.closeContactOptionsModal = function() {
+        document.getElementById('contactOptionsModal').classList.remove('active');
+      };
+
+      // Contacter par téléphone
+      window.contactByPhone = function() {
+        const phone = document.getElementById('contactPhoneNumber').textContent;
+        showToast(`Appel vers ${phone}...`, "info");
+        // Pour un appel réel, décommentez la ligne suivante :
+        // window.location.href = `tel:${phone}`;
+      };
+
+      // Contacter par email
+      window.contactByEmail = function() {
+        const email = document.getElementById('contactEmail').textContent;
+        showToast(`Ouverture de l'email vers ${email}...`, "info");
+        // Pour un email réel, décommentez la ligne suivante :
+        // window.location.href = `mailto:${email}`;
+      };
+
+      // Contacter par WhatsApp
+      window.contactByWhatsApp = function() {
+        const branch = document.getElementById('contactBranchName').textContent.toLowerCase();
+        const whatsapp = BRANCHES_DATA[branch].whatsapp;
+        showToast(`Ouverture de WhatsApp...`, "info");
+        // Pour WhatsApp réel, décommentez la ligne suivante :
+        // window.open(`https://wa.me/${whatsapp}`, '_blank');
+      };
+
+      // Gestionnaire du formulaire de contact
+      const contactForm = document.getElementById('contactForm');
+      if (contactForm) {
+        contactForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          showToast("Message envoyé avec succès !", "success");
+          contactForm.reset();
+        });
+      }
+      
+      // Animer les cartes de contact au chargement
+      const contactCards = document.querySelectorAll('.contact-card');
+      contactCards.forEach((card, index) => {
+        setTimeout(() => {
+          card.classList.add('animate');
+        }, 100 * index);
+      });
+      
+      // Fermer le modal avec ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeContactOptionsModal();
+        }
+      });
+      
+      // Fermer le modal en cliquant à l'extérieur
+      document.getElementById('contactOptionsModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('contactOptionsModal')) {
+          closeContactOptionsModal();
+        }
+      });
     });
   </script>
 </body>

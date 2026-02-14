@@ -318,28 +318,35 @@ const SCHOOL_CODE = 'EDF-KA';
 
         // Show section
         function showSection(section) {
-            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-            event.target.classList.add('active');
+            // Clear active state on all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
 
-            document.getElementById('dashboardSection').classList.add('hidden');
-            document.getElementById('reportsSection').classList.add('hidden');
-            document.getElementById('accountsSection').classList.add('hidden');
-            document.getElementById('carouselSection').classList.add('hidden');
-            document.getElementById('settingsSection').classList.add('hidden');
+            // Try to find the clicked nav button by inspecting onclick attribute or data-section
+            const selector = `.nav-btn[onclick="showSection('${section}')"]`;
+            const clicked = document.querySelector(selector) || document.querySelector(`.nav-btn[data-section="${section}"]`);
+            if (clicked) clicked.classList.add('active');
 
-            const sectionId = section + 'Section';
-            document.getElementById(sectionId).classList.remove('hidden');
+            // Hide all sections by convention
+            const sections = ['dashboard','reports','accounts','carousel','settings','teachers','payroll','student-fees','students'];
+            sections.forEach(s => {
+                const el = document.getElementById(s + 'Section');
+                if (el) el.classList.add('hidden');
+            });
 
+            const sectionEl = document.getElementById(section + 'Section');
+            if (sectionEl) sectionEl.classList.remove('hidden');
+
+            // Trigger section-specific loads
             if (section === 'dashboard') {
                 loadDashboardData();
             } else if (section === 'reports') {
-                loadBulletinStats();
-                loadFinancialData();
+                if (typeof loadBulletinStats === 'function') loadBulletinStats();
+                if (typeof loadFinancialData === 'function') loadFinancialData();
             } else if (section === 'accounts') {
-                loadTeachersList();
-                loadSecretariesList();
+                if (typeof loadTeachersList === 'function') loadTeachersList();
+                if (typeof loadSecretariesList === 'function') loadSecretariesList();
             } else if (section === 'carousel') {
-                loadCarousel();
+                if (typeof loadCarousel === 'function') loadCarousel();
             }
         }
 
