@@ -22,6 +22,11 @@ service cloud.firestore {
              exists(/databases/$(database)/documents/secretaries/$(request.auth.uid));
     }
 
+    function isComptable() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/comptables/$(request.auth.uid));
+    }
+
     function isParent() {
       return isAuthenticated() &&
              exists(/databases/$(database)/documents/parents/$(request.auth.uid));
@@ -37,7 +42,7 @@ service cloud.firestore {
 
     function hasSchoolAccess() {
       return isAuthenticated() &&
-             (isDirector() || isTeacher() || isSecretary() || isParent());
+             (isDirector() || isTeacher() || isSecretary() || isComptable() || isParent());
     }
 
     // Users collection - allow owners to read/create their own profile, directors to manage
