@@ -1,4 +1,12 @@
+# Ignore Firebase service account key and other sensitive files
+serviceAccountKey.json
+serviceAccount*.json
+*.pem
+*.key
+
+# Node / env
 node_modules/
+.envnode_modules/
 serviceAccountKey.json
 .env
 *.logserviceAccount.json
