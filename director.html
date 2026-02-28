@@ -47,6 +47,7 @@
             --gradient-secondary: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
             --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             --box-shadow-hover: 0 15px 50px rgba(0, 0, 0, 0.15);
+            --nav-border-radius: 0px;
         }
         
         * {
@@ -118,9 +119,13 @@
         .admin-nav {
             background: white;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            position: sticky;
-            top: 100px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
             z-index: 999;
+            overflow: hidden;
         }
         
         .nav-container {
@@ -161,7 +166,142 @@
             color: white;
             box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
         }
-        
+
+        /* Navigation Scroll Animation */
+        .admin-nav.nav-scrolled {
+            border-radius: var(--nav-border-radius, 0px) !important;
+            margin: 1rem 0 0 0 !important;
+            width: calc(100% - 4rem) !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            top: 0.5rem !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
+            transition: border-radius 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            animation: navAppear 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .admin-nav.nav-scrolled .nav-container {
+            max-width: calc(100% - 4rem);
+        }
+
+        /* Navigation cachée */
+        .admin-nav.nav-hidden {
+            transform: translateY(-120px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            border-radius: var(--nav-border-radius, 20px) !important;
+            animation: navExit 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        /* Animation de flottement */
+        @keyframes navFloat {
+            0% {
+                transform: translateY(0);
+                border-radius: 0px;
+                width: 100%;
+                left: 0;
+                top: 0;
+                margin: 0;
+            }
+            100% {
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                width: calc(100% - 4rem);
+                left: 50%;
+                top: 1rem;
+            }
+        }
+
+        @keyframes navAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-40px);
+                border-radius: 0px;
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+        }
+
+        @keyframes navExit {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-80px);
+                border-radius: 0px;
+            }
+        }
+
+        /* Navigation Header Wrapper - groups header + nav together */
+        .nav-header-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            z-index: 999;
+        }
+
+        .nav-header-wrapper.nav-scrolled {
+            border-radius: var(--nav-border-radius, 0px) !important;
+            margin: 1rem 0 0 0 !important;
+            width: calc(100% - 4rem) !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            top: 0.5rem !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
+            transition: border-radius 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            animation: navWrapperAppear 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .nav-header-wrapper.nav-hidden {
+            transform: translateY(-200px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            border-radius: var(--nav-border-radius, 20px) !important;
+            animation: navWrapperExit 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes navWrapperAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-140px);
+                border-radius: 0px;
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+        }
+
+        @keyframes navWrapperExit {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-200px);
+                border-radius: 0px;
+            }
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 185px;
+        }
+
         /* Main Content */
         .main-content {
             max-width: 1400px;
@@ -556,6 +696,284 @@
             background: rgba(245, 158, 11, 0.05);
         }
         
+        /* Ultra-Mobile Screens (320px - 374px) */
+        @media (max-width: 374px) {
+            body {
+                font-size: 13px;
+            }
+            
+            .header-container {
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 0.75rem 0.5rem;
+            }
+            
+            .logo {
+                gap: 10px;
+            }
+            
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .logo-text h1 {
+                font-size: 1rem;
+            }
+            
+            .logo-text p {
+                font-size: 0.7rem;
+            }
+            
+            .nav-btn {
+                padding: 8px 8px;
+                font-size: 0.75rem;
+            }
+            
+            .main-content {
+                padding: 0 0.5rem;
+                margin: 1rem auto;
+            }
+            
+            .card-modern {
+                padding: 0.75rem;
+                margin-bottom: 1rem;
+            }
+            
+            .stat-card {
+                padding: 0.75rem;
+            }
+            
+            .stat-value {
+                font-size: 1.2rem;
+            }
+            
+            .table-modern th,
+            .table-modern td {
+                padding: 0.5rem;
+                font-size: 0.7rem;
+            }
+            
+            .form-control-modern {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .btn-modern {
+                padding: 8px 12px;
+                font-size: 0.75rem;
+            }
+            
+            .branch-selector {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .branch-card {
+                padding: 0.75rem;
+            }
+        }
+        
+        /* Mobile Screens (375px - 479px) */
+        @media (max-width: 479px) {
+            body {
+                font-size: 13px;
+            }
+            
+            .header-container {
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                padding: 0.75rem 0.75rem;
+            }
+            
+            .logo {
+                gap: 12px;
+            }
+            
+            .logo-icon {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .logo-text h1 {
+                font-size: 1.1rem;
+            }
+            
+            .logo-text p {
+                font-size: 0.75rem;
+            }
+            
+            .nav-container, .main-content {
+                padding: 0 0.75rem;
+            }
+            
+            .nav-btn {
+                padding: 8px 10px;
+                font-size: 0.8rem;
+                margin: 2px;
+                min-height: 44px;
+            }
+            
+            .nav-tabs {
+                gap: 2px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .card-modern {
+                padding: 1rem;
+                margin-bottom: 1rem;
+                border-radius: 12px;
+            }
+            
+            .card-header-modern {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .card-title {
+                font-size: 1.1rem;
+            }
+            
+            .branch-selector {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .branch-card {
+                padding: 1rem;
+                border-radius: 10px;
+            }
+            
+            .branch-card h6 {
+                font-size: 0.95rem;
+            }
+            
+            .table-modern {
+                font-size: 0.8rem;
+            }
+            
+            .table-modern th,
+            .table-modern td {
+                padding: 0.6rem;
+            }
+            
+            .badge-modern {
+                font-size: 0.75rem;
+            }
+            
+            .form-control-modern {
+                padding: 10px 12px;
+                font-size: 16px;
+                min-height: 44px;
+            }
+            
+            .btn-modern {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+                min-height: 44px;
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            .d-flex {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .row {
+                margin: 0;
+                gap: 0.5rem;
+            }
+            
+            [class*="col-"] {
+                width: 100% !important;
+                padding: 0.25rem;
+            }
+            
+            h1 { font-size: 1.2rem; }
+            h2 { font-size: 1.1rem; }
+            h3, h4 { font-size: 0.95rem; }
+            
+            .main-content {
+                margin: 1rem auto;
+            }
+        }
+
+        /* Small Tablets (480px - 767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+            body {
+                font-size: 14px;
+            }
+
+            .header-container {
+                flex-wrap: wrap;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .logo-text h1 {
+                font-size: 1.3rem;
+            }
+
+            .nav-btn {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+                min-height: 44px;
+            }
+
+            .nav-container, .main-content {
+                padding: 0 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stat-card {
+                padding: 1rem;
+            }
+            
+            .stat-value {
+                font-size: 1.8rem;
+            }
+
+            input, select, textarea, button {
+                font-size: 14px;
+                min-height: 44px;
+            }
+
+            .col-md-4 {
+                margin-bottom: 1rem;
+            }
+            
+            .col-md-6 {
+                width: 50%;
+            }
+            
+            .table-responsive {
+                overflow-x: auto;
+            }
+            
+            .branch-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .header-container, .nav-container, .main-content {
@@ -971,91 +1389,94 @@
     </script>
 </head>
 <body>
-    <!-- Header -->
-    <header class="admin-header">
-        <div class="header-container">
-            <div class="logo">
-                <div class="logo-icon">
-                    <img src="asset/img/logo_eden.png" alt="Logo Eden Family School" style="height: 40px; width: auto; object-fit: contain;">
+    <!-- Navigation & Header Wrapper -->
+    <div class="nav-header-wrapper">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-container">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <img src="asset/img/logo_eden.png" alt="Logo Eden Family School" style="height: 40px; width: auto; object-fit: contain;">
+                    </div>
+                    <div class="logo-text">
+                        <h1>Portail Directeur</h1>
+                        <p>Super Administration - Eden Family School</p>
+                    </div>
                 </div>
-                <div class="logo-text">
-                    <h1>Portail Directeur</h1>
-                    <p>Super Administration - Eden Family School</p>
+                
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end text-white">
+                        <div class="fw-bold" id="directorName">Directeur</div>
+                        <small id="userRole">Super Administrateur</small>
+                    </div>
+                    <button class="btn-modern btn-danger-modern" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Déconnexion
+                    </button>
                 </div>
             </div>
-            
-            <div class="d-flex align-items-center gap-3">
-                <div class="text-end text-white">
-                    <div class="fw-bold" id="directorName">Directeur</div>
-                    <small id="userRole">Super Administrateur</small>
-                </div>
-                <button class="btn-modern btn-danger-modern" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Déconnexion
-                </button>
-            </div>
-        </div>
-    </header>
+        </header>
 
-    <!-- Navigation -->
-    <nav class="admin-nav">
-        <div class="nav-container">
-            <div class="nav-tabs">
-                <button class="nav-btn active" onclick="showSection('dashboard')">
-                    <i class="fas fa-chart-line"></i>
-                    Tableau de bord
-                </button>
-                <button class="nav-btn" onclick="showSection('users')">
-                    <i class="fas fa-users-cog"></i>
-                    Gestion Utilisateurs
-                </button>
-                <button class="nav-btn" onclick="showSection('secretaries')">
-                    <i class="fas fa-user-shield"></i>
-                    Secrétaires
-                </button>
-                <button class="nav-btn" onclick="showSection('teachers')">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                    Enseignants
-                </button>
-                <button class="nav-btn" onclick="showSection('accountants')">
-                    <i class="fas fa-calculator"></i>
-                    Comptables
-                </button>
-                <button class="nav-btn" onclick="showSection('students')">
-                    <i class="fas fa-graduation-cap"></i>
-                    Élèves
-                </button>
-                <button class="nav-btn" onclick="showSection('branches')">
-                    <i class="fas fa-building"></i>
-                    Branches
-                </button>
-                <button class="nav-btn" onclick="showSection('finance')">
-                    <i class="fas fa-money-bill-wave"></i>
-                    Finances
-                </button>
-                <button class="nav-btn" onclick="showSection('academics')">
-                    <i class="fas fa-book-open"></i>
-                    Académique
-                </button>
-                <button class="nav-btn" onclick="showSection('gallery')">
-                    <i class="fas fa-images"></i>
-                    Galerie
-                </button>
-                <button class="nav-btn" onclick="showSection('messages')">
-                    <i class="fas fa-envelope"></i>
-                    Messages
-                </button>
-                <button class="nav-btn" onclick="showSection('reports')">
-                    <i class="fas fa-file-alt"></i>
-                    Rapports
-                </button>
-                <button class="nav-btn" onclick="showSection('settings')">
-                    <i class="fas fa-cog"></i>
-                    Paramètres
-                </button>
+        <!-- Navigation -->
+        <nav class="admin-nav">
+            <div class="nav-container">
+                <div class="nav-tabs">
+                    <button class="nav-btn active" onclick="showSection('dashboard')">
+                        <i class="fas fa-chart-line"></i>
+                        Tableau de bord
+                    </button>
+                    <button class="nav-btn" onclick="showSection('users')">
+                        <i class="fas fa-users-cog"></i>
+                        Gestion Utilisateurs
+                    </button>
+                    <button class="nav-btn" onclick="showSection('secretaries')">
+                        <i class="fas fa-user-shield"></i>
+                        Secrétaires
+                    </button>
+                    <button class="nav-btn" onclick="showSection('teachers')">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        Enseignants
+                    </button>
+                    <button class="nav-btn" onclick="showSection('accountants')">
+                        <i class="fas fa-calculator"></i>
+                        Comptables
+                    </button>
+                    <button class="nav-btn" onclick="showSection('students')">
+                        <i class="fas fa-graduation-cap"></i>
+                        Élèves
+                    </button>
+                    <button class="nav-btn" onclick="showSection('branches')">
+                        <i class="fas fa-building"></i>
+                        Branches
+                    </button>
+                    <button class="nav-btn" onclick="showSection('finance')">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Finances
+                    </button>
+                    <button class="nav-btn" onclick="showSection('academics')">
+                        <i class="fas fa-book-open"></i>
+                        Académique
+                    </button>
+                    <button class="nav-btn" onclick="showSection('gallery')">
+                        <i class="fas fa-images"></i>
+                        Galerie
+                    </button>
+                    <button class="nav-btn" onclick="showSection('messages')">
+                        <i class="fas fa-envelope"></i>
+                        Messages
+                    </button>
+                    <button class="nav-btn" onclick="showSection('reports')">
+                        <i class="fas fa-file-alt"></i>
+                        Rapports
+                    </button>
+                    <button class="nav-btn" onclick="showSection('settings')">
+                        <i class="fas fa-cog"></i>
+                        Paramètres
+                    </button>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    </div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -4900,6 +5321,78 @@
         
         // Initialiser au chargement
         document.addEventListener('DOMContentLoaded', initApp);
+
+        // ===== Navigation Scroll Animation =====
+        let lastScrollTop = 0;
+        let scrollDirection = 'down';
+        const navWrapper = document.querySelector('.nav-header-wrapper');
+        let isNavScrolled = false;
+        let isNavHidden = false;
+        let scrollThresholdStart = 100;
+        let scrollThresholdHide = 300;
+
+        window.addEventListener('scroll', function() {
+            const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Determine scroll direction
+            if (currentScroll > lastScrollTop) {
+                scrollDirection = 'down';
+            } else {
+                scrollDirection = 'up';
+            }
+            
+            // Calculate progressive border radius on both scroll down and up
+            let borderRadius = 0;
+            if (currentScroll > scrollThresholdStart && currentScroll <= scrollThresholdHide) {
+                const progress = (currentScroll - scrollThresholdStart) / (scrollThresholdHide - scrollThresholdStart);
+                borderRadius = Math.min(20 * progress, 20);
+            } else if (currentScroll > scrollThresholdHide) {
+                borderRadius = 20;
+            }
+            
+            // Set the CSS variable for border radius
+            navWrapper.style.setProperty('--nav-border-radius', borderRadius + 'px');
+            
+            // At the top - reset everything
+            if (currentScroll <= scrollThresholdStart) {
+                if (isNavScrolled || isNavHidden) {
+                    navWrapper.classList.remove('nav-scrolled', 'nav-hidden');
+                    navWrapper.style.setProperty('--nav-border-radius', '0px');
+                    isNavScrolled = false;
+                    isNavHidden = false;
+                }
+            }
+            // After scrolling past threshold - make nav scrolled
+            else if (currentScroll > scrollThresholdStart && currentScroll <= scrollThresholdHide) {
+                if (!isNavScrolled && !isNavHidden) {
+                    navWrapper.classList.remove('nav-hidden');
+                    navWrapper.classList.add('nav-scrolled');
+                    isNavScrolled = true;
+                    isNavHidden = false;
+                } else if (isNavHidden && scrollDirection === 'up') {
+                    navWrapper.classList.remove('nav-hidden');
+                    navWrapper.classList.add('nav-scrolled');
+                    isNavHidden = false;
+                    isNavScrolled = true;
+                }
+            }
+            // Far down - hide nav when scrolling down
+            else if (currentScroll > scrollThresholdHide) {
+                if (scrollDirection === 'down' && !isNavHidden) {
+                    navWrapper.classList.remove('nav-scrolled');
+                    navWrapper.classList.add('nav-hidden');
+                    isNavHidden = true;
+                    isNavScrolled = false;
+                } else if (scrollDirection === 'up' && isNavHidden) {
+                    navWrapper.classList.remove('nav-hidden');
+                    navWrapper.classList.add('nav-scrolled');
+                    isNavHidden = false;
+                    isNavScrolled = true;
+                }
+            }
+            
+            lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+        });
     </script>
 </body>
 </html>

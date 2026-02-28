@@ -53,6 +53,7 @@
       box-shadow: 0 2px 20px rgba(0,0,0,0.1);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
+      overflow: hidden;
     }
 
     .nav-container {
@@ -86,7 +87,7 @@
     .nav-links {
       display: flex;
       list-style: none;
-      gap: 1.5rem;
+      gap: 0.8rem;
       align-items: center;
     }
 
@@ -95,7 +96,7 @@
       text-decoration: none;
       font-weight: 500;
       transition: var(--transition);
-      padding: 0.5rem 1rem;
+      padding: 0.5rem 0.7rem;
       border-radius: 8px;
       font-size: 0.95rem;
       position: relative;
@@ -148,11 +149,15 @@
     .carousel-container {
       position: relative;
       width: 100%;
-      height: 120vh;
+      height: calc(100vh - 65px);
       overflow: hidden;
-      margin-top: 0;
-      padding-top: 80px;
+      margin-top: 80px;
+      padding-top: 0;
+      padding-bottom: 15px;
       box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .carousel-slide {
@@ -228,7 +233,7 @@
 
     .carousel-controls {
       position: absolute;
-      bottom: 30px;
+      bottom: 60px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -530,10 +535,29 @@
 
     .video-thumbnail {
       position: relative;
-      padding-bottom: 56.25%;
-      height: 0;
-      overflow: hidden;
+      width: 100%;
+      height: 300px;
       background: #000;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .video-thumbnail::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0);
+      z-index: 5;
+      transition: background 0.3s ease;
+    }
+
+    .video-thumbnail:hover::before {
+      background: rgba(0, 0, 0, 0.1);
     }
 
     .video-thumbnail iframe {
@@ -545,8 +569,114 @@
       border: none;
     }
 
+    /* Custom Video Player */
+    .video-thumbnail video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #000;
+    }
+
+    .video-controls {
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      flex-wrap: wrap;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .video-thumbnail:hover .video-controls {
+      opacity: 1;
+    }
+
+    .control-btn {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+      font-weight: 600;
+    }
+
+    .control-btn:hover {
+      background: var(--secondary-color);
+      transform: scale(1.05);
+    }
+
+    .control-btn:active {
+      transform: scale(0.95);
+    }
+
+    .video-progress {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 3px;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--primary-color);
+      border-radius: 3px;
+      transition: width 0.1s linear;
+    }
+
+    .time-display {
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+      min-width: 80px;
+      text-align: right;
+    }
+
     .video-info {
       padding: 1.5rem;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .video-info h4 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.2rem;
+      color: var(--dark-text);
+      word-break: break-word;
+    }
+
+    .video-info p {
+      margin: 0 0 1rem 0;
+      font-size: 0.95rem;
+      color: #666;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     /* Games Section */
@@ -1574,8 +1704,8 @@
       
       .carousel-container {
         height: 70vh;
-        margin-top: 0;
-        padding-top: 80px;
+        margin-top: 80px;
+        padding-top: 0;
         box-sizing: border-box;
       }
 
@@ -1677,8 +1807,8 @@
       
       .carousel-container {
         height: 65vh;
-        margin-top: 0;
-        padding-top: 60px;
+        margin-top: 60px;
+        padding-top: 0;
         box-sizing: border-box;
       }
       
@@ -2536,6 +2666,139 @@
         opacity: 0;
       }
     }
+
+    /* Navigation Scroll Animation */
+    /* Navigation flottante */
+    nav.nav-scrolled {
+      border-radius: var(--nav-border-radius, 0px) !important;
+      margin: 1rem 0 0 0 !important;
+      width: calc(100% - 4rem) !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      top: 0.5rem !important;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      transition: border-radius 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      animation: navAppear 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    nav.nav-scrolled .nav-container {
+      max-width: calc(100% - 4rem);
+    }
+
+    /* Navigation cachée */
+    nav.nav-hidden {
+      transform: translateY(-120px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      border-radius: var(--nav-border-radius, 20px) !important;
+      animation: navExit 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    /* Animation de flottement */
+    @keyframes navFloat {
+      0% {
+        transform: translateY(0);
+        border-radius: 0px;
+        width: 100%;
+        left: 0;
+        top: 0;
+        margin: 0;
+      }
+      100% {
+        transform: translateX(-50%) translateY(0);
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        width: calc(100% - 4rem);
+        left: 50%;
+        top: 1rem;
+      }
+    }
+
+    @keyframes navAppear {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-40px);
+        border-radius: 0px;
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        border-radius: 20px;
+      }
+    }
+
+    @keyframes navExit {
+      from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        border-radius: 20px;
+      }
+      to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-80px);
+        border-radius: 0px;
+      }
+    }
+
+    /* Animation de disparition */
+    @keyframes navHide {
+      0% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-120px);
+        opacity: 0;
+      }
+    }
+
+    /* Animation de réapparition */
+    @keyframes navShow {
+      0% {
+        transform: translateY(-50px);
+        opacity: 0;
+        border-radius: 0px;
+      }
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+        border-radius: 20px;
+      }
+    }
+
+    /* Bouton Parent Login sur même ligne */
+    nav.nav-scrolled .nav-links {
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    nav.nav-scrolled #parentLoginLi {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+    }
+
+    nav.nav-scrolled #parentLoginLi button {
+      padding: 0.4rem 1rem;
+      font-size: 0.9rem;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Carrousel en bas - fullscreen */
+    .carousel-container.bottom-carousel {
+      height: 100vh;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .carousel-container.bottom-carousel .carousel-slide {
+      height: 100vh;
+    }
   </style>
   <script src="firebase-config.js"></script>
   <!-- Firebase SDK -->
@@ -2594,13 +2857,53 @@
             <label for="parentPassword">Mot de passe</label>
             <input type="password" id="parentPassword" required placeholder="Votre mot de passe">
           </div>
+          <button type="submit" class="btn-primary" style="width: 100%;">
+            <i class="fas fa-sign-in-alt"></i> Se connecter
+          </button>
+        </form>
+        <div style="text-align:center; margin: 1rem 0; color: #666">ou</div>
+        <div style="display:flex; gap:0.5rem; justify-content:center;">
+          <button type="button" class="btn-google" onclick="handleGoogleSignIn()" style="background:#db4437;color:#fff;border:none;padding:0.5rem 1rem;border-radius:4px;display:flex;align-items:center;gap:0.5rem;">
+            <i class="fab fa-google"></i> Se connecter avec Google
+          </button>
+        </div>
+        <p style="text-align: center; margin-top: 1rem;">
+          <a href="#" onclick="openRegisterModal(); closeLoginModal();">Pas encore de compte ? Inscrivez-vous</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div id="registerModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-user-plus"></i> Créer un compte parent</h2>
+        <button class="modal-close" onclick="closeRegisterModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="login-form" onsubmit="handleRegister(event)">
           <div class="form-group">
-            <label for="studentName">Nom de l'élève</label>
-            <input type="text" id="studentName" required placeholder="Nom complet de l'élève">
+            <label for="registerEmail">Email</label>
+            <input type="email" id="registerEmail" required placeholder="votre@email.com">
           </div>
           <div class="form-group">
-            <label for="classLevel">Niveau de classe</label>
-            <select id="classLevel" required>
+            <label for="registerPassword">Mot de passe</label>
+            <input type="password" id="registerPassword" required placeholder="Minimum 6 caractères">
+          </div>
+          <div class="form-group">
+            <label for="registerConfirmPassword">Confirmer le mot de passe</label>
+            <input type="password" id="registerConfirmPassword" required placeholder="Confirmer">
+          </div>
+          <div class="form-group">
+            <label for="registerStudentName">Nom de l'élève</label>
+            <input type="text" id="registerStudentName" required placeholder="Nom complet de l'élève">
+          </div>
+          <div class="form-group">
+            <label for="registerClassLevel">Niveau de classe</label>
+            <select id="registerClassLevel" required>
               <option value="">Sélectionnez le niveau</option>
               <option value="maternelle">Maternelle</option>
               <option value="primaire1">Primaire 1</option>
@@ -2612,11 +2915,11 @@
             </select>
           </div>
           <button type="submit" class="btn-primary" style="width: 100%;">
-            <i class="fas fa-sign-in-alt"></i> Se connecter
+            <i class="fas fa-user-plus"></i> S'inscrire
           </button>
         </form>
-        <p style="text-align: center; margin-top: 1rem; color: #666;">
-          <small>Contactez l'administration pour obtenir vos identifiants</small>
+        <p style="text-align: center; margin-top: 1rem;">
+          <a href="#" onclick="openLoginModal(); closeRegisterModal();">Déjà un compte ? Connectez-vous</a>
         </p>
       </div>
     </div>
@@ -2653,7 +2956,7 @@
           </button>
         </li>
       </ul>
-      <button class="mobile-menu" onclick="toggleMenu()" aria-label="Menu mobile">
+      <button id="mobileMenuBtn" type="button" class="mobile-menu" aria-label="Menu mobile">
         <i class="fas fa-bars"></i>
       </button>
     </div>
@@ -3084,14 +3387,34 @@
 
     <div class="video-grid">
       <div class="video-card">
-        <div class="video-thumbnail">
-          <iframe src="https://www.youtube.com/embed/nKl1SQVnS3s" title="Présentation de l'école Eden Family School" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <div class="video-thumbnail" id="videoContainer" style="position: relative;">
+          <video id="schoolVideo" width="100%" height="100%" style="object-fit: cover; background: #000;">
+            <source src="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" type="video/mp4">
+            Votre navigateur ne supporte pas la balise vidéo.
+          </video>
+          <div class="video-controls">
+            <button class="control-btn" id="rewindBtn" title="Reculer 10s">
+              <i class="fas fa-backward"></i> -10s
+            </button>
+            <button class="control-btn" id="playPauseBtn" title="Lecture/Pause">
+              <i class="fas fa-play"></i> Lecture
+            </button>
+            <button class="control-btn" id="forwardBtn" title="Avancer 10s">
+              <i class="fas fa-forward"></i> +10s
+            </button>
+            <div class="video-progress">
+              <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+              <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
+            </div>
+          </div>
         </div>
         <div class="video-info">
           <h4>Présentation de l'école</h4>
           <p>Découvrez notre école et nos installations</p>
-          <a href="https://youtu.be/nKl1SQVnS3s" target="_blank" class="youtube-link">
-            <i class="fab fa-youtube"></i> Voir sur YouTube
+          <a href="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" download class="youtube-link">
+            <i class="fas fa-download"></i> Télécharger
           </a>
         </div>
       </div>
@@ -3166,17 +3489,6 @@
             <i class="fab fa-youtube"></i> Voir sur YouTube
           </a>
         </div>
-      </div>
-    </div>
-
-    <div style="text-align: center; margin-top: 3rem;">
-      <h3><i class="fas fa-play-circle"></i> Dernières Vidéos</h3>
-      <div class="video-thumbnail" style="margin-top: 2rem; max-width: 800px; margin-left: auto; margin-right: auto;">
-        <iframe width="100%" height="450" src="https://www.youtube.com/embed/videoseries?list=UUedenfamilyschool" 
-                title="Playlist des vidéos Eden Family School" frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-        </iframe>
       </div>
     </div>
   </section>
@@ -4569,6 +4881,15 @@
       });
     }
 
+    // Attach click handler to mobile menu button (safer than inline onclick)
+    const mobileMenuBtnEl = document.getElementById('mobileMenuBtn');
+    if (mobileMenuBtnEl) {
+      mobileMenuBtnEl.addEventListener('click', function(e) {
+        e.preventDefault();
+        toggleMenu();
+      });
+    }
+
     // Carousel
     const slides = document.querySelectorAll('.carousel-slide');
     const dots = document.querySelectorAll('.carousel-dot');
@@ -4632,6 +4953,90 @@
     function closeLoginModal() {
       document.getElementById('loginModal').style.display = 'none';
       document.body.style.overflow = '';
+    }
+
+    // Firebase auth helpers and register modal controls
+    let currentFirebaseUser = null; // utilisateur Firebase
+    function openRegisterModal() {
+      document.getElementById('registerModal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeRegisterModal() {
+      document.getElementById('registerModal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    function logoutFromIndex() {
+      firebase.auth().signOut().then(() => {
+        showToast("Déconnexion réussie", "info");
+      }).catch(error => {
+        console.error("Erreur lors de la déconnexion:", error);
+      });
+    }
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (user) {
+        // Utilisateur connecté
+        currentFirebaseUser = user;
+        
+        // Récupérer les infos supplémentaires depuis la base
+        const snapshot = await firebase.database().ref('parents/' + user.uid).once('value');
+        const userData = snapshot.val();
+        
+        // Mettre à jour l'interface
+        document.getElementById('staffAccessLi').style.display = 'none';
+        document.getElementById('parentLoginLi').style.display = 'none';
+        document.getElementById('logoutLi').style.display = 'block';
+        
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        if (userData && userData.studentName) {
+          userNameDisplay.textContent = userData.studentName;
+        } else {
+          userNameDisplay.textContent = user.email.split('@')[0];
+        }
+        
+        // Mettre à jour CONFIG si nécessaire
+        CONFIG.isLoggedIn = true;
+        CONFIG.currentUser = userData;
+      } else {
+        // Utilisateur déconnecté
+        currentFirebaseUser = null;
+        
+        document.getElementById('staffAccessLi').style.display = 'block';
+        document.getElementById('parentLoginLi').style.display = 'block';
+        document.getElementById('logoutLi').style.display = 'none';
+        
+        CONFIG.isLoggedIn = false;
+        CONFIG.currentUser = null;
+      }
+    });
+
+    // Google sign-in
+    function handleGoogleSignIn() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .then(async (result) => {
+          const user = result.user;
+          if (!user) return;
+
+          // Ensure a parent record exists
+          const parentRef = firebase.database().ref('parents/' + user.uid);
+          const snapshot = await parentRef.once('value');
+          if (!snapshot.exists()) {
+            const parentData = {
+              email: user.email || null,
+              displayName: user.displayName || null,
+              createdAt: Date.now()
+            };
+            await parentRef.set(parentData);
+          }
+
+          closeLoginModal();
+          showToast('Connexion Google réussie', 'success');
+        })
+        .catch((err) => {
+          console.error('Erreur Google Sign-In:', err);
+          showToast('Erreur connexion Google', 'error');
+        });
     }
 
     // Galerie
@@ -4814,10 +5219,8 @@
 
     function startGame() {
       // Require login before starting any game
-      const logged = (typeof CONFIG !== 'undefined' && CONFIG.isLoggedIn) || (typeof isLoggedIn !== 'undefined' && isLoggedIn) || false;
-      if (!logged) {
+      if (!currentFirebaseUser) {
         showToast('Veuillez vous connecter pour jouer', 'info');
-        // open the existing login modal
         if (typeof openLoginModal === 'function') openLoginModal();
         return;
       }
@@ -5519,32 +5922,90 @@
       updateActiveNavLink(current);
     }
 
-    // Login
+    // Login with Firebase
     function handleLogin(event) {
       event.preventDefault();
-      
+
       const email = document.getElementById('parentEmail').value;
       const password = document.getElementById('parentPassword').value;
-      const studentName = document.getElementById('studentName').value;
-      const classLevel = document.getElementById('classLevel').value;
-      
-      // Simulation de connexion
-      if (email && password && studentName && classLevel) {
-        CONFIG.isLoggedIn = true;
-        CONFIG.currentUser = {
-          email,
-          studentName,
-          classLevel
-        };
-        
-        closeLoginModal();
-        showToast(`Bienvenue ${studentName} !`, 'success');
-        
-        // Mettre à jour le badge des devoirs
-        const homeworkCount = Math.floor(Math.random() * 10) + 1;
-        document.getElementById('homeworkCount').textContent = `${homeworkCount} nouveaux`;
-      } else {
+
+      if (!email || !password) {
         showToast('Veuillez remplir tous les champs', 'error');
+        return;
+      }
+
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(async (cred) => {
+          const user = cred.user;
+          if (!user) return;
+
+          // Récupérer les données parents depuis la base
+          const snapshot = await firebase.database().ref('parents/' + user.uid).once('value');
+          const userData = snapshot.val() || {};
+
+          CONFIG.isLoggedIn = true;
+          CONFIG.currentUser = userData;
+
+          closeLoginModal();
+          const displayName = userData.studentName || user.email.split('@')[0];
+          showToast(`Bienvenue ${displayName} !`, 'success');
+
+          // Mettre à jour le badge des devoirs (si présent)
+          try {
+            const homeworkCount = userData.homeworkCount || Math.floor(Math.random() * 10) + 1;
+            const el = document.getElementById('homeworkCount');
+            if (el) el.textContent = `${homeworkCount} nouveaux`;
+          } catch (e) {}
+        })
+        .catch((err) => {
+          console.error('Erreur login:', err);
+          showToast(err.message || 'Erreur lors de la connexion', 'error');
+        });
+    }
+
+    // Register with Firebase
+    async function handleRegister(event) {
+      event.preventDefault();
+
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const confirm = document.getElementById('registerConfirmPassword').value;
+      const studentName = document.getElementById('registerStudentName').value;
+      const classLevel = document.getElementById('registerClassLevel').value;
+
+      if (!email || !password || !confirm || !studentName || !classLevel) {
+        showToast('Veuillez remplir tous les champs', 'error');
+        return;
+      }
+
+      if (password !== confirm) {
+        showToast('Les mots de passe ne correspondent pas', 'error');
+        return;
+      }
+
+      try {
+        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        const user = cred.user;
+        if (!user) throw new Error('Utilisateur non créé');
+
+        const parentRef = firebase.database().ref('parents/' + user.uid);
+        const parentData = {
+          email: email,
+          studentName: studentName,
+          classLevel: classLevel,
+          createdAt: Date.now()
+        };
+
+        await parentRef.set(parentData);
+
+        CONFIG.isLoggedIn = true;
+        CONFIG.currentUser = parentData;
+
+        closeRegisterModal();
+        showToast('Inscription réussie — vous êtes connecté', 'success');
+      } catch (err) {
+        console.error('Erreur register:', err);
+        showToast(err.message || 'Erreur lors de l\'inscription', 'error');
       }
     }
 
@@ -5758,7 +6219,7 @@
       // Fermer le menu si on clique en dehors
       document.addEventListener('click', (e) => {
         const navLinks = document.getElementById('navLinks');
-        const mobileMenuBtn = document.querySelector('.mobile-menu');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         if (navLinks && navLinks.classList.contains('active')) {
           if (!navLinks.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
             closeMobileMenu();
@@ -6613,5 +7074,162 @@
       });
     });
   </script>
+
+  <!-- Navigation Scroll Animation Script -->
+  <script>
+    let lastScrollTop = 0;
+    let scrollDirection = 'down';
+    const nav = document.querySelector('nav');
+    const navContainer = document.querySelector('.nav-container');
+    let isNavScrolled = false;
+    let isNavHidden = false;
+    let scrollThresholdStart = 100;
+    let scrollThresholdHide = 300;
+
+    window.addEventListener('scroll', function() {
+      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+      
+      // Determine scroll direction
+      if (currentScroll > lastScrollTop) {
+        scrollDirection = 'down';
+      } else {
+        scrollDirection = 'up';
+      }
+      
+      // Calculate progressive border radius on both scroll down and up
+      let borderRadius = 0;
+      if (currentScroll > scrollThresholdStart && currentScroll <= scrollThresholdHide) {
+        // Calculate progress from 0 to 1 based on scroll position
+        const progress = (currentScroll - scrollThresholdStart) / (scrollThresholdHide - scrollThresholdStart);
+        // Border radius goes from 0 to 20px progressively (works on both down and up scroll)
+        borderRadius = Math.min(20 * progress, 20);
+      } else if (currentScroll > scrollThresholdHide) {
+        // Full border radius when scrolling past hide threshold
+        borderRadius = 20;
+      }
+      
+      // Set the CSS variable for border radius - applies to both scroll directions
+      nav.style.setProperty('--nav-border-radius', borderRadius + 'px');
+      
+      // At the top - reset everything
+      if (currentScroll <= scrollThresholdStart) {
+        if (isNavScrolled || isNavHidden) {
+          nav.classList.remove('nav-scrolled', 'nav-hidden');
+          navContainer.style.maxWidth = '';
+          navContainer.style.margin = '';
+          nav.style.setProperty('--nav-border-radius', '0px');
+          isNavScrolled = false;
+          isNavHidden = false;
+        }
+      }
+      // After scrolling past threshold - make nav scrolled
+      else if (currentScroll > scrollThresholdStart && currentScroll <= scrollThresholdHide) {
+        if (!isNavScrolled && !isNavHidden) {
+          nav.classList.remove('nav-hidden');
+          nav.classList.add('nav-scrolled');
+          isNavScrolled = true;
+          isNavHidden = false;
+        } else if (isNavHidden && scrollDirection === 'up') {
+          nav.classList.remove('nav-hidden');
+          nav.classList.add('nav-scrolled');
+          isNavHidden = false;
+          isNavScrolled = true;
+        }
+      }
+      // Far down - hide nav when scrolling down
+      else if (currentScroll > scrollThresholdHide) {
+        if (scrollDirection === 'down' && !isNavHidden) {
+          nav.classList.remove('nav-scrolled');
+          nav.classList.add('nav-hidden');
+          isNavHidden = true;
+          isNavScrolled = false;
+        } else if (scrollDirection === 'up' && isNavHidden) {
+          nav.classList.remove('nav-hidden');
+          nav.classList.add('nav-scrolled');
+          isNavHidden = false;
+          isNavScrolled = true;
+        }
+      }
+      
+      lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+    });
+  </script>
 </body>
+<script>
+  // ===== Contrôles vidéo personnalisés =====
+  const video = document.getElementById('schoolVideo');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const rewindBtn = document.getElementById('rewindBtn');
+  const forwardBtn = document.getElementById('forwardBtn');
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  const timeDisplay = document.getElementById('timeDisplay');
+
+  if (video) {
+    // Fonction pour formater le temps (mm:ss)
+    function formatTime(seconds) {
+      if (!isFinite(seconds)) return '0:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Mise à jour du bouton play/pause
+    function updatePlayPauseBtn() {
+      if (video.paused) {
+        playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Lecture';
+      } else {
+        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+      }
+    }
+
+    // Bouton Play/Pause
+    playPauseBtn.addEventListener('click', () => {
+      if (video.paused) {
+        video.play();
+      } else {
+        video.pause();
+      }
+      updatePlayPauseBtn();
+    });
+
+    // Bouton Retour (-10s)
+    rewindBtn.addEventListener('click', () => {
+      video.currentTime = Math.max(0, video.currentTime - 10);
+    });
+
+    // Bouton Avancer (+10s)
+    forwardBtn.addEventListener('click', () => {
+      video.currentTime = Math.min(video.duration, video.currentTime + 10);
+    });
+
+    // Barre de progression (clic)
+    progressBar.addEventListener('click', (e) => {
+      const rect = progressBar.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = x / rect.width;
+      video.currentTime = percentage * video.duration;
+    });
+
+    // Mise à jour de la barre de progression
+    video.addEventListener('timeupdate', () => {
+      if (video.duration) {
+        const percentage = (video.currentTime / video.duration) * 100;
+        progressFill.style.width = percentage + '%';
+        timeDisplay.textContent = formatTime(video.currentTime) + ' / ' + formatTime(video.duration);
+      }
+    });
+
+    // Mise à jour au chargement des métadonnées
+    video.addEventListener('loadedmetadata', () => {
+      // Positionner la vidéo à 1 seconde pour avoir une image de couverture
+      video.currentTime = 1;
+      timeDisplay.textContent = '0:00 / ' + formatTime(video.duration);
+    });
+
+    // Mise à jour du bouton lors de la lecture/pause
+    video.addEventListener('play', updatePlayPauseBtn);
+    video.addEventListener('pause', updatePlayPauseBtn);
+  }
+</script>
 </html>

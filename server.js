@@ -126,15 +126,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend Node.js fonctionne.' });
 });
 
-// Exemple: stats simples en lisant la base (students / teachers)
+// Exemple: stats simples en lisant la base (students / travailleurs)
 app.get('/api/stats', async (req, res) => {
   try {
     const studentsSnap = await db.ref('students').once('value');
-    const teachersSnap = await db.ref('teachers').once('value');
+    const travailleursSnap = await db.ref('Travailleurs').once('value');
 
     res.json({
       totalStudents: studentsSnap.numChildren(),
-      totalTeachers: teachersSnap.numChildren()
+      totalTravailleurs: travailleursSnap.numChildren()
     });
   } catch (err) {
     console.error('Erreur /api/stats:', err);

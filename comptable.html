@@ -14,6 +14,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Responsive CSS Global -->
+    <link rel="stylesheet" href="responsive.css">
+    
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -40,6 +43,7 @@
             --border-radius: 12px;
             --box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
             --transition: all 0.3s ease;
+            --nav-border-radius: 0px;
         }
         
         * {
@@ -150,15 +154,20 @@
             backdrop-filter: blur(10px);
             padding: 1rem 0;
             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
-            position: sticky;
-            top: 80px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
             z-index: 999;
+            overflow: hidden;
         }
         
         .nav-container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 0 2rem;
+            transition: max-width 0.3s ease;
         }
         
         .nav-tabs {
@@ -192,7 +201,177 @@
             color: white;
             box-shadow: 0 4px 12px rgba(46, 139, 87, 0.3);
         }
-        
+
+        /* Navigation Scroll Animation */
+        .main-nav.nav-scrolled {
+            /* Keep same shape/position when scrolled; only subtle elevation */
+            border-radius: var(--nav-border-radius, 0px) !important;
+            margin: 0 !important;
+            width: 100% !important;
+            left: 0 !important;
+            transform: none !important;
+            top: 0 !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+            transition: box-shadow 0.25s ease;
+            animation: none !important;
+        }
+
+        .main-nav.nav-scrolled .nav-container {
+            max-width: 1400px;
+        }
+
+        /* Navigation cachée: translate up to hide (works on phones) */
+        .main-nav.nav-hidden {
+            transform: translateY(-120%) !important;
+            opacity: 0 !important;
+            transition: transform 0.35s ease, opacity 0.25s ease;
+            pointer-events: none !important;
+            animation: none !important;
+            border-radius: var(--nav-border-radius, 20px) !important;
+        }
+
+        /* Animation de flottement */
+        @keyframes navFloat {
+            0% {
+                transform: translateY(0);
+                border-radius: 0px;
+                width: 100%;
+                left: 0;
+                top: 0;
+                margin: 0;
+            }
+            100% {
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                width: calc(100% - 4rem);
+                left: 50%;
+                top: 1rem;
+            }
+        }
+
+        @keyframes navAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-40px);
+                border-radius: 0px;
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+        }
+
+        @keyframes navExit {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-80px);
+                border-radius: 0px;
+            }
+        }
+
+        /* Navigation Header Wrapper - groups header + nav together */
+        .nav-header-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            z-index: 999;
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-header-wrapper.nav-scrolled {
+            /* Keep same header shape when scrolled; subtle shadow only */
+            border-radius: var(--nav-border-radius, 0px) !important;
+            margin: 0 !important;
+            width: 100% !important;
+            left: 0 !important;
+            transform: none !important;
+            top: 0 !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08) !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            transition: box-shadow 0.25s ease;
+            animation: none !important;
+        }
+
+        .nav-header-wrapper.nav-hidden {
+            transform: translateY(-110%) !important;
+            opacity: 0 !important;
+            transition: transform 0.35s ease, opacity 0.25s ease;
+            pointer-events: none !important;
+            animation: none !important;
+            border-radius: var(--nav-border-radius, 20px) !important;
+        }
+
+        @keyframes navWrapperAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-120px);
+                border-radius: 0px;
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+        }
+
+        @keyframes navWrapperExit {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-200px);
+                border-radius: 0px;
+            }
+        }
+
+        /* NAV: disable all animations/transitions and keep nav static */
+        /* Make header and nav flow in document (not fixed) so they stack normally */
+        .nav-header-wrapper,
+        .main-nav {
+            position: static !important;
+            width: 100% !important;
+            left: auto !important;
+            top: auto !important;
+            transform: none !important;
+            animation: none !important;
+            transition: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
+        /* Neutralize scrolled/hidden modifiers so they don't change flow */
+        .main-nav.nav-scrolled,
+        .nav-header-wrapper.nav-scrolled,
+        .main-nav.nav-hidden,
+        .nav-header-wrapper.nav-hidden {
+            position: static !important;
+            transform: none !important;
+            animation: none !important;
+            transition: none !important;
+            opacity: 1 !important;
+        }
+
+        /* Remove large top margin now header+nav are static */
+        .main-content {
+            margin-top: 0 !important;
+        }
+
         /* Main Content */
         .main-content {
             max-width: 1400px;
@@ -439,6 +618,306 @@
             border-left-color: #17a2b8;
         }
         
+        /* Ultra-Mobile Screens (320px - 374px) */
+        @media (max-width: 374px) {
+            body {
+                font-size: 13px;
+            }
+
+            .header-container {
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 0.75rem 0.5rem;
+            }
+
+            .logo-icon {
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
+            }
+
+            .logo-text h1 {
+                font-size: 0.95rem;
+            }
+
+            .logo-text p {
+                font-size: 0.65rem;
+            }
+
+            .nav-btn {
+                padding: 6px 8px;
+                font-size: 0.7rem;
+                min-height: 40px;
+            }
+
+            .main-content {
+                padding: 0 0.5rem;
+                margin-top: 220px;
+            }
+
+            .dashboard-hero {
+                padding: 0.75rem;
+                margin-bottom: 1rem;
+            }
+
+            .hero-title {
+                font-size: 0.95rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .stat-card {
+                padding: 0.75rem;
+            }
+
+            .stat-value {
+                font-size: 1.1rem;
+            }
+
+            .card-modern {
+                padding: 0.75rem;
+            }
+
+            .modern-table {
+                font-size: 0.65rem;
+            }
+
+            .modern-table th,
+            .modern-table td {
+                padding: 0.4rem;
+            }
+
+            .form-control-modern {
+                padding: 8px 10px;
+                font-size: 13px;
+                min-height: 40px;
+            }
+
+            .btn-modern {
+                padding: 8px 10px;
+                font-size: 0.7rem;
+                min-height: 40px;
+            }
+        }
+
+        /* Mobile Screens (375px - 479px) */
+        @media (max-width: 479px) {
+            body {
+                font-size: 13px;
+            }
+
+            .header-container {
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                padding: 0.75rem;
+            }
+
+            .logo-icon {
+                width: 42px;
+                height: 42px;
+                font-size: 18px;
+            }
+
+            .logo-text h1 {
+                font-size: 1.05rem;
+            }
+
+            .logo-text p {
+                font-size: 0.7rem;
+            }
+
+            .nav-container {
+                padding: 0 0.75rem;
+            }
+
+            .nav-btn {
+                padding: 8px 10px;
+                font-size: 0.75rem;
+                margin: 2px;
+                min-height: 44px;
+            }
+
+            .nav-tabs {
+                gap: 2px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                flex-wrap: nowrap;
+            }
+
+            .main-content {
+                padding: 0 0.75rem;
+                margin-top: 220px;
+            }
+
+            .dashboard-hero {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .hero-title {
+                font-size: 1.05rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+
+            .stat-card {
+                padding: 0.75rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .stat-value {
+                font-size: 1.2rem;
+            }
+
+            .card-modern {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .badge-bank,
+            .badge-cash,
+            .badge-momo,
+            .badge-minervale,
+            .badge-coaching,
+            .badge-transport {
+                font-size: 0.75rem;
+                padding: 4px 6px;
+                white-space: normal;
+                word-break: break-word;
+            }
+
+            .modern-table {
+                font-size: 0.8rem;
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .modern-table thead,
+            .modern-table tbody {
+                display: table;
+                width: 100%;
+            }
+
+            .modern-table th,
+            .modern-table td {
+                padding: 0.6rem;
+            }
+
+            .form-control-modern {
+                padding: 10px 12px;
+                font-size: 16px;
+                min-height: 44px;
+                width: 100%;
+            }
+
+            .btn-modern {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+                min-height: 44px;
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .d-flex {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            /* Keep header/nav areas horizontal on very small screens */
+            .nav-header-wrapper .d-flex,
+            .header-container .d-flex,
+            .nav-container .d-flex {
+                flex-direction: row !important;
+                gap: 0.5rem !important;
+                align-items: center !important;
+            }
+
+            [class*="col-"] {
+                width: 100% !important;
+            }
+
+            h1 { font-size: 1.1rem; }
+            h2 { font-size: 0.95rem; }
+            h3 { font-size: 0.85rem; }
+
+            .chart-container {
+                height: 250px;
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Small Tablets (480px - 767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+            body {
+                font-size: 14px;
+            }
+
+            .header-container {
+                flex-wrap: wrap;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .logo-text h1 {
+                font-size: 1.2rem;
+            }
+
+            .nav-btn {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+                min-height: 44px;
+            }
+
+            .nav-container, .main-content {
+                padding: 0 1rem;
+            }
+
+            .dashboard-hero {
+                padding: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            input, select, textarea, button {
+                font-size: 14px;
+                min-height: 44px;
+            }
+
+            .modern-table {
+                font-size: 0.85rem;
+            }
+
+            .modern-table th,
+            .modern-table td {
+                padding: 0.75rem;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+
+            .col-md-6 {
+                width: 50%;
+            }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .header-container, .nav-container, .main-content {
@@ -460,6 +939,16 @@
             .nav-btn {
                 padding: 10px 15px;
                 font-size: 0.9rem;
+                min-height: 44px;
+            }
+
+            body {
+                font-size: 14px;
+            }
+
+            input, select, textarea, button {
+                font-size: 15px;
+                min-height: 44px;
             }
         }
         
@@ -940,61 +1429,6 @@
             display: none;
         }
         
-        /* Nouveaux styles pour les filtres élèves */
-        .student-filters {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--box-shadow);
-        }
-        
-        .filter-row {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
-        
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .btn-sort-alphabetical {
-            background: #17a2b8;
-            color: white;
-            height: 38px;
-            align-self: flex-end;
-        }
-        
-        .student-detail-modal .modal-body {
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-        
-        .detail-section {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .detail-row {
-            display: flex;
-            margin-bottom: 8px;
-        }
-        
-        .detail-label {
-            font-weight: 600;
-            width: 150px;
-            color: #2E8B57;
-        }
-        
-        .detail-value {
-            flex: 1;
-        }
-        
         /* Support Safari pour backdrop-filter */
         .modern-header,
         .main-nav,
@@ -1049,94 +1483,114 @@
             }
         }
     </script>
+    <script>
+        // Ajuste dynamiquement le margin-top de .main-content
+        function adjustMainContentOffset() {
+            const wrapper = document.querySelector('.nav-header-wrapper');
+            const main = document.querySelector('.main-content');
+            if (!wrapper || !main) return;
+            const rect = wrapper.getBoundingClientRect();
+            // ajouter une marge de sécurité
+            const offset = Math.ceil(rect.height) + 16;
+            main.style.marginTop = offset + 'px';
+        }
+
+        window.addEventListener('DOMContentLoaded', adjustMainContentOffset);
+        window.addEventListener('load', adjustMainContentOffset);
+        window.addEventListener('resize', () => {
+            // petit délai pour laisser le layout se stabiliser
+            clearTimeout(window._adjustMainContentTimeout);
+            window._adjustMainContentTimeout = setTimeout(adjustMainContentOffset, 120);
+        });
+    </script>
 </head>
 <body>
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- Header -->
-    <header class="modern-header">
-        <div class="header-container">
-            <div class="logo">
-                <div class="logo-icon">
-                    <img src="asset/img/logo_eden.png" alt="Logo Eden Family School" style="height: 40px; width: auto; object-fit: contain;">
-                </div>
-                <div class="logo-text">
-                    <h1>EdenSmart Finances</h1>
-                    <p>Système conforme aux lois financières du Rwanda</p>
-                </div>
-            </div>
-            
-            <div class="d-flex align-items-center gap-3">
-                <div class="search-container">
-                    <input type="text" class="form-control-modern" id="globalSearch" 
-                           placeholder="Rechercher dans tout le système..." 
-                           onkeyup="performGlobalSearch(this.value)">
-                    <div class="search-results" id="searchResults">
-                        <!-- Résultats de recherche -->
+    <!-- Navigation & Header Wrapper -->
+    <div class="nav-header-wrapper">
+        <!-- Header -->
+        <header class="modern-header">
+            <div class="header-container">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <img src="asset/img/logo_eden.png" alt="Logo Eden Family School" style="height: 40px; width: auto; object-fit: contain;">
+                    </div>
+                    <div class="logo-text">
+                        <h1>EdenSmart Finances</h1>
+                        <p>Système conforme aux lois financières du Rwanda</p>
                     </div>
                 </div>
                 
-                <span class="legal-badge">
-                    <i class="fas fa-balance-scale"></i>
-                    Conforme RRA
-                </span>
-                
-                <button id="languageToggle" class="btn-modern language-toggle-btn">
-                    <i class="fas fa-language me-2"></i>
-                    <span id="languageText">EN</span>
-                </button>
-                
-                <div class="text-end">
-                    <div class="fw-bold" id="userName">Utilisateur</div>
-                    <small id="userRole" class="user-role-text">Comptable Principal</small>
-                </div>
-                <div class="user-avatar-header">
-                    IA
+                <div class="d-flex align-items-center gap-3">
+                    <div class="search-container">
+                        <input type="text" class="form-control-modern" id="globalSearch" 
+                               placeholder="Rechercher dans tout le système..." 
+                               onkeyup="performGlobalSearch(this.value)">
+                        <div class="search-results" id="searchResults">
+                            <!-- Résultats de recherche -->
+                        </div>
+                    </div>
+                    
+                    <span class="legal-badge">
+                        <i class="fas fa-balance-scale"></i>
+                        Conforme RRA
+                    </span>
+                    
+                    <button id="languageToggle" class="btn-modern language-toggle-btn">
+                        <i class="fas fa-language me-2"></i>
+                        <span id="languageText">EN</span>
+                    </button>
+                    
+                    <div class="text-end">
+                        <div class="fw-bold" id="userName">Utilisateur</div>
+                        <small id="userRole" class="user-role-text">Comptable Principal</small>
+                    </div>
                 </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <!-- Navigation -->
-    <nav class="main-nav">
-        <div class="nav-container">
-            <div class="nav-tabs">
-                <button class="nav-btn active" onclick="showSection('dashboard')">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span data-i18n="dashboard">Tableau de bord</span>
-                </button>
-                <button class="nav-btn" onclick="showSection('inscription-comptable')">
-                    <i class="fas fa-pen-fancy"></i>
-                    <span data-i18n="inscription">Inscription</span>
-                </button>
-                <button class="nav-btn" onclick="showSection('teachers')">
-                    <i class="fas fa-users"></i>
-                    <span data-i18n="workers">Gestion Travailleurs</span>
-                </button>
-                <button class="nav-btn" onclick="showSection('payroll')">
-                    <i class="fas fa-money-check-alt"></i>
-                    <span data-i18n="payroll">Générer Payroll</span>
-                </button>
-                <button class="nav-btn" onclick="showSection('student-fees')">
-                    <i class="fas fa-user-graduate"></i>
-                    <span data-i18n="payments">Paiements</span>
-                </button>
-                <button class="nav-btn" onclick="showSection('students')">
-                    <i class="fas fa-child"></i>
-                    <span data-i18n="students">Élèves</span>
-                </button>
-                <button class="nav-btn" onclick="showSection('reports')">
-                    <i class="fas fa-file-contract"></i>
-                    <span data-i18n="reports">Rapports Financiers</span>
-                </button>
-                <button class="nav-btn" onclick="showSection('settings')">
-                    <i class="fas fa-cog"></i>
-                    <span data-i18n="settings">Paramètres</span>
-                </button>
+        <!-- Navigation -->
+        <nav class="main-nav">
+            <div class="nav-container">
+                <div class="nav-tabs">
+                    <button class="nav-btn active" onclick="showSection('dashboard')">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span data-i18n="dashboard">Tableau de bord</span>
+                    </button>
+                    <button class="nav-btn" onclick="showSection('inscription-comptable')">
+                        <i class="fas fa-pen-fancy"></i>
+                        <span data-i18n="addStudent">Inscription</span>
+                    </button>
+                    <button class="nav-btn" onclick="showSection('travailleurs')">
+                        <i class="fas fa-users"></i>
+                        <span data-i18n="workers">Gestion Travailleurs</span>
+                    </button>
+                    <button class="nav-btn" onclick="showSection('payroll')">
+                        <i class="fas fa-money-check-alt"></i>
+                        <span data-i18n="payroll">Générer Payroll</span>
+                    </button>
+                    <button class="nav-btn" onclick="showSection('student-fees')">
+                        <i class="fas fa-user-graduate"></i>
+                        <span data-i18n="payments">Paiements</span>
+                    </button>
+                    <button class="nav-btn" onclick="showSection('students')">
+                        <i class="fas fa-child"></i>
+                        <span data-i18n="students">Élèves</span>
+                    </button>
+                    <button class="nav-btn" onclick="showSection('reports')">
+                        <i class="fas fa-file-contract"></i>
+                        <span>Rapports Financiers</span>
+                    </button>
+                    <button class="nav-btn" onclick="showSection('settings')">
+                        <i class="fas fa-cog"></i>
+                        <span>Paramètres</span>
+                    </button>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    </div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -1177,7 +1631,7 @@
                     <div class="stat-icon stat-icon-primary">
                         <i class="fas fa-users"></i>
                     </div>
-                    <h3 class="stat-value" id="totalTeachers">0</h3>
+                    <h3 class="stat-value" id="totalTravailleurs">0</h3>
                     <p class="text-muted mb-0">Total Travailleurs</p>
                 </div>
                 
@@ -1512,7 +1966,7 @@
         </section>
 
         <!-- Workers Management Section -->
-        <section id="teachers" class="section">
+        <section id="travailleurs" class="section">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="fw-bold">
                     <i class="fas fa-users me-3 icon-text-primary"></i>
@@ -1687,12 +2141,12 @@
                         <thead>
                             <tr>
                                 <th>NO</th>
-                                <th>NOMS</th>
+                                <th>NOM COMPLET</th>
                                 <th>TYPE</th>
+                                <th>TELEPHONE</th>
                                 <th>MODE PAIEMENT</th>
                                 <th>SALAIRE BASE</th>
                                 <th>DETTES</th>
-                                <th>SALAIRE NET</th>
                                 <th>STATUT</th>
                                 <th>ACTIONS</th>
                             </tr>
@@ -1838,94 +2292,14 @@
                     <button class="btn-modern btn-primary-modern" onclick="showStudentModal()">
                         <i class="fas fa-plus me-2"></i> Ajouter Élève
                     </button>
-                    <button class="btn-modern btn-primary-modern" onclick="exportStudentsExcel()">
-                        <i class="fas fa-file-excel me-2"></i> Exporter Excel
+                    <!-- Import buttons -->
+                    <input type="file" id="importExcelInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportExcel(event)">
+                    <button class="btn-modern btn-outline-primary" onclick="document.getElementById('importExcelInput').click()">
+                        <i class="fas fa-file-excel me-2"></i> Importer Excel
                     </button>
-                    <button class="btn-modern btn-success" onclick="showImportStudentsModal()">
-                        <i class="fas fa-file-import me-2"></i> Importer Excel
-                    </button>
-                </div>
-            </div>
-
-            <!-- Filtres avancés -->
-            <div class="student-filters">
-                <h5 class="fw-bold mb-3">
-                    <i class="fas fa-filter me-2 icon-text-primary"></i>
-                    Filtres de Recherche
-                </h5>
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label class="form-label">Filtrer par Classe</label>
-                        <select class="form-control-modern" id="filterStudentClass" onchange="applyStudentFilters()">
-                            <option value="">Toutes les classes</option>
-                            <optgroup label="NURSERY">
-                                <option value="N1A">N1A (Nursery 1A)</option>
-                                <option value="N1B">N1B (Nursery 1B)</option>
-                                <option value="N1C">N1C (Nursery 1C)</option>
-                                <option value="N2A">N2A (Nursery 2A)</option>
-                                <option value="N2B">N2B (Nursery 2B)</option>
-                                <option value="N2C">N2C (Nursery 2C)</option>
-                                <option value="N3A">N3A (Nursery 3A)</option>
-                                <option value="N3B">N3B (Nursery 3B)</option>
-                                <option value="N3C">N3C (Nursery 3C)</option>
-                            </optgroup>
-                            <optgroup label="PRIMAIRE">
-                                <option value="P1A">P1A</option>
-                                <option value="P1B">P1B</option>
-                                <option value="P1C">P1C</option>
-                                <option value="P2A">P2A</option>
-                                <option value="P2B">P2B</option>
-                                <option value="P2C">P2C</option>
-                                <option value="P3A">P3A</option>
-                                <option value="P3B">P3B</option>
-                                <option value="P3C">P3C</option>
-                                <option value="P4A">P4A</option>
-                                <option value="P4B">P4B</option>
-                                <option value="P4C">P4C</option>
-                                <option value="P5A">P5A</option>
-                                <option value="P5B">P5B</option>
-                                <option value="P5C">P5C</option>
-                                <option value="P6A">P6A</option>
-                                <option value="P6B">P6B</option>
-                                <option value="P6C">P6C</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label class="form-label">Filtrer par Tranche d'Âge</label>
-                        <select class="form-control-modern" id="filterAgeRange" onchange="applyStudentFilters()">
-                            <option value="">Toutes les tranches d'âge</option>
-                            <option value="2-3">2 à 3 ans</option>
-                            <option value="3-4">3 à 4 ans</option>
-                            <option value="4-5">4 à 5 ans</option>
-                            <option value="5-6">5 à 6 ans</option>
-                            <option value="6-7">6 à 7 ans</option>
-                            <option value="7-8">7 à 8 ans</option>
-                            <option value="8-9">8 à 9 ans</option>
-                            <option value="9-10">9 à 10 ans</option>
-                            <option value="10-11">10 à 11 ans</option>
-                            <option value="11-12">11 à 12 ans</option>
-                            <option value="12+">12 ans et plus</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label class="form-label">Trier par</label>
-                        <select class="form-control-modern" id="sortStudents" onchange="applyStudentFilters()">
-                            <option value="name_asc">Nom (A-Z)</option>
-                            <option value="name_desc">Nom (Z-A)</option>
-                            <option value="class_asc">Classe (A-Z)</option>
-                            <option value="class_desc">Classe (Z-A)</option>
-                            <option value="age_asc">Âge (Croissant)</option>
-                            <option value="age_desc">Âge (Décroissant)</option>
-                            <option value="date_asc">Date ajout (Ancien)</option>
-                            <option value="date_desc">Date ajout (Récent)</option>
-                        </select>
-                    </div>
-                    
-                    <button class="btn-modern btn-sort-alphabetical" onclick="sortAlphabetically()">
-                        <i class="fas fa-sort-alpha-down me-2"></i>Trier Alphabétique
+                    <input type="file" id="importPdfInput" accept=".pdf" style="display:none" onchange="handleImportPdf(event)">
+                    <button class="btn-modern btn-outline-secondary" onclick="document.getElementById('importPdfInput').click()">
+                        <i class="fas fa-file-pdf me-2"></i> Importer PDF
                     </button>
                 </div>
             </div>
@@ -1994,7 +2368,6 @@
                                 <th>NOM COMPLET</th>
                                 <th>CLASSE</th>
                                 <th>DATE NAISSANCE</th>
-                                <th>ÂGE</th>
                                 <th>TOTAL PAYÉ</th>
                                 <th>ACTIONS</th>
                             </tr>
@@ -2460,7 +2833,7 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Trimestre *</label>
-                                <select class="form-control-modern" id="feeQuarter">
+                                <select class="form-control-modern" id="feeQuarter" onchange="loadFeeConfiguration()">
                                     <option value="1">Trimestre 1</option>
                                     <option value="2">Trimestre 2</option>
                                     <option value="3">Trimestre 3</option>
@@ -2468,7 +2841,7 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Année Scolaire *</label>
-                                <select class="form-control-modern" id="feeYear">
+                                <select class="form-control-modern" id="feeYear" onchange="loadFeeConfiguration()">
                                     <option value="2024-2025">2024-2025</option>
                                     <option value="2025-2026">2025-2026</option>
                                 </select>
@@ -2641,6 +3014,7 @@
                                         <option value="COGE">Cogebanque</option>
                                         <option value="ACCESS">Access Bank Rwanda</option>
                                         <option value="ECOBANK">Ecobank Rwanda</option>
+                                        <option value="EQUITY">Equity Bank</option>
                                     </select>
                                 </div>
                             </div>
@@ -2807,6 +3181,9 @@
                                     <option value="P6B">P6B</option>
                                     <option value="P6C">P6C</option>
                                 </optgroup>
+                                    <option value="P4">Primaire 4</option>
+                                    <option value="P5">Primaire 5</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -2968,296 +3345,21 @@
         </div>
     </div>
 
-    <!-- Student Detail Modal -->
-    <div class="modal fade student-detail-modal" id="studentDetailModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Détails de l'Élève</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="detail-section">
-                        <h6 class="fw-bold mb-3">Informations Personnelles</h6>
-                        <div class="detail-row">
-                            <div class="detail-label">Nom Complet:</div>
-                            <div class="detail-value" id="detailFullName"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Référence:</div>
-                            <div class="detail-value" id="detailReference"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Classe:</div>
-                            <div class="detail-value" id="detailClass"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Date de Naissance:</div>
-                            <div class="detail-value" id="detailBirthDate"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Âge:</div>
-                            <div class="detail-value" id="detailAge"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Parent:</div>
-                            <div class="detail-value" id="detailParent"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Téléphone Parent:</div>
-                            <div class="detail-value" id="detailParentPhone"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Branche:</div>
-                            <div class="detail-value" id="detailBranch"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Date d'Inscription:</div>
-                            <div class="detail-value" id="detailRegistrationDate"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-section">
-                        <h6 class="fw-bold mb-3">Informations Financières</h6>
-                        <div class="detail-row">
-                            <div class="detail-label">Total Payé:</div>
-                            <div class="detail-value text-success fw-bold" id="detailTotalPaid"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Solde Restant:</div>
-                            <div class="detail-value text-danger fw-bold" id="detailRemainingBalance"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Nombre de Paiements:</div>
-                            <div class="detail-value" id="detailPaymentCount"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Dernier Paiement:</div>
-                            <div class="detail-value" id="detailLastPayment"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-section">
-                        <h6 class="fw-bold mb-3">Derniers Paiements</h6>
-                        <div class="table-responsive">
-                            <table class="modern-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Type</th>
-                                        <th>Montant</th>
-                                        <th>Mode</th>
-                                        <th>Reçu par</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="detailPaymentsTable">
-                                    <!-- Détails des paiements -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                    <button type="button" class="btn btn-primary" onclick="editStudentFromDetail()">
-                        <i class="fas fa-edit me-2"></i>Modifier
-                    </button>
-                    <button type="button" class="btn btn-success" onclick="addPaymentFromDetail()">
-                        <i class="fas fa-money-bill-wave me-2"></i>Ajouter Paiement
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Import Students Modal -->
-    <div class="modal fade" id="importStudentsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Importer des Élèves depuis Excel</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Étape 1: Sélection du fichier -->
-                    <div id="importStep1">
-                        <h6 class="fw-bold mb-3">
-                            <i class="fas fa-file-excel me-2"></i>
-                            Étape 1: Sélectionner le fichier Excel
-                        </h6>
-                        <div class="mb-3">
-                            <label class="form-label">Fichier Excel *</label>
-                            <input type="file" class="form-control-modern" id="importFileInput" accept=".xlsx,.xls" 
-                                   onchange="previewImportFile()">
-                            <div class="alert alert-info mt-2 mb-0">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Colonnes obligatoires:</strong>
-                                <ul class="mb-0 mt-2">
-                                    <li><strong>🔴 NOM COMPLET</strong> - Nom complet de l'élève (OBLIGATOIRE)</li>
-                                    <li><strong>🔴 CLASSE</strong> - Classe de l'élève (OBLIGATOIRE)</li>
-                                </ul>
-                                
-                                <strong class="d-block mt-2">Colonnes hautement recommandées:</strong>
-                                <ul class="mb-0 mt-2">
-                                    <li><strong>🟠 DATE NAISSANCE</strong> - Date de naissance (important)</li>
-                                    <li><strong>🟠 PARENT</strong> - Nom du parent/tuteur (important)</li>
-                                    <li><strong>🟠 TÉLÉPHONE PARENT</strong> - Téléphone du parent (important)</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Étape 2: Aperçu et configuration -->
-                    <div id="importStep2" style="display: none;">
-                        <h6 class="fw-bold mb-3">
-                            <i class="fas fa-eye me-2"></i>
-                            Étape 2: Aperçu et Configuration
-                        </h6>
-                        
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <span id="importFileInfo"></span> lignes d'élèves détectées
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Classe par défaut *</label>
-                                <select class="form-control-modern" id="importDefaultClass">
-                                    <option value="">Sélectionnez une classe</option>
-                                    <optgroup label="NURSERY">
-                                        <option value="N1A">N1A (Nursery 1A)</option>
-                                        <option value="N1B">N1B (Nursery 1B)</option>
-                                        <option value="N1C">N1C (Nursery 1C)</option>
-                                        <option value="N2A">N2A (Nursery 2A)</option>
-                                        <option value="N2B">N2B (Nursery 2B)</option>
-                                        <option value="N2C">N2C (Nursery 2C)</option>
-                                        <option value="N3A">N3A (Nursery 3A)</option>
-                                        <option value="N3B">N3B (Nursery 3B)</option>
-                                        <option value="N3C">N3C (Nursery 3C)</option>
-                                    </optgroup>
-                                    <optgroup label="PRIMAIRE">
-                                        <option value="P1A">P1A</option>
-                                        <option value="P1B">P1B</option>
-                                        <option value="P1C">P1C</option>
-                                        <option value="P2A">P2A</option>
-                                        <option value="P2B">P2B</option>
-                                        <option value="P2C">P2C</option>
-                                        <option value="P3A">P3A</option>
-                                        <option value="P3B">P3B</option>
-                                        <option value="P3C">P3C</option>
-                                        <option value="P4A">P4A</option>
-                                        <option value="P4B">P4B</option>
-                                        <option value="P4C">P4C</option>
-                                        <option value="P5A">P5A</option>
-                                        <option value="P5B">P5B</option>
-                                        <option value="P5C">P5C</option>
-                                        <option value="P6A">P6A</option>
-                                        <option value="P6B">P6B</option>
-                                        <option value="P6C">P6C</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Tranche d'âge (Filtre optionnel)</label>
-                                <select class="form-control-modern" id="importAgeFilter">
-                                    <option value="">Toutes les tranches d'âge</option>
-                                    <option value="2-3">2 à 3 ans</option>
-                                    <option value="3-4">3 à 4 ans</option>
-                                    <option value="4-5">4 à 5 ans</option>
-                                    <option value="5-6">5 à 6 ans</option>
-                                    <option value="6-7">6 à 7 ans</option>
-                                    <option value="7-8">7 à 8 ans</option>
-                                    <option value="8-9">8 à 9 ans</option>
-                                    <option value="9-10">9 à 10 ans</option>
-                                    <option value="10-11">10 à 11 ans</option>
-                                    <option value="11-12">11 à 12 ans</option>
-                                    <option value="12+">12 ans et plus</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <h6 class="fw-bold mb-2">Aperçu des données:</h6>
-                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                            <table class="modern-table" id="importPreviewTable">
-                                <thead>
-                                    <tr>
-                                        <th>NO</th>
-                                        <th>NOM COMPLET</th>
-                                        <th>DATE NAISSANCE</th>
-                                        <th>CLASSE</th>
-                                        <th>PARENT</th>
-                                        <th>STATUT</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="importPreviewBody">
-                                    <!-- Aperçu généré dynamiquement -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="alert alert-warning mt-3">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Important:</strong> Les élèves seront enregistrés dans la branche <strong id="importBranchText">sélectionnée</strong> 
-                            et recevront automatiquement une référence unique.
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="importBackBtn" data-bs-dismiss="modal" style="display: none;">
-                        <i class="fas fa-arrow-left me-2"></i> Retour
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i> Annuler
-                    </button>
-                    <button type="button" class="btn btn-primary" id="importNextBtn" onclick="proceedImportStep2()">
-                        <i class="fas fa-arrow-right me-2"></i> Suivant
-                    </button>
-                    <button type="button" class="btn btn-success" id="importConfirmBtn" style="display: none;" onclick="confirmImportStudents()">
-                        <i class="fas fa-check me-2"></i> Importer Maintenant
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
-            authDomain: "edensmart-app.firebaseapp.com",
-            databaseURL: "https://edensmart-app-default-rtdb.firebaseio.com",
-            projectId: "edensmart-app",
-            storageBucket: "edensmart-app.firebasestorage.app",
-            messagingSenderId: "1093120876724",
-            appId: "1:1093120876724:web:bc37448cadd18d651c77e1",
-            measurementId: "G-1FL70PZZSW"
+            apiKey: "AIzaSyCx6kmJ59x0tLt4vh_3czvEEQrtw4aWFHs",
+            authDomain: "edendatabase-7e1ed.firebaseapp.com",
+            databaseURL: "https://edendatabase-7e1ed-default-rtdb.firebaseio.com",
+            projectId: "edendatabase-7e1ed",
+            storageBucket: "edendatabase-7e1ed.firebasestorage.app",
+            messagingSenderId: "147248399046",
+            appId: "1:147248399046:web:d0b433e755772bbe718dc7",
+            measurementId: "G-XB192PCMV7"
         };
-
-        // Apply translations to elements marked with data-i18n
-        function applyTranslations(lang) {
-            if (!translations[lang]) return;
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (key && translations[lang][key]) {
-                    el.textContent = translations[lang][key];
-                }
-            });
-
-            // placeholders
-            const searchInput = document.getElementById('globalSearch');
-            if (searchInput) {
-                const placeholder = translations[lang].searchStudent || '';
-                searchInput.setAttribute('placeholder', placeholder);
-            }
-
-            // update language indicator
-            const langSpan = document.getElementById('languageText');
-            if (langSpan) langSpan.textContent = (lang === 'fr') ? 'FR' : 'EN';
-        }
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
@@ -3265,56 +3367,21 @@
         const db = firebase.database();
         const storage = firebase.storage();
 
-        // Variable pour stocker l'utilisateur courant
-        let currentUser = null;
-        let currentUserUID = null;
-
         // Check authentication
         auth.onAuthStateChanged((user) => {
             if (user) {
-                currentUserUID = user.uid;
-                console.log('Utilisateur connecté:', user.uid);
-                // Charger les données utilisateur depuis la collection "users"
-                loadCurrentUserFromDatabase(user.uid);
-            } else {
-                console.log('Aucun utilisateur connecté - redirection vers Auth.html');
-                // Rediriger vers la page d'authentification
-                window.location.href = 'Auth.html';
-            }
-        });
-
-        // Charger les informations actuelles de l'utilisateur depuis la collection "users"
-        async function loadCurrentUserFromDatabase(uid) {
-            try {
-                const snapshot = await db.ref(`users/${uid}`).once('value');
-                if (snapshot.exists()) {
-                    currentUser = {
-                        uid: uid,
-                        ...snapshot.val()
-                    };
-                    currentUserName = currentUser.name || currentUser.email || "Utilisateur";
-                    updateUIWithUserInfo();
-                    console.log('Utilisateur chargé depuis la base de données:', currentUser);
-                } else {
-                    // Créer un profil utilisateur par défaut si inexistant
-                    currentUser = {
-                        uid: uid,
-                        name: auth.currentUser?.displayName || "Utilisateur",
-                        email: auth.currentUser?.email || "utilisateur@edensmart.com",
-                        role: "comptable",
-                        branch: "kacyiru",
-                        createdAt: Date.now()
-                    };
-                    currentUserName = currentUser.name;
-                    updateUIWithUserInfo();
-                    console.log('Profil utilisateur créé par défaut:', currentUser);
-                }
+                currentUserName = user.displayName || user.email || "Utilisateur";
+                document.getElementById('userName').textContent = currentUserName;
+                document.getElementById('preparedBy').textContent = currentUserName;
+                document.getElementById('reportPreparedBy').value = currentUserName;
+                document.getElementById('accountantName').value = currentUserName;
+                console.log('Utilisateur connecté:', currentUserName);
                 loadAllData();
-            } catch (error) {
-                console.error('Erreur chargement utilisateur:', error);
+            } else {
+                console.log('Aucun utilisateur connecté - Accès temporaire autorisé pour diagnostic');
                 currentUser = {
                     name: "Utilisateur",
-                    email: auth.currentUser?.email || "utilisateur@edensmart.com",
+                    email: "utilisateur@edensmart.com",
                     role: "comptable",
                     branch: "kacyiru"
                 };
@@ -3322,48 +3389,13 @@
                 updateUIWithUserInfo();
                 loadAllData();
             }
-        }
-
-        // Mettre à jour l'interface avec les informations de l'utilisateur
-        function updateUIWithUserInfo() {
-            if (!currentUser) return;
-            
-            document.getElementById('userName').textContent = currentUser.name || "Utilisateur";
-            document.getElementById('userRole').textContent = getRoleLabel(currentUser.role);
-            document.getElementById('preparedBy').textContent = currentUser.name;
-            document.getElementById('reportPreparedBy').value = currentUser.name;
-            document.getElementById('accountantName').value = currentUser.name;
-            document.getElementById('accountantTitle').value = getRoleLabel(currentUser.role);
-            document.getElementById('accountantEmail').value = currentUser.email || '';
-            
-            // Sélectionner la branche de l'utilisateur
-            if (currentUser.branch) {
-                selectedBranch = currentUser.branch;
-                selectBranch(currentUser.branch);
-            }
-        }
-
-        // Obtenir le label du rôle
-        function getRoleLabel(role) {
-            const roleLabels = {
-                'comptable': 'Comptable Principal',
-                'comptable_principal': 'Comptable Principal',
-                'comptable_secondaire': 'Comptable Secondaire',
-                'directeur': 'Directeur',
-                'secretaire': 'Secrétaire',
-                'enseignant': 'Enseignant',
-                'admin': 'Administrateur'
-            };
-            return roleLabels[role] || 'Utilisateur';
-        }
+        });
 
         // Références Firebase
-        const usersRef = db.ref('users');
-        const teachersRef = db.ref('teachers');
+        const travailleursRef = db.ref('Travailleurs'); // collection des employés/travailleurs
         const studentFeesRef = db.ref('studentFees');
         const payrollRef = db.ref('payroll');
         const reportsRef = db.ref('reports');
-        const activitiesRef = db.ref('activities');
         const announcementsRef = db.ref('announcements');
         const debtsRef = db.ref('debts');
         const studentsRef = db.ref('students');
@@ -3375,12 +3407,11 @@
         const feeConfigRef = db.ref('feeConfiguration');
         const dailyExpensesRef = db.ref('dailyExpenses');
         const receiptsRef = db.ref('receipts');
-        const rolesRef = db.ref('roles');
+        const accountantRef = db.ref('accountant');
         const settingsRef = db.ref('settings');
 
         // Variables globales
-        let users = [];
-        let teachers = [];
+        let travailleurs = [];
         let studentFees = [];
         let payrollData = [];
         let announcements = [];
@@ -3402,31 +3433,6 @@
         let monthlyChart = null;
         let currentLanguage = 'fr';
         let selectedBranch = 'kacyiru';
-        let currentViewStudentId = null;
-
-        // Fonction utilitaire pour enregistrer les activités
-        async function logActivity(action, description, type = 'general', relatedData = {}) {
-            try {
-                if (!currentUser) return;
-                
-                const activity = {
-                    timestamp: Date.now(),
-                    action: action,
-                    description: description,
-                    type: type,
-                    userId: currentUserUID,
-                    userName: currentUser.name,
-                    userRole: currentUser.role,
-                    userBranch: currentUser.branch,
-                    ...relatedData
-                };
-                
-                await activitiesRef.push(activity);
-                console.log('Activité enregistrée:', action);
-            } catch (error) {
-                console.error('Erreur enregistrement activité:', error);
-            }
-        }
 
         // Translations
         const translations = {
@@ -3499,22 +3505,14 @@
             document.getElementById('userRole').textContent = "Comptable Principal";
             
             setupFirebaseListeners();
+            // Charger les configurations de frais avec un petit délai pour s'assurer que Firebase est prêt
+            setTimeout(() => {
+                loadFeeConfiguration();
+            }, 500);
             initializeCharts();
             selectBranch('kacyiru'); // Sélectionner la branche par défaut
-            
-            // Générer une référence pour le nouvel élève
-            generateStudentReference();
             // Apply initial translations
-            applyTranslations(currentLanguage);
-
-            // Language toggle handler
-            const langBtn = document.getElementById('languageToggle');
-            if (langBtn) {
-                langBtn.addEventListener('click', function () {
-                    currentLanguage = (currentLanguage === 'fr') ? 'en' : 'fr';
-                    applyTranslations(currentLanguage);
-                });
-            }
+            try { applyTranslations(); } catch (e) { /* ignore if not ready */ }
         });
 
         // Setup Firebase listeners
@@ -3534,17 +3532,17 @@
             });
 
             // Écouter les changements de travailleurs
-            teachersRef.on('value', (snapshot) => {
-                teachers = [];
+            travailleursRef.on('value', (snapshot) => {
+                travailleurs = [];
                 snapshot.forEach((childSnapshot) => {
-                    const teacher = {
+                    const worker = {
                         id: childSnapshot.key,
                         ...childSnapshot.val()
                     };
-                    teachers.push(teacher);
+                    travailleurs.push(worker);
                 });
                 updateStats();
-                if (document.getElementById('teachers').classList.contains('active')) {
+                if (document.getElementById('travailleurs').classList.contains('active')) {
                     loadWorkers();
                 }
                 updateDebtWorkerSelect();
@@ -3560,7 +3558,7 @@
                     };
                     debts.push(debt);
                 });
-                if (document.getElementById('teachers').classList.contains('active')) {
+                if (document.getElementById('travailleurs').classList.contains('active')) {
                     loadCurrentMonthDebts();
                 }
             });
@@ -3576,7 +3574,7 @@
                     students.push(student);
                 });
                 if (document.getElementById('students').classList.contains('active')) {
-                    applyStudentFilters();
+                    loadStudents();
                 }
             });
 
@@ -3595,7 +3593,7 @@
                     loadStudentFees();
                 }
                 if (document.getElementById('students').classList.contains('active')) {
-                    applyStudentFilters();
+                    loadStudents();
                 }
                 
                 // Si la section rapports est active, mettre à jour le tableau
@@ -3679,32 +3677,20 @@
                 }
             });
             
-            // Écouter les changements dans la collection "users" pour mettre à jour les informations du comptable courant
-            if (currentUserUID) {
-                usersRef.child(currentUserUID).on('value', (snapshot) => {
-                    if (snapshot.exists()) {
-                        currentUser = {
-                            uid: currentUserUID,
-                            ...snapshot.val()
-                        };
-                        currentUserName = currentUser.name;
-                        updateUIWithUserInfo();
-                        console.log('Informations utilisateur mises à jour:', currentUser);
+            // Charger les informations du comptable
+            accountantRef.on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const accountant = snapshot.val();
+                    if (accountant.name) {
+                        document.getElementById('accountantName').value = accountant.name;
+                        currentUserName = accountant.name;
+                        document.getElementById('userName').textContent = accountant.name;
+                        document.getElementById('preparedBy').textContent = accountant.name;
+                        document.getElementById('reportPreparedBy').value = accountant.name;
                     }
-                });
-            }
-            
-            // Écouter les changements dans la collection "users" pour charger tous les utilisateurs (pour les listes)
-            usersRef.on('value', (snapshot) => {
-                users = [];
-                snapshot.forEach((childSnapshot) => {
-                    const user = {
-                        uid: childSnapshot.key,
-                        ...childSnapshot.val()
-                    };
-                    users.push(user);
-                });
-                console.log(`${users.length} utilisateurs chargés depuis la collection 'users'`);
+                    if (accountant.title) document.getElementById('accountantTitle').value = accountant.title;
+                    if (accountant.email) document.getElementById('accountantEmail').value = accountant.email;
+                }
             });
             
             // Observer pour charger automatiquement le rapport quand la section est active
@@ -3747,7 +3733,7 @@
                     loadWorkers(),
                     loadStudentFees(),
                     loadCurrentMonthDebts(),
-                    applyStudentFilters(),
+                    loadStudents(),
                     updateFilteredAnnouncements()
                 ]);
                 console.log('Données chargées avec succès');
@@ -3761,23 +3747,23 @@
         // Update stats from Firebase
         function updateStats() {
             // Filtrer les travailleurs par branche sélectionnée
-            const branchTeachers = teachers.filter(teacher => teacher.branch === selectedBranch);
-            document.getElementById('totalTeachers').textContent = branchTeachers.length;
+            const branchTravailleurs = travailleurs.filter(w => w.branch === selectedBranch);
+            document.getElementById('totalTravailleurs').textContent = branchTravailleurs.length;
             
             const currentMonth = new Date().getMonth() + 1;
             const currentYear = new Date().getFullYear();
             
             // Calculer le payroll pour la branche sélectionnée
-            const monthlyPayroll = branchTeachers.reduce((total, teacher) => {
-                if (teacher.salary) {
-                    return total + parseFloat(teacher.salary);
+            const monthlyPayroll = branchTravailleurs.reduce((total, w) => {
+                if (w.salary) {
+                    return total + parseFloat(w.salary);
                 }
                 return total;
             }, 0);
             document.getElementById('monthlyPayroll').textContent = formatCurrencyRWF(monthlyPayroll);
             
-            const bankTeachers = branchTeachers.filter(t => t.paymentMode === 'bank').length;
-            document.getElementById('bankPayments').textContent = bankTeachers;
+            const bankCount = branchTravailleurs.filter(t => t.paymentMode === 'bank').length;
+            document.getElementById('bankPayments').textContent = bankCount;
             
             // Filtrer les paiements élèves par branche
             const branchStudentFees = studentFees.filter(fee => {
@@ -3869,7 +3855,7 @@
                 }
                 if (activeBtn) activeBtn.classList.add('active');
                 
-                if (sectionId === 'teachers') {
+                if (sectionId === 'travailleurs') {
                     loadWorkers();
                     loadCurrentMonthDebts();
                 } else if (sectionId === 'payroll') {
@@ -3878,7 +3864,7 @@
                 } else if (sectionId === 'student-fees') {
                     loadStudentFees();
                 } else if (sectionId === 'students') {
-                    applyStudentFilters();
+                    loadStudents();
                 } else if (sectionId === 'reports') {
                     showDailyReport();
                 }
@@ -3891,6 +3877,85 @@
             const month = monthSelect.options[monthSelect.selectedIndex].text;
             const year = document.getElementById('payrollYear').value;
             document.getElementById('currentPeriod').textContent = `${month} ${year}`;
+            displayPayrollTable();
+        }
+        
+        // Display payroll table with workers data
+        function displayPayrollTable() {
+            try {
+                const tbody = document.getElementById('payrollTable');
+                if (!tbody) return; // no payroll section loaded
+                
+                tbody.innerHTML = '';
+                
+                // Filter workers by selected branch
+                const branchTravailleurs = travailleurs.filter(w => w.branch === selectedBranch);
+                
+                if (branchTravailleurs.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-users fa-2x mb-3"></i>
+                                    <p>Aucun travailleur dans cette branche</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let totalPayroll = 0;
+                branchTravailleurs.forEach((w, index) => {
+                    // Calculate debts for this worker
+                    const workerDebts = debts.filter(d => d.workerId === w.id);
+                    const totalDebt = workerDebts.reduce((sum, d) => sum + (d.amount || 0), 0);
+                    
+                    const salary = parseFloat(w.salary) || 0;
+                    totalPayroll += salary;
+                    
+                    const type = w.type || 'Worker';
+                    const typeBadge = type.toLowerCase().includes('director') ? 'badge bg-danger' : 
+                                     type.toLowerCase().includes('admin') || type.toLowerCase().includes('administrator') ? 'badge bg-warning' : 'badge bg-info';
+                    const typeText = type;
+                    
+                    const paymentMode = w.paymentMode || 'bank';
+                    const paymentText = paymentMode.charAt(0).toUpperCase() + paymentMode.slice(1);
+                    
+                    const badgeClass = paymentMode === 'bank' ? 'badge bg-primary' :
+                                     paymentMode === 'momo' ? 'badge bg-success' : 'badge bg-secondary';
+                    
+                    const status = w.status || 'active';
+                    const statusBadge = status === 'active' ? 'bg-success' : status === 'leave' ? 'bg-warning' : 'bg-secondary';
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${w.name || 'Inconnu'}</strong></td>
+                        <td><span class="${typeBadge}">${typeText}</span></td>
+                        <td>${w.phone || '-'}</td>
+                        <td><span class="${badgeClass}">${paymentText}</span></td>
+                        <td>${formatCurrencyRWF(salary)}</td>
+                        <td>${totalDebt > 0 ? formatCurrencyRWF(totalDebt) : 'Aucune'}</td>
+                        <td><span class="badge ${statusBadge}">${status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info me-1" onclick="downloadWorkerPaymentHistory('${w.id}')" title="T\u00e9l\u00e9charger historique">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="updatePaymentStatus('${w.id}')" title="Mettre \u00e0 jour">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                document.getElementById('totalPayrollAmount').textContent = `Total: ${formatCurrencyRWF(totalPayroll)} RWF`;
+                
+            } catch (error) {
+                console.error('Erreur affichage payroll:', error);
+                showToast('Erreur lors de l\'affichage du payroll', 'error');
+            }
         }
 
         // Sélectionner une branche
@@ -3914,6 +3979,9 @@
             document.getElementById('currentBranchText').textContent = branchNames[branchId];
             document.getElementById('feeBranch').value = branchNames[branchId];
             
+            // Recharger la configuration des frais pour la nouvelle branche
+            loadFeeConfiguration();
+            
             // Mettre à jour les statistiques
             updateStats();
             
@@ -3923,7 +3991,7 @@
         // Load workers
         async function loadWorkers() {
             try {
-                const snapshot = await teachersRef.orderByChild('no').once('value');
+                const snapshot = await travailleursRef.orderByChild('no').once('value');
                 const tbody = document.getElementById('workersTable');
                 tbody.innerHTML = '';
                 
@@ -3941,20 +4009,20 @@
                     return;
                 }
                 
-                teachers = [];
+                travailleurs = [];
                 snapshot.forEach((childSnapshot) => {
-                    const teacher = {
+                    const w = {
                         id: childSnapshot.key,
                         ...childSnapshot.val()
                     };
-                    teachers.push(teacher);
+                    travailleurs.push(w);
                 });
                 
                 // Filtrer par branche sélectionnée
-                const branchTeachers = teachers.filter(teacher => teacher.branch === selectedBranch);
-                branchTeachers.sort((a, b) => parseInt(a.no) - parseInt(b.no));
+                const branchTravailleurs = travailleurs.filter(w => w.branch === selectedBranch);
+                branchTravailleurs.sort((a, b) => parseInt(a.no) - parseInt(b.no));
                 
-                if (branchTeachers.length === 0) {
+                if (branchTravailleurs.length === 0) {
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="9" class="text-center py-4">
@@ -3968,43 +4036,43 @@
                     return;
                 }
                 
-                branchTeachers.forEach((teacher, index) => {
-                    const badgeClass = teacher.paymentMode === 'bank' ? 'badge-bank' :
-                                     teacher.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash';
-                    const paymentText = teacher.paymentMode === 'bank' ? 'Banque' :
-                                      teacher.paymentMode === 'momo' ? 'Mobile Money' : 'Espèces';
+                branchTravailleurs.forEach((w, index) => {
+                    const badgeClass = w.paymentMode === 'bank' ? 'badge-bank' :
+                                     w.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash';
+                    const paymentText = w.paymentMode === 'bank' ? 'Banque' :
+                                      w.paymentMode === 'momo' ? 'Mobile Money' : 'Espèces';
                     
-                    const typeBadge = teacher.type === 'enseignant' ? 'badge bg-success' :
-                                    teacher.type === 'staff' ? 'badge bg-info' : 'badge bg-secondary';
-                    const typeText = teacher.type === 'enseignant' ? 'Enseignant' :
-                                   teacher.type === 'staff' ? 'Staff' : 'Autre';
+                    const typeBadge = w.type === 'enseignant' ? 'badge bg-success' :
+                                    w.type === 'staff' ? 'badge bg-info' : 'badge bg-secondary';
+                    const typeText = w.type === 'enseignant' ? 'Enseignant' :
+                                   w.type === 'staff' ? 'Staff' : 'Autre';
                     
-                    const workerDebts = debts.filter(d => d.workerId === teacher.id && d.status === 'pending');
+                    const workerDebts = debts.filter(d => d.workerId === w.id && d.status === 'pending');
                     const totalDebt = workerDebts.reduce((sum, debt) => sum + (debt.amount || 0), 0);
                     
                     const tr = document.createElement('tr');
                     tr.className = 'animate-fade-in';
                     tr.innerHTML = `
-                        <td>${teacher.no}</td>
-                        <td><strong>${teacher.name}</strong></td>
+                        <td>${w.no}</td>
+                        <td><strong>${w.name}</strong></td>
                         <td><span class="${typeBadge}">${typeText}</span></td>
-                        <td>${teacher.phone || ''}</td>
+                        <td>${w.phone || ''}</td>
                         <td><span class="${badgeClass}">${paymentText}</span></td>
-                        <td>${formatCurrencyRWF(teacher.salary || 0)}</td>
+                        <td>${formatCurrencyRWF(w.salary || 0)}</td>
                         <td>
                             ${totalDebt > 0 ? 
-                                `<span class="debt-badge" onclick="showDebtDetails('${teacher.id}')">${formatCurrencyRWF(totalDebt)}</span>` : 
+                                `<span class="debt-badge" onclick="showDebtDetails('${w.id}')">${formatCurrencyRWF(totalDebt)}</span>` : 
                                 'Aucune'}
                         </td>
-                        <td><span class="badge bg-success">${teacher.status || 'active'}</span></td>
+                        <td><span class="badge bg-success">${w.status || 'active'}</span></td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editWorker('${teacher.id}')">
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editWorker('${w.id}')">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-info me-1" onclick="addDebtForWorker('${teacher.id}')">
+                            <button class="btn btn-sm btn-outline-info me-1" onclick="addDebtForWorker('${w.id}')">
                                 <i class="fas fa-money-bill-wave"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteWorkerPrompt('${teacher.id}')">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteWorkerPrompt('${w.id}')">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
@@ -4021,12 +4089,12 @@
         // Filter workers
         function filterWorkers(type) {
             // Filtrer d'abord par branche
-            const branchTeachers = teachers.filter(teacher => teacher.branch === selectedBranch);
+            const branchTravailleurs = travailleurs.filter(w => w.branch === selectedBranch);
             
             // Puis par type
             const filtered = type === 'all' 
-                ? branchTeachers 
-                : branchTeachers.filter(teacher => teacher.type === type);
+                ? branchTravailleurs 
+                : branchTravailleurs.filter(w => w.type === type);
             
             const tbody = document.getElementById('workersTable');
             tbody.innerHTML = '';
@@ -4121,7 +4189,7 @@
                 }
                 
                 monthDebts.forEach((debt, index) => {
-                    const worker = teachers.find(t => t.id === debt.workerId);
+                    const worker = travailleurs.find(t => t.id === debt.workerId);
                     if (!worker || worker.branch !== selectedBranch) return;
                     
                     const tr = document.createElement('tr');
@@ -4212,16 +4280,17 @@
             
             try {
                 if (currentTeacherId) {
-                    await teachersRef.child(currentTeacherId).update(workerData);
+                    await travailleursRef.child(currentTeacherId).update(workerData);
                     showToast('Travailleur mis à jour avec succès!', 'success');
                     
-                    await logActivity('UPDATE_WORKER', `Travailleur ${workerData.name} mis à jour`, 'worker_update', {
-                        workerId: currentTeacherId,
-                        workerName: workerData.name,
-                        workerType: workerData.type
+                    await announcementsRef.push({
+                        timestamp: Date.now(),
+                        message: `Travailleur ${workerData.name} mis à jour`,
+                        author: 'system',
+                        type: 'worker_update'
                     });
                 } else {
-                    const existingSnapshot = await teachersRef
+                    const existingSnapshot = await travailleursRef
                         .orderByChild('no')
                         .equalTo(workerData.no)
                         .once('value');
@@ -4231,13 +4300,14 @@
                         return;
                     }
                     
-                    await teachersRef.push(workerData);
+                    await travailleursRef.push(workerData);
                     showToast('Travailleur ajouté avec succès!', 'success');
                     
-                    await logActivity('ADD_WORKER', `Nouveau travailleur ajouté: ${workerData.name}`, 'worker_add', {
-                        workerName: workerData.name,
-                        workerType: workerData.type,
-                        workerNo: workerData.no
+                    await announcementsRef.push({
+                        timestamp: Date.now(),
+                        message: `Nouveau travailleur ajouté: ${workerData.name}`,
+                        author: 'system',
+                        type: 'worker_add'
                     });
                 }
                 
@@ -4252,7 +4322,7 @@
 
         // Edit worker
         function editWorker(id) {
-            const worker = teachers.find(t => t.id === id);
+            const worker = travailleurs.find(t => t.id === id);
             if (!worker) return;
             
             currentTeacherId = id;
@@ -4281,7 +4351,7 @@
 
         // Prompt for worker deletion
         function deleteWorkerPrompt(workerId) {
-            const worker = teachers.find(t => t.id === workerId);
+            const worker = travailleurs.find(t => t.id === workerId);
             if (!worker) return;
             
             if (confirm(`Êtes-vous sûr de vouloir supprimer le travailleur ${worker.name}?`)) {
@@ -4292,10 +4362,10 @@
         // Delete worker
         async function deleteWorker(workerId) {
             try {
-                const worker = teachers.find(t => t.id === workerId);
+                const worker = travailleurs.find(t => t.id === workerId);
                 if (!worker) return;
                 
-                await teachersRef.child(workerId).remove();
+                await travailleursRef.child(workerId).remove();
                 showToast('Travailleur supprimé avec succès!', 'success');
                 
                 await announcementsRef.push({
@@ -4341,9 +4411,9 @@
             select.innerHTML = '<option value="">Sélectionnez un travailleur</option>';
             
             // Filtrer par branche
-            const branchTeachers = teachers.filter(teacher => teacher.branch === selectedBranch);
+            const branchTravailleurs = travailleurs.filter(w => w.branch === selectedBranch);
             
-            branchTeachers.forEach(worker => {
+            branchTravailleurs.forEach(worker => {
                 const option = document.createElement('option');
                 option.value = worker.id;
                 option.textContent = `${worker.no} - ${worker.name} (${worker.type})`;
@@ -4360,7 +4430,7 @@
             }
             
             const workerId = document.getElementById('debtWorker').value;
-            const worker = teachers.find(t => t.id === workerId);
+            const worker = travailleurs.find(t => t.id === workerId);
             
             if (!worker) {
                 showToast('Veuillez sélectionner un travailleur', 'error');
@@ -4382,11 +4452,11 @@
                 await debtsRef.push(debtData);
                 showToast('Dette enregistrée avec succès!', 'success');
                 
-                await logActivity('ADD_DEBT', `Dette enregistrée pour ${worker.name}: ${formatCurrencyRWF(debtData.amount)}`, 'debt_added', {
-                    workerId: workerId,
-                    workerName: worker.name,
-                    amount: debtData.amount,
-                    reason: debtData.reason
+                await announcementsRef.push({
+                    timestamp: Date.now(),
+                    message: `Dette enregistrée pour ${worker.name}: ${formatCurrencyRWF(debtData.amount)}`,
+                    author: 'system',
+                    type: 'debt_added'
                 });
                 
                 bootstrap.Modal.getInstance(document.getElementById('debtModal')).hide();
@@ -4401,7 +4471,7 @@
         // Show debt details
         function showDebtDetails(workerId) {
             const workerDebts = debts.filter(d => d.workerId === workerId && d.status === 'pending');
-            const worker = teachers.find(t => t.id === workerId);
+            const worker = travailleurs.find(t => t.id === workerId);
             
             if (workerDebts.length === 0) {
                 showToast('Aucune dette pour ce travailleur', 'info');
@@ -4452,105 +4522,97 @@
             }
         }
 
-        // Load students with filters
-        async function applyStudentFilters() {
+        // Load students
+        async function loadStudents() {
             try {
-                const selectedClass = document.getElementById('filterStudentClass').value;
-                const ageRange = document.getElementById('filterAgeRange').value;
-                const sortBy = document.getElementById('sortStudents').value;
+                const tbody = document.getElementById('studentsTable');
+                tbody.innerHTML = '';
                 
-                // Filtrer par branche d'abord
-                let filteredStudents = students.filter(student => student.branch === selectedBranch);
+                // Filtrer par branche
+                const branchStudents = students.filter(student => student.branch === selectedBranch);
                 
-                // Filtrer par classe si sélectionnée
-                if (selectedClass) {
-                    filteredStudents = filteredStudents.filter(student => student.class === selectedClass);
+                if (branchStudents.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-child fa-2x mb-3"></i>
+                                    <p>Aucun élève trouvé dans cette branche</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
                 }
                 
-                // Filtrer par tranche d'âge si sélectionnée
-                if (ageRange) {
-                    filteredStudents = filteredStudents.filter(student => {
-                        if (!student.birthDate) return false;
-                        const birthDate = new Date(student.birthDate);
-                        const today = new Date();
-                        let age = today.getFullYear() - birthDate.getFullYear();
-                        const monthDiff = today.getMonth() - birthDate.getMonth();
-                        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                            age--;
-                        }
-                        
-                        const [minAge, maxAge] = ageRange.split('-').map(num => {
-                            if (num.endsWith('+')) {
-                                return parseInt(num);
-                            }
-                            return parseInt(num);
-                        });
-                        
-                        if (ageRange.endsWith('+')) {
-                            return age >= minAge;
-                        } else {
-                            return age >= minAge && age <= maxAge;
-                        }
-                    });
-                }
-                
-                // Trier les élèves
-                filteredStudents.sort((a, b) => {
-                    switch(sortBy) {
-                        case 'name_asc':
-                            return a.fullName.localeCompare(b.fullName);
-                        case 'name_desc':
-                            return b.fullName.localeCompare(a.fullName);
-                        case 'class_asc':
-                            return (a.class || '').localeCompare(b.class || '');
-                        case 'class_desc':
-                            return (b.class || '').localeCompare(a.class || '');
-                        case 'age_asc':
-                            return calculateAge(a.birthDate) - calculateAge(b.birthDate);
-                        case 'age_desc':
-                            return calculateAge(b.birthDate) - calculateAge(a.birthDate);
-                        case 'date_asc':
-                            return (a.timestamp || 0) - (b.timestamp || 0);
-                        case 'date_desc':
-                            return (b.timestamp || 0) - (a.timestamp || 0);
-                        default:
-                            return 0;
-                    }
+                branchStudents.forEach((student, index) => {
+                    // Calculer le total payé par cet élève
+                    const studentPayments = studentFees.filter(fee => fee.studentId === student.id);
+                    const totalPaid = studentPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = 'animate-fade-in';
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${student.reference || 'N/A'}</strong></td>
+                        <td>${student.fullName}</td>
+                        <td>${student.class || ''}</td>
+                        <td>${student.birthDate ? new Date(student.birthDate).toLocaleDateString('fr-FR') : ''}</td>
+                        <td>${formatCurrencyRWF(totalPaid)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="viewStudentProfile('${student.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info me-1" onclick="editStudent('${student.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteStudentPrompt('${student.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
                 });
                 
-                updateStudentsTable(filteredStudents);
-                
             } catch (error) {
-                console.error('Erreur filtrage élèves:', error);
-                showToast('Erreur lors du filtrage des élèves', 'error');
+                console.error('Erreur chargement élèves:', error);
+                showToast('Erreur lors du chargement des élèves', 'error');
             }
         }
 
-        // Calculer l'âge à partir de la date de naissance
-        function calculateAge(birthDate) {
-            if (!birthDate) return 0;
-            const birth = new Date(birthDate);
-            const today = new Date();
-            let age = today.getFullYear() - birth.getFullYear();
-            const monthDiff = today.getMonth() - birth.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                age--;
-            }
-            return age;
+        // Load students from database (actualiser)
+        function loadStudentsFromDatabase() {
+            loadStudents();
+            showToast('Liste des élèves actualisée', 'success');
         }
 
-        // Mettre à jour le tableau des élèves
-        function updateStudentsTable(filteredStudents) {
+        // Search student
+        function searchStudent() {
+            const query = document.getElementById('searchStudent').value.toLowerCase().trim();
+            if (!query) {
+                loadStudents();
+                return;
+            }
+            
+            // Filtrer par branche d'abord
+            const branchStudents = students.filter(student => student.branch === selectedBranch);
+            
+            const found = branchStudents.filter(s => 
+                s.fullName.toLowerCase().includes(query) || 
+                (s.reference && s.reference.toLowerCase().includes(query)) ||
+                (s.class && s.class.toLowerCase().includes(query))
+            );
+            
             const tbody = document.getElementById('studentsTable');
             tbody.innerHTML = '';
             
-            if (filteredStudents.length === 0) {
+            if (found.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" class="text-center py-4">
+                        <td colspan="7" class="text-center py-4">
                             <div class="text-muted">
-                                <i class="fas fa-child fa-2x mb-3"></i>
-                                <p>Aucun élève trouvé avec ces critères</p>
+                                <i class="fas fa-search fa-2x mb-3"></i>
+                                <p>Aucun élève trouvé</p>
                             </div>
                         </td>
                     </tr>
@@ -4558,13 +4620,9 @@
                 return;
             }
             
-            filteredStudents.forEach((student, index) => {
-                // Calculer le total payé par cet élève
+            found.forEach((student, index) => {
                 const studentPayments = studentFees.filter(fee => fee.studentId === student.id);
                 const totalPaid = studentPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
-                
-                // Calculer l'âge
-                const age = calculateAge(student.birthDate);
                 
                 const tr = document.createElement('tr');
                 tr.className = 'animate-fade-in';
@@ -4574,10 +4632,9 @@
                     <td>${student.fullName}</td>
                     <td>${student.class || ''}</td>
                     <td>${student.birthDate ? new Date(student.birthDate).toLocaleDateString('fr-FR') : ''}</td>
-                    <td>${age} ans</td>
                     <td>${formatCurrencyRWF(totalPaid)}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewStudentDetail('${student.id}')">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewStudentProfile('${student.id}')">
                             <i class="fas fa-eye"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-info me-1" onclick="editStudent('${student.id}')">
@@ -4592,76 +4649,138 @@
             });
         }
 
-        // Load students from database (actualiser)
-        function loadStudentsFromDatabase() {
-            applyStudentFilters();
-            showToast('Liste des élèves actualisée', 'success');
-        }
-
-        // Search student
-        function searchStudent() {
-            const query = document.getElementById('searchStudent').value.toLowerCase().trim();
-            if (!query) {
-                applyStudentFilters();
-                return;
-            }
-            
-            // Filtrer par branche d'abord
-            const branchStudents = students.filter(student => student.branch === selectedBranch);
-            
-            const found = branchStudents.filter(s => 
-                s.fullName.toLowerCase().includes(query) || 
-                (s.reference && s.reference.toLowerCase().includes(query)) ||
-                (s.class && s.class.toLowerCase().includes(query)) ||
-                (s.parent && s.parent.toLowerCase().includes(query))
-            );
-            
-            updateStudentsTable(found);
-        }
-
-        // View student detail in modal
-        function viewStudentDetail(studentId) {
+        // View student profile
+        function viewStudentProfile(studentId) {
             const student = students.find(s => s.id === studentId);
             if (!student) return;
             
-            currentViewStudentId = studentId;
+            currentStudentId = studentId;
+            
+            // Afficher les informations de base
+            document.getElementById('studentNameProfile').textContent = student.fullName;
+            document.getElementById('studentClassProfile').textContent = `Classe: ${student.class || 'Non spécifiée'}`;
             
             // Calculer l'âge
-            const age = calculateAge(student.birthDate);
+            if (student.birthDate) {
+                const birthDate = new Date(student.birthDate);
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                document.getElementById('studentAgeProfile').textContent = `Âge: ${age} ans`;
+            } else {
+                document.getElementById('studentAgeProfile').textContent = 'Âge: Non spécifié';
+            }
             
-            // Calculer les paiements
-            const studentPayments = studentFees.filter(fee => fee.studentId === studentId);
-            const totalPaid = studentPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
-            const lastPayment = studentPayments.length > 0 ? 
-                new Date(Math.max(...studentPayments.map(p => new Date(p.paymentDate)))) : null;
+            document.getElementById('studentReferenceProfile').textContent = `Réf: ${student.reference || 'N/A'}`;
             
-            // Remplir les informations
-            document.getElementById('detailFullName').textContent = student.fullName;
-            document.getElementById('detailReference').textContent = student.reference || 'N/A';
-            document.getElementById('detailClass').textContent = student.class || 'Non spécifiée';
-            document.getElementById('detailBirthDate').textContent = student.birthDate ? 
-                new Date(student.birthDate).toLocaleDateString('fr-FR') : 'Non spécifiée';
-            document.getElementById('detailAge').textContent = `${age} ans`;
-            document.getElementById('detailParent').textContent = student.parent || 'Non spécifié';
-            document.getElementById('detailParentPhone').textContent = student.parentPhone || 'Non spécifié';
-            document.getElementById('detailBranch').textContent = getBranchName(student.branch);
-            document.getElementById('detailRegistrationDate').textContent = student.timestamp ? 
-                new Date(student.timestamp).toLocaleDateString('fr-FR') : 'Non spécifiée';
+            // Charger l'historique des paiements
+            loadStudentPaymentsHistory(studentId);
             
-            document.getElementById('detailTotalPaid').textContent = formatCurrencyRWF(totalPaid);
-            document.getElementById('detailRemainingBalance').textContent = formatCurrencyRWF(0); // À calculer avec les frais
-            document.getElementById('detailPaymentCount').textContent = studentPayments.length;
-            document.getElementById('detailLastPayment').textContent = lastPayment ? 
-                lastPayment.toLocaleDateString('fr-FR') : 'Aucun paiement';
-            
-            // Remplir le tableau des paiements
-            const tbody = document.getElementById('detailPaymentsTable');
+            // Afficher la section profil
+            document.getElementById('studentProfile').style.display = 'block';
+        }
+
+        // Handle Excel import for students
+        function handleImportExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = e.target.result;
+                let workbook;
+                try {
+                    workbook = XLSX.read(data, { type: 'array' });
+                } catch (err) {
+                    console.error('Erreur lecture Excel:', err);
+                    showToast('Fichier Excel invalide', 'error');
+                    return;
+                }
+                const firstSheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[firstSheetName];
+                const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                if (!rows || rows.length === 0) {
+                    showToast('Fichier Excel vide ou format non reconnu', 'error');
+                    return;
+                }
+
+                // Map rows to student objects. Support multiple header names.
+                const Normalize = (s) => (s || '').toString().trim().toLowerCase();
+                const uploadPromises = [];
+                rows.forEach(r => {
+                    const keys = Object.keys(r);
+                    // Attempt to find common columns
+                    const refKey = keys.find(k => /ref|reference|réf|id/i.test(k));
+                    const nameKey = keys.find(k => /name|nom|full/i.test(k));
+                    const classKey = keys.find(k => /class|classe|niveau/i.test(k));
+                    const birthKey = keys.find(k => /birth|date|naiss/i.test(k));
+                    const branchKey = keys.find(k => /branch|branche/i.test(k));
+
+                    const studentObj = {
+                        reference: refKey ? r[refKey] : (r.reference || ''),
+                        fullName: nameKey ? r[nameKey] : (r.fullName || r.nom || r.Name || ''),
+                        class: classKey ? r[classKey] : (r.class || r.Classe || ''),
+                        birthDate: birthKey ? (new Date(r[birthKey]).toISOString().split('T')[0]) : (r.birthDate || ''),
+                        branch: branchKey ? r[branchKey] : (r.branch || selectedBranch || ''),
+                        timestamp: Date.now(),
+                    };
+
+                    // Basic validation
+                    if (!studentObj.fullName) return; // skip incomplete rows
+
+                    // Push to Firebase
+                    uploadPromises.push(studentsRef.push(studentObj));
+                });
+
+                Promise.all(uploadPromises).then(() => {
+                    showToast(`Import terminé (${uploadPromises.length} élèves)`, 'success');
+                    // Refresh students
+                    loadStudents();
+                }).catch(err => {
+                    console.error('Erreur upload élèves:', err);
+                    showToast('Erreur lors de l\'import des élèves', 'error');
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Simple PDF import handler (inform user PDF import is not supported automatically)
+        function handleImportPdf(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showToast('Import PDF non pris en charge. Convertissez le PDF en Excel/CSV puis importez.', 'info');
+        }
+
+        // Language toggle: switch EN/FR and update UI
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLanguage] && translations[currentLanguage][key]) {
+                    el.textContent = translations[currentLanguage][key];
+                }
+            });
+        }
+
+        document.getElementById('languageToggle').addEventListener('click', function() {
+            currentLanguage = currentLanguage === 'fr' ? 'en' : 'fr';
+            document.getElementById('languageText').textContent = currentLanguage.toUpperCase();
+            applyTranslations();
+            showToast(currentLanguage === 'fr' ? 'Langue: Français' : 'Language: English', 'success');
+        });
+
+        // Load student payments history
+        function loadStudentPaymentsHistory(studentId) {
+            const tbody = document.getElementById('studentPaymentsHistory');
             tbody.innerHTML = '';
+            
+            const studentPayments = studentFees.filter(fee => fee.studentId === studentId);
             
             if (studentPayments.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-center py-3">
+                        <td colspan="6" class="text-center py-3">
                             <div class="text-muted">
                                 <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
                                 <p>Aucun paiement enregistré</p>
@@ -4669,70 +4788,33 @@
                         </td>
                     </tr>
                 `;
-            } else {
-                studentPayments.slice(0, 5).forEach(payment => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${new Date(payment.paymentDate).toLocaleDateString('fr-FR')}</td>
-                        <td><span class="badge-minervale">${getPaymentTypeText(payment.paymentType)}</span></td>
-                        <td><strong>${formatCurrencyRWF(payment.amount)}</strong></td>
-                        <td><span class="badge ${payment.paymentMode === 'bank' ? 'badge-bank' : payment.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash'}">
-                            ${payment.paymentMode === 'bank' ? 'Banque' : payment.paymentMode === 'momo' ? 'Mobile Money' : 'Espèces'}
-                        </span></td>
-                        <td>${payment.receivedBy || 'N/A'}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                document.getElementById('totalPaid').textContent = '0 RWF';
+                document.getElementById('remainingBalance').textContent = '0 RWF';
+                return;
             }
             
-            const modal = new bootstrap.Modal(document.getElementById('studentDetailModal'));
-            modal.show();
-        }
-
-        // Get branch name from ID
-        function getBranchName(branchId) {
-            const branchNames = {
-                kacyiru: 'EDEN FAMILY SCHOOL KACYIRU',
-                kimisagara: 'EDEN FAMILY SCHOOL KIMISAGARA',
-                gisozimaternelle: 'EDEN FAMILY SCHOOL GISOZI MATERNELLE',
-                gisoziprimaire: 'EDEN FAMILY SCHOOL GISOZI PRIMAIRE'
-            };
-            return branchNames[branchId] || branchId;
-        }
-
-        // Edit student from detail modal
-        function editStudentFromDetail() {
-            if (currentViewStudentId) {
-                bootstrap.Modal.getInstance(document.getElementById('studentDetailModal')).hide();
-                editStudent(currentViewStudentId);
-            }
-        }
-
-        // Add payment from detail modal
-        function addPaymentFromDetail() {
-            if (currentViewStudentId) {
-                bootstrap.Modal.getInstance(document.getElementById('studentDetailModal')).hide();
-                showStudentFeeModal();
-                // Pré-remplir avec l'élève sélectionné
-                setTimeout(() => {
-                    const student = students.find(s => s.id === currentViewStudentId);
-                    if (student) {
-                        document.getElementById('studentClassFilter').value = student.class;
-                        loadStudentsByClass();
-                        setTimeout(() => {
-                            document.getElementById('studentSelect').value = currentViewStudentId;
-                            loadStudentDetails();
-                        }, 500);
-                    }
-                }, 300);
-            }
-        }
-
-        // Sort students alphabetically
-        function sortAlphabetically() {
-            document.getElementById('sortStudents').value = 'name_asc';
-            applyStudentFilters();
-            showToast('Élèves triés par ordre alphabétique', 'success');
+            studentPayments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+            
+            studentPayments.forEach((payment, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${payment.reference || 'N/A'}</td>
+                    <td>${new Date(payment.paymentDate).toLocaleDateString('fr-FR')}</td>
+                    <td><span class="badge-minervale">${getPaymentTypeText(payment.paymentType)}</span></td>
+                    <td><strong>${formatCurrencyRWF(payment.amount)}</strong></td>
+                    <td><span class="badge ${payment.paymentMode === 'bank' ? 'badge-bank' : payment.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash'}">${payment.paymentMode === 'bank' ? 'Banque' : payment.paymentMode === 'momo' ? 'Mobile Money' : 'Espèces'}</span></td>
+                    <td>${payment.receivedBy || 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Calculer les totaux
+            const totalPaid = studentPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+            document.getElementById('totalPaid').textContent = formatCurrencyRWF(totalPaid);
+            
+            // Ici vous pourriez ajouter la logique pour calculer le solde restant
+            // basé sur les frais configurés pour la classe
+            document.getElementById('remainingBalance').textContent = formatCurrencyRWF(0);
         }
 
         // Get payment type text
@@ -4875,433 +4957,6 @@
             }
         }
 
-        // Export students to Excel
-        function exportStudentsExcel() {
-            try {
-                // Filtrer les élèves par branche
-                const branchStudents = students.filter(student => student.branch === selectedBranch);
-                
-                // Appliquer les filtres actuels
-                const selectedClass = document.getElementById('filterStudentClass').value;
-                const ageRange = document.getElementById('filterAgeRange').value;
-                const sortBy = document.getElementById('sortStudents').value;
-                
-                let filteredStudents = [...branchStudents];
-                
-                // Filtrer par classe si sélectionnée
-                if (selectedClass) {
-                    filteredStudents = filteredStudents.filter(student => student.class === selectedClass);
-                }
-                
-                // Filtrer par tranche d'âge si sélectionnée
-                if (ageRange) {
-                    filteredStudents = filteredStudents.filter(student => {
-                        if (!student.birthDate) return false;
-                        const age = calculateAge(student.birthDate);
-                        const [minAge, maxAge] = ageRange.split('-').map(num => {
-                            if (num.endsWith('+')) {
-                                return parseInt(num);
-                            }
-                            return parseInt(num);
-                        });
-                        
-                        if (ageRange.endsWith('+')) {
-                            return age >= minAge;
-                        } else {
-                            return age >= minAge && age <= maxAge;
-                        }
-                    });
-                }
-                
-                // Préparer les données pour l'export
-                const exportData = filteredStudents.map((student, index) => {
-                    const studentPayments = studentFees.filter(fee => fee.studentId === student.id);
-                    const totalPaid = studentPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
-                    const age = calculateAge(student.birthDate);
-                    
-                    return {
-                        'NO': index + 1,
-                        'RÉFÉRENCE': student.reference || 'N/A',
-                        'NOM COMPLET': student.fullName,
-                        'CLASSE': student.class || '',
-                        'DATE NAISSANCE': student.birthDate ? new Date(student.birthDate).toLocaleDateString('fr-FR') : '',
-                        'ÂGE': `${age} ans`,
-                        'PARENT': student.parent || '',
-                        'TÉLÉPHONE PARENT': student.parentPhone || '',
-                        'TOTAL PAYÉ': totalPaid,
-                        'BRANCHE': getBranchName(student.branch),
-                        'DATE INSCRIPTION': student.timestamp ? new Date(student.timestamp).toLocaleDateString('fr-FR') : ''
-                    };
-                });
-                
-                // Créer le classeur Excel
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.json_to_sheet(exportData);
-                XLSX.utils.book_append_sheet(wb, ws, 'Élèves');
-                
-                // Générer le fichier
-                const fileName = `eleves_${selectedBranch}_${new Date().toISOString().split('T')[0]}.xlsx`;
-                XLSX.writeFile(wb, fileName);
-                
-                showToast('Liste des élèves exportée en Excel avec succès!', 'success');
-            } catch (error) {
-                console.error('Erreur export Excel élèves:', error);
-                showToast('Erreur lors de l\'export', 'error');
-            }
-        }
-
-        // Variables pour l'importation
-        let importedStudentsData = [];
-        let filteredImportedStudents = [];
-
-        // Show import students modal
-        function showImportStudentsModal() {
-            document.getElementById('importFileInput').value = '';
-            document.getElementById('importStep1').style.display = 'block';
-            document.getElementById('importStep2').style.display = 'none';
-            document.getElementById('importNextBtn').style.display = 'block';
-            document.getElementById('importConfirmBtn').style.display = 'none';
-            document.getElementById('importBackBtn').style.display = 'none';
-            
-            importedStudentsData = [];
-            filteredImportedStudents = [];
-            
-            const branchNames = {
-                kacyiru: 'EDEN FAMILY SCHOOL KACYIRU',
-                kimisagara: 'EDEN FAMILY SCHOOL KIMISAGARA',
-                gisozimaternelle: 'EDEN FAMILY SCHOOL GISOZI MATERNELLE',
-                gisoziprimaire: 'EDEN FAMILY SCHOOL GISOZI PRIMAIRE'
-            };
-            document.getElementById('importBranchText').textContent = branchNames[selectedBranch];
-            
-            const modal = new bootstrap.Modal(document.getElementById('importStudentsModal'));
-            modal.show();
-        }
-
-        // Preview import file
-        async function previewImportFile() {
-            const file = document.getElementById('importFileInput').files[0];
-            if (!file) return;
-            
-            try {
-                const data = await file.arrayBuffer();
-                const workbook = XLSX.read(data, { type: 'array' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                
-                if (jsonData.length === 0) {
-                    showToast('Le fichier Excel est vide!', 'error');
-                    return;
-                }
-                
-                // Traiter les données avec validation stricte
-                importedStudentsData = [];
-                let invalidRows = [];
-                let missingFields = {};
-                
-                jsonData.forEach((row, index) => {
-                    // Extraire les données du fichier avec normalisation
-                    const fullName = (row['NOM COMPLET'] || row['NOM'] || row['nom complet'] || row['Nom'] || row['NOM COMPLET'] || '').toString().trim();
-                    const birthDate = row['DATE NAISSANCE'] || row['DATE DE NAISSANCE'] || row['date naissance'] || '';
-                    const parent = (row['PARENT'] || row['parent'] || row['Parent'] || '').toString().trim();
-                    const parentPhone = (row['TÉLÉPHONE PARENT'] || row['TELEPHONE PARENT'] || row['téléphone'] || row['Téléphone'] || '').toString().trim();
-                    let studentClass = (row['CLASSE'] || row['CLASS'] || row['classe'] || row['Classe'] || '').toString().trim();
-                    
-                    // VALIDATION: NOM et CLASSE sont OBLIGATOIRES
-                    if (!fullName || fullName.length === 0) {
-                        invalidRows.push({
-                            row: index + 2,
-                            reason: 'NOM COMPLET manquant (OBLIGATOIRE)'
-                        });
-                        missingFields['NOM'] = (missingFields['NOM'] || 0) + 1;
-                        return; // Passer à la ligne suivante
-                    }
-                    
-                    if (!studentClass || studentClass.length === 0) {
-                        invalidRows.push({
-                            row: index + 2,
-                            reason: `${fullName}: CLASSE manquante (OBLIGATOIRE)`
-                        });
-                        missingFields['CLASSE'] = (missingFields['CLASSE'] || 0) + 1;
-                        return; // Passer à la ligne suivante
-                    }
-                    
-                    // Convertir la date Excel si nécessaire
-                    let birthDateFormatted = '';
-                    let dateWarning = false;
-                    
-                    if (birthDate) {
-                        if (typeof birthDate === 'number') {
-                            // Date Excel (nombre de jours depuis 1900-01-01)
-                            const excelDate = new Date((birthDate - 25569) * 86400 * 1000);
-                            birthDateFormatted = excelDate.toISOString().split('T')[0];
-                        } else {
-                            // Essayer de convertir en format YYYY-MM-DD
-                            const parsed = new Date(birthDate);
-                            if (!isNaN(parsed.getTime())) {
-                                birthDateFormatted = parsed.toISOString().split('T')[0];
-                            }
-                        }
-                    } else {
-                        dateWarning = true;
-                        missingFields['DATE NAISSANCE'] = (missingFields['DATE NAISSANCE'] || 0) + 1;
-                    }
-                    
-                    // Vérifier les autres champs importants
-                    if (!parent || parent.length === 0) {
-                        missingFields['PARENT'] = (missingFields['PARENT'] || 0) + 1;
-                    }
-                    
-                    if (!parentPhone || parentPhone.length === 0) {
-                        missingFields['TÉLÉPHONE PARENT'] = (missingFields['TÉLÉPHONE PARENT'] || 0) + 1;
-                    }
-                    
-                    // Ajouter l'élève (avec données valides pour NOM et CLASSE)
-                    importedStudentsData.push({
-                        index: index + 1,
-                        rowNumber: index + 2,
-                        fullName: fullName,
-                        birthDate: birthDateFormatted,
-                        class: studentClass,
-                        parent: parent,
-                        parentPhone: parentPhone,
-                        reference: `EDU-${Date.now()}-${index}`,
-                        timestamp: Date.now(),
-                        warnings: {
-                            dateWarning: dateWarning,
-                            missingParent: !parent,
-                            missingPhone: !parentPhone
-                        }
-                    });
-                });
-                
-                if (importedStudentsData.length === 0) {
-                    let message = 'Aucun élève valide trouvé! ';
-                    if (invalidRows.length > 0) {
-                        message += `\n\nLignes invalides:\n`;
-                        invalidRows.slice(0, 5).forEach(row => {
-                            message += `- Ligne ${row.row}: ${row.reason}\n`;
-                        });
-                        if (invalidRows.length > 5) {
-                            message += `... et ${invalidRows.length - 5} autres erreurs`;
-                        }
-                    }
-                    showToast(message, 'error');
-                    return;
-                }
-                
-                // Afficher un résumé des avertissements
-                let warningMessage = `${importedStudentsData.length} élève(s) valide(s) chargés`;
-                if (Object.keys(missingFields).length > 0) {
-                    warningMessage += `\n\nChamps manquants:\n`;
-                    Object.keys(missingFields).forEach(field => {
-                        warningMessage += `- ${field}: ${missingFields[field]} élève(s)\n`;
-                    });
-                }
-                if (invalidRows.length > 0) {
-                    warningMessage += `\n⚠️ ${invalidRows.length} ligne(s) invalide(s) (NOM ou CLASSE manquant)`;
-                }
-                
-                showToast(warningMessage, missingFields['DATE NAISSANCE'] || missingFields['PARENT'] ? 'warning' : 'success');
-                
-            } catch (error) {
-                console.error('Erreur lecture fichier:', error);
-                showToast('Erreur lors de la lecture du fichier Excel', 'error');
-            }
-        }
-
-        // Proceed to step 2
-        function proceedImportStep2() {
-            if (importedStudentsData.length === 0) {
-                showToast('Veuillez d\'abord sélectionner un fichier Excel', 'error');
-                return;
-            }
-            
-            const defaultClass = document.getElementById('importDefaultClass').value;
-            const ageFilter = document.getElementById('importAgeFilter').value;
-            
-            // Appliquer les filtres
-            filteredImportedStudents = importedStudentsData.map(student => ({
-                ...student,
-                class: student.class || defaultClass
-            }));
-            
-            // Filtrer par tranche d'âge si spécifiée
-            if (ageFilter) {
-                filteredImportedStudents = filteredImportedStudents.filter(student => {
-                    if (!student.birthDate) return true;
-                    const age = calculateAge(student.birthDate);
-                    const [minAge, maxAge] = ageFilter.split('-').map(num => {
-                        if (num.endsWith('+')) {
-                            return parseInt(num);
-                        }
-                        return parseInt(num);
-                    });
-                    
-                    if (ageFilter.endsWith('+')) {
-                        return age >= minAge;
-                    } else {
-                        return age >= minAge && age <= maxAge;
-                    }
-                });
-            }
-            
-            // Afficher l'aperçu
-            updateImportPreview();
-            
-            // Passer à l'étape 2
-            document.getElementById('importStep1').style.display = 'none';
-            document.getElementById('importStep2').style.display = 'block';
-            document.getElementById('importNextBtn').style.display = 'none';
-            document.getElementById('importConfirmBtn').style.display = 'block';
-            document.getElementById('importBackBtn').style.display = 'block';
-            
-            document.getElementById('importFileInfo').textContent = filteredImportedStudents.length;
-        }
-
-        // Update import preview
-        function updateImportPreview() {
-            const tbody = document.getElementById('importPreviewBody');
-            tbody.innerHTML = '';
-            
-            filteredImportedStudents.forEach((student, index) => {
-                const age = student.birthDate ? calculateAge(student.birthDate) : '?';
-                const tr = document.createElement('tr');
-                
-                // Déterminer le statut avec avertissements
-                let statusBadge = '<span class="badge bg-success">✓ OK</span>';
-                let warnings = '';
-                
-                if (student.warnings) {
-                    const warns = [];
-                    if (student.warnings.dateWarning) warns.push('📅 Date manquante');
-                    if (student.warnings.missingParent) warns.push('👤 Parent manquant');
-                    if (student.warnings.missingPhone) warns.push('📱 Téléphone manquant');
-                    
-                    if (warns.length > 0) {
-                        statusBadge = '<span class="badge bg-warning">⚠️ Incomplet</span>';
-                        warnings = `<br><small class="text-muted">${warns.join(', ')}</small>`;
-                    }
-                }
-                
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td><strong>${student.fullName}</strong></td>
-                    <td>${student.birthDate ? new Date(student.birthDate).toLocaleDateString('fr-FR') : '⚠️ Manquant'}</td>
-                    <td><span class="badge bg-primary">${student.class || 'N/A'}</span></td>
-                    <td>${student.parent || '<em class="text-danger">-</em>'}</td>
-                    <td>${statusBadge}${warnings}</td>
-                `;
-                tr.style.verticalAlign = 'top';
-                tbody.appendChild(tr);
-            });
-            
-            // Afficher un résumé des données
-            const warningCount = filteredImportedStudents.filter(s => s.warnings && (s.warnings.dateWarning || s.warnings.missingParent || s.warnings.missingPhone)).length;
-            const summary = document.createElement('div');
-            summary.className = 'mt-3 p-3 bg-light rounded';
-            
-            if (warningCount > 0) {
-                summary.innerHTML = `
-                    <div class="alert alert-warning mb-0">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Attention:</strong> ${warningCount} élève(s) avec des données incomplètes.
-                        <br><small>Les champs NOM et CLASSE sont validés. Les autres champs peuvent être complétés manuellement après importation.</small>
-                    </div>
-                `;
-            } else {
-                summary.innerHTML = `
-                    <div class="alert alert-success mb-0">
-                        <i class="fas fa-check-circle me-2"></i>
-                        <strong>Excellent!</strong> Tous les élèves ont les données obligatoires (NOM et CLASSE).
-                    </div>
-                `;
-            }
-            
-            const existingSummary = document.querySelector('.importPreviewSummary');
-            if (existingSummary) {
-                existingSummary.replaceWith(summary);
-            } else {
-                summary.className = 'importPreviewSummary ' + summary.className;
-                document.getElementById('importPreviewBody').parentElement.insertAdjacentElement('afterend', summary);
-            }
-        }
-
-        // Confirm import students
-        async function confirmImportStudents() {
-            if (filteredImportedStudents.length === 0) {
-                showToast('Aucun élève à importer!', 'error');
-                return;
-            }
-            
-            try {
-                // Désactiver le bouton pour éviter les clics multiples
-                const btn = document.getElementById('importConfirmBtn');
-                const originalText = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Importation en cours...';
-                
-                let successCount = 0;
-                let errorCount = 0;
-                
-                // Importer chaque élève
-                for (const student of filteredImportedStudents) {
-                    try {
-                        // Générer une référence unique
-                        const reference = `EDU-${new Date().getFullYear()}${(new Date().getMonth() + 1).toString().padStart(2, '0')}${new Date().getDate().toString().padStart(2, '0')}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-                        
-                        const studentData = {
-                            reference: reference,
-                            fullName: student.fullName,
-                            birthDate: student.birthDate || '',
-                            class: student.class || '',
-                            parent: student.parent || '',
-                            parentPhone: student.parentPhone || '',
-                            branch: selectedBranch,
-                            status: 'active',
-                            timestamp: Date.now(),
-                            createdBy: currentUserName,
-                            importedFrom: 'excel'
-                        };
-                        
-                        await studentsRef.push(studentData);
-                        successCount++;
-                        
-                    } catch (error) {
-                        console.error('Erreur importation élève:', error);
-                        errorCount++;
-                    }
-                }
-                
-                // Restaurer le bouton
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-                
-                // Afficher le résultat
-                let message = `Importation terminée: ${successCount} élève(s) importé(s) avec succès`;
-                if (errorCount > 0) {
-                    message += ` et ${errorCount} erreur(s)`;
-                }
-                
-                showToast(message, successCount > 0 ? 'success' : 'error');
-                
-                // Fermer le modal et actualiser la liste
-                bootstrap.Modal.getInstance(document.getElementById('importStudentsModal')).hide();
-                applyStudentFilters();
-                
-                // Enregistrer dans l'historique des activités
-                await logActivity('IMPORT_STUDENTS', `${successCount} élève(s) importé(s) depuis Excel`, 'import_students', {
-                    successCount: successCount,
-                    errorCount: errorCount,
-                    totalCount: filteredImportedStudents.length
-                });
-                
-            } catch (error) {
-                console.error('Erreur importation:', error);
-                showToast('Erreur lors de l\'importation', 'error');
-            }
-        }
-
         // Show student fee modal
         function showStudentFeeModal() {
             document.getElementById('studentFeeForm').reset();
@@ -5390,12 +5045,11 @@
                 await studentFeesRef.push(feeData);
                 showToast('Paiement enregistré avec succès!', 'success');
                 
-                await logActivity('ADD_STUDENT_PAYMENT', `Paiement enregistré pour ${student.fullName}: ${formatCurrencyRWF(feeData.amount)}`, 'student_payment', {
-                    studentId: studentId,
-                    studentName: student.fullName,
-                    studentClass: student.class,
-                    amount: feeData.amount,
-                    paymentType: feeData.paymentType
+                await announcementsRef.push({
+                    timestamp: Date.now(),
+                    message: `Paiement enregistré pour ${student.fullName}: ${formatCurrencyRWF(feeData.amount)}`,
+                    author: 'system',
+                    type: 'student_payment'
                 });
                 
                 bootstrap.Modal.getInstance(document.getElementById('studentFeeModal')).hide();
@@ -6011,10 +5665,10 @@
             const monthlyData = Array(12).fill(0);
             
             // Filtrer par branche
-            const branchTeachers = teachers.filter(teacher => teacher.branch === selectedBranch);
+            const branchTravailleurs = travailleurs.filter(w => w.branch === selectedBranch);
             
             // Pour l'instant, utiliser les salaires des travailleurs comme données
-            monthlyData[new Date().getMonth()] = branchTeachers.reduce((sum, teacher) => sum + (teacher.salary || 0), 0);
+            monthlyData[new Date().getMonth()] = branchTravailleurs.reduce((sum, w) => sum + (w.salary || 0), 0);
             
             const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
             
@@ -6075,34 +5729,58 @@
 
         // Save accountant info
         async function saveAccountantInfo() {
-            if (!currentUserUID) {
-                showToast('Utilisateur non authentifié', 'error');
-                return;
-            }
-            
             const accountantData = {
                 name: document.getElementById('accountantName').value,
-                email: document.getElementById('accountantEmail').value,
-                role: currentUser?.role || 'comptable',
-                branch: currentUser?.branch || selectedBranch,
                 title: document.getElementById('accountantTitle').value,
-                updatedAt: Date.now(),
-                updatedBy: currentUserName
+                email: document.getElementById('accountantEmail').value,
+                updatedAt: Date.now()
             };
             
             try {
-                // Enregistrer dans la collection "users" au lieu de "accountant"
-                await usersRef.child(currentUserUID).update(accountantData);
-                currentUser = {
-                    ...currentUser,
-                    ...accountantData
-                };
+                await accountantRef.set(accountantData);
                 currentUserName = accountantData.name;
-                updateUIWithUserInfo();
+                document.getElementById('userName').textContent = accountantData.name;
+                document.getElementById('preparedBy').textContent = accountantData.name;
+                document.getElementById('reportPreparedBy').value = accountantData.name;
                 showToast('Informations comptable enregistrées avec succès!', 'success');
             } catch (error) {
                 console.error('Erreur sauvegarde informations comptable:', error);
                 showToast('Erreur lors de l\'enregistrement', 'error');
+            }
+        }
+
+        // Load fee configuration
+        function loadFeeConfiguration() {
+            const branch = document.getElementById('feeBranch').value;
+            const quarter = document.getElementById('feeQuarter').value;
+            const year = document.getElementById('feeYear').value;
+            
+            // Créer la clé unique pour chercher la configuration
+            const configKey = `${branch.replace(/\s+/g, '_')}_${quarter}_${year}`;
+            
+            // Chercher dans les configurations chargées
+            const config = feeConfigurations.find(c => c.id === configKey);
+            
+            if (config) {
+                // Remplir les champs avec les données existantes
+                document.getElementById('feeMinervale').value = config.minervale || 150000;
+                document.getElementById('feeTransport').value = config.transport || 50000;
+                document.getElementById('feeCoaching').value = config.coaching || 80000;
+                document.getElementById('feeUniform').value = config.uniform || 30000;
+                document.getElementById('feeLunch').value = config.lunch || 20000;
+                document.getElementById('feeBreakfast').value = config.breakfast || 10000;
+                document.getElementById('feeMaterial').value = config.material || 15000;
+                document.getElementById('feeInsurance').value = config.insurance || 10000;
+            } else {
+                // Utiliser les valeurs par défaut si pas de configuration existante
+                document.getElementById('feeMinervale').value = 150000;
+                document.getElementById('feeTransport').value = 50000;
+                document.getElementById('feeCoaching').value = 80000;
+                document.getElementById('feeUniform').value = 30000;
+                document.getElementById('feeLunch').value = 20000;
+                document.getElementById('feeBreakfast').value = 10000;
+                document.getElementById('feeMaterial').value = 15000;
+                document.getElementById('feeInsurance').value = 10000;
             }
         }
 
@@ -6140,7 +5818,7 @@
             try {
                 // Récupérer toutes les données
                 const allData = {
-                    teachers: teachers,
+                    travailleurs: travailleurs,
                     students: students,
                     studentFees: studentFees,
                     debts: debts,
@@ -6175,7 +5853,7 @@
             try {
                 // Préparer les données pour l'export
                 const exportData = {
-                    Travailleurs: teachers.filter(t => t.branch === selectedBranch).map(t => ({
+                    Travailleurs: travailleurs.filter(t => t.branch === selectedBranch).map(t => ({
                         NO: t.no,
                         Nom: t.name,
                         Type: t.type,
@@ -6211,7 +5889,7 @@
                     })),
                     
                     Dettes: debts.filter(d => {
-                        const worker = teachers.find(t => t.id === d.workerId);
+                        const worker = travailleurs.find(t => t.id === d.workerId);
                         return worker && worker.branch === selectedBranch;
                     }).map(d => ({
                         Travailleur: d.workerName,
@@ -6280,7 +5958,7 @@
             const results = [];
             
             // Rechercher dans les travailleurs
-            teachers.forEach(teacher => {
+            travailleurs.forEach(teacher => {
                 if (teacher.branch === selectedBranch && 
                     (teacher.name.toLowerCase().includes(searchTerm) || 
                      teacher.no.toLowerCase().includes(searchTerm) ||
@@ -6290,7 +5968,7 @@
                         name: teacher.name,
                         id: teacher.id,
                         action: () => {
-                            showSection('teachers');
+                            showSection('travailleurs');
                             setTimeout(() => editWorker(teacher.id), 500);
                         }
                     });
@@ -6309,7 +5987,7 @@
                         id: student.id,
                         action: () => {
                             showSection('students');
-                            setTimeout(() => viewStudentDetail(student.id), 500);
+                            setTimeout(() => viewStudentProfile(student.id), 500);
                         }
                     });
                 }
@@ -6352,6 +6030,88 @@
                 searchContainer.style.display = 'none';
             }
         });
+
+        // Download worker payment history
+        async function downloadWorkerPaymentHistory(workerId) {
+            try {
+                const worker = travailleurs.find(t => t.id === workerId);
+                if (!worker) {
+                    showToast('Travailleur non trouvé', 'error');
+                    return;
+                }
+                
+                // Récupérer l'historique des paiements du travailleur
+                const workerPayments = payrollHistory.filter(p => p.workerId === workerId);
+                
+                // Créer le contenu CSV
+                let csvContent = `Historique des Paiements - ${worker.name}\nGénéré le: ${new Date().toLocaleDateString('fr-FR')}\n\n`;
+                csvContent += `Mois,Année,Salaire Base,Dettes,Statut,Date Paiement\n`;
+                
+                workerPayments.forEach(payment => {
+                    const month = payment.month || '-';
+                    const year = payment.year || '-';
+                    const salary = payment.salary || 0;
+                    const debts = payment.debts || 0;
+                    const status = payment.status || 'pending';
+                    const paymentDate = payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString('fr-FR') : '-';
+                    csvContent += `${month},${year},${salary},${debts},${status},${paymentDate}\n`;
+                });
+                
+                // Créer et télécharger le fichier
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `payroll_${worker.name.replace(/\\s+/g, '_')}_${Date.now()}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                showToast(`Historique de ${worker.name} téléchargé!`, 'success');
+            } catch (error) {
+                console.error('Erreur téléchargement historique:', error);
+                showToast('Erreur lors du téléchargement', 'error');
+            }
+        }
+        
+        // Update payment status
+        async function updatePaymentStatus(workerId) {
+            try {
+                const worker = travailleurs.find(t => t.id === workerId);
+                if (!worker) {
+                    showToast('Travailleur non trouvé', 'error');
+                    return;
+                }
+                
+                const month = document.getElementById('payrollMonth').value;
+                const year = document.getElementById('payrollYear').value;
+                
+                // Créer entry de paiement
+                const paymentEntry = {
+                    workerId: workerId,
+                    workerName: worker.name,
+                    month: month,
+                    year: year,
+                    salary: worker.salary || 0,
+                    status: 'paid',
+                    paymentDate: Date.now(),
+                    receivedBy: currentUserName,
+                    paymentMode: worker.paymentMode || 'bank'
+                };
+                
+                // Sauvegarder dans payrollHistory
+                const key = payrollHistoryRef.push().key;
+                await payrollHistoryRef.child(key).set(paymentEntry);
+                
+                showToast(`Paiement enregistré pour ${worker.name}`, 'success');
+                displayPayrollTable(); // Rafraîchir l'affichage
+                
+            } catch (error) {
+                console.error('Erreur mise à jour paiement:', error);
+                showToast('Erreur lors de la mise à jour du statut', 'error');
+            }
+        }
 
         // ===== INSCRIPTION COMPTABLE =====
         const BRANCHES_DATA_COMP = {
@@ -6547,6 +6307,89 @@
             document.getElementById('errorMessageComp').textContent = message;
             document.getElementById('missingFieldMessageComp').style.display = 'block';
         }
+
+        // ===== Navigation Scroll Animation =====
+        let lastScrollTop = 0;
+        let scrollDirection = 'down';
+        const navWrapper = document.querySelector('.nav-header-wrapper');
+        let isNavScrolled = false;
+        let isNavHidden = false;
+        // Thresholds for when header/nav becomes "scrolled" and when it should hide
+        // Use smaller thresholds on small screens so the nav hides quickly on phones
+        let scrollThresholdStart = window.innerWidth < 768 ? 10 : 100;
+        let scrollThresholdHide = window.innerWidth < 768 ? 80 : 300;
+
+        // Update thresholds on resize
+        window.addEventListener('resize', () => {
+            scrollThresholdStart = window.innerWidth < 768 ? 10 : 100;
+            scrollThresholdHide = window.innerWidth < 768 ? 80 : 300;
+        });
+
+        window.addEventListener('scroll', function() {
+            const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Determine scroll direction
+            if (currentScroll > lastScrollTop) {
+                scrollDirection = 'down';
+            } else {
+                scrollDirection = 'up';
+            }
+            
+            // Calculate progressive border radius on both scroll down and up
+            let borderRadius = 0;
+            if (currentScroll > scrollThresholdStart && currentScroll <= scrollThresholdHide) {
+                // Calculate progress from 0 to 1 based on scroll position
+                const progress = (currentScroll - scrollThresholdStart) / (scrollThresholdHide - scrollThresholdStart);
+                // Border radius goes from 0 to 20px progressively (works on both down and up scroll)
+                borderRadius = Math.min(20 * progress, 20);
+            } else if (currentScroll > scrollThresholdHide) {
+                // Full border radius when scrolling past hide threshold
+                borderRadius = 20;
+            }
+            
+            // Set the CSS variable for border radius - applies to both scroll directions
+            navWrapper.style.setProperty('--nav-border-radius', borderRadius + 'px');
+            
+            // At the top - reset everything
+            if (currentScroll <= scrollThresholdStart) {
+                if (isNavScrolled || isNavHidden) {
+                    navWrapper.classList.remove('nav-scrolled', 'nav-hidden');
+                    navWrapper.style.setProperty('--nav-border-radius', '0px');
+                    isNavScrolled = false;
+                    isNavHidden = false;
+                }
+            }
+            // After scrolling past threshold - make nav scrolled
+            else if (currentScroll > scrollThresholdStart && currentScroll <= scrollThresholdHide) {
+                if (!isNavScrolled && !isNavHidden) {
+                    navWrapper.classList.remove('nav-hidden');
+                    navWrapper.classList.add('nav-scrolled');
+                    isNavScrolled = true;
+                    isNavHidden = false;
+                } else if (isNavHidden && scrollDirection === 'up') {
+                    navWrapper.classList.remove('nav-hidden');
+                    navWrapper.classList.add('nav-scrolled');
+                    isNavHidden = false;
+                    isNavScrolled = true;
+                }
+            }
+            // Far down - hide nav when scrolling down
+            else if (currentScroll > scrollThresholdHide) {
+                if (scrollDirection === 'down' && !isNavHidden) {
+                    navWrapper.classList.remove('nav-scrolled');
+                    navWrapper.classList.add('nav-hidden');
+                    isNavHidden = true;
+                    isNavScrolled = false;
+                } else if (scrollDirection === 'up' && isNavHidden) {
+                    navWrapper.classList.remove('nav-hidden');
+                    navWrapper.classList.add('nav-scrolled');
+                    isNavHidden = false;
+                    isNavScrolled = true;
+                }
+            }
+            
+            lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+        });
     </script>
 </body>
 </html>

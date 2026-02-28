@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="stylesheet" href="responsive.css">
     <title>Eden Family School - Portail Enseignants & Parents</title>
     
     <!-- 🔒 SÉCURITÉ: Script d'authentification -->
@@ -50,6 +54,7 @@
             --primaire-color: #42d395;
             --kimisagara-color: #4CAF50;
             --gisozi-color: #5d6afb;
+            --nav-border-radius: 0px;
         }
         
         * {
@@ -160,9 +165,13 @@
             backdrop-filter: blur(10px);
             padding: 1rem 0;
             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-            position: sticky;
-            top: 80px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
             z-index: 999;
+            overflow: hidden;
         }
         
         .nav-container {
@@ -209,6 +218,141 @@
             background: var(--primary);
             color: white;
             box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        /* Navigation Scroll Animation */
+        .main-nav.nav-scrolled {
+            border-radius: var(--nav-border-radius, 0px) !important;
+            margin: 1rem 0 0 0 !important;
+            width: calc(100% - 4rem) !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            top: 0.5rem !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
+            transition: border-radius 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            animation: navAppear 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .main-nav.nav-scrolled .nav-container {
+            max-width: calc(100% - 4rem);
+        }
+
+        /* Navigation cachée */
+        .main-nav.nav-hidden {
+            transform: translateY(-120px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            border-radius: var(--nav-border-radius, 20px) !important;
+            animation: navExit 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        /* Animation de flottement */
+        @keyframes navFloat {
+            0% {
+                transform: translateY(0);
+                border-radius: 0px;
+                width: 100%;
+                left: 0;
+                top: 0;
+                margin: 0;
+            }
+            100% {
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                width: calc(100% - 4rem);
+                left: 50%;
+                top: 1rem;
+            }
+        }
+
+        @keyframes navAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-40px);
+                border-radius: 0px;
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+        }
+
+        @keyframes navExit {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-80px);
+                border-radius: 0px;
+            }
+        }
+
+        /* Navigation Header Wrapper - groups header + nav together */
+        .nav-header-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            z-index: 999;
+        }
+
+        .nav-header-wrapper.nav-scrolled {
+            border-radius: var(--nav-border-radius, 0px) !important;
+            margin: 1rem 0 0 0 !important;
+            width: calc(100% - 4rem) !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            top: 0.5rem !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
+            transition: border-radius 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            animation: navWrapperAppear 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .nav-header-wrapper.nav-hidden {
+            transform: translateY(-200px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            border-radius: var(--nav-border-radius, 20px) !important;
+            animation: navWrapperExit 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes navWrapperAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-130px);
+                border-radius: 0px;
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+        }
+
+        @keyframes navWrapperExit {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                border-radius: 20px;
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-200px);
+                border-radius: 0px;
+            }
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 170px;
         }
         
         .nav-btn .badge {
@@ -699,8 +843,10 @@
     <script src="password-visibility.js"></script>
 </head>
 <body>
-    <!-- Header -->
-    <header class="modern-header">
+    <!-- Navigation & Header Wrapper -->
+    <div class="nav-header-wrapper">
+        <!-- Header -->
+        <header class="modern-header">
         <div class="header-container">
             <div class="logo">
                 <div class="logo-icon">
@@ -775,6 +921,7 @@
             </div>
         </div>
     </nav>
+    </div>
 
     <!-- User Menu Dropdown -->
     <div id="userMenu" class="dashboard-card" style="display: none; position: fixed; top: 80px; right: 20px; width: 250px; z-index: 1001;">
@@ -2147,6 +2294,78 @@
                     // Recherche à implémenter
                 });
             }
+        });
+
+        // ===== Navigation Scroll Animation =====
+        let lastScrollTop = 0;
+        let scrollDirection = 'down';
+        const navWrapper = document.querySelector('.nav-header-wrapper');
+        let isNavScrolled = false;
+        let isNavHidden = false;
+        let scrollThresholdStart = 100;
+        let scrollThresholdHide = 300;
+
+        window.addEventListener('scroll', function() {
+            const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Determine scroll direction
+            if (currentScroll > lastScrollTop) {
+                scrollDirection = 'down';
+            } else {
+                scrollDirection = 'up';
+            }
+            
+            // Calculate progressive border radius on both scroll down and up
+            let borderRadius = 0;
+            if (currentScroll > scrollThresholdStart && currentScroll <= scrollThresholdHide) {
+                const progress = (currentScroll - scrollThresholdStart) / (scrollThresholdHide - scrollThresholdStart);
+                borderRadius = Math.min(20 * progress, 20);
+            } else if (currentScroll > scrollThresholdHide) {
+                borderRadius = 20;
+            }
+            
+            // Set the CSS variable for border radius
+            navWrapper.style.setProperty('--nav-border-radius', borderRadius + 'px');
+            
+            // At the top - reset everything
+            if (currentScroll <= scrollThresholdStart) {
+                if (isNavScrolled || isNavHidden) {
+                    navWrapper.classList.remove('nav-scrolled', 'nav-hidden');
+                    navWrapper.style.setProperty('--nav-border-radius', '0px');
+                    isNavScrolled = false;
+                    isNavHidden = false;
+                }
+            }
+            // After scrolling past threshold - make nav scrolled
+            else if (currentScroll > scrollThresholdStart && currentScroll <= scrollThresholdHide) {
+                if (!isNavScrolled && !isNavHidden) {
+                    navWrapper.classList.remove('nav-hidden');
+                    navWrapper.classList.add('nav-scrolled');
+                    isNavScrolled = true;
+                    isNavHidden = false;
+                } else if (isNavHidden && scrollDirection === 'up') {
+                    navWrapper.classList.remove('nav-hidden');
+                    navWrapper.classList.add('nav-scrolled');
+                    isNavHidden = false;
+                    isNavScrolled = true;
+                }
+            }
+            // Far down - hide nav when scrolling down
+            else if (currentScroll > scrollThresholdHide) {
+                if (scrollDirection === 'down' && !isNavHidden) {
+                    navWrapper.classList.remove('nav-scrolled');
+                    navWrapper.classList.add('nav-hidden');
+                    isNavHidden = true;
+                    isNavScrolled = false;
+                } else if (scrollDirection === 'up' && isNavHidden) {
+                    navWrapper.classList.remove('nav-hidden');
+                    navWrapper.classList.add('nav-scrolled');
+                    isNavHidden = false;
+                    isNavScrolled = true;
+                }
+            }
+            
+            lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
         });
     </script>
 </body>

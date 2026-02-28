@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="stylesheet" href="responsive.css">
   <title>Eden Family School - Portail Staff</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1025,54 +1029,43 @@
           return false;
         }
         
-        // Vérifier le rôle
+        // Vérifier le rôle et le normaliser (accepte variantes FR/EN et casse)
         userRole = userData.role;
-        
+
         if (!userRole) {
           console.log('❌ Aucun rôle défini pour l\'utilisateur');
           showAlert('Votre compte n\'a pas de rôle défini. Contactez l\'administration.', 'error');
           await window.signOut();
           return false;
         }
-        
-        console.log('📊 Rôle trouvé:', userRole);
-        
-        // Mapper les rôles et rediriger
+
+        // Normaliser le rôle: lowercase, retirer espaces et accents
+        const normalizedRole = userRole
+          .toString()
+          .toLowerCase()
+          .replace(/\s+/g, '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, ''); // Retirer les accents diacritiques
+        console.log('📊 Rôle trouvé (raw):', userRole, '=> normalisé:', normalizedRole);
+
+        // Mapper les rôles (touchant les variantes françaises/anglaises avec et sans accents)
         const roleMapping = {
-          'Directeur': {
-            page: 'director.html',
-            roleKey: 'director',
-            name: userData.nom || 'Directeur'
-          },
-          'IT Admin': {
-            page: 'IT.html',
-            roleKey: 'itadmin',
-            name: userData.nom || 'Administrateur IT'
-          },
-          'Secrétaire': {
-            page: 'secretary.html',
-            roleKey: 'secretary',
-            name: userData.nom || 'Secrétaire'
-          },
-          'Enseignant': {
-            page: 'teacher_clean.html',
-            roleKey: 'teacher',
-            name: userData.nom || 'Enseignant'
-          },
-          'Comptable': {
-            page: 'comptable.html',
-            roleKey: 'accountant',
-            name: userData.nom || 'Comptable'
-          },
-          'Administrateur': {
-            page: 'director.html',
-            roleKey: 'admin',
-            name: userData.nom || 'Administrateur'
-          }
+          'directeur': { page: 'director.html', roleKey: 'director', name: userData.nom || 'Directeur' },
+          'director': { page: 'director.html', roleKey: 'director', name: userData.nom || 'Directeur' },
+          'itadmin': { page: 'IT.html', roleKey: 'itadmin', name: userData.nom || 'Administrateur IT' },
+          'itadminstr': { page: 'IT.html', roleKey: 'itadmin', name: userData.nom || 'Administrateur IT' },
+          'secretaire': { page: 'secretary.html', roleKey: 'secretary', name: userData.nom || 'Secrétaire' },
+          'secretary': { page: 'secretary.html', roleKey: 'secretary', name: userData.nom || 'Secrétaire' },
+          'enseignant': { page: 'teacher_clean.html', roleKey: 'teacher', name: userData.nom || 'Enseignant' },
+          'teacher': { page: 'teacher_clean.html', roleKey: 'teacher', name: userData.nom || 'Enseignant' },
+          'comptable': { page: 'comptable.html', roleKey: 'accountant', name: userData.nom || 'Comptable' },
+          'accountant': { page: 'comptable.html', roleKey: 'accountant', name: userData.nom || 'Comptable' },
+          'administrateur': { page: 'director.html', roleKey: 'admin', name: userData.nom || 'Administrateur' },
+          'admin': { page: 'director.html', roleKey: 'admin', name: userData.nom || 'Administrateur' }
         };
-        
-        if (roleMapping[userRole]) {
-          const mapping = roleMapping[userRole];
+
+        const mapping = roleMapping[normalizedRole];
+        if (mapping) {
           const secureUser = {
             uid: userData.id || uid,
             email: email,
@@ -1096,7 +1089,9 @@
         } else {
           // Rôle non reconnu
           console.log('❌ Rôle non reconnu:', userRole);
-          showAlert('Votre rôle n\'est pas autorisé à accéder à ce portail.', 'error');
+          console.log('🔍 Rôle normalisé:', normalizedRole);
+          console.log('📋 Rôles autorisés:', Object.keys(roleMapping));
+          showAlert(`Votre rôle "${userRole}" n'est pas autorisé à accéder à ce portail. Contactez l'administration.`, 'error');
           await window.signOut();
           return false;
         }
