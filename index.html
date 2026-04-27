@@ -1,0 +1,2882 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eden Family School</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
+  <link rel="stylesheet" href="responsive.css">
+  <style>
+    :root {
+      --primary-color: #667eea;
+      --secondary-color: #764ba2;
+      --accent-color: #ff6b6b;
+      --success-color: #4CAF50;
+      --warning-color: #FF9800;
+      --light-bg: #f8f9fa;
+      --dark-text: #333;
+      --white: #ffffff;
+      --shadow: 0 5px 20px rgba(0,0,0,0.1);
+      --transition: all 0.3s ease;
+      --branch-kimisagara: #4CAF50;
+      --branch-gisozi: #2196F3;
+      --branch-kacyiru: #9C27B0;
+      /* Variables bubble */
+      --p:#667eea;--s:#764ba2;--acc:#ff6b6b;
+      --grad:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      --BS:60px;
+      --BM:36px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      line-height: 1.6;
+      color: var(--dark-text);
+      background: var(--light-bg);
+      overflow-x: hidden;
+    }
+
+    /* ══════════════════════════════════════
+       CURSOR GLOW
+    ══════════════════════════════════════ */
+    #cg{
+      position:fixed;width:320px;height:320px;border-radius:50%;
+      pointer-events:none;z-index:0;transform:translate(-50%,-50%);
+      background:radial-gradient(circle,rgba(102,126,234,.09) 0%,transparent 70%);
+    }
+
+    /* ══════════════════════════════════════
+       NAVBAR — 3 states
+    ══════════════════════════════════════ */
+    nav {
+      background: #0b63ce !important;
+      padding: 0;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 2000;
+      box-shadow: 0 2px 20px rgba(0,0,0,.1);
+      overflow: visible;
+      transition:
+        top            .5s cubic-bezier(.34,1.56,.64,1),
+        left           .5s cubic-bezier(.34,1.56,.64,1),
+        right          .5s cubic-bezier(.34,1.56,.64,1),
+        border-radius  .5s cubic-bezier(.34,1.56,.64,1),
+        padding        .45s ease,
+        box-shadow     .4s ease,
+        transform      .45s ease,
+        background     .4s ease,
+        opacity        .35s ease,
+        width          .45s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    /* STATE 1: Compact pill */
+    nav.pill, nav.shrink {
+      top: 0.7rem;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      width: auto;
+      min-width: min(820px, 92vw);
+      border-radius: 50px;
+      box-shadow:
+        0 4px 30px rgba(102,126,234,.3),
+        0 8px 40px rgba(0,0,0,.15);
+    }
+
+    /* STATE 2: Shrink away */
+    nav.shrink {
+      top: 0.5rem;
+      left: 50%;
+      right: auto;
+      transform: translateX(-55%) scale(.85);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      transition: padding .4s ease, gap .4s ease;
+    }
+    nav.pill .nav-container {
+      padding: .55rem 1.4rem;
+      gap: .5rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--white);
+      font-size: 1.2rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: var(--transition), font-size .35s, gap .35s;
+      white-space: nowrap;
+    }
+    .logo:hover { transform: translateY(-2px); }
+    .logo i { font-size: 1.7rem; transition: font-size .35s; }
+    nav.pill .logo { font-size: 1rem; gap: 7px; }
+    nav.pill .logo i { font-size: 1.35rem; }
+    nav.pill .logo img { height: 30px !important; }
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 0.8rem;
+      align-items: center;
+      transition: gap .35s;
+    }
+    nav.pill .nav-links { gap: .05rem; }
+
+    .nav-links a {
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 500;
+      transition: var(--transition), padding .3s, font-size .3s;
+      padding: 0.5rem 0.7rem;
+      border-radius: 8px;
+      font-size: 0.86rem;
+      position: relative;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    nav.pill .nav-links a { font-size: .78rem; padding: .38rem .55rem; }
+
+    /* Hide text labels in pill — show only icons */
+    nav.pill .nav-links a .lbl {
+      max-width: 0; overflow: hidden; opacity: 0;
+      transition: max-width .35s ease, opacity .3s ease;
+    }
+    nav:not(.pill) .nav-links a .lbl {
+      max-width: 120px; opacity: 1;
+      transition: max-width .35s ease, opacity .3s ease;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: var(--white);
+      transition: var(--transition);
+      transform: translateX(-50%);
+    }
+    .nav-links a:hover::after,
+    .nav-links a.active::after { width: 80%; }
+    .nav-links a:hover { background: rgba(255,255,255,0.14); }
+    nav.pill .nav-links a.active {
+      background: rgba(255,255,255,.35) !important;
+      border-radius: 50px;
+    }
+
+    /* Mobile menu button */
+    .mobile-menu {
+      display: none;
+      color: var(--white);
+      font-size: 1.5rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0.5rem;
+      z-index: 1001;
+      position: relative;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+    }
+    .mobile-menu:active, .mobile-menu:focus {
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+    }
+
+    /* ══════════════════════ BUBBLE ══════════════════════ */
+    #bubble {
+      position: fixed;
+      z-index: 2100;
+      bottom: 2.2rem;
+      right: calc(50% - 200px);
+      width: var(--BS);
+      height: var(--BS);
+      border-radius: 50%;
+      background: var(--grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: visible;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0) rotate(0deg);
+      box-shadow:
+        0 0 0 2.5px rgba(102,126,234,.4),
+        0 6px 28px rgba(102,126,234,.3),
+        0 8px 32px rgba(0,0,0,.2);
+      transition:
+        width  .4s cubic-bezier(.34,1.56,.64,1),
+        height .4s cubic-bezier(.34,1.56,.64,1),
+        box-shadow .3s,
+        opacity .35s,
+        filter .7s ease;
+      will-change: transform, width, height, opacity, filter;
+    }
+    #bubble.vis { opacity: 1; pointer-events: all; }
+    #bubble.blurred { filter: blur(2.5px) brightness(.75); }
+    #bubble.blurred:hover { filter: none; transition: filter .2s ease; cursor: pointer; }
+    #bubble.mini {
+      width: var(--BM);
+      height: var(--BM);
+      animation: floatBob 3s ease-in-out infinite;
+      box-shadow:
+        0 0 0 1.5px rgba(102,126,234,.3),
+        0 3px 14px rgba(102,126,234,.22),
+        0 4px 18px rgba(0,0,0,.13);
+    }
+    #bubble.open {
+      animation: none;
+      filter: none !important;
+      box-shadow:
+        0 0 0 3px rgba(102,126,234,.55),
+        0 10px 40px rgba(102,126,234,.4);
+    }
+    #bubble.near-footer {
+      filter: none !important;
+      box-shadow:
+        0 0 0 3px rgba(102,126,234,.7),
+        0 0 28px rgba(102,126,234,.55),
+        0 8px 32px rgba(0,0,0,.25) !important;
+      animation: floatBob 3s ease-in-out infinite !important;
+    }
+    @keyframes floatBob {
+      0%,100%{ transform: scale(1) translateY(0); }
+      50%    { transform: scale(1) translateY(-6px); }
+    }
+    #bubble.vis:not(.open)::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(102,126,234,.33);
+      animation: pR 2.8s ease-out infinite;
+      pointer-events: none;
+    }
+    #bubble.mini::before { inset: -5px; }
+    #bubble.open::before { display: none; }
+    @keyframes pR {
+      0%  { transform: scale(1);   opacity: .65; }
+      70% { transform: scale(1.5); opacity: 0;   }
+      100%{ transform: scale(1.5); opacity: 0;   }
+    }
+    #bubble .bi {
+      font-size: 1.4rem;
+      color: var(--white);
+      filter: drop-shadow(0 0 5px rgba(255,255,255,.4));
+      pointer-events: none;
+      position: relative;
+      z-index: 2;
+      transition: font-size .35s cubic-bezier(.34,1.56,.64,1),
+                  transform .5s cubic-bezier(.34,1.56,.64,1),
+                  opacity .22s;
+    }
+    #bubble.mini .bi { font-size: .82rem; }
+
+    /* ══════════════════════ RADIAL ITEMS ══════════════════════ */
+    .ri {
+      position: fixed;
+      z-index: 2050;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      text-decoration: none;
+      cursor: pointer;
+      pointer-events: none;
+    }
+    .rb {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--grad);
+      border: 2px solid rgba(255,255,255,.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 5px 18px rgba(0,0,0,.13);
+      transition: transform .22s, box-shadow .22s, border-color .22s;
+      position: relative;
+    }
+    .ri:hover .rb::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: calc(100% + 7px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30,20,60,.88);
+      color: #fff;
+      font-size: .62rem;
+      font-weight: 600;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      padding: 3px 8px;
+      border-radius: 8px;
+      pointer-events: none;
+      font-family: 'Poppins', sans-serif;
+    }
+    .ri:hover .rb { transform: scale(1.18); box-shadow: 0 0 22px rgba(102,126,234,.55); border-color: var(--white); }
+    .rb i { font-size: 1.15rem; color: var(--white); }
+    .rl { display: none; }
+
+    @keyframes orbitOut {
+      0%  { transform: scale(1) rotate(0deg); }
+      100%{ transform: scale(0) rotate(720deg); }
+    }
+    .ri.spinning-out {
+      animation: orbitOut .5s cubic-bezier(.55,0,.1,1) forwards;
+    }
+
+    /* Carousel */
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      height: calc(100vh - 65px);
+      overflow: hidden;
+      margin-top: 80px;
+      padding-top: 0;
+      padding-bottom: 15px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .carousel-slide {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .carousel-slide.active { opacity: 1; }
+    .carousel-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.85), rgba(118, 75, 162, 0.85));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--white);
+      padding: 1rem;
+    }
+    .carousel-content { max-width: 800px; animation: fadeInUp 1s; }
+    .carousel-content h1 {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .carousel-content p { font-size: 1.5rem; margin-bottom: 2rem; opacity: 0.9; }
+    .carousel-btn {
+      background: var(--white);
+      color: var(--primary-color);
+      padding: 1rem 2.5rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0.5rem;
+      transition: var(--transition);
+      cursor: pointer;
+      border: 2px solid transparent;
+      font-family: 'Poppins', sans-serif;
+      box-shadow: var(--shadow);
+    }
+    .carousel-btn:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      border-color: var(--primary-color);
+    }
+    .carousel-controls {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 1rem;
+      z-index: 10;
+    }
+    .carousel-dot {
+      width: 15px; height: 15px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: var(--transition);
+      border: 2px solid transparent;
+    }
+    .carousel-dot.active, .carousel-dot:hover {
+      background: var(--white);
+      border-color: var(--primary-color);
+    }
+    .carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.3);
+      color: var(--white);
+      border: none;
+      font-size: 2rem;
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      border-radius: 50%;
+      transition: var(--transition);
+      z-index: 10;
+      backdrop-filter: blur(5px);
+    }
+    .carousel-arrow:hover { background: rgba(255,255,255,0.5); transform: translateY(-50%) scale(1.1); }
+
+    /* Sections */
+    section {
+      padding: 5rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .section-title {
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 3rem;
+      color: var(--primary-color);
+      position: relative;
+      padding-bottom: 1rem;
+    }
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100px; height: 4px;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      border-radius: 2px;
+    }
+
+    /* Gallery Grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    .gallery-item {
+      position: relative;
+      height: 300px;
+      border-radius: 15px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      background: var(--white);
+    }
+    .gallery-item::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+      opacity: 0;
+      transition: var(--transition);
+      z-index: 1;
+    }
+    .gallery-item:hover::before { opacity: 0.2; }
+    .gallery-item:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: var(--transition); }
+    .gallery-item:hover img { transform: scale(1.1); }
+    .gallery-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      color: var(--white);
+      padding: 1.5rem;
+      z-index: 2;
+    }
+
+    /* Academic Activities */
+    .academic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    .academic-card {
+      background: var(--white);
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      cursor: pointer;
+      text-align: center;
+      border: 2px solid transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .academic-card:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(0,0,0,0.2); border-color: var(--primary-color); }
+    .academic-card i {
+      font-size: 3.5rem;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      margin-bottom: 1rem;
+    }
+    .academic-card h3 { font-size: 1.3rem; margin-bottom: 1rem; color: var(--dark-text); }
+    .badge {
+      background: var(--accent-color); color: var(--white);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 600; margin-top: 0.5rem;
+    }
+
+    /* Library Section */
+    .library-container { margin-top: 3rem; }
+    .library-level-buttons {
+      display: flex; gap: 2rem; justify-content: center;
+      margin-bottom: 3rem; flex-wrap: wrap;
+    }
+    .level-btn {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: var(--white);
+      padding: 1.5rem 3rem; border: none; border-radius: 15px;
+      font-size: 1.2rem; font-weight: 600; cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+      display: flex; align-items: center; gap: 10px;
+      min-width: 250px; justify-content: center;
+    }
+    .level-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 10px 35px rgba(102, 126, 234, 0.5); }
+
+    /* YouTube Section */
+    .youtube-section {
+      background: linear-gradient(135deg, #ff0000, #cc0000);
+      color: var(--white);
+      padding: 4rem 2rem; border-radius: 20px;
+      margin: 3rem 0; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .youtube-section::before {
+      content: '';
+      position: absolute; top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: float 20s linear infinite;
+    }
+    .youtube-section h2 { font-size: 2.5rem; margin-bottom: 1rem; position: relative; z-index: 1; }
+    .youtube-btn {
+      background: var(--white); color: #ff0000;
+      padding: 1rem 2.5rem; border-radius: 50px;
+      text-decoration: none; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 10px;
+      transition: var(--transition); position: relative; z-index: 1;
+      border: 2px solid transparent;
+    }
+    .youtube-btn:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(255,255,255,0.3); border-color: #ff0000; }
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem; margin-top: 3rem;
+    }
+    .video-card {
+      background: var(--white); border-radius: 15px; overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: var(--transition);
+      border: 2px solid transparent;
+    }
+    .video-card:hover { transform: translateY(-10px); border-color: var(--primary-color); }
+    .video-thumbnail {
+      position: relative; width: 100%; height: 300px;
+      background: #000; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .video-thumbnail::before {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(0,0,0,0); z-index: 5;
+      transition: background 0.3s ease;
+    }
+    .video-thumbnail:hover::before { background: rgba(0,0,0,0.1); }
+    .video-thumbnail iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+    .video-thumbnail video { width: 100%; height: 100%; object-fit: cover; display: block; background: #000; }
+    .video-controls {
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      padding: 1rem;
+      display: flex; align-items: center; gap: 0.8rem;
+      position: absolute; bottom: 0; left: 0; right: 0;
+      z-index: 10; flex-wrap: wrap;
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .video-thumbnail:hover .video-controls { opacity: 1; }
+    .control-btn {
+      background: var(--primary-color); color: white; border: none;
+      padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;
+      font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;
+      transition: var(--transition); font-weight: 600;
+    }
+    .control-btn:hover { background: var(--secondary-color); transform: scale(1.05); }
+    .control-btn:active { transform: scale(0.95); }
+    .video-progress { flex: 1; display: flex; align-items: center; gap: 0.5rem; }
+    .progress-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.3); border-radius: 3px; cursor: pointer; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--primary-color); border-radius: 3px; transition: width 0.1s linear; }
+    .time-display { color: white; font-size: 0.8rem; font-weight: 600; min-width: 80px; text-align: right; }
+    .video-info { padding: 1.5rem; min-height: 120px; display: flex; flex-direction: column; justify-content: space-between; }
+    .video-info h4 { margin: 0 0 0.5rem 0; font-size: 1.2rem; color: var(--dark-text); word-break: break-word; }
+    .video-info p { margin: 0 0 1rem 0; font-size: 0.95rem; color: #666; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* Games Section */
+    .games-section { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 5rem 2rem; position: relative; }
+    .games-hero { text-align: center; padding: 2rem 1.5rem; animation: popIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .games-hero h1 { font-family: 'Fredoka One', cursive; font-size: clamp(2rem, 7vw, 3.5rem); background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.15; margin-bottom: 0.5rem; }
+    .games-hero p { color: #555; font-size: clamp(0.9rem, 2.5vw, 1.1rem); font-weight: 600; margin: 0; }
+    .games-header {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: var(--white); padding: 4rem 2rem; text-align: center;
+      margin-bottom: 3rem; border-radius: 20px;
+      position: relative; overflow: hidden;
+    }
+    .games-header h1 { font-size: 3.5rem; margin-bottom: 1rem; text-shadow: 3px 3px 0 rgba(255, 209, 102, 0.3); position: relative; }
+    .level-selection {
+      background: var(--white); border-radius: 20px; padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border: 2px solid transparent; transition: var(--transition);
+    }
+    .level-selection:hover { border-color: var(--primary-color); }
+    .level-options {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem; margin-top: 1rem;
+    }
+    .level-option {
+      background: var(--light-bg); border: 2px solid #e0e0e0; border-radius: 15px;
+      padding: 0.8rem 0.6rem; text-align: center; cursor: pointer;
+      transition: var(--transition); display: flex; flex-direction: column; align-items: center;
+    }
+    .level-option:hover { border-color: var(--primary-color); transform: translateY(-5px); }
+    .level-option.selected {
+      border-color: var(--primary-color);
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    }
+    .level-option i { font-size: 1.4rem; margin-bottom: 0.7rem; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .level-option h5 { font-size: 1.05rem; margin-bottom: 0.3rem; font-weight: 600; }
+    .level-option small { font-size: 0.85rem; color: #666; }
+    .game-categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 4rem; }
+    .category-card {
+      background: var(--white); border-radius: 20px; padding: 2rem;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1); transition: var(--transition);
+      cursor: pointer; text-align: center; border: 5px solid transparent;
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .category-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); opacity: 0; transition: var(--transition); }
+    .category-card:hover::before { opacity: 1; }
+    .category-card:hover { transform: translateY(-15px) scale(1.05); box-shadow: 0 25px 50px rgba(0,0,0,0.2); }
+    .category-icon { font-size: 4rem; margin-bottom: 1.5rem; display: inline-block; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .category-card h3 { color: var(--dark-text); font-size: 1.8rem; margin-bottom: 1rem; }
+    .play-category-btn {
+      background: linear-gradient(135deg, var(--accent-color), #ff8e53);
+      color: var(--white); border: none; padding: 1rem 2rem; border-radius: 50px;
+      font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: var(--transition);
+      display: inline-flex; align-items: center; gap: 10px;
+      width: 100%; justify-content: center; margin-top: auto; border: 2px solid transparent;
+    }
+    .play-category-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3); border-color: var(--white); }
+
+    .btn-primary {
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: var(--white); border: none; border-radius: 50px;
+      font-size: 1.1rem; font-weight: 600; cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex; align-items: center; gap: 10px;
+      border: 2px solid transparent;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); border-color: var(--white); }
+
+    /* Modal Styles */
+    .modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center; align-items: center;
+      z-index: 10000;
+      backdrop-filter: blur(5px);
+      animation: fadeIn 0.3s ease;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: var(--white); border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+      animation: slideUp 0.4s ease;
+      max-width: 90%; max-height: 90vh; overflow: hidden;
+      width: 90%;
+    }
+    .modal-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: var(--white); padding: 1.5rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-header h2 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+    .modal-close { background: none; border: none; color: var(--white); font-size: 1.5rem; cursor: pointer; transition: transform 0.3s; }
+    .modal-close:hover { transform: rotate(90deg); }
+    .modal-body { padding: 2rem; max-height: 70vh; overflow-y: auto; }
+
+    @keyframes slideUp { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Game elements */
+    .game-modal { max-width: 800px; }
+    .game-area { background: var(--light-bg); border-radius: 10px; padding: 2rem; margin: 1rem 0; min-height: 300px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .game-question { font-size: 2rem; margin-bottom: 2rem; text-align: center; }
+    .game-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; width: 100%; }
+    .game-option { background: var(--white); border: 2px solid var(--primary-color); border-radius: 10px; padding: 1rem; font-size: 1.2rem; cursor: pointer; transition: var(--transition); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+    .game-option img { width: 80px; height: 80px; object-fit: contain; }
+    .game-option:hover { background: var(--primary-color); color: var(--white); transform: translateY(-3px); }
+    .game-option.correct { background: var(--success-color); color: var(--white); border-color: var(--success-color); }
+    .game-option.incorrect { background: var(--accent-color); color: var(--white); border-color: var(--accent-color); }
+    .game-score { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: var(--white); border-radius: 10px; }
+    .game-controls { display: flex; gap: 1rem; margin-top: 1rem; justify-content: center; }
+    .audio-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin: 1rem 0; }
+    .audio-btn { background: var(--primary-color); color: var(--white); border: none; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition); }
+    .audio-btn:hover { background: var(--secondary-color); transform: scale(1.1); }
+
+
+
+    /* Homework Modal */
+    .homework-list { list-style: none; margin: 1rem 0; }
+    .homework-item { background: var(--light-bg); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary-color); }
+    .homework-date { font-size: 0.9rem; color: #666; }
+    .homework-subject { font-weight: 600; color: var(--primary-color); }
+    .homework-download { background: var(--primary-color); color: var(--white); border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 5px; }
+    .homework-download:hover { background: var(--secondary-color); }
+
+    /* Library Modal */
+    .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin: 1rem 0; }
+    .book-item { background: var(--light-bg); border-radius: 10px; padding: 1rem; text-align: center; transition: var(--transition); cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+    .book-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .book-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .book-author { font-size: 0.8rem; color: #666; }
+
+    /* Back to top */
+    .back-to-top { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: var(--white); border: none; border-radius: 50%; cursor: pointer; transition: var(--transition); display: none; align-items: center; justify-content: center; z-index: 100; box-shadow: var(--shadow); }
+    .back-to-top:hover { transform: translateY(-5px); }
+
+    /* Toast */
+    .toast { position: fixed; top: 100px; right: 20px; padding: 1rem 1.5rem; border-radius: 8px; color: white; font-weight: 500; z-index: 10001; animation: slideInRight 0.3s ease, slideOutRight 0.3s ease 2.7s; display: flex; align-items: center; gap: 10px; }
+    .toast-success { background: var(--success-color); }
+    .toast-error { background: var(--accent-color); }
+    .toast-warning { background: var(--warning-color); }
+    .toast-info { background: var(--primary-color); }
+
+    @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+    .youtube-link { color: #ff0000; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: var(--transition); }
+    .youtube-link:hover { color: #cc0000; transform: translateY(-2px); }
+
+    /* Gallery Modal */
+    .gallery-modal-content { display: flex; flex-direction: column; gap: 1.5rem; }
+    .gallery-modal-image { width: 100%; max-height: 400px; object-fit: contain; border-radius: 10px; }
+    .gallery-modal-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
+    .gallery-modal-thumbnails { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; }
+    .gallery-thumbnail { width: 80px; height: 80px; object-fit: cover; border-radius: 5px; cursor: pointer; border: 2px solid transparent; transition: var(--transition); }
+    .gallery-thumbnail.active { border-color: var(--primary-color); }
+    .gallery-thumbnail:hover { transform: scale(1.05); }
+
+    .voir-plus-container { text-align: center; margin-top: 3rem; }
+    .voir-plus-btn { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: var(--white); border: none; padding: 1rem 2.5rem; border-radius: 50px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: var(--transition); display: inline-flex; align-items: center; gap: 10px; border: 2px solid transparent; }
+    .voir-plus-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); border-color: var(--white); }
+
+    /* Loading */
+    .loading { display: flex; justify-content: center; align-items: center; padding: 2rem; }
+    .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Animations */
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes float { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(50px, 50px) rotate(360deg); } }
+
+    /* Login/Register forms */
+    .login-form { display: flex; flex-direction: column; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-group label { font-weight: 600; color: var(--dark-text); }
+    .form-group input, .form-group select { padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 1rem; transition: var(--transition); }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary-color); outline: none; }
+
+    /* Footer */
+    footer {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: var(--white); padding: 3rem 2rem; margin-top: 4rem; position: relative;
+    }
+    footer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(135deg, var(--accent-color), #ff8e53); }
+    .footer-content { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; }
+    .footer-section h3 { margin-bottom: 1.5rem; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+    .footer-section a { color: var(--white); text-decoration: none; transition: var(--transition); display: inline-block; }
+    .footer-section a:hover { transform: translateX(5px); color: var(--accent-color); }
+    .footer-bottom { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); }
+
+    /* Contact Cards */
+    .contact-card { background: var(--white); border-radius: 15px; padding: 2rem; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center; transition: var(--transition); cursor: pointer; opacity: 0; transform: translateY(30px); }
+    .contact-card:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
+    .contact-card i { font-size: 3rem; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 1rem; }
+    .contact-card.animate { animation: fadeInUp 0.6s ease forwards; }
+    .contact-card:nth-child(1).animate { animation-delay: 0.1s; }
+    .contact-card:nth-child(2).animate { animation-delay: 0.2s; }
+    .contact-card:nth-child(3).animate { animation-delay: 0.3s; }
+    .contact-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 3rem; }
+
+    /* Contact modal */
+    .contact-options-modal { max-width: 600px; }
+    .contact-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+    .contact-option { background: var(--light-bg); border: 2px solid var(--primary-color); border-radius: 10px; padding: 1.5rem; text-align: center; cursor: pointer; transition: var(--transition); }
+    .contact-option:hover { background: var(--primary-color); color: var(--white); }
+
+    /* Form */
+    #contactForm input, #contactForm select, #contactForm textarea { padding: 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: var(--transition); width: 100%; margin-bottom: 1rem; }
+    #contactForm input:focus, #contactForm select:focus, #contactForm textarea:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); outline: none; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* Branches Section */
+    #branches { padding: 5rem 2rem; max-width: 1400px; margin: 0 auto; position: relative; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05)); }
+    .branches-intro { text-align: center; max-width: 800px; margin: 0 auto 3rem; animation: fadeInUp 1s ease-out; }
+    .branches-intro h2 { font-size: 2.8rem; color: var(--primary-color); margin-bottom: 1rem; position: relative; display: inline-block; }
+    .branches-intro h2::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 100px; height: 4px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: 2px; }
+    .branches-intro p { font-size: 1.1rem; color: #666; margin-top: 1.5rem; line-height: 1.8; }
+    .branches-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2.5rem; margin: 4rem 0; }
+    .branch-card { background: var(--white); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); transition: var(--transition); position: relative; animation: slideUp 0.8s ease-out forwards; opacity: 0; transform: translateY(30px); border: 2px solid transparent; }
+    .branch-card:nth-child(1) { animation-delay: 0.2s; }
+    .branch-card:nth-child(2) { animation-delay: 0.4s; }
+    .branch-card:nth-child(3) { animation-delay: 0.6s; }
+    .branch-card.kimisagara { border-top: 5px solid var(--branch-kimisagara); }
+    .branch-card.gisozi { border-top: 5px solid var(--branch-gisozi); }
+    .branch-card.kacyiru { border-top: 5px solid var(--branch-kacyiru); }
+    .branch-card:hover { transform: translateY(-15px) scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.15); border-color: rgba(0,0,0,0.1); }
+    .branch-image { position: relative; height: 250px; overflow: hidden; }
+    .branch-image img { width: 100%; height: 100%; object-fit: cover; transition: var(--transition); }
+    .branch-card:hover .branch-image img { transform: scale(1.1); }
+    .branch-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.3)); display: flex; align-items: center; justify-content: center; opacity: 0; transition: var(--transition); }
+    .branch-card:hover .branch-overlay { opacity: 1; }
+    .branch-icon { width: 60px; height: 60px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; animation: pulse 2s infinite; }
+    .branch-content { padding: 2rem; }
+    .branch-header { display: flex; align-items: center; margin-bottom: 1.5rem; }
+    .branch-badge { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem; color: var(--white); font-size: 1.3rem; font-weight: 600; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .branch-badge.kimisagara { background: linear-gradient(135deg, var(--branch-kimisagara), #2E7D32); }
+    .branch-badge.gisozi { background: linear-gradient(135deg, var(--branch-gisozi), #0D47A1); }
+    .branch-badge.kacyiru { background: linear-gradient(135deg, var(--branch-kacyiru), #6A1B9A); }
+    .branch-title { font-size: 1.8rem; color: var(--dark-text); margin-bottom: 0.5rem; }
+    .branch-subtitle { color: #666; font-size: 0.9rem; font-style: italic; }
+    .branch-info { margin: 1.5rem 0; }
+    .branch-info-item { display: flex; align-items: center; margin-bottom: 0.8rem; color: #555; transition: var(--transition); }
+    .branch-info-item:hover { transform: translateX(5px); color: var(--primary-color); }
+    .branch-info-item i { width: 20px; margin-right: 10px; transition: var(--transition); }
+    .branch-info-item:hover i { color: var(--primary-color); transform: scale(1.2); }
+    .branch-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+    .branch-btn { padding: 0.8rem 1.5rem; border: none; border-radius: 50px; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.95rem; position: relative; overflow: hidden; }
+    .branch-btn.gallery { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: var(--white); border: 2px solid transparent; }
+    .branch-btn.directions { background: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
+    .branch-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+    .branch-btn.gallery:hover { background: linear-gradient(135deg, var(--secondary-color), var(--primary-color)); }
+    .branch-btn.directions:hover { background: var(--primary-color); color: var(--white); }
+
+    .branches-features { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-radius: 20px; padding: 3rem; margin-top: 4rem; position: relative; overflow: hidden; border: 2px solid rgba(102, 126, 234, 0.2); }
+    .branches-features::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 1px, transparent 1px); background-size: 50px 50px; animation: float 20s linear infinite; opacity: 0.5; }
+    .features-title { text-align: center; font-size: 2.2rem; color: var(--primary-color); margin-bottom: 3rem; position: relative; z-index: 1; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; position: relative; z-index: 1; }
+    .feature-item { background: var(--white); padding: 2rem; border-radius: 15px; text-align: center; box-shadow: var(--shadow); transition: var(--transition); animation: fadeInUp 0.8s ease-out forwards; opacity: 0; border: 2px solid transparent; }
+    .feature-item:nth-child(1) { animation-delay: 0.1s; }
+    .feature-item:nth-child(2) { animation-delay: 0.2s; }
+    .feature-item:nth-child(3) { animation-delay: 0.3s; }
+    .feature-item:nth-child(4) { animation-delay: 0.4s; }
+    .feature-item:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); border-color: var(--primary-color); }
+    .feature-icon { width: 70px; height: 70px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--white); font-size: 1.8rem; transition: var(--transition); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3); }
+    .feature-item:hover .feature-icon { transform: rotateY(180deg) scale(1.1); }
+    .feature-item h4 { font-size: 1.3rem; margin-bottom: 1rem; color: var(--dark-text); font-weight: 600; }
+    .feature-item p { color: #666; font-size: 0.95rem; line-height: 1.6; }
+
+    .branches-map { margin-top: 4rem; background: var(--white); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); animation: fadeIn 1s ease-out; border: 2px solid rgba(0,0,0,0.1); }
+    .map-container { position: relative; height: 400px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: var(--white); }
+    .map-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 2rem; z-index: 2; }
+    .map-title { font-size: 2rem; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+    .map-description { font-size: 1.1rem; max-width: 600px; margin-bottom: 1rem; }
+    .map-marker { position: absolute; width: 25px; height: 25px; background: var(--accent-color); border-radius: 50%; cursor: pointer; transition: var(--transition); animation: bounce 2s infinite; z-index: 3; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
+    .map-marker:hover { transform: scale(1.5); background: var(--warning-color); animation: none; }
+    .map-marker.kimisagara { top: 30%; left: 45%; background: var(--branch-kimisagara); }
+    .map-marker.gisozi { top: 35%; left: 50%; background: var(--branch-gisozi); }
+    .map-marker.kacyiru { top: 40%; left: 55%; background: var(--branch-kacyiru); }
+    .map-marker::after { content: attr(data-branch); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--white); color: var(--dark-text); padding: 0.5rem 1rem; border-radius: 5px; font-size: 0.9rem; white-space: nowrap; opacity: 0; transition: var(--transition); box-shadow: 0 3px 10px rgba(0,0,0,0.2); font-weight: 600; z-index: 4; }
+    .map-marker:hover::after { opacity: 1; bottom: 120%; }
+
+    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255,255,255,0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0); } }
+    @keyframes bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.1); } }
+    @keyframes shimmer { 0% { transform: translateX(-100%) rotate(45deg); } 100% { transform: translateX(100%) rotate(45deg); } }
+    @keyframes popIn { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 70% { transform: translate(-50%, -50%) scale(1.1); } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .nav-links {
+        position: fixed;
+        left: -100%;
+        top: 80px;
+        flex-direction: column;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        width: 100%;
+        padding: 2rem;
+        transition: 0.3s;
+      }
+      .nav-links.active { left: 0; }
+      .mobile-menu { display: block; }
+      nav.pill { min-width: 95vw; }
+      nav.pill .nav-links { display: none; }
+      .carousel-content h1 { font-size: 2rem; }
+      .carousel-content p { font-size: 1rem; }
+      .carousel-container { height: 70vh; margin-top: 80px; }
+      .branches-grid { grid-template-columns: 1fr; }
+      .branch-actions { grid-template-columns: 1fr; }
+      .video-grid { grid-template-columns: 1fr; }
+      .game-options { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      body { font-size: 13px; overflow-x: hidden; }
+      section { padding: 2rem 0.75rem; }
+      .carousel-content h1 { font-size: 1.5rem; }
+      .carousel-container { height: 65vh; margin-top: 60px; }
+      .games-header h1 { font-size: 1.5rem; }
+      nav.pill { min-width: 98vw; border-radius: 20px; }
+    }
+
+    /* Inscription */
+    #inscription { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 4rem 2rem; border-radius: 20px; margin: 3rem 0; position: relative; }
+    .form-inscription-container { max-width: 900px; width: 100%; background: white; border-radius: 20px; box-shadow: 0 5px 30px rgba(0,0,0,0.2); overflow: hidden; margin: 0 auto; animation: slideUp 0.6s ease; }
+  /* ===== nouveaux styles jeux fournis par l'utilisateur ===== */
+  /* ─── LEVEL TABS ─── */
+  .level-tabs{
+    display:flex;justify-content:center;gap:.75rem;
+    padding:.75rem 1.5rem;flex-wrap:wrap;
+  }
+  .ltab{
+    background:white;border:3px solid #e0e0e0;
+    padding:.55rem 1.4rem;border-radius:50px;
+    font-family:var(--font-body);font-weight:800;font-size:.9rem;
+    cursor:pointer;transition:all .25s;color:#777;
+    display:flex;align-items:center;gap:.4rem;
+  }
+  .ltab.active{
+    background:linear-gradient(135deg,var(--primary),var(--secondary));
+    border-color:transparent;color:#fff;
+    box-shadow:0 4px 15px rgba(102,126,234,.4);
+    transform:translateY(-2px);
+  }
+  .ltab:hover:not(.active){border-color:var(--primary);color:var(--primary);transform:translateY(-2px);}
+
+  /* ─── SCORE BAR ─── */
+  .score-bar{
+    display:flex;justify-content:center;gap:1rem;
+    padding:.5rem 1.5rem;flex-wrap:wrap;
+  }
+  .score-chip{
+    background:white;border-radius:50px;padding:.4rem 1.1rem;
+    font-weight:800;font-size:.85rem;
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
+    display:flex;align-items:center;gap:.35rem;
+  }
+  .score-chip .icon{font-size:1.1rem;}
+  .score-chip.stars{color:#FFD93D;}
+  .score-chip.hearts{color:var(--accent);}
+  .score-chip.games{color:#6BCB77;}
+
+  /* ─── GAME GRID ─── */
+  .game-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(min(160px,45vw),1fr));
+    gap:1rem;
+    padding:1rem 1.2rem 2rem;
+    max-width:900px;margin:0 auto;
+  }
+  .game-card{
+    background:white;
+    border-radius:var(--radius);
+    padding:1.4rem .8rem 1rem;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+    transition:transform .25s,box-shadow .25s;
+    border:3px solid transparent;
+    position:relative;
+    overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;gap:.5rem;
+    animation:cardIn .5s ease both;
+  }
+  .game-card:hover{transform:translateY(-6px) scale(1.03);box-shadow:0 16px 40px rgba(0,0,0,.15);}
+  .game-card:active{transform:scale(.97);}
+  @keyframes cardIn{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:none;}}
+  .game-card:nth-child(1){animation-delay:.05s;}
+  .game-card:nth-child(2){animation-delay:.1s;}
+  .game-card:nth-child(3){animation-delay:.15s;}
+  .game-card:nth-child(4){animation-delay:.2s;}
+  .game-card:nth-child(5){animation-delay:.25s;}
+  .game-card:nth-child(6){animation-delay:.3s;}
+  .game-card:nth-child(7){animation-delay:.35s;}
+  .game-card:nth-child(8){animation-delay:.4s;}
+  .game-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:5px;
+    background:var(--card-color,var(--primary));border-radius:var(--radius) var(--radius) 0 0;
+  }
+  .game-card .emoji{font-size:clamp(2.2rem,7vw,3rem);line-height:1;}
+  .game-card h3{
+    font-family:var(--font-title);font-size:clamp(.9rem,3vw,1.1rem);
+    color:var(--navy);line-height:1.2;
+  }
+  .game-card p{font-size:.72rem;color:#888;line-height:1.3;}
+  .game-card .badge{
+    background:var(--card-color,var(--primary));color:white;
+    font-size:.65rem;font-weight:800;padding:.2rem .6rem;
+    border-radius:50px;margin-top:.2rem;
+  }
+  .play-btn{
+    background:var(--card-color,var(--primary));color:white;
+    border:none;padding:.5rem 1.2rem;border-radius:50px;
+    font-family:var(--font-body);font-weight:800;font-size:.8rem;
+    cursor:pointer;margin-top:.3rem;transition:opacity .2s,transform .15s;
+    display:flex;align-items:center;gap:.3rem;
+  }
+  .play-btn:hover{opacity:.9;transform:scale(1.05);}
+
+  /* ─── MODAL OVERLAY ─── */
+  .modal-overlay{
+    position:fixed;inset:0;
+    background:rgba(27,42,74,.6);
+    z-index:2000;
+    display:none;
+    align-items:center;justify-content:center;
+    padding:1rem;
+    backdrop-filter:blur(6px);
+    animation:fadeIn .3s;
+    overflow-y:auto;
+  }
+  .modal-overlay.open{display:flex;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+  .modal-box{
+    background:var(--white);
+    border-radius:28px;
+    width:100%;max-width:600px;
+    overflow:hidden;
+    box-shadow:0 24px 60px rgba(0,0,0,.25);
+    animation:slideUp .4s cubic-bezier(.34,1.56,.64,1);
+    position:relative;
+    max-height:90vh;
+    display:flex;flex-direction:column;
+  }
+  @keyframes slideUp{from{opacity:0;transform:translateY(60px) scale(.95);}to{opacity:1;transform:none;}}
+
+  .modal-header{
+    background:var(--modal-color,linear-gradient(135deg,var(--primary),var(--secondary)));
+    padding:1.1rem 1.5rem;
+    display:flex;align-items:center;justify-content:space-between;
+    color:white;flex-shrink:0;
+  }
+  .modal-header h2{font-family:var(--font-title);font-size:1.3rem;display:flex;align-items:center;gap:.5rem;}
+  .modal-close{
+    background:rgba(255,255,255,.25);border:none;color:white;
+    width:36px;height:36px;border-radius:50%;
+    cursor:pointer;font-size:1.1rem;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .2s;
+  }
+  .modal-close:hover{background:rgba(255,255,255,.4);}
+
+  .modal-body{padding:1.25rem;overflow-y:auto;flex:1;}
+
+  /* HEART LIVES */
+  .lives-row{display:flex;gap:.3rem;justify-content:center;margin:.4rem 0;}
+  .heart{font-size:1.2rem;transition:all .3s;}
+  .heart.lost{filter:grayscale(1);opacity:.3;}
+  
+  </style>
+  <script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script>
+    if (typeof window.FIREBASE_CONFIG !== 'undefined') {
+      try { firebase.initializeApp(window.FIREBASE_CONFIG); console.log("Firebase initialisé"); }
+      catch (error) { console.log("Erreur Firebase:", error); }
+    }
+  </script>
+</head>
+<body>
+
+<!-- CURSOR GLOW -->
+<div id="cg"></div>
+
+<!-- BUBBLE NAVIGATION -->
+<div id="bubble">
+  <i class="bi fas fa-home" id="bicon"></i>
+</div>
+
+<!-- Back to top button -->
+<button class="back-to-top" onclick="scrollToTop()">
+  <i class="fas fa-arrow-up"></i>
+</button>
+
+<!-- Modal Structure -->
+<div id="modal" class="modal">
+  <div class="modal-content" id="modalContent">
+    <div class="modal-header">
+      <h2 id="modalTitle"><i class="fas fa-info-circle"></i> Information</h2>
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div id="loginModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-user"></i> Connexion Parent</h2>
+      <button class="modal-close" onclick="closeLoginModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <form class="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="parentEmail">Email</label>
+          <input type="email" id="parentEmail" required placeholder="votre@email.com">
+        </div>
+        <div class="form-group">
+          <label for="parentPassword">Mot de passe</label>
+          <input type="password" id="parentPassword" required placeholder="Votre mot de passe">
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%;"><i class="fas fa-sign-in-alt"></i> Se connecter</button>
+      </form>
+      <div style="text-align:center; margin: 1rem 0; color: #666">ou</div>
+      <div style="display:flex; gap:0.5rem; justify-content:center;">
+        <button type="button" onclick="handleGoogleSignIn()" style="background:#db4437;color:#fff;border:none;padding:0.5rem 1rem;border-radius:4px;display:flex;align-items:center;gap:0.5rem;">
+          <i class="fab fa-google"></i> Se connecter avec Google
+        </button>
+      </div>
+      <p style="text-align: center; margin-top: 1rem;">
+        <a href="#" onclick="openRegisterModal(); closeLoginModal();">Pas encore de compte ? Inscrivez-vous</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Register Modal -->
+<div id="registerModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-user-plus"></i> Créer un compte parent</h2>
+      <button class="modal-close" onclick="closeRegisterModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <form class="login-form" onsubmit="handleRegister(event)">
+        <div class="form-group"><label>Email</label><input type="email" id="registerEmail" required placeholder="votre@email.com"></div>
+        <div class="form-group"><label>Mot de passe</label><input type="password" id="registerPassword" required placeholder="Minimum 6 caractères"></div>
+        <div class="form-group"><label>Confirmer le mot de passe</label><input type="password" id="registerConfirmPassword" required placeholder="Confirmer"></div>
+        <div class="form-group"><label>Nom de l'élève</label><input type="text" id="registerStudentName" required placeholder="Nom complet de l'élève"></div>
+        <div class="form-group">
+          <label>Niveau de classe</label>
+          <select id="registerClassLevel" required>
+            <option value="">Sélectionnez le niveau</option>
+            <option value="maternelle">Maternelle</option>
+            <option value="primaire1">Primaire 1</option>
+            <option value="primaire2">Primaire 2</option>
+            <option value="primaire3">Primaire 3</option>
+            <option value="primaire4">Primaire 4</option>
+            <option value="primaire5">Primaire 5</option>
+            <option value="primaire6">Primaire 6</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%;"><i class="fas fa-user-plus"></i> S'inscrire</button>
+      </form>
+      <p style="text-align: center; margin-top: 1rem;">
+        <a href="#" onclick="openLoginModal(); closeRegisterModal();">Déjà un compte ? Connectez-vous</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Registration Form Modal -->
+<div id="registrationFormModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-file-signature"></i> FORMULAIRE D'INSCRIPTION SCOLAIRE</h2>
+      <button class="modal-close" onclick="closeRegistrationModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <form id="registrationForm">
+        <section style="margin-bottom:1.5rem;">
+          <h3 style="margin-bottom:1rem; font-size:1.1rem; color:#0d3b66;">SECTION 1 — INFORMATION DE L'ENFANT</h3>
+          <div class="form-group"><label for="regChildFullName">Nom-prénom *</label><input type="text" id="regChildFullName" required placeholder="Nom complet de l'enfant"></div>
+          <div class="form-group" id="regChildGender"><label>Sexe *</label><div style="display:flex;gap:1rem;align-items:center;margin-top:0.5rem;"><label><input type="radio" name="regChildGender" value="garcon"> GARÇON</label><label><input type="radio" name="regChildGender" value="fille"> FILLE</label></div></div>
+          <div class="form-group"><label for="regPreviousSchool">École de provenance</label><input type="text" id="regPreviousSchool" placeholder="École précédente"></div>
+          <div class="form-group"><label for="regChildBirthDate">Date de naissance *</label><input type="date" id="regChildBirthDate" required></div>
+          <div class="form-group"><label for="regRequestedClass">Classe demandée</label><select id="regRequestedClass"><option value="">Sélectionner une classe</option></select></div>
+          <div class="form-group"><label for="regAssignedClass">Classe affectée</label><input type="text" id="regAssignedClass" placeholder="Classe affectée par l'école"></div>
+          <div class="form-group" id="regBranch"><label>Branche *</label><div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.5rem;"><label><input type="radio" name="regBranch" value="kacyiru" onchange="invokeApplyBranchFeeRules(this.value)"> KACYIRU</label><label><input type="radio" name="regBranch" value="gisozi_maternelle" onchange="invokeApplyBranchFeeRules(this.value)"> GISOZI</label><label><input type="radio" name="regBranch" value="kimisagara" onchange="invokeApplyBranchFeeRules(this.value)"> KIMISAGARA</label></div></div>
+          <div class="form-group"><label><input type="checkbox" id="regTransportBus" onchange="toggleRegTransportBus()"> Transport Bus</label></div>
+          <div class="form-group" id="regTransportFeeGroup" style="display:none;"><label for="regTransportBusFee">Frais de Transport Mensuels</label><select id="regTransportBusFee" onchange="toggleRegTransportCustomFee()"><option value="">Sélectionner</option><option value="20000">20000</option><option value="25000">25000</option><option value="30000">30000</option><option value="35000">35000</option><option value="40000">40000</option><option value="45000">45000</option><option value="50000">50000</option><option value="other">Autre</option></select></div>
+          <div class="form-group" id="regTransportCustomFeeGroup" style="display:none;"><label for="regTransportCustomFee">Montant transport personnalisé</label><input type="number" id="regTransportCustomFee" placeholder="Entrez un montant"></div>
+        </section>
+
+        <section style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+          <div>
+            <h3 style="margin-bottom:1rem; font-size:1.1rem; color:#0d3b66;">SECTION 2 — CHEF DE FAMILLE</h3>
+            <div class="form-group"><label for="regParentName">Nom-prénom *</label><input type="text" id="regParentName" required placeholder="Nom du chef de famille"></div>
+            <div class="form-group"><label for="regParentPhone">Numéro de Téléphone *</label><input type="tel" id="regParentPhone" required placeholder="+250 7XXXXXXXX"></div>
+            <div class="form-group"><label for="regParentID">Numéro de la pièce d'identité</label><input type="text" id="regParentID" placeholder="Numéro de pièce"></div>
+          </div>
+          <div>
+            <h3 style="margin-bottom:1rem; font-size:1.1rem; color:#0d3b66;">SECTION 3 — LA CONJOINT(E)</h3>
+            <div class="form-group"><label for="regSpouseName">Nom-prénom</label><input type="text" id="regSpouseName" placeholder="Nom du conjoint(e)"></div>
+            <div class="form-group"><label for="regSpousePhone">Numéro de Téléphone</label><input type="tel" id="regSpousePhone" placeholder="+250 7XXXXXXXX"></div>
+            <div class="form-group"><label for="regSpouseID">Numéro de la pièce d'identité</label><input type="text" id="regSpouseID" placeholder="Numéro de pièce"></div>
+          </div>
+        </section>
+
+        <section style="margin-bottom:1.5rem;">
+          <h3 style="margin-bottom:1rem; font-size:1.1rem; color:#0d3b66;">SECTION 4 — ADRESSE</h3>
+          <div class="form-group"><label for="regAddress">Adresse</label><input type="text" id="regAddress" placeholder="Adresse complète"></div>
+        </section>
+
+        <section style="margin-bottom:1.5rem;">
+          <h3 style="margin-bottom:1rem; font-size:1.1rem; color:#0d3b66;">SECTION 5 — FEES PAYMENT</h3>
+          <div class="form-group"><label for="regFeeAmount">Montant des frais d'inscription *</label><input type="number" id="regFeeAmount" required placeholder="Montant en RWF"></div>
+          <div class="form-group"><label for="regPaymentMode">Mode de paiement</label><select id="regPaymentMode"><option value="cash">Cash</option><option value="momo">Mobile Money</option><option value="bank">Bank</option></select></div>
+          <div class="form-group"><label for="regTransactionRef">Référence de transaction</label><input type="text" id="regTransactionRef" placeholder="Référence de paiement"></div>
+          <div class="form-group"><label for="regNotes">Notes</label><textarea id="regNotes" rows="3" placeholder="Commentaires supplémentaires"></textarea></div>
+        </section>
+      </form>
+      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:flex-end;">
+        <button class="btn-primary" type="button" onclick="closeRegistrationModal()" style="background:#888;">Cancel</button>
+        <button class="btn-primary" type="button" onclick="saveRegistrationAndGenerateID()">Register & Generate ID</button>
+        <button class="btn-primary" id="downloadAdmissionLetterBtn" type="button" style="display:none;">Download Admission Letter</button>
+        <button class="btn-primary" id="downloadRegistrationFormBtn" type="button" style="display:none;">Download Registration Form</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav id="navbar">
+  <div class="nav-container" id="ni">
+    <a href="#accueil" class="logo" id="navLogo">
+      <img src="asset/img/logo_eden.png" alt="Logo Eden Family School" style="height: 40px; margin-right: 10px;">
+      <span class="lbl">EDEN FAMILY SCHOOL</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#accueil" class="active"><i class="fas fa-home"></i><span class="lbl"> Accueil</span></a></li>
+      <li><a href="#galerie"><i class="fas fa-images"></i><span class="lbl"> Galerie</span></a></li>
+      <li><a href="#academique"><i class="fas fa-graduation-cap"></i><span class="lbl"> Activités</span></a></li>
+
+      <li><a href="#bibliotheque"><i class="fas fa-book"></i><span class="lbl"> Bibliothèque</span></a></li>
+      <li><a href="#youtube"><i class="fab fa-youtube"></i><span class="lbl"> YouTube</span></a></li>
+      <li><a href="#jeux"><i class="fas fa-gamepad"></i><span class="lbl"> Jeux</span></a></li>
+      <li><a href="#contact"><i class="fas fa-envelope"></i><span class="lbl"> Contact</span></a></li>
+      <li id="staffAccessLi">
+        <a href="Auth.html" style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;">
+          <i class="fas fa-user-tie"></i><span class="lbl"> Staff Access</span>
+        </a>
+      </li>
+      <li id="parentLoginLi">
+        <button class="btn-primary" onclick="openLoginModal()" style="padding: 0.5rem 1.5rem;">
+          <i class="fas fa-user"></i><span class="lbl"> Parent Login</span>
+        </button>
+      </li>
+      <li id="logoutLi" style="display: none;">
+        <button onclick="logoutFromIndex()" style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 50px; cursor: pointer; font-family: 'Poppins', sans-serif;">
+          <i class="fas fa-sign-out-alt"></i> <span id="userNameDisplay"></span> - Déconnexion
+        </button>
+      </li>
+    </ul>
+    <button id="mobileMenuBtn" type="button" class="mobile-menu" aria-label="Menu mobile">
+      <i class="fas fa-bars"></i>
+    </button>
+  </div>
+</nav>
+
+<script src="security-auth.js"></script>
+
+<!-- Section Accueil -->
+<section id="accueil" class="carousel-container" data-s="accueil">
+  <div class="carousel-slide active" style="background-image: url('asset/img/love_eden.jpg');">
+    <div class="carousel-overlay">
+      <div class="carousel-content">
+        <h1><i class="fas fa-book-reader"></i> Bienvenue a Eden family school</h1>
+        <p>Learning by doing - Excellence et Innovation</p>
+        <div>
+          <button class="carousel-btn" onclick="scrollToSection('galerie')"><i class="fas fa-images"></i> Voir la Galerie</button>
+          <button class="carousel-btn" onclick="openLoginModal()"><i class="fas fa-user"></i> Espace Parent</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="carousel-slide" style="background-image: url('asset/img/gisozi_graduation.JPG');">
+    <div class="carousel-overlay">
+      <div class="carousel-content">
+        <h1><i class="fas fa-graduation-cap"></i> Excellence Académique</h1>
+        <p>Une éducation de qualité pour vos enfants</p>
+        <button class="carousel-btn" onclick="scrollToSection('academique')"><i class="fas fa-graduation-cap"></i> Activités Académiques</button>
+      </div>
+    </div>
+  </div>
+  <div class="carousel-slide" style="background-image: url('asset/img/sport.jpg');">
+    <div class="carousel-overlay">
+      <div class="carousel-content">
+        <h1><i class="fas fa-users"></i> Notre Communauté</h1>
+        <p>Ensemble pour l'avenir de vos enfants</p>
+        <button class="carousel-btn" onclick="scrollToSection('jeux')"><i class="fas fa-gamepad"></i> Jeux Éducatifs</button>
+      </div>
+    </div>
+  </div>
+  <div class="carousel-controls">
+    <span class="carousel-dot active" onclick="goToSlide(0)"></span>
+    <span class="carousel-dot" onclick="goToSlide(1)"></span>
+    <span class="carousel-dot" onclick="goToSlide(2)"></span>
+  </div>
+</section>
+
+<!-- Section Nos Branches -->
+<section id="branches" data-s="branches">
+  <div class="branches-intro">
+    <h2><i class="fas fa-map-marker-alt"></i> Nos Branches</h2>
+    <p>Découvrez les trois campus d'Eden Family School à travers Kigali.</p>
+  </div>
+  <div class="branches-grid">
+    <!-- Branche Kimisagara -->
+    <div class="branch-card kimisagara">
+      <div class="branch-image">
+        <img src="asset/img/kimisagara.jpg" alt="Eden Family School Kimisagara">
+        <div class="branch-overlay"><div class="branch-icon"><i class="fas fa-child"></i></div></div>
+      </div>
+      <div class="branch-content">
+        <div class="branch-header">
+          <div class="branch-badge kimisagara">K</div>
+          <div><h3 class="branch-title">Kimisagara</h3><p class="branch-subtitle">École maternelle</p></div>
+        </div>
+        <div class="branch-info">
+          <div class="branch-info-item"><i class="fas fa-map-marker-alt"></i><span>KG 7 Ave, Kimisagara, Kigali</span></div>
+          <div class="branch-info-item"><i class="fas fa-phone"></i><span>Comptable: 0785892018 | Responsable: 0791826950</span></div>
+          <div class="branch-info-item"><i class="fas fa-envelope"></i><span>kimisagara@edenfamily.edu.rw</span></div>
+          <div class="branch-info-item"><i class="fas fa-clock"></i><span>Lun-Ven: 7h30 - 17h30</span></div>
+        </div>
+        <div class="branch-actions">
+          <button class="branch-btn gallery" onclick="openBranchGallery('kimisagara')"><i class="fas fa-images"></i> Galerie</button>
+          <button class="branch-btn directions" onclick="showKimisagaraDirections()"><i class="fas fa-directions"></i> Itinéraire</button>
+        </div>
+      </div>
+    </div>
+    <!-- Branche Gisozi -->
+    <div class="branch-card gisozi">
+      <div class="branch-image">
+        <img src="asset/img/gisozi_graduation.JPG" alt="Eden Family School Gisozi">
+        <div class="branch-overlay"><div class="branch-icon"><i class="fas fa-school"></i></div></div>
+      </div>
+      <div class="branch-content">
+        <div class="branch-header">
+          <div class="branch-badge gisozi">G</div>
+          <div><h3 class="branch-title">Gisozi</h3><p class="branch-subtitle">École maternelle et primaire</p></div>
+        </div>
+        <div class="branch-info">
+          <div class="branch-info-item"><i class="fas fa-map-marker-alt"></i><span>KG 11 Ave, Gisozi, Kigali</span></div>
+          <div class="branch-info-item"><i class="fas fa-phone"></i><span>Directrice: 0788410242 | DOS: 0796145647 | DG: 0788883842</span></div>
+          <div class="branch-info-item"><i class="fas fa-envelope"></i><span>gisozi@edenfamily.edu.rw</span></div>
+          <div class="branch-info-item"><i class="fas fa-clock"></i><span>Lun-Ven: 7h30 - 18h00</span></div>
+        </div>
+        <div class="branch-actions">
+          <button class="branch-btn gallery" onclick="openBranchGallery('gisozi')"><i class="fas fa-images"></i> Galerie</button>
+          <button class="branch-btn directions" onclick="showGisoziDirections()"><i class="fas fa-directions"></i> Itinéraire</button>
+        </div>
+      </div>
+    </div>
+    <!-- Branche Kacyiru -->
+    <div class="branch-card kacyiru">
+      <div class="branch-image">
+        <img src="asset/img/sport.jpg" alt="Eden Family School Kacyiru">
+        <div class="branch-overlay"><div class="branch-icon"><i class="fas fa-child"></i></div></div>
+      </div>
+      <div class="branch-content">
+        <div class="branch-header">
+          <div class="branch-badge kacyiru">K</div>
+          <div><h3 class="branch-title">Kacyiru</h3><p class="branch-subtitle">École maternelle</p></div>
+        </div>
+        <div class="branch-info">
+          <div class="branch-info-item"><i class="fas fa-map-marker-alt"></i><span>KG 17 Ave, Kacyiru, Kigali</span></div>
+          <div class="branch-info-item"><i class="fas fa-phone"></i><span>Directeur: 0791639766 | Comptable: 0792570074</span></div>
+          <div class="branch-info-item"><i class="fas fa-envelope"></i><span>sergetumbwe@gmail.com</span></div>
+          <div class="branch-info-item"><i class="fas fa-clock"></i><span>Lun-Ven: 7h30 - 17h30</span></div>
+        </div>
+        <div class="branch-actions">
+          <button class="branch-btn gallery" onclick="openBranchGallery('kacyiru')"><i class="fas fa-images"></i> Galerie</button>
+          <button class="branch-btn directions" onclick="showKacyiruDirections()"><i class="fas fa-directions"></i> Itinéraire</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Features -->
+  <div class="branches-features">
+    <h3 class="features-title"><i class="fas fa-star"></i> Notre Approche Éducative</h3>
+    <div class="features-grid">
+      <div class="feature-item"><div class="feature-icon"><i class="fas fa-child"></i></div><h4>Éveil précoce</h4><p>Notre approche maternelle privilégie l'éveil sensoriel et le développement global</p></div>
+      <div class="feature-item"><div class="feature-icon"><i class="fas fa-book"></i></div><h4>Fondamentaux solides</h4><p>Au primaire, nous bâtissons des bases académiques solides pour chaque élève</p></div>
+      <div class="feature-item"><div class="feature-icon"><i class="fas fa-heart"></i></div><h4>Environnement bienveillant</h4><p>Chaque enfant est accueilli dans un cadre sécurisé et stimulant</p></div>
+      <div class="feature-item"><div class="feature-icon"><i class="fas fa-users"></i></div><h4>Suivi personnalisé</h4><p>Un accompagnement adapté au rythme de développement de chaque enfant</p></div>
+    </div>
+  </div>
+  <!-- Map -->
+  <div class="branches-map">
+    <div class="map-container">
+      <div class="map-overlay">
+        <h3 class="map-title"><i class="fas fa-map"></i> Nos Campus à Kigali</h3>
+        <p class="map-description">Trois emplacements stratégiques pour servir les familles de Kigali</p>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;"><div style="width: 15px; height: 15px; background: var(--branch-kimisagara); border-radius: 50%;"></div><span>Kimisagara</span></div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;"><div style="width: 15px; height: 15px; background: var(--branch-gisozi); border-radius: 50%;"></div><span>Gisozi</span></div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;"><div style="width: 15px; height: 15px; background: var(--branch-kacyiru); border-radius: 50%;"></div><span>Kacyiru</span></div>
+        </div>
+        <div style="margin-top: 1rem;">
+          <button class="branch-btn" onclick="openAllBranchesMap()" style="background: var(--accent-color); color: white; border: none;">
+            <i class="fas fa-map-marked-alt"></i> Voir tous nos emplacements
+          </button>
+        </div>
+      </div>
+      <div class="map-marker kimisagara" data-branch="Kimisagara" onclick="showBranchInfo('kimisagara')"></div>
+      <div class="map-marker gisozi" data-branch="Gisozi" onclick="showBranchInfo('gisozi')"></div>
+      <div class="map-marker kacyiru" data-branch="Kacyiru" onclick="showBranchInfo('kacyiru')"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Section Galerie -->
+<section id="galerie" data-s="galerie">
+  <h2 class="section-title"><i class="fas fa-images"></i> Galerie</h2>
+  <div class="gallery-grid">
+    <div class="gallery-item" onclick="openGalleryModal(0)">
+      <img src="asset/img/kimisagara.jpg" alt="Nos Salles de Classe">
+      <div class="gallery-overlay"><h3>Eden Family school kimisagara</h3><p>École à Kimisagara</p></div>
+    </div>
+    <div class="gallery-item" onclick="openGalleryModal(1)">
+      <img src="asset/img/gisozi_graduation2.JPG" alt="Nos Élèves">
+      <div class="gallery-overlay"><h3>Nos Élèves</h3><p>Passionnés par l'apprentissage</p></div>
+    </div>
+    <div class="gallery-item" onclick="openGalleryModal(2)">
+      <img src="asset/img/sport2.jpg" alt="Activités">
+      <div class="gallery-overlay"><h3>Activités</h3><p>Sports et culture</p></div>
+    </div>
+    <div class="gallery-item" onclick="openGalleryModal(3)">
+      <img src="asset/img/club_de_dance.jpg" alt="Bibliothèque">
+      <div class="gallery-overlay"><h3>Bibliothèque</h3><p>Riche collection de livres</p></div>
+    </div>
+    <div class="gallery-item" onclick="openGalleryModal(4)">
+      <img src="asset/img/gisozi_graduation.JPG" alt="Laboratoires">
+      <div class="gallery-overlay"><h3>Laboratoires</h3><p>Sciences pratiques</p></div>
+    </div>
+    <div class="gallery-item" onclick="openGalleryModal(5)">
+      <img src="asset/img/love_eden.jpg" alt="Cour de Récréation">
+      <div class="gallery-overlay"><h3>Cour de Récréation</h3><p>Sécurisée et amusante</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Section Académique -->
+<section id="academique" data-s="academique" style="display: none;">
+  <h2 class="section-title">Activités Académiques</h2>
+  <div class="academic-grid">
+    <a href="#" class="academic-card" onclick="showHomework()"><i class="fas fa-book"></i><h3>Devoirs</h3><p>Consultez et téléchargez les devoirs</p><span class="badge" id="devoirsCount">5 nouveaux</span></a>
+    <a href="#" class="academic-card" onclick="showExams()"><i class="fas fa-file-alt"></i><h3>Examens</h3><p>Sujets et résultats des examens</p><span class="badge">Prochain: 15/12</span></a>
+    <a href="#" class="academic-card" onclick="showVacationWork()"><i class="fas fa-umbrella-beach"></i><h3>Travaux de Vacances</h3><p>Activités et devoirs pour les vacances</p><span class="badge">Nouveau</span></a>
+    <a href="#" class="academic-card" onclick="showTests()"><i class="fas fa-clipboard-check"></i><h3>Tests & Évaluations</h3><p>Tests continus et évaluations</p><span class="badge">3 à venir</span></a>
+  </div>
+</section>
+
+
+
+<!-- Section Bibliothèque -->
+<section id="bibliotheque" data-s="bibliotheque">
+  <h2 class="section-title"><i class="fas fa-book-reader"></i> Bibliothèque de Lecture</h2>
+  <div class="library-container">
+    <div class="library-level-buttons">
+      <button class="level-btn" onclick="showLibrary('maternelle')"><i class="fas fa-child"></i> MATERNELLE</button>
+      <button class="level-btn" onclick="showLibrary('primaire')"><i class="fas fa-school"></i> ÉCOLE PRIMAIRE</button>
+    </div>
+    <div style="text-align: center; margin-top: 2rem;">
+      <h3><i class="fas fa-search"></i> Recherche de Livres</h3>
+      <div style="max-width: 500px; margin: 1rem auto;">
+        <input type="text" id="bookSearch" placeholder="Rechercher un livre..." style="width: 100%; padding: 1rem; border-radius: 25px; border: 2px solid #ddd; font-family: 'Poppins';">
+        <button class="btn-primary" onclick="searchBooks()" style="margin-top: 1rem;"><i class="fas fa-search"></i> Rechercher</button>
+      </div>
+    </div>
+    <div id="libraryResults" style="margin-top: 2rem;"></div>
+    <div class="voir-plus-container">
+      <button class="voir-plus-btn" onclick="loadMoreBooks()"><i class="fas fa-plus"></i> Voir plus de livres</button>
+    </div>
+  </div>
+</section>
+
+<!-- Section YouTube -->
+<section id="youtube" data-s="youtube">
+  <div class="youtube-section">
+    <h2><i class="fab fa-youtube"></i> Chaîne YouTube Eden Family School</h2>
+    <p>Découvrez notre chaîne YouTube officielle avec des vidéos éducatives !</p>
+    <a href="https://www.youtube.com/@edenfamilyschool" target="_blank" class="youtube-btn"><i class="fab fa-youtube"></i> Visiter la chaîne</a>
+  </div>
+  <div class="video-grid">
+    <div class="video-card">
+      <div class="video-thumbnail" id="videoContainer">
+        <video id="schoolVideo" width="100%" height="100%" style="object-fit: cover; background: #000;">
+          <source src="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" type="video/mp4">
+        </video>
+        <div class="video-controls">
+          <button class="control-btn" id="rewindBtn"><i class="fas fa-backward"></i> -10s</button>
+          <button class="control-btn" id="playPauseBtn"><i class="fas fa-play"></i> Lecture</button>
+          <button class="control-btn" id="forwardBtn"><i class="fas fa-forward"></i> +10s</button>
+          <div class="video-progress">
+            <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
+          </div>
+        </div>
+      </div>
+      <div class="video-info">
+        <h4>Présentation de l'école</h4>
+        <p>Découvrez notre école et nos installations</p>
+        <a href="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" download class="youtube-link"><i class="fas fa-download"></i> Télécharger</a>
+      </div>
+    </div>
+    <div class="video-card">
+      <div class="video-thumbnail">
+        <iframe src="https://www.youtube.com/embed/KZzPurEUKW0" title="Activités scolaires" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+      <div class="video-info"><h4>Activités scolaires</h4><p>Les activités quotidiennes de nos élèves</p><a href="https://youtu.be/KZzPurEUKW0" target="_blank" class="youtube-link"><i class="fab fa-youtube"></i> Voir sur YouTube</a></div>
+    </div>
+    <div class="video-card">
+      <div class="video-thumbnail">
+        <iframe src="https://www.youtube.com/embed/ywAuUh3QI4k" title="Dernière vidéo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+      <div class="video-info"><h4>Dernière vidéo</h4><p>Activités récentes de notre école</p><a href="https://youtu.be/ywAuUh3QI4k" target="_blank" class="youtube-link"><i class="fab fa-youtube"></i> Voir sur YouTube</a></div>
+    </div>
+    <div class="video-card">
+      <div class="video-thumbnail">
+        <iframe src="https://www.youtube.com/embed/Bwa-VT5v1sk" title="Journée sportive" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+      <div class="video-info"><h4>Journée sportive</h4><p>Compétitions sportives de nos élèves</p><a href="https://youtu.be/Bwa-VT5v1sk" target="_blank" class="youtube-link"><i class="fab fa-youtube"></i> Voir sur YouTube</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- Section Jeux Éducatifs -->
+<section id="jeux" class="games-section" data-s="jeux">
+  <!-- HERO TITLE -->
+  <div class="games-hero">
+    <h1>🎮 Jeux Éducatifs</h1>
+    <p>Section Maternelle — Apprendre en jouant !</p>
+  </div>
+
+  <!-- nouveau design de jeu fourni par l'utilisateur -->
+  <!-- LEVEL TABS -->
+  <div class="level-tabs">
+    <button class="ltab active" onclick="setLevel('N1',this)">🌸 N1 <span style="font-size:.7rem;opacity:.7">(3-4 ans)</span></button>
+    <button class="ltab" onclick="setLevel('N2',this)">🌼 N2 <span style="font-size:.7rem;opacity:.7">(4-5 ans)</span></button>
+    <button class="ltab" onclick="setLevel('N3',this)">🌟 N3 <span style="font-size:.7rem;opacity:.7">(5-6 ans)</span></button>
+  </div>
+
+  <!-- SCORE BAR -->
+  <div class="score-bar">
+    <div class="score-chip stars"><span class="icon">⭐</span> <span id="totalStars">0</span> étoiles</div>
+    <div class="score-chip hearts"><span class="icon">❤️</span> <span id="totalLives">3</span> vies</div>
+    <div class="score-chip games"><span class="icon">🏆</span> <span id="gamesWon">0</span> gagnés</div>
+  </div>
+
+  <!-- SECTION LABEL -->
+  <div class="section-label" id="sectionLabel">Niveau N1 — Choisissez un jeu !</div>
+
+  <!-- GAME GRID -->
+  <div class="game-grid" id="gameGrid">
+    <!-- injected by JS -->
+  </div>
+
+  <!-- ─── MAIN MODAL ─── -->
+  <div class="modal-overlay" id="gameModal">
+    <div class="modal-box" id="modalBox">
+      <div class="modal-header" id="modalHeader">
+        <h2 id="modalTitle"><i class="fas fa-gamepad"></i> Jeu</h2>
+        <button class="modal-close" onclick="closeGame()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <div class="loader"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── RESULT MODAL ─── -->
+  <div class="modal-overlay" id="resultModal">
+    <div class="modal-box">
+      <div class="modal-header" style="background:linear-gradient(135deg,#6BCB77,#45a049)">
+        <h2><i class="fas fa-trophy"></i> Résultats</h2>
+        <button class="modal-close" onclick="closeResult()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="result-screen" id="resultScreen"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section Inscription -->
+<section id="inscription" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 4rem 2rem; border-radius: 20px; margin: 3rem 0; position:relative;">
+  <h2 class="section-title" style="color: white; margin-bottom: 2rem;"><i class="fas fa-pen-fancy"></i> Formulaire d'Inscription</h2>
+  <div class="form-inscription-container">
+    <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2rem; text-align: center; position: relative; overflow: hidden;">
+      <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%); animation: shimmer 3s infinite linear;"></div>
+      <h3 style="font-size: 1.8em; margin-bottom: 0.5rem; position: relative; z-index: 1;">FORMULAIRE D'INSCRIPTION SCOLAIRE</h3>
+      <p style="font-size: 1.1em; margin-bottom: 0; position: relative; z-index: 1;">EDEN FAMILY SCHOOL</p>
+    </div>
+    <form id="inscriptionForm" style="padding: 2rem;">
+      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">INFORMATION DE L'ENFANT</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-user"></i> Nom et prénom *</label><input type="text" id="nomPrenom" name="nomPrenom" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="nomPrenomError"></div></div>
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-birthday-cake"></i> Date de naissance *</label><input type="date" id="dateNaissance" name="dateNaissance" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="dateNaissanceError"></div></div>
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-school"></i> École de provenance *</label><input type="text" id="ecoleProvenance" name="ecoleProvenance" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="ecoleProvenanceError"></div></div>
+      </div>
+      <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
+        <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-venus-mars"></i> Sexe *</label>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+          <input type="radio" id="garcon" name="sexe" value="GARÇON" required style="display: none;"><label for="garcon" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-male"></i> GARÇON</label>
+          <input type="radio" id="fille" name="sexe" value="FILLE" required style="display: none;"><label for="fille" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-female"></i> FILLE</label>
+        </div>
+        <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="sexeError"></div>
+      </div>
+      <!-- Niveau, Branche, Transport, Chef, Adresse - abbreviated for space -->
+      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">NIVEAU SCOLAIRE</div>
+      <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
+        <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-graduation-cap"></i> Section *</label>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+          <input type="radio" id="maternelle" name="section" value="MATERNELLE" required style="display: none;"><label for="maternelle" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-baby"></i> MATERNELLE</label>
+          <input type="radio" id="primaire" name="section" value="PRIMAIRE" required style="display: none;"><label for="primaire" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-child"></i> PRIMAIRE</label>
+        </div>
+        <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="sectionError"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; display: none;" id="niveauMaternelleGroup"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-star"></i> Niveau maternelle *</label><select id="niveauMaternelle" name="niveauMaternelle" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><option value="">Sélectionnez</option><option value="N1">N1</option><option value="N2">N2</option><option value="N3">N3</option></select></div>
+      <div style="display: flex; flex-direction: column; display: none;" id="niveauPrimaireGroup"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-book"></i> Niveau primaire *</label><select id="niveauPrimaire" name="niveauPrimaire" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><option value="">Sélectionnez</option><option value="P1">P1</option><option value="P2">P2</option><option value="P3">P3</option><option value="P4">P4</option><option value="P5">P5</option></select></div>
+      <div style="display: flex; flex-direction: column; display: none;" id="sdmsGroup"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-id-card"></i> SDMS Code *</label><input type="text" id="sdmsCode" name="sdmsCode" placeholder="Code SDMS" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"></div>
+      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">BRANCHE</div>
+      <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
+        <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-map-marker-alt"></i> Sélectionnez la branche *</label>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+          <input type="radio" id="brancheKacyiru" name="branche" value="KACYIRU" required style="display: none;"><label for="brancheKacyiru" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-school" style="color: #9C27B0;"></i> KACYIRU</label>
+          <input type="radio" id="brancheGisozi" name="branche" value="GISOZI" required style="display: none;"><label for="brancheGisozi" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-school" style="color: #2196F3;"></i> GISOZI</label>
+          <input type="radio" id="brancheKimisagara" name="branche" value="KIMISAGARA" required style="display: none;"><label for="brancheKimisagara" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-school" style="color: #4CAF50;"></i> KIMISAGARA</label>
+        </div>
+        <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="brancheError"></div>
+      </div>
+      <div id="contactInfo" style="background: #FFF9C4; padding: 1.5rem; border-radius: 10px; margin: 2rem 0; border-left: 5px solid #FFC107; text-align: center; animation: fadeIn 0.5s ease; display: none;"><p id="contactText"></p></div>
+      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">TRANSPORT</div>
+      <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
+        <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-bus"></i> Transport bus *</label>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+          <input type="radio" id="transportOui" name="transport" value="OUI" required style="display: none;"><label for="transportOui" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-check-circle"></i> OUI</label>
+          <input type="radio" id="transportNon" name="transport" value="NON" required style="display: none;"><label for="transportNon" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-times-circle"></i> NON</label>
+        </div>
+        <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="transportError"></div>
+      </div>
+      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">CHEF DE FAMILLE</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-user-tie"></i> Nom et prénom *</label><input type="text" id="chefNomPrenom" name="chefNomPrenom" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="chefNomPrenomError"></div></div>
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-phone"></i> Téléphone *</label><input type="tel" id="chefTelephone" name="chefTelephone" pattern="[0-9]{10}" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="chefTelephoneError"></div></div>
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-id-card"></i> Pièce d'identité *</label><input type="text" id="chefPieceIdentite" name="chefPieceIdentite" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="chefPieceIdentiteError"></div></div>
+      </div>
+      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">ADRESSE</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-city"></i> Ville *</label><select id="ville" name="ville" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><option value="">Sélectionnez la ville</option><option value="Kigali">Kigali</option><option value="Butare">Butare</option><option value="Gisenyi">Gisenyi</option><option value="Ruhengeri">Ruhengeri</option></select><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="villeError"></div></div>
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-map"></i> Secteur *</label><input type="text" id="secteur" name="secteur" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="secteurError"></div></div>
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-map-signs"></i> Umurenge *</label><input type="text" id="umurenge" name="umurenge" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="umurengeError"></div></div>
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-home"></i> Akagari *</label><input type="text" id="akagari" name="akagari" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="akagariError"></div></div>
+        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-street-view"></i> Umudugudu *</label><input type="text" id="umudugudu" name="umudugudu" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="umuduguduError"></div></div>
+      </div>
+      <div style="position: relative; margin-top: 2rem; text-align: center;">
+        <button type="button" class="btn-primary" id="submitBtn" onclick="submitInscriptionForm()" style="padding: 1rem 2rem;">
+          <i class="fas fa-paper-plane"></i> Soumettre l'inscription
+        </button>
+      </div>
+    </form>
+    <div id="missingFieldMessage" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff6b6b; color: white; padding: 2rem; border-radius: 15px; z-index: 1000; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: popIn 0.5s ease; display: none;">
+      <h3 id="errorTitle">Champ obligatoire manquant !</h3>
+      <p id="errorMessage">Veuillez remplir tous les champs obligatoires.</p>
+      <button onclick="hideInscriptionErrorMessage()" style="background: white; color: #ff6b6b; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; margin-top: 1rem; font-weight: bold;">J'ai compris !</button>
+    </div>
+    <div id="successMessage" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000;">
+      <div style="background: white; padding: 3rem; border-radius: 15px; text-align: center; max-width: 500px; animation: slideUp 0.4s ease;">
+        <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #4CAF50, #45a049); color: white; font-size: 3em; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">✓</div>
+        <h3>Inscription enregistrée avec succès!</h3>
+        <p>Code unique de l'enfant: <strong id="studentCode"></strong></p>
+        <button onclick="closeInscriptionSuccessMessage()" style="background: #4CAF50; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; margin-top: 1rem; font-weight: bold;">Fermer</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section Contact -->
+<section id="contact" data-s="contact">
+  <h2 class="section-title">Contactez-Nous</h2>
+  <div class="contact-cards">
+    <div class="contact-card" onclick="showContactOptions('Kimisagara')">
+      <i class="fas fa-school fa-3x" style="color: var(--branch-kimisagara); margin-bottom: 1rem;"></i>
+      <h3>Kimisagara</h3>
+      <p><i class="fas fa-map-marker-alt"></i> KG 7 Ave, Kimisagara, Kigali</p>
+      <p><i class="fas fa-phone"></i> 0785892018 / 0791826950</p>
+      <small>Cliquez pour les options de contact</small>
+    </div>
+    <div class="contact-card" onclick="showContactOptions('Gisozi')">
+      <i class="fas fa-school fa-3x" style="color: var(--branch-gisozi); margin-bottom: 1rem;"></i>
+      <h3>Gisozi</h3>
+      <p><i class="fas fa-map-marker-alt"></i> KG 11 Ave, Gisozi, Kigali</p>
+      <p><i class="fas fa-phone"></i> 0788410242 / 0796145647</p>
+      <small>Cliquez pour les options de contact</small>
+    </div>
+    <div class="contact-card" onclick="showContactOptions('Kacyiru')">
+      <i class="fas fa-school fa-3x" style="color: var(--branch-kacyiru); margin-bottom: 1rem;"></i>
+      <h3>Kacyiru</h3>
+      <p><i class="fas fa-map-marker-alt"></i> KG 17 Ave, Kacyiru, Kigali</p>
+      <p><i class="fas fa-phone"></i> 0791639766 / 0792570074</p>
+      <small>Cliquez pour les options de contact</small>
+    </div>
+  </div>
+  <div style="background: white; padding: 2rem; border-radius: 15px; box-shadow: var(--shadow); margin-top: 3rem;">
+    <h3 style="text-align: center; margin-bottom: 2rem;">Formulaire de Contact</h3>
+    <form id="contactForm">
+      <div class="form-row">
+        <input type="text" placeholder="Votre nom" required>
+        <input type="email" placeholder="Votre email" required>
+      </div>
+      <select required style="width:100%; margin-bottom:1rem;"><option value="">Sélectionnez une branche</option><option>Kimisagara</option><option>Gisozi</option><option>Kacyiru</option></select>
+      <textarea placeholder="Votre message" rows="5" required style="width:100%; margin-bottom:1rem;"></textarea>
+      <button type="submit" class="btn-primary" style="width: 100%;"><i class="fas fa-paper-plane"></i> Envoyer le message</button>
+    </form>
+  </div>
+</section>
+
+<!-- Modal Contact Options -->
+<div id="contactOptionsModal" class="modal">
+  <div class="modal-content contact-options-modal">
+    <div class="modal-header">
+      <h2><i class="fas fa-phone-alt"></i> Options de Contact</h2>
+      <button class="modal-close" onclick="closeContactOptionsModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <h3 id="contactBranchName" style="text-align: center; margin-bottom: 2rem;"></h3>
+      <div class="contact-options">
+        <div class="contact-option" onclick="contactByPhone()"><i class="fas fa-phone fa-2x" style="margin-bottom: 1rem;"></i><h4>Appeler</h4><p id="contactPhoneNumber"></p></div>
+        <div class="contact-option" onclick="contactByEmail()"><i class="fas fa-envelope fa-2x" style="margin-bottom: 1rem;"></i><h4>Envoyer un email</h4><p id="contactEmail"></p></div>
+        <div class="contact-option" onclick="contactByWhatsApp()"><i class="fab fa-whatsapp fa-2x" style="color: #25D366; margin-bottom: 1rem;"></i><h4>WhatsApp</h4><p>Envoyer un message</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-content">
+    <div class="footer-section">
+      <h3><i class="fas fa-graduation-cap"></i> EDEN FAMILY SCHOOL</h3>
+      <p>Excellence et Innovation dans l'éducation. Notre devise "Learning by doing" reflète notre engagement.</p>
+      <div style="margin-top: 1rem;">
+        <a href="#" style="margin-right: 1rem; font-size: 1.5rem;"><i class="fab fa-facebook"></i></a>
+        <a href="#" style="margin-right: 1rem; font-size: 1.5rem;"><i class="fab fa-twitter"></i></a>
+        <a href="#" style="margin-right: 1rem; font-size: 1.5rem;"><i class="fab fa-instagram"></i></a>
+        <a href="#" style="font-size: 1.5rem;"><i class="fab fa-youtube"></i></a>
+      </div>
+    </div>
+    <div class="footer-section">
+      <h3>Contact</h3>
+      <p><i class="fas fa-map-marker-alt"></i> Kigali, Rwanda<br>
+      <i class="fas fa-envelope"></i> edengracefamilyltd@gmail.com<br>
+      <i class="fas fa-phone"></i> +250 788 883 842</p>
+    </div>
+    <div class="footer-section">
+      <h3>Liens rapides</h3>
+      <p>
+        <a href="#accueil"><i class="fas fa-home"></i> Accueil</a><br>
+        <a href="#galerie"><i class="fas fa-images"></i> Galerie</a><br>
+        <a href="#jeux"><i class="fas fa-gamepad"></i> Jeux Éducatifs</a><br>
+        <a href="#youtube"><i class="fab fa-youtube"></i> YouTube</a>
+      </p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2024 Eden Family School - Tous droits réservés</p>
+    <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+      <a href="#" onclick="showPrivacyPolicy()" style="color: var(--white); margin-right: 1rem;">Politique de confidentialité</a>
+      <a href="#" onclick="showTerms()" style="color: var(--white);">Conditions d'utilisation</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   CURSOR GLOW
+══════════════════════════════════════════════════════════ */
+const cgEl = document.getElementById('cg');
+document.addEventListener('mousemove', e => {
+  cgEl.style.left = e.clientX+'px';
+  cgEl.style.top  = e.clientY+'px';
+});
+
+/* ══════════════════════════════════════════════════════════
+   SECTION COLOUR (body class)
+══════════════════════════════════════════════════════════ */
+document.querySelectorAll('[data-s]').forEach(s =>
+  new IntersectionObserver(es => {
+    es.forEach(e => { if(e.isIntersecting) document.body.className = 's-'+e.target.dataset.s; });
+  },{threshold:.45}).observe(s)
+);
+
+/* ══════════════════════════════════════════════════════════
+   RADIAL MENU ITEMS
+══════════════════════════════════════════════════════════ */
+const ITEMS = [
+  {label:'Accueil',      icon:'fas fa-home',          href:'#accueil'},
+  {label:'Galerie',      icon:'fas fa-images',         href:'#galerie'},
+  {label:'Activités',    icon:'fas fa-graduation-cap', href:'#academique'},
+  {label:'Bibliothèque', icon:'fas fa-book',           href:'#bibliotheque'},
+  {label:'YouTube',      icon:'fab fa-youtube',        href:'#youtube'},
+  {label:'Jeux',         icon:'fas fa-gamepad',        href:'#jeux'},
+];
+const R_BIG  = 118;
+const R_MINI = 80;
+
+const riEls = ITEMS.map(item => {
+  const el = document.createElement('a');
+  el.className = 'ri';
+  el.href = item.href;
+  el.innerHTML = `<div class="rb" data-label="${item.label}"><i class="${item.icon}"></i></div>`;
+  el.style.cssText = 'opacity:0;transform:scale(.3);pointer-events:none';
+  document.body.appendChild(el);
+  return el;
+});
+
+function spinCloseItems() {
+  const rect = bubble.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top  + rect.height/2;
+  riEls.forEach((el, i) => {
+    el.style.transition = 'none';
+    el.style.pointerEvents = 'none';
+    el.classList.add('spinning-out');
+    el.style.animationDelay = (i * 0.04)+'s';
+    setTimeout(() => {
+      el.style.left = (cx-25)+'px'; el.style.top = (cy-25)+'px';
+      el.style.transform = 'scale(.3)'; el.style.opacity = '0';
+      el.classList.remove('spinning-out');
+    }, 500 + i * 40);
+  });
+}
+
+function placeItems(open, radius, instant) {
+  const rect = bubble.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top  + rect.height/2;
+  const n  = ITEMS.length;
+  const arcStart = -180, arcEnd = 0;
+
+  riEls.forEach((el, i) => {
+    const delay = i * 0.055;
+    const tr = `opacity .42s cubic-bezier(.34,1.56,.64,1) ${delay}s,`+
+               `transform .42s cubic-bezier(.34,1.56,.64,1) ${delay}s`;
+    if (instant) { el.style.transition = 'none'; }
+    else { el.style.transition = tr; el.classList.remove('spinning-out'); }
+
+    if (open) {
+      const angle = arcStart + (arcEnd - arcStart) * (i / (n - 1));
+      const rad   = angle * Math.PI / 180;
+      const ix    = cx + Math.cos(rad) * radius - 25;
+      const iy    = cy + Math.sin(rad) * radius - 25;
+      const offScreen = ix < -10 || ix > window.innerWidth-40 || iy < -10 || iy > window.innerHeight-40;
+      el.style.left          = (offScreen ? cx-25 : ix) + 'px';
+      el.style.top           = (offScreen ? cy-25 : iy) + 'px';
+      el.style.transform     = offScreen ? 'scale(0)' : 'scale(1) rotate(0deg)';
+      el.style.opacity       = offScreen ? '0' : '1';
+      el.style.pointerEvents = offScreen ? 'none' : 'all';
+    } else {
+      el.style.left = (cx-25)+'px'; el.style.top = (cy-25)+'px';
+      el.style.transform = 'scale(.3)'; el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+    }
+    if (instant) requestAnimationFrame(() => { el.style.transition = tr; });
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   BUBBLE LOGIC
+══════════════════════════════════════════════════════════ */
+const bubble  = document.getElementById('bubble');
+const bicon   = document.getElementById('bicon');
+const navbar  = document.getElementById('navbar');
+const NB_H    = 68;
+
+let menuOpen  = false;
+let isMini    = false;
+let scrollRAF = null;
+
+function openMenu() {
+  if (menuOpen) return;
+  menuOpen = true;
+  if (isMini) setBubbleMini(false);
+  bubble.classList.add('open');
+  bicon.style.transition = 'transform .45s cubic-bezier(.34,1.56,.64,1)';
+  bicon.style.transform  = 'rotate(180deg) scale(1.1)';
+  setTimeout(() => { bicon.className = 'bi fas fa-arrow-up'; bicon.style.transform = 'rotate(360deg) scale(1)'; }, 230);
+  placeItems(true, isMini ? R_MINI : R_BIG, false);
+}
+
+function closeMenu(instant, spinOut) {
+  if (!menuOpen) return;
+  menuOpen = false;
+  bubble.classList.remove('open');
+  bicon.style.transition = 'transform .45s cubic-bezier(.34,1.56,.64,1)';
+  bicon.style.transform  = 'rotate(180deg) scale(1.1)';
+  setTimeout(() => { bicon.className = 'bi fas fa-home'; bicon.style.transform = 'rotate(0deg) scale(1)'; }, 230);
+  if (spinOut) { spinCloseItems(); }
+  else { placeItems(false, R_BIG, instant); }
+}
+
+function setBubbleMini(mini) {
+  if (isMini === mini) return;
+  isMini = mini;
+  if (mini) { bubble.classList.add('mini'); }
+  else { bubble.classList.remove('mini'); if (menuOpen) placeItems(true, R_BIG, false); }
+}
+
+/* ── DRAG ── */
+let isDragging=false, dragStartX=0, dragStartY=0, bubStartX=0, bubStartY=0, dragMoved=false;
+const DRAG_THRESHOLD=6;
+
+function setBubbleFree(x,y){bubble.style.right='auto';bubble.style.bottom='auto';bubble.style.left=x+'px';bubble.style.top=y+'px';}
+function getBubbleXY(){const r=bubble.getBoundingClientRect();return{x:r.left,y:r.top};}
+function cl2(v,lo,hi){return Math.min(hi,Math.max(lo,v));}
+
+function onDragStart(clientX,clientY){isDragging=true;dragMoved=false;dragStartX=clientX;dragStartY=clientY;const pos=getBubbleXY();bubStartX=pos.x;bubStartY=pos.y;bubble.style.transition='none';bubble.style.cursor='grabbing';}
+function onDragMove(clientX,clientY){if(!isDragging)return;const dx=clientX-dragStartX,dy=clientY-dragStartY;if(!dragMoved&&(Math.abs(dx)>DRAG_THRESHOLD||Math.abs(dy)>DRAG_THRESHOLD)){dragMoved=true;setBubbleFree(bubStartX,bubStartY);}if(dragMoved){const bSize=parseInt(getComputedStyle(bubble).width)||60;const newX=cl2(bubStartX+dx,0,window.innerWidth-bSize),newY=cl2(bubStartY+dy,0,window.innerHeight-bSize);bubble.style.left=newX+'px';bubble.style.top=newY+'px';if(menuOpen)placeItems(true,R_BIG,true);}}
+function onDragEnd(){if(!isDragging)return;isDragging=false;bubble.style.cursor='pointer';bubble.style.transition='width .4s cubic-bezier(.34,1.56,.64,1), height .4s cubic-bezier(.34,1.56,.64,1), box-shadow .3s, opacity .35s, filter .7s ease';}
+
+bubble.addEventListener('mousedown',e=>{if(e.button!==0)return;e.preventDefault();onDragStart(e.clientX,e.clientY);});
+document.addEventListener('mousemove',e=>{onDragMove(e.clientX,e.clientY);});
+document.addEventListener('mouseup',()=>{onDragEnd();});
+bubble.addEventListener('touchstart',e=>{const t=e.touches[0];onDragStart(t.clientX,t.clientY);},{passive:true});
+document.addEventListener('touchmove',e=>{const t=e.touches[0];onDragMove(t.clientX,t.clientY);},{passive:true});
+document.addEventListener('touchend',()=>{onDragEnd();});
+
+/* ── BUBBLE CLICK ── */
+let bubbleClicked=false;
+bubble.addEventListener('click',e=>{
+  e.stopPropagation();
+  if(dragMoved){dragMoved=false;return;}
+  bubbleClicked=true;
+  bubble.classList.remove('blurred');
+  if(isMini&&!menuOpen){setBubbleMini(false);return;}
+  if(menuOpen){
+    closeMenu(false,true);
+    const accueil=document.getElementById('accueil');
+    if(accueil) accueil.scrollIntoView({behavior:'smooth'});
+    else window.scrollTo({top:0,behavior:'smooth'});
+  } else {
+    openMenu();
+  }
+});
+
+document.addEventListener('click',e=>{
+  if(menuOpen&&!bubble.contains(e.target)&&!e.target.closest('.ri')) closeMenu(false,false);
+});
+
+riEls.forEach(el=>{
+  el.addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();
+    const h=el.getAttribute('href');
+    if(h&&h.startsWith('#')) document.querySelector(h)?.scrollIntoView({behavior:'smooth'});
+    closeMenu(false,true);
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
+   SCROLL ENGINE — navbar pill + bubble
+══════════════════════════════════════════════════════════ */
+const PILL_START  = 60;
+const PILL_END    = 180;
+const BUBBLE_END  = 320;
+const MINI_END    = 520;
+const BLUR_START  = 600;
+const BLUR_END    = 800;
+
+const cl = (v,lo,hi) => Math.min(hi, Math.max(lo, v));
+const lp = (a,b,t)   => a + (b-a) * cl(t,0,1);
+const getStartRight  = () => window.innerWidth/2 - 30;
+const getStartBottom = () => window.innerHeight  - 38;
+
+let lastSc2 = 0;
+const footerEl = document.querySelector('footer');
+
+window.addEventListener('scroll', () => {
+  if(scrollRAF) cancelAnimationFrame(scrollRAF);
+  scrollRAF = requestAnimationFrame(doScroll);
+},{passive:true});
+
+function doScroll(){
+  const sc = window.scrollY;
+  lastSc2 = sc;
+
+  let nearFooter = false;
+  if(footerEl){const fRect=footerEl.getBoundingClientRect();nearFooter=fRect.top<window.innerHeight+100;}
+
+  /* ZONE 0 — full bar */
+  if(sc < PILL_START){
+    navbar.classList.remove('pill','shrink');
+    navbar.style.cssText = 'background: #0b63ce; padding: 0; position: fixed; width: 100%; top: 0; z-index: 2000; box-shadow: 0 2px 20px rgba(0,0,0,.1); overflow: visible;';
+    bubble.classList.remove('vis','blurred','near-footer');
+    bubble.style.transform='scale(0) rotate(0deg)';bubble.style.opacity='0';bubble.style.pointerEvents='none';
+    bubble.style.right=(window.innerWidth/2-30)+'px';bubble.style.bottom='35px';
+    if(isMini){isMini=false;bubble.classList.remove('mini');}
+    if(menuOpen) closeMenu(true);
+    bubbleClicked=false;
+    return;
+  }
+
+  /* ZONE 1 — navbar morphs to pill */
+  if(sc < PILL_END){
+    navbar.classList.remove('shrink');
+    navbar.classList.add('pill');
+    navbar.style.opacity='1';navbar.style.transform='translateX(-50%)';navbar.style.pointerEvents='all';
+    bubble.classList.remove('vis','blurred','near-footer');
+    bubble.style.transform='scale(0) rotate(0deg)';bubble.style.opacity='0';bubble.style.pointerEvents='none';
+    if(isMini){isMini=false;bubble.classList.remove('mini');}
+    if(menuOpen) closeMenu(true);
+    return;
+  }
+
+  /* ZONE 2 — pill fades, bubble rolls in */
+  if(sc < BUBBLE_END){
+    const p=(sc-PILL_END)/(BUBBLE_END-PILL_END);
+    navbar.classList.add('pill');navbar.classList.remove('shrink');
+    const navScale=lp(1,.8,p),navOpac=lp(1,0,p),navLeft=lp(50,40,p);
+    navbar.style.opacity=navOpac;
+    navbar.style.transform=`translateX(-${navLeft}%) scale(${navScale})`;
+    navbar.style.pointerEvents=p>0.7?'none':'all';
+    if(menuOpen) closeMenu(true);
+    if(isMini){isMini=false;bubble.classList.remove('mini');}
+    bubble.classList.add('vis');bubble.classList.remove('blurred','near-footer');
+    bubble.style.opacity='1';bubble.style.pointerEvents='all';bubble.style.filter='';
+    const bScale=lp(0.12,1.0,p),bDeg=lp(0,720,p);
+    const rPx=lp(getStartRight(),window.innerWidth/2-30,p);
+    const bPx=lp(getStartBottom(),35,p);
+    bubble.style.right=rPx+'px';bubble.style.bottom=bPx+'px';
+    bubble.style.transform=`scale(${bScale}) rotate(${bDeg}deg)`;
+    return;
+  }
+
+  /* ZONE 3 — bubble at rest */
+  navbar.classList.add('shrink');
+  navbar.style.opacity='0';navbar.style.pointerEvents='none';
+  bubble.classList.add('vis');
+  bubble.style.opacity='1';bubble.style.pointerEvents='all';
+  bubble.style.right=(window.innerWidth/2-30)+'px';bubble.style.bottom='35px';
+
+  const pMini=cl((sc-BUBBLE_END)/(MINI_END-BUBBLE_END),0,1);
+  if(pMini>0.25&&!isMini&&!menuOpen) setBubbleMini(true);
+  else if(pMini<=0.25&&isMini&&!menuOpen) setBubbleMini(false);
+
+  if(menuOpen){
+    bubble.classList.remove('blurred');
+    const iFade=1-pMini;
+    riEls.forEach(el=>{el.style.opacity=Math.max(0,iFade);el.style.transform=`scale(${lp(1,.3,pMini)})`;});
+    if(pMini>=1) closeMenu(true);
+  }
+  if(!menuOpen) bubble.style.transform='';
+
+  /* Blur quand scroll profond */
+  if(!menuOpen&&!nearFooter){
+    const pBlur=cl((sc-BLUR_START)/(BLUR_END-BLUR_START),0,1);
+    if(pBlur>0&&!bubbleClicked) bubble.classList.add('blurred');
+    else bubble.classList.remove('blurred');
+  } else { bubble.classList.remove('blurred'); }
+
+  /* Près du footer — flèche haut */
+  if(nearFooter&&!menuOpen){
+    bubble.classList.add('near-footer');bubble.classList.remove('blurred');
+    if(bicon.className!=='bi fas fa-arrow-up'){
+      bicon.style.transition='transform .4s cubic-bezier(.34,1.56,.64,1)';
+      bicon.style.transform='rotate(180deg) scale(1.1)';
+      setTimeout(()=>{bicon.className='bi fas fa-arrow-up';bicon.style.transform='rotate(360deg) scale(1)';},220);
+    }
+  } else if(!nearFooter&&!menuOpen){
+    bubble.classList.remove('near-footer');
+    if(bicon.className==='bi fas fa-arrow-up'){
+      bicon.style.transition='transform .4s cubic-bezier(.34,1.56,.64,1)';
+      bicon.style.transform='rotate(180deg) scale(1.1)';
+      setTimeout(()=>{bicon.className='bi fas fa-home';bicon.style.transform='rotate(0deg) scale(1)';},220);
+    }
+  }
+}
+
+doScroll();
+
+/* ══════════════════════════════════════════════════════════
+   VARIABLES GLOBALES DE L'APP
+══════════════════════════════════════════════════════════ */
+const CONFIG = {
+  selectedLevel: 'maternelle', selectedDifficulty: 'facile',
+  currentSlide: 0, autoSlideInterval: null, isAutoSlideEnabled: true,
+  isLoggedIn: false, currentUser: null,
+  gameScore: 0, bestScore: 0, gamesCompleted: 0, audioEnabled: true,
+  lives: 3, // hearts shown in new UI
+  galleryPerPage: 6
+};
+
+const GALLERY_IMAGES = [
+  {src:'asset/img/kimisagara.jpg',largeSrc:'asset/img/kimisagara.jpg',title:'Eden Family school kimisagara',desc:'École à Kimisagara',date:'2024-10-15',category:'École'},
+  {src:'asset/img/gisozi_graduation2.JPG',largeSrc:'asset/img/gisozi_graduation2.JPG',title:'Nos Élèves',desc:'Passionnés par l\'apprentissage',date:'2024-10-20',category:'Élèves'},
+  {src:'asset/img/sport2.jpg',largeSrc:'asset/img/sport2.jpg',title:'Activités Sportives',desc:'Sports et activités culturelles',date:'2024-10-18',category:'Activités'},
+  {src:'asset/img/club_de_dance.jpg',largeSrc:'asset/img/club_de_dance.jpg',title:'Bibliothèque',desc:'Riche collection de livres',date:'2024-10-22',category:'École'},
+  {src:'asset/img/gisozi_graduation.JPG',largeSrc:'asset/img/gisozi_graduation.JPG',title:'Laboratoire',desc:'Sciences pratiques',date:'2024-10-25',category:'École'},
+  {src:'asset/img/love_eden.jpg',largeSrc:'asset/img/love_eden.jpg',title:'Cour de Récréation',desc:'Sécurisée et amusante',date:'2024-10-28',category:'École'},
+];
+
+/* ══════════════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════════════ */
+function scrollToSection(sectionId){
+  const section=document.getElementById(sectionId);
+  if(section){
+    const navHeight=document.querySelector('nav').offsetHeight;
+    const sectionPosition=section.offsetTop-navHeight;
+    window.scrollTo({top:sectionPosition,behavior:'smooth'});
+    closeMobileMenu();
+    updateActiveNavLink(sectionId);
+  }
+}
+
+function toggleMenu(){
+  const navLinks=document.getElementById('navLinks');
+  navLinks.classList.toggle('active');
+  document.body.style.overflow=navLinks.classList.contains('active')?'hidden':'';
+}
+
+function closeMobileMenu(){
+  document.getElementById('navLinks').classList.remove('active');
+  document.body.style.overflow='';
+}
+
+function updateActiveNavLink(sectionId){
+  document.querySelectorAll('.nav-links a').forEach(link=>{
+    link.classList.remove('active');
+    if(link.getAttribute('href')==='#'+sectionId) link.classList.add('active');
+  });
+}
+
+document.getElementById('mobileMenuBtn').addEventListener('click',function(e){e.preventDefault();toggleMenu();});
+
+/* nav link clicks */
+document.querySelectorAll('nav a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',function(e){
+    e.preventDefault();
+    const targetId=this.getAttribute('href').substring(1);
+    closeMobileMenu();
+    if(targetId) scrollToSection(targetId);
+    document.querySelectorAll('.nl a, .nav-links a').forEach(l=>l.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+document.addEventListener('click',e=>{
+  const navLinks=document.getElementById('navLinks');
+  const mobileMenuBtn=document.getElementById('mobileMenuBtn');
+  if(navLinks&&navLinks.classList.contains('active')){
+    if(!navLinks.contains(e.target)&&!mobileMenuBtn.contains(e.target)) closeMobileMenu();
+  }
+});
+
+/* ══════════════════════════════════════════════════════════
+   CAROUSEL
+══════════════════════════════════════════════════════════ */
+const slides=document.querySelectorAll('.carousel-slide');
+const dots=document.querySelectorAll('.carousel-dot');
+
+function showSlide(n){
+  slides.forEach(s=>s.classList.remove('active'));
+  dots.forEach(d=>d.classList.remove('active'));
+  if(n>=slides.length) CONFIG.currentSlide=0;
+  if(n<0) CONFIG.currentSlide=slides.length-1;
+  slides[CONFIG.currentSlide].classList.add('active');
+  dots[CONFIG.currentSlide].classList.add('active');
+}
+function goToSlide(n){CONFIG.currentSlide=n;showSlide(CONFIG.currentSlide);resetAutoSlide();}
+function startAutoSlide(){if(CONFIG.isAutoSlideEnabled) CONFIG.autoSlideInterval=setInterval(()=>{CONFIG.currentSlide++;showSlide(CONFIG.currentSlide);},5000);}
+function resetAutoSlide(){clearInterval(CONFIG.autoSlideInterval);startAutoSlide();}
+
+/* ══════════════════════════════════════════════════════════
+   MODALS
+══════════════════════════════════════════════════════════ */
+function openModal(title,content){
+  document.getElementById('modalTitle').innerHTML=title;
+  document.getElementById('modalBody').innerHTML=content;
+  const modal=document.getElementById('modal');
+  modal.style.display='flex';
+  document.body.style.overflow='hidden';
+}
+
+function closeModal(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  document.getElementById('modal').style.display='none';
+  document.body.style.overflow='';
+}
+
+function openLoginModal(){document.getElementById('loginModal').style.display='flex';document.body.style.overflow='hidden';}
+function closeLoginModal(){document.getElementById('loginModal').style.display='none';document.body.style.overflow='';}
+function openRegisterModal(){document.getElementById('registerModal').style.display='flex';document.body.style.overflow='hidden';}
+function closeRegisterModal(){document.getElementById('registerModal').style.display='none';document.body.style.overflow='';}
+function openRegistrationModal(){document.getElementById('registrationFormModal').style.display='flex';document.body.style.overflow='hidden';}
+function closeRegistrationModal(){document.getElementById('registrationFormModal').style.display='none';document.body.style.overflow='';}
+
+function invokeApplyBranchFeeRules(branchId){
+  if(typeof window.applyBranchFeeRules==='function' && window.applyBranchFeeRules!==invokeApplyBranchFeeRules){
+    window.applyBranchFeeRules(branchId,'1');
+  }
+}
+
+function toggleRegTransportBus(){
+  const checked=document.getElementById('regTransportBus').checked;
+  const group=document.getElementById('regTransportFeeGroup');
+  group.style.display=checked?'block':'none';
+  if(!checked){
+    document.getElementById('regTransportBusFee').value='';
+    document.getElementById('regTransportCustomFeeGroup').style.display='none';
+    document.getElementById('regTransportCustomFee').value='';
+  }
+}
+function toggleRegTransportCustomFee(){
+  const fee=document.getElementById('regTransportBusFee').value;
+  const customGroup=document.getElementById('regTransportCustomFeeGroup');
+  customGroup.style.display=(fee==='other')?'block':'none';
+  if(fee!=='other') document.getElementById('regTransportCustomFee').value='';
+}
+
+function saveRegistrationAndGenerateID(){
+  console.log('saveRegistrationAndGenerateID called');
+  // Placeholder: implement save logic and set registrationSavedStudentId
+}
+function downloadAdmissionLetter(studentId){
+  console.log('downloadAdmissionLetter', studentId);
+}
+function downloadRegistrationForm(studentId){
+  console.log('downloadRegistrationForm', studentId);
+}
+
+window.onclick=function(event){
+  if(event.target===document.getElementById('modal')) closeModal();
+  if(event.target===document.getElementById('loginModal')) closeLoginModal();
+  if(event.target===document.getElementById('registerModal')) closeRegisterModal();
+  if(event.target===document.getElementById('registrationFormModal')) closeRegistrationModal();
+};
+document.addEventListener('keydown',function(event){if(event.key==='Escape'){closeModal();closeLoginModal();closeRegisterModal();}});
+
+/* ══════════════════════════════════════════════════════════
+   FIREBASE AUTH
+══════════════════════════════════════════════════════════ */
+let currentFirebaseUser=null;
+
+// Isoler la session par onglet pour éviter qu'une 2e connexion déconnecte la 1re
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION).catch((err) => {
+  console.warn('setPersistence(Session) impossible:', err);
+});
+
+firebase.auth().onAuthStateChanged(async(user)=>{
+  if(user){
+    currentFirebaseUser=user;
+    const snapshot=await firebase.database().ref('parents/'+user.uid).once('value');
+    const userData=snapshot.val();
+    document.getElementById('staffAccessLi').style.display='none';
+    document.getElementById('parentLoginLi').style.display='none';
+    document.getElementById('logoutLi').style.display='block';
+    const userNameDisplay=document.getElementById('userNameDisplay');
+    if(userData&&userData.studentName) userNameDisplay.textContent=userData.studentName;
+    else userNameDisplay.textContent=user.email.split('@')[0];
+    CONFIG.isLoggedIn=true;CONFIG.currentUser=userData;
+  } else {
+    currentFirebaseUser=null;
+    document.getElementById('staffAccessLi').style.display='block';
+    document.getElementById('parentLoginLi').style.display='block';
+    document.getElementById('logoutLi').style.display='none';
+    CONFIG.isLoggedIn=false;CONFIG.currentUser=null;
+  }
+});
+
+function handleGoogleSignIn(){
+  const provider=new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider)
+    .then(async(result)=>{
+      const user=result.user;if(!user)return;
+      const parentRef=firebase.database().ref('parents/'+user.uid);
+      const snapshot=await parentRef.once('value');
+      if(!snapshot.exists()) await parentRef.set({email:user.email||null,displayName:user.displayName||null,createdAt:Date.now()});
+      closeLoginModal();showToast('Connexion Google réussie','success');
+    }).catch(err=>{console.error(err);showToast('Erreur connexion Google','error');});
+}
+
+function handleLogin(event){
+  event.preventDefault();
+  const email=document.getElementById('parentEmail').value;
+  const password=document.getElementById('parentPassword').value;
+  if(!email||!password){showToast('Veuillez remplir tous les champs','error');return;}
+  firebase.auth().signInWithEmailAndPassword(email,password)
+    .then(async(cred)=>{
+      const user=cred.user;if(!user)return;
+      const snapshot=await firebase.database().ref('parents/'+user.uid).once('value');
+      const userData=snapshot.val()||{};
+      CONFIG.isLoggedIn=true;CONFIG.currentUser=userData;
+      closeLoginModal();
+      showToast(`Bienvenue ${userData.studentName||user.email.split('@')[0]} !`,'success');
+    }).catch(err=>{console.error(err);showToast(err.message||'Erreur','error');});
+}
+
+async function handleRegister(event){
+  event.preventDefault();
+  const email=document.getElementById('registerEmail').value;
+  const password=document.getElementById('registerPassword').value;
+  const confirm=document.getElementById('registerConfirmPassword').value;
+  const studentName=document.getElementById('registerStudentName').value;
+  const classLevel=document.getElementById('registerClassLevel').value;
+  if(!email||!password||!confirm||!studentName||!classLevel){showToast('Veuillez remplir tous les champs','error');return;}
+  if(password!==confirm){showToast('Les mots de passe ne correspondent pas','error');return;}
+  try {
+    const cred=await firebase.auth().createUserWithEmailAndPassword(email,password);
+    const user=cred.user;if(!user) throw new Error('Erreur');
+    const parentData={email,studentName,classLevel,createdAt:Date.now()};
+    await firebase.database().ref('parents/'+user.uid).set(parentData);
+    CONFIG.isLoggedIn=true;CONFIG.currentUser=parentData;
+    closeRegisterModal();showToast('Inscription réussie','success');
+  } catch(err){console.error(err);showToast(err.message||'Erreur','error');}
+}
+
+function logoutFromIndex(){
+  firebase.auth().signOut().then(()=>{showToast("Déconnexion réussie","info");}).catch(err=>{console.error(err);});
+}
+
+/* ══════════════════════════════════════════════════════════
+   GALERIE
+══════════════════════════════════════════════════════════ */
+function openGalleryModal(index){
+  const image=GALLERY_IMAGES[index];const totalImages=GALLERY_IMAGES.length;
+  let thumbnailsHTML='';
+  GALLERY_IMAGES.forEach((img,i)=>{thumbnailsHTML+=`<img src="${img.src}" class="gallery-thumbnail ${i===index?'active':''}" onclick="switchGalleryImage(${i})" alt="${img.title}">`;});
+  const content=`<div class="gallery-modal-content"><img src="${image.largeSrc}" alt="${image.title}" class="gallery-modal-image"><div class="gallery-modal-thumbnails">${thumbnailsHTML}</div><div><h3>${image.title}</h3><p>${image.desc}</p><div class="gallery-modal-nav" style="margin-top:1rem;"><button class="btn-primary" onclick="switchGalleryImage(${index-1})" ${index===0?'disabled':''}>← Précédent</button><span>${index+1}/${totalImages}</span><button class="btn-primary" onclick="switchGalleryImage(${index+1})" ${index===totalImages-1?'disabled':''}>Suivant →</button></div></div></div>`;
+  openModal(`<i class="fas fa-image"></i> ${image.title}`,content);
+}
+function switchGalleryImage(index){closeModal();setTimeout(()=>{if(index>=0&&index<GALLERY_IMAGES.length) openGalleryModal(index);},300);}
+
+/* ══════════════════════════════════════════════════════════
+   JEUX
+══════════════════════════════════════════════════════════ */
+const GAMES_DATA = {
+  math:{maternelle:{facile:[{question:"Combien font 1 + 1 ?",options:[{text:"1",image:"https://cdn-icons-png.flaticon.com/512/2921/2921221.png"},{text:"2",image:"https://cdn-icons-png.flaticon.com/512/2921/2921222.png"},{text:"3",image:"https://cdn-icons-png.flaticon.com/512/2921/2921223.png"},{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"}],answer:1,audio:"Un plus un égale combien ?"}],moyen:[{question:"Combien font 3 + 4 ?",options:[{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"},{text:"8",image:"https://cdn-icons-png.flaticon.com/512/2921/2921228.png"}],answer:2,audio:"Trois plus quatre égale combien ?"}],difficile:[{question:"Combien font 5 + 6 ?",options:[{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"},{text:"11",image:"https://cdn-icons-png.flaticon.com/512/2921/2921231.png"},{text:"12",image:"https://cdn-icons-png.flaticon.com/512/2921/2921232.png"},{text:"13",image:"https://cdn-icons-png.flaticon.com/512/2921/2921233.png"}],answer:1,audio:"Cinq plus six égale combien ?"}]},primaire:{facile:[{question:"Combien font 12 + 8 ?",options:[{text:"18",image:"https://cdn-icons-png.flaticon.com/512/2921/2921238.png"},{text:"20",image:"https://cdn-icons-png.flaticon.com/512/2921/2921240.png"},{text:"22",image:"https://cdn-icons-png.flaticon.com/512/2921/2921242.png"},{text:"24",image:"https://cdn-icons-png.flaticon.com/512/2921/2921244.png"}],answer:1,audio:"Douze plus huit égale combien ?"}],moyen:[{question:"Combien font 25 - 13 ?",options:[{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"},{text:"12",image:"https://cdn-icons-png.flaticon.com/512/2921/2921232.png"},{text:"13",image:"https://cdn-icons-png.flaticon.com/512/2921/2921233.png"},{text:"15",image:"https://cdn-icons-png.flaticon.com/512/2921/2921235.png"}],answer:1,audio:"Vingt-cinq moins treize égale combien ?"}],difficile:[{question:"Combien font 7 × 8 ?",options:[{text:"48",image:"https://cdn-icons-png.flaticon.com/512/2921/2921248.png"},{text:"54",image:"https://cdn-icons-png.flaticon.com/512/2921/2921254.png"},{text:"56",image:"https://cdn-icons-png.flaticon.com/512/2921/2921256.png"},{text:"64",image:"https://cdn-icons-png.flaticon.com/512/2921/2921264.png"}],answer:2,audio:"Sept fois huit égale combien ?"}]}},
+  fruits:{maternelle:{facile:[{question:"Trouve la pomme",options:[{text:"Pomme",image:"https://cdn-icons-png.flaticon.com/512/415/415733.png"},{text:"Banane",image:"https://cdn-icons-png.flaticon.com/512/2909/2909761.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/3082/3082383.png"},{text:"Fraise",image:"https://cdn-icons-png.flaticon.com/512/2937/2937251.png"}],answer:0,audio:"Trouve la pomme"}],moyen:[{question:"Trouve la fraise",options:[{text:"Cerise",image:"https://cdn-icons-png.flaticon.com/512/2909/2909776.png"},{text:"Fraise",image:"https://cdn-icons-png.flaticon.com/512/2937/2937251.png"},{text:"Raisin",image:"https://cdn-icons-png.flaticon.com/512/2909/2909792.png"},{text:"Ananas",image:"https://cdn-icons-png.flaticon.com/512/2909/2909771.png"}],answer:1,audio:"Trouve la fraise"}],difficile:[{question:"Trouve l'ananas",options:[{text:"Mangue",image:"https://cdn-icons-png.flaticon.com/512/2909/2909784.png"},{text:"Pastèque",image:"https://cdn-icons-png.flaticon.com/512/2909/2909791.png"},{text:"Ananas",image:"https://cdn-icons-png.flaticon.com/512/2909/2909771.png"},{text:"Pêche",image:"https://cdn-icons-png.flaticon.com/512/2909/2909798.png"}],answer:2,audio:"Trouve l'ananas"}]},primaire:{facile:[{question:"Trouve le légume",options:[{text:"Carotte",image:"https://cdn-icons-png.flaticon.com/512/2909/2909806.png"},{text:"Pomme",image:"https://cdn-icons-png.flaticon.com/512/415/415733.png"},{text:"Banane",image:"https://cdn-icons-png.flaticon.com/512/2909/2909761.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/3082/3082383.png"}],answer:0,audio:"Trouve le légume"}],moyen:[{question:"Trouve le brocoli",options:[{text:"Chou-fleur",image:"https://cdn-icons-png.flaticon.com/512/2909/2909777.png"},{text:"Brocoli",image:"https://cdn-icons-png.flaticon.com/512/2909/2909773.png"},{text:"Salade",image:"https://cdn-icons-png.flaticon.com/512/2909/2909793.png"},{text:"Tomate",image:"https://cdn-icons-png.flaticon.com/512/2909/2909789.png"}],answer:1,audio:"Trouve le brocoli"}],difficile:[{question:"Trouve l'aubergine",options:[{text:"Courgette",image:"https://cdn-icons-png.flaticon.com/512/2909/2909778.png"},{text:"Poivron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909800.png"},{text:"Aubergine",image:"https://cdn-icons-png.flaticon.com/512/2909/2909770.png"},{text:"Concombre",image:"https://cdn-icons-png.flaticon.com/512/2909/2909775.png"}],answer:2,audio:"Trouve l'aubergine"}]}},
+  animaux:{maternelle:{facile:[{question:"Trouve le chat",options:[{text:"Chat",image:"https://cdn-icons-png.flaticon.com/512/1998/1998594.png"},{text:"Chien",image:"https://cdn-icons-png.flaticon.com/512/1998/1998598.png"},{text:"Lapin",image:"https://cdn-icons-png.flaticon.com/512/1998/1998613.png"},{text:"Oiseau",image:"https://cdn-icons-png.flaticon.com/512/1998/1998627.png"}],answer:0,audio:"Trouve le chat"}],moyen:[{question:"Trouve l'oiseau",options:[{text:"Poisson",image:"https://cdn-icons-png.flaticon.com/512/1998/1998622.png"},{text:"Tortue",image:"https://cdn-icons-png.flaticon.com/512/1998/1998628.png"},{text:"Oiseau",image:"https://cdn-icons-png.flaticon.com/512/1998/1998627.png"},{text:"Hamster",image:"https://cdn-icons-png.flaticon.com/512/1998/1998601.png"}],answer:2,audio:"Trouve l'oiseau"}],difficile:[{question:"Trouve le hamster",options:[{text:"Souris",image:"https://cdn-icons-png.flaticon.com/512/1998/1998625.png"},{text:"Cochon d'Inde",image:"https://cdn-icons-png.flaticon.com/512/1998/1998599.png"},{text:"Hamster",image:"https://cdn-icons-png.flaticon.com/512/1998/1998601.png"},{text:"Écureuil",image:"https://cdn-icons-png.flaticon.com/512/1998/1998597.png"}],answer:2,audio:"Trouve le hamster"}]},primaire:{facile:[{question:"Trouve l'éléphant",options:[{text:"Lion",image:"https://cdn-icons-png.flaticon.com/512/1998/1998610.png"},{text:"Éléphant",image:"https://cdn-icons-png.flaticon.com/512/1998/1998595.png"},{text:"Girafe",image:"https://cdn-icons-png.flaticon.com/512/1998/1998600.png"},{text:"Zèbre",image:"https://cdn-icons-png.flaticon.com/512/1998/1998630.png"}],answer:1,audio:"Trouve l'éléphant"}],moyen:[{question:"Trouve le panda",options:[{text:"Kangourou",image:"https://cdn-icons-png.flaticon.com/512/1998/1998604.png"},{text:"Panda",image:"https://cdn-icons-png.flaticon.com/512/1998/1998619.png"},{text:"Koala",image:"https://cdn-icons-png.flaticon.com/512/1998/1998606.png"},{text:"Singe",image:"https://cdn-icons-png.flaticon.com/512/1998/1998624.png"}],answer:1,audio:"Trouve le panda"}],difficile:[{question:"Trouve le manchot",options:[{text:"Morse",image:"https://cdn-icons-png.flaticon.com/512/1998/1998617.png"},{text:"Phoque",image:"https://cdn-icons-png.flaticon.com/512/1998/1998621.png"},{text:"Manchot",image:"https://cdn-icons-png.flaticon.com/512/1998/1998615.png"},{text:"Ours polaire",image:"https://cdn-icons-png.flaticon.com/512/1998/1998626.png"}],answer:2,audio:"Trouve le manchot"}]}},
+  couleurs:{maternelle:{facile:[{question:"Trouve la couleur rouge",options:[{text:"Rouge",image:"https://cdn-icons-png.flaticon.com/512/2909/2909797.png"},{text:"Bleu",image:"https://cdn-icons-png.flaticon.com/512/2909/2909772.png"},{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Jaune",image:"https://cdn-icons-png.flaticon.com/512/2909/2909802.png"}],answer:0,audio:"Trouve la couleur rouge"}],moyen:[{question:"Trouve la couleur verte",options:[{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/2909/2909790.png"},{text:"Rose",image:"https://cdn-icons-png.flaticon.com/512/2909/2909796.png"},{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"}],answer:2,audio:"Trouve la couleur verte"}],difficile:[{question:"Trouve la couleur violette",options:[{text:"Marron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909783.png"},{text:"Gris",image:"https://cdn-icons-png.flaticon.com/512/2909/2909781.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"},{text:"Noir",image:"https://cdn-icons-png.flaticon.com/512/2909/2909785.png"}],answer:2,audio:"Trouve la couleur violette"}]},primaire:{facile:[{question:"Mélange bleu + jaune = ?",options:[{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/2909/2909790.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"},{text:"Rose",image:"https://cdn-icons-png.flaticon.com/512/2909/2909796.png"}],answer:0,audio:"Bleu plus jaune donne quelle couleur ?"}],moyen:[{question:"Mélange rouge + bleu = ?",options:[{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/2909/2909790.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"},{text:"Marron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909783.png"}],answer:2,audio:"Rouge plus bleu donne quelle couleur ?"}],difficile:[{question:"Mélange toutes les couleurs = ?",options:[{text:"Blanc",image:"https://cdn-icons-png.flaticon.com/512/2909/2909779.png"},{text:"Noir",image:"https://cdn-icons-png.flaticon.com/512/2909/2909785.png"},{text:"Marron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909783.png"},{text:"Gris",image:"https://cdn-icons-png.flaticon.com/512/2909/2909781.png"}],answer:2,audio:"Toutes les couleurs mélangées donnent quelle couleur ?"}]}},
+  alphabet:{maternelle:{facile:[{question:"Trouve la lettre A",options:[{text:"A",image:"https://cdn-icons-png.flaticon.com/512/3208/3208752.png"},{text:"B",image:"https://cdn-icons-png.flaticon.com/512/3208/3208753.png"},{text:"C",image:"https://cdn-icons-png.flaticon.com/512/3208/3208754.png"},{text:"D",image:"https://cdn-icons-png.flaticon.com/512/3208/3208755.png"}],answer:0,audio:"Trouve la lettre A"}],moyen:[{question:"Trouve la lettre M",options:[{text:"L",image:"https://cdn-icons-png.flaticon.com/512/3208/3208763.png"},{text:"M",image:"https://cdn-icons-png.flaticon.com/512/3208/3208764.png"},{text:"N",image:"https://cdn-icons-png.flaticon.com/512/3208/3208765.png"},{text:"O",image:"https://cdn-icons-png.flaticon.com/512/3208/3208766.png"}],answer:1,audio:"Trouve la lettre M"}],difficile:[{question:"Trouve la lettre Z",options:[{text:"X",image:"https://cdn-icons-png.flaticon.com/512/3208/3208788.png"},{text:"Y",image:"https://cdn-icons-png.flaticon.com/512/3208/3208789.png"},{text:"Z",image:"https://cdn-icons-png.flaticon.com/512/3208/3208790.png"},{text:"W",image:"https://cdn-icons-png.flaticon.com/512/3208/3208787.png"}],answer:2,audio:"Trouve la lettre Z"}]},primaire:{facile:[{question:"Première lettre de 'maison'",options:[{text:"M",image:"https://cdn-icons-png.flaticon.com/512/3208/3208764.png"},{text:"A",image:"https://cdn-icons-png.flaticon.com/512/3208/3208752.png"},{text:"I",image:"https://cdn-icons-png.flaticon.com/512/3208/3208760.png"},{text:"S",image:"https://cdn-icons-png.flaticon.com/512/3208/3208769.png"}],answer:0,audio:"Quelle est la première lettre du mot maison ?"}],moyen:[{question:"Dernière lettre de 'école'",options:[{text:"C",image:"https://cdn-icons-png.flaticon.com/512/3208/3208754.png"},{text:"O",image:"https://cdn-icons-png.flaticon.com/512/3208/3208766.png"},{text:"L",image:"https://cdn-icons-png.flaticon.com/512/3208/3208763.png"},{text:"E",image:"https://cdn-icons-png.flaticon.com/512/3208/3208756.png"}],answer:3,audio:"Quelle est la dernière lettre du mot école ?"}],difficile:[{question:"Mot qui commence par 'C'",options:[{text:"Maison",image:"https://cdn-icons-png.flaticon.com/512/3075/3075977.png"},{text:"Chat",image:"https://cdn-icons-png.flaticon.com/512/1998/1998594.png"},{text:"Arbre",image:"https://cdn-icons-png.flaticon.com/512/2909/2909768.png"},{text:"Fleur",image:"https://cdn-icons-png.flaticon.com/512/2909/2909774.png"}],answer:1,audio:"Quel mot commence par la lettre C ?"}]}},
+  comptage:{maternelle:{facile:[{question:"Compte les pommes",count:3,options:[{text:"2",image:"https://cdn-icons-png.flaticon.com/512/2921/2921222.png"},{text:"3",image:"https://cdn-icons-png.flaticon.com/512/2921/2921223.png"},{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"},{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"}],answer:1,audio:"Compte les pommes"}],moyen:[{question:"Compte les étoiles",count:5,options:[{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"},{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"}],answer:1,audio:"Compte les étoiles"}],difficile:[{question:"Compte les ballons",count:8,options:[{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"},{text:"8",image:"https://cdn-icons-png.flaticon.com/512/2921/2921228.png"},{text:"9",image:"https://cdn-icons-png.flaticon.com/512/2921/2921229.png"},{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"}],answer:1,audio:"Compte les ballons"}]},primaire:{facile:[{question:"Additionne: 2 + 3",count:5,options:[{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"},{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"}],answer:1,audio:"Deux plus trois ?"}],moyen:[{question:"10 - 4 = ?",count:6,options:[{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"},{text:"8",image:"https://cdn-icons-png.flaticon.com/512/2921/2921228.png"}],answer:1,audio:"Dix moins quatre ?"}],difficile:[{question:"3 × 4 = ?",count:12,options:[{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"},{text:"12",image:"https://cdn-icons-png.flaticon.com/512/2921/2921232.png"},{text:"14",image:"https://cdn-icons-png.flaticon.com/512/2921/2921234.png"},{text:"16",image:"https://cdn-icons-png.flaticon.com/512/2921/2921236.png"}],answer:1,audio:"Trois fois quatre ?"}]}}
+};
+
+let currentGame=null,currentQuestion=0,gameScoreLocal=0,gameQuestions=[];
+let speechSynthesisLocal=window.speechSynthesis,voices=[],currentVoice=null;
+
+function loadVoices(){voices=speechSynthesisLocal.getVoices();currentVoice=voices.find(v=>v.lang.includes('fr'))||voices[0];}
+function speak(text){if(!CONFIG.audioEnabled||!speechSynthesisLocal)return;speechSynthesisLocal.cancel();const u=new SpeechSynthesisUtterance(text);u.voice=currentVoice;u.rate=0.9;speechSynthesisLocal.speak(u);}
+if(speechSynthesisLocal){loadVoices();speechSynthesisLocal.onvoiceschanged=loadVoices;}
+
+function selectLevel(level){CONFIG.selectedLevel=level;document.querySelectorAll('[id^="level-"]').forEach(el=>el.classList.remove('selected'));document.getElementById('level-'+level).classList.add('selected');updateGameDescriptions();}
+function selectDifficulty(d){CONFIG.selectedDifficulty=d;document.querySelectorAll('[id^="difficulty-"]').forEach(el=>el.classList.remove('selected'));document.getElementById('difficulty-'+d).classList.add('selected');updateGameDescriptions();}
+function updateGameDescriptions(){
+    const mathDesc=document.getElementById('math-description');
+    const countDesc=document.getElementById('counting-description');
+    // if the old description elements aren't present (new UI) just exit
+    if(!mathDesc||!countDesc) return;
+    if(CONFIG.selectedLevel==='maternelle'){
+        if(CONFIG.selectedDifficulty==='facile'){mathDesc.textContent='Chiffres de 1 à 5';countDesc.textContent='Compte jusqu\'à 5 objets';}
+        else if(CONFIG.selectedDifficulty==='moyen'){mathDesc.textContent='Additions simples';countDesc.textContent='Compte jusqu\'à 10 objets';}
+        else{mathDesc.textContent='Additions jusqu\'à 10';countDesc.textContent='Compte jusqu\'à 15 objets';}
+    }else{
+        if(CONFIG.selectedDifficulty==='facile'){mathDesc.textContent='Additions et soustractions';countDesc.textContent='Calculs simples';}
+        else if(CONFIG.selectedDifficulty==='moyen'){mathDesc.textContent='Multiplications simples';countDesc.textContent='Problèmes de comptage';}
+        else{mathDesc.textContent='Multiplications et divisions';countDesc.textContent='Problèmes complexes';}
+    }
+}
+function applyGameSettings(){showToast(`Paramètres: ${CONFIG.selectedLevel} - ${CONFIG.selectedDifficulty}`,'success');}
+
+function startMathGame(){currentGame='math';startGame();}
+function startFruitGame(){currentGame='fruits';startGame();}
+function startAnimalGame(){currentGame='animaux';startGame();}
+function startColorGame(){currentGame='couleurs';startGame();}
+function startAlphabetGame(){currentGame='alphabet';startGame();}
+function startCountingGame(){currentGame='comptage';startGame();}
+
+function startGame(){
+  if(!currentFirebaseUser){showToast('Veuillez vous connecter pour jouer','info');openLoginModal();return;}
+  gameQuestions=GAMES_DATA[currentGame][CONFIG.selectedLevel][CONFIG.selectedDifficulty];
+  if(!gameQuestions||gameQuestions.length===0){showToast('Aucune question disponible','warning');return;}
+  // reset state for new playthrough
+  currentQuestion=0;gameScoreLocal=0;
+  CONFIG.lives = 3; // restore hearts
+  const livesEl = document.getElementById('totalLives');
+  if(livesEl) livesEl.textContent = CONFIG.lives;
+  showGameQuestion();
+}
+
+function showGameQuestion(){
+  if(currentQuestion>=gameQuestions.length){endGame();return;}
+  const question=gameQuestions[currentQuestion];
+  let optionsHTML='';
+  question.options.forEach((opt,index)=>{optionsHTML+=`<button class="game-option" onclick="checkGameAnswer(${index})"><img src="${opt.image}" alt="${opt.text}" style="width:60px;height:60px;"><span>${opt.text}</span></button>`;});
+  const content=`<div class="game-modal"><div class="game-area"><div class="game-question">${question.question}</div><div class="game-options">${optionsHTML}</div><div class="audio-controls" style="margin-top:1rem;"><button class="audio-btn" onclick="speakQuestion()"><i class="fas fa-volume-up"></i></button></div></div><div class="game-score"><div>Score: ${gameScoreLocal}</div><div>Question: ${currentQuestion+1}/${gameQuestions.length}</div></div><div class="game-controls"><button class="btn-primary" onclick="closeModal()"><i class="fas fa-times"></i> Quitter</button><button class="btn-primary" onclick="nextQuestion()" id="nextQuestionBtn" style="display:none;"><i class="fas fa-forward"></i> Suivant</button></div></div>`;
+  openModal(`<i class="fas fa-gamepad"></i> Jeu`,content);
+  setTimeout(()=>speakQuestion(),500);
+}
+function speakQuestion(){const q=gameQuestions[currentQuestion];if(q&&q.audio)speak(q.audio);}
+function checkGameAnswer(selectedIndex){
+  const question=gameQuestions[currentQuestion];
+  const options=document.querySelectorAll('.game-option');
+  options.forEach(o=>o.disabled=true);
+  options[question.answer].classList.add('correct');
+  if(selectedIndex!==question.answer){
+    options[selectedIndex].classList.add('incorrect');
+    // lose a life
+    CONFIG.lives = Math.max(0, CONFIG.lives - 1);
+    const livesEl = document.getElementById('totalLives');
+    if(livesEl) livesEl.textContent = CONFIG.lives;
+    speak("Essaie encore !");
+    showToast("Mauvaise réponse","error");
+  }
+  else{gameScoreLocal+=10;CONFIG.gameScore+=10;updateGameScores();speak("Bravo ! Bonne réponse !");showToast("Bonne réponse ! +10 points","success");}
+  const nextBtn=document.getElementById('nextQuestionBtn');if(nextBtn) nextBtn.style.display='inline-flex';
+}
+function nextQuestion(){currentQuestion++;if(currentQuestion<gameQuestions.length)showGameQuestion();else endGame();}
+function endGame(){
+  CONFIG.gamesCompleted++;updateGameScores();
+  if(CONFIG.gameScore>CONFIG.bestScore){CONFIG.bestScore=CONFIG.gameScore;localStorage.setItem('bestScore',CONFIG.bestScore);}
+  const content=`<div style="text-align:center;padding:2rem;"><div style="font-size:4rem;color:var(--success-color);margin-bottom:1rem;"><i class="fas fa-trophy"></i></div><h3>Jeu Terminé !</h3><p>Score: <strong>${gameScoreLocal} points</strong></p><p>Score global: <strong>${CONFIG.gameScore}</strong></p><div style="margin-top:2rem;"><button class="btn-primary" onclick="closeModal()"><i class="fas fa-times"></i> Fermer</button><button class="btn-primary" onclick="restartGame()" style="margin-left:1rem;"><i class="fas fa-redo"></i> Rejouer</button></div></div>`;
+  openModal('<i class="fas fa-trophy"></i> Résultats',content);
+  localStorage.setItem('gameScore',CONFIG.gameScore);localStorage.setItem('gamesCompleted',CONFIG.gamesCompleted);
+}
+function restartGame(){closeModal();setTimeout(()=>startGame(),300);}
+function updateGameScores(){
+    document.getElementById('gameScore').textContent=CONFIG.gameScore;
+    document.getElementById('bestScore').textContent=CONFIG.bestScore;
+    document.getElementById('gamesCompleted').textContent=CONFIG.gamesCompleted;
+    // also update the new score bar elements if present
+    const starsEl = document.getElementById('totalStars');
+    if(starsEl) starsEl.textContent = CONFIG.gameScore;
+    const gamesEl = document.getElementById('gamesWon');
+    if(gamesEl) gamesEl.textContent = CONFIG.gamesCompleted;
+    const livesEl = document.getElementById('totalLives');
+    if(livesEl) livesEl.textContent = CONFIG.lives!==undefined?CONFIG.lives:3;
+}
+
+
+
+
+/* ══════════════════════════════════════════════════════════
+   BIBLIOTHÈQUE
+══════════════════════════════════════════════════════════ */
+const LIBRARY_BOOKS={maternelle:[{title:"Le Petit Chaperon Rouge",author:"Charles Perrault",type:"conte",image:"https://cdn-icons-png.flaticon.com/512/2232/2232688.png",description:"Un conte classique"},{title:"Boucle d'Or",author:"Conte traditionnel",type:"conte",image:"https://cdn-icons-png.flaticon.com/512/2232/2232691.png",description:"L'histoire de Boucle d'Or"},{title:"Mon premier alphabet",author:"Éditions Eden",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232689.png",description:"Apprendre les lettres"},{title:"Les Chiffres Magiques",author:"Éditions Eden",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232690.png",description:"Découverte des chiffres"}],primaire:[{title:"Le Petit Prince",author:"Antoine de Saint-Exupéry",type:"roman",image:"https://cdn-icons-png.flaticon.com/512/2232/2232692.png",description:"Un classique de la littérature"},{title:"Les Fables de La Fontaine",author:"Jean de La Fontaine",type:"poesie",image:"https://cdn-icons-png.flaticon.com/512/2232/2232693.png",description:"Fables célèbres"},{title:"Mathématiques Faciles",author:"Prof. Mathis",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232696.png",description:"Exercices progressifs"},{title:"Découverte des Sciences",author:"Dr. Science",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232697.png",description:"Expériences scientifiques"}]};
+
+function showLibrary(level){
+  if(!CONFIG.isLoggedIn){showToast('Veuillez vous connecter','info');openLoginModal();return;}
+  const books=LIBRARY_BOOKS[level];const levelName=level==='maternelle'?'Maternelle':'École Primaire';
+  let booksHTML='<div class="book-grid">';
+  books.forEach((book,index)=>{booksHTML+=`<div class="book-item" onclick="readBook(${index},'${level}')"><img src="${book.image}" alt="${book.title}" style="width:80px;height:80px;object-fit:contain;margin-bottom:10px;"><div class="book-title">${book.title}</div><div class="book-author">${book.author}</div></div>`;});
+  booksHTML+='</div>';
+  openModal(`<i class="fas fa-book"></i> Bibliothèque ${levelName}`,booksHTML);
+}
+function searchBooks(){
+  if(!CONFIG.isLoggedIn){showToast('Veuillez vous connecter','info');openLoginModal();return;}
+  const searchTerm=document.getElementById('bookSearch').value.toLowerCase();
+  if(!searchTerm){showToast("Veuillez entrer un terme","warning");return;}
+  const allBooks=[...LIBRARY_BOOKS.maternelle,...LIBRARY_BOOKS.primaire];
+  const results=allBooks.filter(book=>book.title.toLowerCase().includes(searchTerm)||book.author.toLowerCase().includes(searchTerm));
+  const libraryResults=document.getElementById('libraryResults');
+  if(results.length===0){libraryResults.innerHTML='<p style="text-align:center;color:#666;">Aucun livre trouvé.</p>';return;}
+  let resultsHTML='<div class="book-grid">';
+  results.forEach((book,index)=>{const level=LIBRARY_BOOKS.maternelle.includes(book)?'maternelle':'primaire';const bookIndex=LIBRARY_BOOKS[level].indexOf(book);resultsHTML+=`<div class="book-item" onclick="readBook(${bookIndex},'${level}')"><img src="${book.image}" alt="${book.title}" style="width:80px;height:80px;object-fit:contain;margin-bottom:10px;"><div class="book-title">${book.title}</div><div class="book-author">${book.author}</div></div>`;});
+  resultsHTML+='</div>';
+  libraryResults.innerHTML=`<h3 style="text-align:center;margin-bottom:1rem;">Résultats (${results.length})</h3>${resultsHTML}`;
+}
+function readBook(index,level){
+  if(!CONFIG.isLoggedIn){showToast('Veuillez vous connecter','info');openLoginModal();return;}
+  const book=LIBRARY_BOOKS[level][index];if(!book)return;
+  const content=`<div style="text-align:center;"><img src="${book.image}" alt="${book.title}" style="width:150px;height:150px;object-fit:contain;margin-bottom:1rem;"><h3>${book.title}</h3><p><strong>Auteur:</strong> ${book.author}</p><p>${book.description}</p><div style="margin-top:1rem;"><button class="btn-primary" onclick="showToast('Téléchargement...','info')"><i class="fas fa-download"></i> Télécharger PDF</button></div></div>`;
+  openModal(`<i class="fas fa-book"></i> ${book.title}`,content);
+}
+function loadMoreBooks(){if(!CONFIG.isLoggedIn){showToast('Veuillez vous connecter','info');openLoginModal();return;}showToast("Chargement de livres supplémentaires...",'success');}
+
+/* ══════════════════════════════════════════════════════════
+   ACADÉMIQUE
+══════════════════════════════════════════════════════════ */
+function showHomework(){
+  if(!CONFIG.isLoggedIn){showToast("Veuillez vous connecter","warning");openLoginModal();return;}
+  const content=`<h3>Devoirs à faire</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">Mathématiques</span><br><span class="homework-date">Pour le 15 novembre</span><p>Exercices 1 à 10 page 45</p></div><button class="homework-download" onclick="showToast('PDF téléchargé','success')"><i class="fas fa-download"></i> PDF</button></li><li class="homework-item"><div><span class="homework-subject">Français</span><br><span class="homework-date">Pour le 16 novembre</span><p>Lecture et compréhension</p></div><button class="homework-download" onclick="showToast('PDF téléchargé','success')"><i class="fas fa-download"></i> PDF</button></li></ul>`;
+  openModal('<i class="fas fa-book"></i> Devoirs',content);
+}
+function showTests(){const content=`<h3>Tests et Évaluations</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">Test de Français</span><br><span class="homework-date">15 novembre 2024</span></div><span style="color:var(--success-color);font-weight:bold;">18/20</span></li><li class="homework-item"><div><span class="homework-subject">Test de Maths</span><br><span class="homework-date">10 novembre 2024</span></div><span style="color:var(--success-color);font-weight:bold;">16/20</span></li></ul>`;openModal('<i class="fas fa-clipboard-check"></i> Tests',content);}
+function showExams(){const content=`<h3>Calendrier des Examens</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">Français - Examen</span><br><span class="homework-date">2 décembre 2024, 9:00-11:00</span><p>Salle 101</p></div></li><li class="homework-item"><div><span class="homework-subject">Mathématiques - Examen</span><br><span class="homework-date">4 décembre 2024, 9:00-11:00</span><p>Salle 102</p></div></li></ul>`;openModal('<i class="fas fa-file-alt"></i> Examens',content);}
+function showVacationWork(){const content=`<h3>Travaux de Vacances</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">Cahier - Français</span><br><span class="homework-date">Vacances de Noël</span></div><button class="homework-download" onclick="showToast('Téléchargement','info')"><i class="fas fa-download"></i></button></li><li class="homework-item"><div><span class="homework-subject">Cahier - Mathématiques</span><br><span class="homework-date">Vacances de Noël</span></div><button class="homework-download" onclick="showToast('Téléchargement','info')"><i class="fas fa-download"></i></button></li></ul>`;openModal('<i class="fas fa-umbrella-beach"></i> Vacances',content);}
+
+/* ══════════════════════════════════════════════════════════
+   UTILITAIRES
+══════════════════════════════════════════════════════════ */
+function showToast(message,type='info'){
+  const toast=document.createElement('div');
+  toast.className=`toast toast-${type}`;
+  toast.innerHTML=`<i class="fas fa-${type==='success'?'check-circle':type==='error'?'exclamation-circle':'info-circle'}"></i><span>${message}</span>`;
+  document.body.appendChild(toast);
+  setTimeout(()=>{toast.style.animation='slideOutRight 0.3s ease';setTimeout(()=>toast.remove(),300);},3000);
+}
+
+function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
+
+function handleScroll(){
+  const backToTop=document.querySelector('.back-to-top');
+  if(window.scrollY>300) backToTop.style.display='flex'; else backToTop.style.display='none';
+  const sections=document.querySelectorAll('section[id]');
+  let current='';
+  sections.forEach(section=>{const sectionTop=section.offsetTop-100;if(window.scrollY>=sectionTop) current=section.getAttribute('id');});
+  updateActiveNavLink(current);
+}
+
+window.addEventListener('scroll',handleScroll);
+
+function showPrivacyPolicy(){openModal('<i class="fas fa-shield-alt"></i> Politique de Confidentialité','<p>Nous nous engageons à protéger vos données personnelles.</p>');}
+function showTerms(){openModal('<i class="fas fa-file-contract"></i> Conditions d\'Utilisation','<p>En utilisant ce portail, vous acceptez ces conditions.</p>');}
+
+/* ══════════════════════════════════════════════════════════
+   BRANCHES
+══════════════════════════════════════════════════════════ */
+const BRANCHES_DATA = {
+  kimisagara:{name:"Kimisagara",phone:"0785892018",email:"kimisagara@edenfamily.edu.rw",whatsapp:"+250785892018",mapLink:"https://maps.app.goo.gl/7NTitr14XKeXg9Hf7"},
+  gisozi:{name:"Gisozi",phone:"0788410242",email:"gisozi@edenfamily.edu.rw",whatsapp:"+250788410242",mapLink:"https://maps.app.goo.gl/tDQhe2s72jdmqJjC7"},
+  kacyiru:{name:"Kacyiru",phone:"0791639766",email:"sergetumbwe@gmail.com",whatsapp:"+250791639766",mapLink:"https://maps.app.goo.gl/pYVZStha8ui2VSjaA"}
+};
+
+function showKimisagaraDirections(){window.open(BRANCHES_DATA.kimisagara.mapLink,'_blank');}
+function showGisoziDirections(){window.open(BRANCHES_DATA.gisozi.mapLink,'_blank');}
+function showKacyiruDirections(){window.open(BRANCHES_DATA.kacyiru.mapLink,'_blank');}
+
+function openBranchGallery(branchName){
+  const galleries={kimisagara:'Galerie_Kimisagara.html',gisozi:'Galerie_Gisozi.html',kacyiru:'Galerie_Kacyiru.html'};
+  showToast('Chargement de la galerie...','info');
+  setTimeout(()=>{window.location.href=galleries[branchName]||'#';},800);
+}
+
+function showBranchInfo(branchName){
+  const branch=BRANCHES_DATA[branchName];if(!branch)return;
+  const content=`<div style="text-align:center;"><h3>${branch.name}</h3><p><i class="fas fa-phone"></i> ${branch.phone}</p><p><i class="fas fa-envelope"></i> ${branch.email}</p><div style="margin-top:1rem;display:flex;gap:1rem;justify-content:center;"><button class="btn-primary" onclick="window.open('${branch.mapLink}','_blank')"><i class="fas fa-map-marker-alt"></i> Google Maps</button></div></div>`;
+  openModal(`<i class="fas fa-school"></i> ${branch.name}`,content);
+}
+
+const COACHING_PROGRAMS = [
+  {id:'coaching-kimisagara-maternelle',branch:'kimisagara',level:'Maternelle',students:18,monthlyFee:25000,paidThisMonth:12,needsApproval:false,status:'Actif'},
+  {id:'coaching-kimisagara-primaire',branch:'kimisagara',level:'Primaire',students:12,monthlyFee:30000,paidThisMonth:9,needsApproval:true,status:'En attente'},
+  {id:'coaching-gisozi-maternelle',branch:'gisozi',level:'Maternelle',students:15,monthlyFee:25000,paidThisMonth:11,needsApproval:false,status:'Actif'},
+  {id:'coaching-gisozi-primaire',branch:'gisozi',level:'Primaire',students:10,monthlyFee:30000,paidThisMonth:6,needsApproval:true,status:'À régulariser'},
+  {id:'coaching-kacyiru-maternelle',branch:'kacyiru',level:'Maternelle',students:20,monthlyFee:25000,paidThisMonth:16,needsApproval:false,status:'Actif'},
+  {id:'coaching-kacyiru-primaire',branch:'kacyiru',level:'Primaire',students:9,monthlyFee:30000,paidThisMonth:7,needsApproval:false,status:'Actif'}
+];
+
+const COACHING_PAYMENT_HISTORY = [
+  {id:'pay-1',programId:'coaching-kimisagara-primaire',student:'Aline Uwimana',date:'2024-11-01',amount:30000,status:'En attente'},
+  {id:'pay-2',programId:'coaching-gisozi-primaire',student:'Jean Nkurunziza',date:'2024-10-28',amount:30000,status:'Effectué'},
+  {id:'pay-3',programId:'coaching-kacyiru-maternelle',student:'Emma Mukandayisenga',date:'2024-11-03',amount:25000,status:'Effectué'},
+  {id:'pay-4',programId:'coaching-kimisagara-maternelle',student:'Samuel Habimana',date:'2024-11-05',amount:25000,status:'En attente'}
+];
+
+let selectedCoachingBranch = 'kimisagara';
+
+function formatCurrencyRWF(value){
+  return new Intl.NumberFormat('fr-RW',{style:'currency',currency:'RWF',maximumFractionDigits:0}).format(value);
+}
+function getCoachingProgramsForBranch(branchId){
+  return COACHING_PROGRAMS.filter(program=>program.branch===branchId);
+}
+function getCoachingPaymentsForBranch(branchId){
+  return COACHING_PAYMENT_HISTORY.filter(payment=>{
+    const program = COACHING_PROGRAMS.find(p=>p.id===payment.programId);
+    return program && program.branch===branchId;
+  });
+}
+function setCoachingBranch(branchId){
+  selectedCoachingBranch=branchId;
+  const select=document.getElementById('coachingBranchSelect');
+  if(select) select.value=branchId;
+  renderCoachingSection();
+}
+function renderCoachingSection(){
+  const programs=getCoachingProgramsForBranch(selectedCoachingBranch);
+  const payments=getCoachingPaymentsForBranch(selectedCoachingBranch);
+  const totalStudents=programs.reduce((sum,p)=>sum+p.students,0);
+  const activePrograms=programs.length;
+  const duePrograms=programs.filter(p=>p.paidThisMonth<p.students).length;
+  const totalIncome=programs.reduce((sum,p)=>sum+p.monthlyFee*p.students,0);
+  const receivedPayments=programs.reduce((sum,p)=>sum+p.monthlyFee*p.paidThisMonth,0);
+  const totalDue=Math.max(0,totalIncome-receivedPayments);
+  const pendingApprovals=programs.filter(p=>p.needsApproval).length;
+  document.getElementById('coachingBranchName').textContent = BRANCHES_DATA[selectedCoachingBranch]?.name || selectedCoachingBranch;
+  document.getElementById('coachingStudentsCount').textContent = totalStudents;
+  document.getElementById('coachingProgramsCount').textContent = activePrograms;
+  document.getElementById('coachingDueProgramsCount').textContent = duePrograms + ' en retard';
+  document.getElementById('coachingPendingApprovalsCount').textContent = pendingApprovals + ' approbations';
+  document.getElementById('coachingExpectedIncome').textContent = formatCurrencyRWF(totalIncome);
+  document.getElementById('coachingTotalDue').textContent = formatCurrencyRWF(totalDue);
+  document.getElementById('coachingPaymentCount').textContent = payments.length + ' paiements';
+  const tableBody=document.getElementById('coachingTableBody');
+  const summaryBody=document.getElementById('coachingTableSummary');
+  if(!tableBody||!summaryBody) return;
+  tableBody.innerHTML='';
+  programs.forEach(program=>{
+    const dueCount=Math.max(0,program.students-program.paidThisMonth);
+    const dueAmount=dueCount*program.monthlyFee;
+    const statusBadge=program.status==='Actif' ? 'var(--success-color)' : (program.status==='En attente' ? 'var(--warning-color)' : 'var(--danger-color)');
+    const row=document.createElement('tr');
+    row.innerHTML=`
+      <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);">${program.level}</td>
+      <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);">${program.students}</td>
+      <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);">${formatCurrencyRWF(program.monthlyFee)}</td>
+      <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);">${formatCurrencyRWF(dueAmount)}</td>
+      <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);"><span style="display:inline-block;padding:.4rem .75rem;border-radius:999px;background:${statusBadge};color:#fff;font-size:.9rem;">${program.status}</span></td>
+      <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);"><button class="btn-primary" onclick="openCoachingDetailsModal('${program.id}')"><i class="fas fa-info-circle"></i> Détails</button><button class="btn-primary" onclick="openCoachingPaymentModal('${program.id}')" style="margin-left:.4rem;"><i class="fas fa-hand-holding-usd"></i> Paiement</button></td>
+    `;
+    tableBody.appendChild(row);
+  });
+  summaryBody.innerHTML=`
+    <tr>
+      <td style="padding:1rem;border-top:2px solid rgba(0,0,0,.12);font-weight:700;">Total</td>
+      <td style="padding:1rem;border-top:2px solid rgba(0,0,0,.12);font-weight:700;">${totalStudents}</td>
+      <td style="padding:1rem;border-top:2px solid rgba(0,0,0,.12);font-weight:700;">-</td>
+      <td style="padding:1rem;border-top:2px solid rgba(0,0,0,.12);font-weight:700;">${formatCurrencyRWF(totalDue)}</td>
+      <td style="padding:1rem;border-top:2px solid rgba(0,0,0,.12);font-weight:700;">-</td>
+      <td style="padding:1rem;border-top:2px solid rgba(0,0,0,.12);">&nbsp;</td>
+    </tr>
+  `;
+}
+function openCoachingDetailsModal(programId){
+  const program=COACHING_PROGRAMS.find(p=>p.id===programId);if(!program)return;
+  const payments=COACHING_PAYMENT_HISTORY.filter(p=>p.programId===programId);
+  const paymentHtml=payments.length ? '<ul style="padding-left:1rem;">' + payments.map(p=>`<li><strong>${p.student}</strong> — ${formatCurrencyRWF(p.amount)} le ${p.date} <span style="color:${p.status==='Effectué'?'var(--success-color)':p.status==='En attente'?'var(--warning-color)':'var(--danger-color)'};">(${p.status})</span></li>`).join('') + '</ul>' : '<p>Aucun paiement enregistré pour ce programme.</p>';
+  const content=`<div style="display:grid;gap:1.25rem;"><div><strong>Niveau :</strong> ${program.level}</div><div><strong>Élèves inscrits :</strong> ${program.students}</div><div><strong>Tarif mensuel :</strong> ${formatCurrencyRWF(program.monthlyFee)}</div><div><strong>Montant dû :</strong> ${formatCurrencyRWF(Math.max(0,(program.students-program.paidThisMonth)*program.monthlyFee))}</div><div><strong>Statut :</strong> ${program.status}</div><div><strong>Historique des paiements :</strong>${paymentHtml}</div><div style="display:flex;gap:.75rem;"><button class="btn-primary" onclick="recordCoachingPayment('${program.id}')"><i class="fas fa-hand-holding-usd"></i> Enregistrer un paiement</button><button class="btn-primary" onclick="openCoachingStudentsModal()"><i class="fas fa-users"></i> Gérer les élèves</button></div></div>`;
+  openModal(`<i class="fas fa-chalkboard-teacher"></i> Détails Coaching`,content);
+}
+function openCoachingStudentsModal(){
+  const programs=getCoachingProgramsForBranch(selectedCoachingBranch);
+  const content=`<div style="display:grid;gap:1rem;">${programs.map(program=>`<div style="padding:1rem;border:1px solid rgba(0,0,0,.08);border-radius:15px;"><strong>${program.level}</strong><div>Élèves: ${program.students}</div><div>Paiements reçus: ${program.paidThisMonth}</div><div>Statut: ${program.status}</div></div>`).join('')}<button class="btn-primary" onclick="closeModal()" style="justify-self:flex-start;"><i class="fas fa-times"></i> Fermer</button></div>`;
+  openModal(`<i class="fas fa-users"></i> Élèves de coaching`,content);
+}
+function openCoachingPaymentModal(programId){
+  const program=COACHING_PROGRAMS.find(p=>p.id===programId);if(!program)return;
+  const dueCount=Math.max(0,program.students-program.paidThisMonth);
+  const dueAmount=dueCount*program.monthlyFee;
+  const content=`<div style="display:grid;gap:1rem;"><p>Programme : <strong>${program.level}</strong></p><p>Élèves non payés : <strong>${dueCount}</strong></p><p>Montant dû : <strong>${formatCurrencyRWF(dueAmount)}</strong></p><button class="btn-primary" onclick="recordCoachingPayment('${program.id}')"><i class="fas fa-hand-holding-usd"></i> Enregistrer un paiement</button><button class="btn-primary" onclick="closeModal()" style="justify-self:flex-start;"><i class="fas fa-times"></i> Annuler</button></div>`;
+  openModal(`<i class="fas fa-credit-card"></i> Paiement coaching`,content);
+}
+function recordCoachingPayment(programId){
+  const program=COACHING_PROGRAMS.find(p=>p.id===programId);if(!program)return;
+  const dueCount=Math.max(0,program.students-program.paidThisMonth);
+  if(dueCount===0){showToast('Aucun paiement dû pour ce programme.','info');return;}
+  program.paidThisMonth += 1;
+  const paymentAmount=program.monthlyFee;
+  COACHING_PAYMENT_HISTORY.unshift({id:`pay-${Date.now()}`,programId,student:`Élève ${program.paidThisMonth}`,date:new Date().toLocaleDateString('fr-FR'),amount:paymentAmount,status:'Effectué'});
+  showToast('Paiement de coaching enregistré.','success');
+  renderCoachingSection();
+  closeModal();
+}
+
+function openAllBranchesMap(){
+  const content=`<div style="text-align:center;padding:2rem;"><h3>Nos emplacements</h3><div style="display:grid;grid-template-columns:1fr;gap:1rem;max-width:400px;margin:1rem auto;"><button class="btn-primary" onclick="window.open('${BRANCHES_DATA.kimisagara.mapLink}','_blank')"><i class="fas fa-map-marker-alt"></i> Kimisagara</button><button class="btn-primary" onclick="window.open('${BRANCHES_DATA.gisozi.mapLink}','_blank')"><i class="fas fa-map-marker-alt"></i> Gisozi</button><button class="btn-primary" onclick="window.open('${BRANCHES_DATA.kacyiru.mapLink}','_blank')"><i class="fas fa-map-marker-alt"></i> Kacyiru</button></div></div>`;
+  openModal('<i class="fas fa-map-marked-alt"></i> Nos Emplacements',content);
+}
+
+/* ══════════════════════════════════════════════════════════
+   CONTACT
+══════════════════════════════════════════════════════════ */
+function showContactOptions(branchName){
+  const branch=BRANCHES_DATA[branchName.toLowerCase()];if(!branch)return;
+  document.getElementById('contactBranchName').textContent=branch.name;
+  document.getElementById('contactPhoneNumber').textContent=branch.phone;
+  document.getElementById('contactEmail').textContent=branch.email;
+  document.getElementById('contactOptionsModal').style.display='flex';
+}
+function closeContactOptionsModal(){document.getElementById('contactOptionsModal').style.display='none';}
+function contactByPhone(){showToast(`Appel vers ${document.getElementById('contactPhoneNumber').textContent}...`,"info");}
+function contactByEmail(){showToast(`Email vers ${document.getElementById('contactEmail').textContent}...`,"info");}
+function contactByWhatsApp(){showToast("Ouverture de WhatsApp...","info");}
+
+document.getElementById('contactOptionsModal').addEventListener('click',e=>{if(e.target===document.getElementById('contactOptionsModal')) closeContactOptionsModal();});
+
+const contactFormEl=document.getElementById('contactForm');
+if(contactFormEl){contactFormEl.addEventListener('submit',(e)=>{e.preventDefault();showToast("Message envoyé avec succès !","success");contactFormEl.reset();});}
+
+/* ══════════════════════════════════════════════════════════
+   FORMULAIRE INSCRIPTION
+══════════════════════════════════════════════════════════ */
+const BRANCHES_DATA_INSCRIPTION={KACYIRU:{name:"Kacyiru",phone:"0791639766 / 0792570074",email:"sergetumbwe@gmail.com",address:"KG 17 Ave, Kacyiru, Kigali"},GISOZI:{name:"Gisozi",phone:"0788410242 / 0796145647",email:"gisozi@edenfamily.edu.rw",address:"KG 11 Ave, Gisozi, Kigali"},KIMISAGARA:{name:"Kimisagara",phone:"0785892018 / 0791826950",email:"kimisagara@edenfamily.edu.rw",address:"KG 7 Ave, Kimisagara, Kigali"}};
+
+document.getElementById('maternelle').addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='block';document.getElementById('niveauPrimaireGroup').style.display='none';document.getElementById('sdmsGroup').style.display='none';}});
+document.getElementById('primaire').addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='none';document.getElementById('niveauPrimaireGroup').style.display='block';document.getElementById('sdmsGroup').style.display='block';}});
+
+document.querySelectorAll('input[name="branche"]').forEach(radio=>{radio.addEventListener('change',function(){if(this.checked){const branchData=BRANCHES_DATA_INSCRIPTION[this.value];if(branchData){document.getElementById('contactText').innerHTML=`<strong>Contact ${branchData.name}:</strong><br>${branchData.phone}<br>${branchData.email}`;document.getElementById('contactInfo').style.display='block';}}});});
+
+function generateInscriptionStudentCode(){const now=new Date();return `EDU-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}-${now.getTime().toString().slice(-6)}`;}
+function hideInscriptionErrorMessage(){document.getElementById('missingFieldMessage').style.display='none';}
+function closeInscriptionSuccessMessage(){document.getElementById('successMessage').style.display='none';}
+
+async function submitInscriptionForm(){
+  const nomPrenom=document.getElementById('nomPrenom').value;
+  if(!nomPrenom){document.getElementById('errorTitle').textContent='Champ manquant !';document.getElementById('errorMessage').textContent='Nom de l\'enfant requis.';document.getElementById('missingFieldMessage').style.display='block';return;}
+  const submitBtn=document.getElementById('submitBtn');submitBtn.disabled=true;submitBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Envoi...';
+  try {
+    const formData={nomPrenom,dateNaissance:document.getElementById('dateNaissance').value,ecoleProvenance:document.getElementById('ecoleProvenance').value,codeUnique:generateInscriptionStudentCode(),dateInscription:new Date().toISOString(),timestamp:Date.now(),statut:'En attente'};
+    await firebase.database().ref('inscriptions-scolaires').push(formData);
+    document.getElementById('studentCode').textContent=formData.codeUnique;
+    document.getElementById('successMessage').style.display='flex';
+    document.getElementById('inscriptionForm').reset();
+  } catch(error){console.error(error);alert('Erreur lors de l\'enregistrement.');}
+  finally{submitBtn.innerHTML='<i class="fas fa-paper-plane"></i> Soumettre l\'inscription';submitBtn.disabled=false;}
+}
+
+document.getElementById('chefTelephone').addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'');});
+
+/* ══════════════════════════════════════════════════════════
+   CONTACT CARDS ANIMATION
+══════════════════════════════════════════════════════════ */
+const contactCards=document.querySelectorAll('.contact-card');
+contactCards.forEach((card,index)=>{setTimeout(()=>{card.classList.add('animate');},100*index);});
+
+/* ══════════════════════════════════════════════════════════
+   VIDÉO CONTRÔLES
+══════════════════════════════════════════════════════════ */
+const video=document.getElementById('schoolVideo');
+const playPauseBtn=document.getElementById('playPauseBtn');
+const rewindBtn=document.getElementById('rewindBtn');
+const forwardBtn=document.getElementById('forwardBtn');
+const progressBar=document.getElementById('progressBar');
+const progressFill=document.getElementById('progressFill');
+const timeDisplay=document.getElementById('timeDisplay');
+
+if(video){
+  function formatTime(s){if(!isFinite(s))return'0:00';return`${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;}
+  function updatePlayPauseBtn(){playPauseBtn.innerHTML=video.paused?'<i class="fas fa-play"></i> Lecture':'<i class="fas fa-pause"></i> Pause';}
+  playPauseBtn.addEventListener('click',()=>{if(video.paused)video.play();else video.pause();updatePlayPauseBtn();});
+  rewindBtn.addEventListener('click',()=>{video.currentTime=Math.max(0,video.currentTime-10);});
+  forwardBtn.addEventListener('click',()=>{video.currentTime=Math.min(video.duration,video.currentTime+10);});
+  progressBar.addEventListener('click',(e)=>{const rect=progressBar.getBoundingClientRect();video.currentTime=((e.clientX-rect.left)/rect.width)*video.duration;});
+  video.addEventListener('timeupdate',()=>{if(video.duration){progressFill.style.width=(video.currentTime/video.duration*100)+'%';timeDisplay.textContent=formatTime(video.currentTime)+' / '+formatTime(video.duration);}});
+  video.addEventListener('loadedmetadata',()=>{video.currentTime=1;timeDisplay.textContent='0:00 / '+formatTime(video.duration);});
+  video.addEventListener('play',updatePlayPauseBtn);video.addEventListener('pause',updatePlayPauseBtn);
+}
+
+/* ══════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════ */
+window.addEventListener('load',()=>{
+  // legacy level/difficulty initialization (may be used by some functions)
+  selectLevel('maternelle');selectDifficulty('facile');updateGameDescriptions();
+
+  CONFIG.gameScore=parseInt(localStorage.getItem('gameScore'))||0;
+  CONFIG.bestScore=parseInt(localStorage.getItem('bestScore'))||0;
+  CONFIG.gamesCompleted=parseInt(localStorage.getItem('gamesCompleted'))||0;
+  updateGameScores();
+
+  // initialize new UI grid and default level tab
+  setLevel('N1');
+
+  startAutoSlide();
+  renderCoachingSection();
+  handleScroll();
+  doScroll();
+  console.log('Eden Family School chargé avec succès!');
+});
+
+window.addEventListener('resize',()=>{
+  if(window.innerWidth<=768){CONFIG.isAutoSlideEnabled=false;clearInterval(CONFIG.autoSlideInterval);}
+  else{CONFIG.isAutoSlideEnabled=true;startAutoSlide();}
+  // Repositionner le bubble si menu ouvert
+  if(menuOpen) placeItems(true,R_BIG,true);
+});
+
+// helpers for the new games UI
+function setLevel(level,el){
+  if(!el){
+    el=document.querySelector(`.ltab[onclick*="${level}"]`);
+  }
+  document.querySelectorAll('.ltab').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  // map to legacy configuration (all levels currently use maternelle)
+  CONFIG.selectedLevel='maternelle';
+  if(level==='N1'){CONFIG.selectedDifficulty='facile';}
+  else if(level==='N2'){CONFIG.selectedDifficulty='moyen';}
+  else if(level==='N3'){CONFIG.selectedDifficulty='difficile';}
+  const labelEl=document.getElementById('sectionLabel');
+  if(labelEl) labelEl.textContent=`Niveau ${level} — Choisissez un jeu !`;
+  renderGrid();
+}
+
+function renderGrid(){
+  const grid=document.getElementById('gameGrid');
+  if(!grid) return;
+  const gamesList=[
+    {title:'Mathématiques',emoji:'🧮',color:'var(--primary)',start:'startMathGame'},
+    {title:'Fruits',emoji:'🍎',color:'var(--accent)',start:'startFruitGame'},
+    {title:'Animaux',emoji:'🐶',color:'var(--grass)',start:'startAnimalGame'},
+    {title:'Couleurs',emoji:'🎨',color:'var(--coral)',start:'startColorGame'},
+    {title:'Alphabet',emoji:'🔤',color:'var(--sky)',start:'startAlphabetGame'},
+    {title:'Comptage',emoji:'🔢',color:'var(--sun)',start:'startCountingGame'},
+  ];
+  grid.innerHTML='';
+  gamesList.forEach(g=>{
+    const card=document.createElement('div');
+    card.className='game-card';
+    card.style.setProperty('--card-color', g.color);
+    card.innerHTML=`<div class="emoji">${g.emoji}</div>
+      <h3>${g.title}</h3>
+      <p>Amuse-toi bien !</p>
+      <button class="play-btn" onclick="${g.start}()">Jouer <i class="fas fa-play"></i></button>`;
+    grid.appendChild(card);
+  });
+}
+
+function capitalize(str){return str.charAt(0).toUpperCase()+str.slice(1);}
+</script>
+
+</body>
+</html>

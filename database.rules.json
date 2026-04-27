@@ -1,0 +1,106 @@
+{
+  "rules": {
+    "branches": {
+      "$branch": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('branch').val() === $branch || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('branch').val() === $branch || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+        "students": {
+          "$studentId": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            "totalPaid": {
+              ".write": "auth != null"
+            }
+          }
+        },
+
+        "payments": {
+          "fees": {
+            "$paymentId": {
+              ".write": "auth != null && (!data.exists() || !newData.exists())"
+            }
+          },
+          "coaching": {
+            "$id": {
+              ".write": "auth != null"
+            }
+          },
+          "transport": {
+            "$id": {
+              ".write": "auth != null"
+            }
+          },
+          "registration": {
+            "$id": {
+              ".write": "auth != null"
+            }
+          }
+        },
+
+        "payroll": {
+          "$periodKey": {
+            ".write": "auth != null && !data.exists()"
+          }
+        },
+
+        "reports": {
+          "daily": {
+            "$dayKey": {
+              ".write": "auth != null && !data.exists()"
+            }
+          },
+          "weekly": {
+            "$id": {
+              ".write": "auth != null && !data.exists()"
+            }
+          },
+          "monthly": {
+            "$id": {
+              ".write": "auth != null && !data.exists()"
+            }
+          },
+          "openingBalances": {
+            "$date": {
+              ".write": "auth != null"
+            }
+          }
+        },
+
+        "workers": {
+          "$id": {
+            ".write": "auth != null"
+          }
+        },
+        "classes": {
+          ".write": "auth != null"
+        },
+        "feeConfig": {
+          ".write": "auth != null"
+        },
+        "debts": {
+          "$id": {
+            ".write": "auth != null"
+          }
+        }
+      }
+    },
+
+    "global": {
+      "settings": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      },
+      "users": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      },
+      "announcements": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}

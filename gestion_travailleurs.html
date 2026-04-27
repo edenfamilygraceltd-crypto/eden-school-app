@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Travailleurs - EdenSmart</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="responsive.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <style>
+        .worker-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: transform 0.3s ease;
+        }
+        .worker-card:hover {
+            transform: translateY(-5px);
+        }
+        .worker-card h5 {
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .worker-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .worker-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .worker-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .worker-stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .section.active {
+            display: block;
+        }
+        .section {
+            display: none;
+        }
+        .nav-btn {
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        .nav-btn.active {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <!-- En-tête -->
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h1 class="fw-bold">Gestion des Travailleurs</h1>
+                <p class="text-muted">Gérer tous les employés et travailleurs de l'école</p>
+            </div>
+            <button class="btn btn-primary" onclick="showAddWorkerModal()">
+                <i class="fas fa-plus me-2"></i> Ajouter un Travailleur
+            </button>
+        </div>
+
+        <!-- Navigation par Section -->
+        <div class="mb-4">
+            <button class="nav-btn active" onclick="showSection('dashboard')">
+                <i class="fas fa-chart-line me-2"></i> Tableau de Bord
+            </button>
+            <button class="nav-btn" onclick="showSection('workers')">
+                <i class="fas fa-users me-2"></i> Liste des Travailleurs
+            </button>
+            <button class="nav-btn" onclick="showSection('payroll')">
+                <i class="fas fa-money-bill me-2"></i> Gestion de la Paie
+            </button>
+            <button class="nav-btn" onclick="showSection('attendance')">
+                <i class="fas fa-calendar-check me-2"></i> Présence
+            </button>
+            <button class="nav-btn" onclick="showSection('reports')">
+                <i class="fas fa-file-alt me-2"></i> Rapports
+            </button>
+        </div>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Total Travailleurs</h6>
+                                    <h3 class="mb-0" id="totalWorkers">0</h3>
+                                </div>
+                                <i class="fas fa-users fa-2x text-primary" style="opacity:0.2;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Actifs</h6>
+                                    <h3 class="mb-0 text-success" id="activeWorkers">0</h3>
+                                </div>
+                                <i class="fas fa-check-circle fa-2x text-success" style="opacity:0.2;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Salarié du Mois</h6>
+                                    <h3 class="mb-0 text-info" id="monthSalary">0 FRW</h3>
+                                </div>
+                                <i class="fas fa-money-bill fa-2x text-info" style="opacity:0.2;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Dettes</h6>
+                                    <h3 class="mb-0 text-danger" id="totalDebts">0 FRW</h3>
+                                </div>
+                                <i class="fas fa-exclamation-circle fa-2x text-danger" style="opacity:0.2;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" id="workersCardsContainer">
+                <!-- Les cartes des travailleurs seront ajoutées ici -->
+            </div>
+        </section>
+
+        <!-- Workers List Section -->
+        <section id="workers" class="section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold">Liste des Travailleurs</h3>
+                <div class="d-flex gap-2">
+                    <input type="text" class="form-control" placeholder="Rechercher..." id="searchWorker" style="max-width: 300px;" oninput="searchWorkers()">
+                    <button class="btn btn-success" onclick="exportWorkersExcel()">
+                        <i class="fas fa-file-excel me-2"></i> Exporter Excel
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="importWorkersFile()">
+                        <i class="fas fa-file-import me-2"></i> Importer
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>NO</th>
+                            <th>NOM COMPLET</th>
+                            <th>POSITION</th>
+                            <th>TÉLÉPHONE</th>
+                            <th>SALAIRE</th>
+                            <th>STATUT</th>
+                            <th>DATE EMBAUCHE</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workersTable">
+                        <!-- Les travailleurs seront chargés ici -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Payroll Section -->
+        <section id="payroll" class="section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold">Gestion de la Paie</h3>
+                <div class="d-flex gap-2">
+                    <input type="month" class="form-control" id="payrollMonth" style="max-width: 200px;">
+                    <button class="btn btn-primary" onclick="calculatePayroll()">
+                        <i class="fas fa-calculator me-2"></i> Calculer
+                    </button>
+                    <button class="btn btn-success" onclick="exportPayrollExcel()">
+                        <i class="fas fa-file-excel me-2"></i> Exporter
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>TRAVAILLEUR</th>
+                            <th>SALAIRE BASE</th>
+                            <th>DETTES</th>
+                            <th>AUTRES DÉDUCTIONS</th>
+                            <th>NET À PAYER</th>
+                            <th>STATUT</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payrollTable">
+                        <!-- Le payroll sera chargé ici -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Attendance Section -->
+        <section id="attendance" class="section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold">Présence</h3>
+                <div class="d-flex gap-2">
+                    <input type="date" class="form-control" id="attendanceDate" style="max-width: 200px;">
+                    <button class="btn btn-primary" onclick="loadAttendance()">
+                        <i class="fas fa-sync me-2"></i> Charger
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>TRAVAILLEUR</th>
+                            <th>PRÉSENT</th>
+                            <th>HEURE ARRIVÉE</th>
+                            <th>HEURE DÉPART</th>
+                            <th>NOTES</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTable">
+                        <!-- La présence sera chargée ici -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="reports" class="section">
+            <div class="mb-4">
+                <h3 class="fw-bold mb-4">Rapports</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm p-4">
+                            <h5 class="mb-3"><i class="fas fa-clock me-2"></i> Rapport de Présence</h5>
+                            <p class="text-muted mb-3">Voir les statistiques de présence des travailleurs</p>
+                            <button class="btn btn-outline-primary" onclick="viewAttendanceReport()">Voir le Rapport</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm p-4">
+                            <h5 class="mb-3"><i class="fas fa-file-invoice-dollar me-2"></i> Rapport de Paie</h5>
+                            <p class="text-muted mb-3">Consulter les détails de la paie mensuelle</p>
+                            <button class="btn btn-outline-primary" onclick="viewPayrollReport()">Voir le Rapport</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal Ajouter Travailleur -->
+    <div class="modal fade" id="addWorkerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter un Travailleur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addWorkerForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nom Complet *</label>
+                                <input type="text" class="form-control" id="workerName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Position *</label>
+                                <input type="text" class="form-control" id="workerPosition" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Téléphone</label>
+                                <input type="tel" class="form-control" id="workerPhone">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="workerEmail">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Salaire Base *</label>
+                                <input type="number" class="form-control" id="workerSalary" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date d'Embauche</label>
+                                <input type="date" class="form-control" id="workerHireDate">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Statut</label>
+                                <select class="form-select" id="workerStatus">
+                                    <option value="active">Actif</option>
+                                    <option value="inactive">Inactif</option>
+                                    <option value="suspended">Suspendu</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Type</label>
+                                <select class="form-select" id="workerType">
+                                    <option value="permanent">Permanent</option>
+                                    <option value="contract">Contrat</option>
+                                    <option value="part-time">Temps Partiel</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="saveWorker()">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        // Firebase initialization
+        const firebaseConfig = {
+            apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+            authDomain: "edensmart-app.firebaseapp.com",
+            databaseURL: "https://edensmart-app-default-rtdb.firebaseio.com",
+            projectId: "edensmart-app",
+            storageBucket: "edensmart-app.firebasestorage.app",
+            messagingSenderId: "1093120876724",
+            appId: "1:1093120876724:web:bc37448cadd18d651c77e1",
+            measurementId: "G-1FL70PZZSW"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+        const workersRef = db.ref('teachers');
+
+        let workers = [];
+        let currentUser = null;
+
+        // Initialize
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                loadWorkers();
+            }
+        });
+
+        // Load workers
+        function loadWorkers() {
+            workersRef.on('value', (snapshot) => {
+                workers = [];
+                snapshot.forEach((childSnapshot) => {
+                    workers.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+                loadWorkersTable();
+                updateStats();
+            });
+        }
+
+        // Load workers table
+        function loadWorkersTable() {
+            const tbody = document.getElementById('workersTable');
+            tbody.innerHTML = '';
+
+            workers.forEach((worker, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><strong>${worker.name || 'N/A'}</strong></td>
+                    <td>${worker.position || 'N/A'}</td>
+                    <td>${worker.phone || 'N/A'}</td>
+                    <td>${formatCurrency(worker.salary || 0)}</td>
+                    <td><span class="badge bg-${worker.status === 'active' ? 'success' : 'danger'}">${worker.status === 'active' ? 'Actif' : 'Inactif'}</span></td>
+                    <td>${new Date(worker.hireDate).toLocaleDateString('fr-FR') || 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editWorker('${worker.id}')">Éditer</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteWorker('${worker.id}')">Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Show section
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('fr-FR', {
+                style: 'currency',
+                currency: 'RWF',
+                minimumFractionDigits: 0
+            }).format(value);
+        }
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('totalWorkers').textContent = workers.length;
+            const activeCount = workers.filter(w => w.status === 'active').length;
+            document.getElementById('activeWorkers').textContent = activeCount;
+            
+            const totalSalary = workers.reduce((sum, w) => sum + (w.salary || 0), 0);
+            document.getElementById('monthSalary').textContent = formatCurrency(totalSalary);
+        }
+
+        // Show add worker modal
+        function showAddWorkerModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addWorkerModal'));
+            modal.show();
+        }
+
+        // Save worker
+        function saveWorker() {
+            const workerData = {
+                name: document.getElementById('workerName').value,
+                position: document.getElementById('workerPosition').value,
+                phone: document.getElementById('workerPhone').value,
+                email: document.getElementById('workerEmail').value,
+                salary: parseFloat(document.getElementById('workerSalary').value),
+                hireDate: document.getElementById('workerHireDate').value,
+                status: document.getElementById('workerStatus').value,
+                type: document.getElementById('workerType').value
+            };
+
+            workersRef.push(workerData).then(() => {
+                document.getElementById('addWorkerForm').reset();
+                bootstrap.Modal.getInstance(document.getElementById('addWorkerModal')).hide();
+                alert('Travailleur ajouté avec succès!');
+            }).catch(err => {
+                console.error('Erreur:', err);
+                alert('Erreur lors de l\'ajout');
+            });
+        }
+
+        // Search workers
+        function searchWorkers() {
+            const query = document.getElementById('searchWorker').value.toLowerCase();
+            const tbody = document.getElementById('workersTable');
+            const rows = tbody.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        // Export workers
+        function exportWorkersExcel() {
+            let csv = 'NO\tNOM\tPOSITION\tTÉLÉPHONE\tSALAIRE\tSTATUT\tDATE EMBAUCHE\n';
+            
+            workers.forEach((w, i) => {
+                csv += `${i+1}\t${w.name}\t${w.position}\t${w.phone}\t${w.salary}\t${w.status}\t${w.hireDate}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `travailleurs_${Date.now()}.csv`;
+            a.click();
+        }
+
+        // Delete worker
+        function deleteWorker(workerId) {
+            if (confirm('Êtes-vous sûr?')) {
+                workersRef.child(workerId).remove();
+            }
+        }
+
+        // Placeholder functions
+        function importWorkersFile() { alert('Fonction import en développement'); }
+        function calculatePayroll() { alert('Fonction calcul paie en développement'); }
+        function exportPayrollExcel() { alert('Fonction export paie en développement'); }
+        function loadAttendance() { alert('Fonction présence en développement'); }
+        function viewAttendanceReport() { alert('Rapport en développement'); }
+        function viewPayrollReport() { alert('Rapport en développement'); }
+        function editWorker(id) { alert('Édition en développement'); }
+    </script>
+</body>
+</html>

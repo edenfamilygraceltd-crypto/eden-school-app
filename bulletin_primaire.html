@@ -1,0 +1,3187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bulletin Primaire — Eden Family School</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root {
+  --gold:#c8a84b; --gold-light:#e8c97a; --gold-dim:#a07830;
+  --dark:#0d1117; --navy:#111827; --blue:#1e3a5f; --blue-mid:#1d4ed8;
+  --white:#ffffff; --off:#f9f7f2; --gray:#6b7280; --border:#d4c5a0;
+  --green:#065f46; --red:#7f1d1d; --surface:#1e2533;
+  --step-done:#10b981; --step-active:#c8a84b; --step-todo:#374151;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:linear-gradient(145deg,#0d1117 0%,#111827 50%,#1e2533 100%);min-height:100vh;color:var(--white);overflow-x:hidden;}
+
+/* ========== PARTICLES BG ========== */
+#particles{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.p{position:absolute;border-radius:50%;opacity:.12;animation:float linear infinite;}
+@keyframes float{0%{transform:translateY(100vh) scale(0);}100%{transform:translateY(-10vh) scale(1);}}
+
+/* ========== LAYOUT ========== */
+.shell{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:28px 16px 60px;}
+
+/* ========== HEADER ========== */
+.hdr{text-align:center;margin-bottom:36px;}
+.hdr-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(200,168,75,.12);border:1px solid rgba(200,168,75,.3);border-radius:999px;padding:5px 16px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.hdr h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3rem);font-weight:900;line-height:1.1;}
+.hdr h1 em{color:var(--gold);font-style:normal;}
+.hdr p{color:rgba(255,255,255,.5);font-size:13px;margin-top:8px;}
+
+/* ========== STEPPER ========== */
+.stepper{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:36px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;}
+.step-item{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px;}
+.step-circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border:2px solid var(--step-todo);color:rgba(255,255,255,.4);background:transparent;transition:all .4s ease;cursor:default;position:relative;z-index:1;}
+.step-circle.done{background:var(--step-done);border-color:var(--step-done);color:#fff;box-shadow:0 0 18px rgba(16,185,129,.35);}
+.step-circle.active{background:var(--step-active);border-color:var(--step-active);color:#1f2937;box-shadow:0 0 22px rgba(200,168,75,.45);}
+.step-label{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.7px;text-align:center;transition:color .3s;}
+.step-label.active{color:var(--gold);}
+.step-label.done{color:var(--step-done);}
+.step-connector{flex:1;height:2px;min-width:24px;max-width:80px;background:var(--step-todo);transition:background .4s;margin-bottom:22px;}
+.step-connector.done{background:var(--step-done);}
+
+/* ========== CARD ========== */
+.card{background:rgba(255,255,255,.04);backdrop-filter:blur(12px);border:1px solid rgba(200,168,75,.15);border-radius:20px;padding:28px;margin-bottom:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.card-title{font-family:'Playfair Display',serif;color:var(--gold);margin-bottom:20px;font-size:1.1rem;display:flex;align-items:center;gap:10px;}
+.card-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(200,168,75,.4),transparent);}
+
+/* ========== STEP PANELS ========== */
+.step-panel{display:none;animation:fadeIn .4s ease;}
+.step-panel.visible{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+/* ========== FORMS ========== */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:7px;}
+.form-group label{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(200,168,75,.8);}
+.form-group input,.form-group select{background:rgba(255,255,255,.06);border:1.5px solid rgba(200,168,75,.2);border-radius:10px;padding:11px 14px;font-size:14px;color:#fff;font-family:'DM Sans',sans-serif;transition:border-color .25s,background .25s;}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--gold);background:rgba(200,168,75,.08);}
+.form-group input[readonly]{color:rgba(255,255,255,.5);cursor:default;}
+.form-group select option{background:#1e2533;color:#fff;}
+#student-name-input{border-color:rgba(200,168,75,.5);font-weight:600;}
+#student-name-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,168,75,.15);}
+
+/* ========== STUDENT NAME WITH EDIT ========== */
+.name-input-wrap{position:relative;}
+.name-input-wrap input{padding-right:44px;}
+.name-edit-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--gold);opacity:.6;font-size:16px;cursor:pointer;}
+
+/* ========== TRIMESTRE SELECTOR ========== */
+.trim-selector{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+.trim-btn{flex:1;min-width:140px;padding:14px 20px;border:2px solid rgba(200,168,75,.25);border-radius:14px;background:rgba(255,255,255,.03);color:rgba(255,255,255,.6);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .3s;text-align:center;}
+.trim-btn:hover{border-color:rgba(200,168,75,.5);color:rgba(255,255,255,.9);}
+.trim-btn.active{border-color:var(--gold);background:rgba(200,168,75,.12);color:var(--gold);box-shadow:0 0 20px rgba(200,168,75,.2);}
+
+/* ========== TABLE ========== */
+.table-wrap{overflow-x:auto;border-radius:14px;border:1px solid rgba(200,168,75,.12);}
+table.notes-table{width:100%;border-collapse:collapse;min-width:700px;font-size:13px;}
+.notes-table thead tr:first-child th{background:rgba(30,58,95,.9);color:var(--gold-light);font-size:11px;letter-spacing:.5px;padding:10px 8px;text-align:center;}
+.notes-table thead tr:last-child th{background:rgba(15,30,50,.7);color:rgba(255,255,255,.6);font-size:10px;padding:7px 5px;text-align:center;}
+.notes-table tbody tr{border-bottom:1px solid rgba(200,168,75,.08);transition:background .2s;}
+.notes-table tbody tr:hover{background:rgba(200,168,75,.05);}
+.notes-table td{padding:7px 5px;text-align:center;color:rgba(255,255,255,.85);}
+.notes-table td:first-child{text-align:left;padding-left:14px;font-weight:600;font-size:12px;color:rgba(255,255,255,.9);}
+.score-inp{width:60px;background:rgba(255,255,255,.07);border:1.5px solid rgba(200,168,75,.2);border-radius:8px;padding:5px;text-align:center;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;transition:border-color .2s;}
+.score-inp:focus{outline:none;border-color:var(--gold);}
+.score-inp:disabled{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08);color:rgba(255,255,255,.4);}
+
+/* ========== STATS BAR ========== */
+.stats-bar{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;}
+.stat-card{flex:1;min-width:120px;background:linear-gradient(135deg,rgba(30,58,95,.6),rgba(15,30,50,.8));border:1px solid rgba(200,168,75,.2);border-radius:14px;padding:14px;text-align:center;}
+.stat-val{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--gold-light);}
+.stat-lbl{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;}
+
+.btn-primary {
+  background: rgba(29, 78, 216, 0.25);
+  color: #60a5fa;
+  border: 1px solid rgba(29, 78, 216, 0.4);
+}
+.btn-primary:hover {
+  background: rgba(29, 78, 216, 0.4);
+}
+
+/* ========== CONDUITE ========== */
+.conduite-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+@media(min-width:600px){.conduite-grid{grid-template-columns:repeat(4,1fr);}}
+.conduite-btn{padding:14px 10px;border:2px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.6);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .3s;text-align:center;letter-spacing:.5px;}
+.conduite-btn:hover{background:rgba(255,255,255,.08);}
+.conduite-btn.active.excellent{border-color:#10b981;background:rgba(16,185,129,.15);color:#10b981;box-shadow:0 0 18px rgba(16,185,129,.2);}
+.conduite-btn.active.tres-bien{border-color:#3b82f6;background:rgba(59,130,246,.15);color:#60a5fa;box-shadow:0 0 18px rgba(59,130,246,.2);}
+.conduite-btn.active.bien{border-color:var(--gold);background:rgba(200,168,75,.15);color:var(--gold);box-shadow:0 0 18px rgba(200,168,75,.2);}
+.conduite-btn.active.mediocre{border-color:#ef4444;background:rgba(239,68,68,.15);color:#f87171;box-shadow:0 0 18px rgba(239,68,68,.2);}
+
+/* ========== BUTTONS ========== */
+.btn-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-end;margin-top:24px;}
+.btn{border:none;border-radius:999px;cursor:pointer;padding:12px 24px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .3s;display:flex;align-items:center;gap:8px;}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#1f2937;box-shadow:0 4px 20px rgba(200,168,75,.3);}
+.btn-gold:hover{box-shadow:0 6px 28px rgba(200,168,75,.5);transform:translateY(-1px);}
+.btn-blue{background:rgba(30,58,95,.8);color:#fff;border:1px solid rgba(200,168,75,.3);}
+.btn-ghost{background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.12);}
+.btn-ghost:hover{background:rgba(255,255,255,.1);}
+.btn-danger{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);}
+.btn-success{background:rgba(16,185,129,.2);color:#10b981;border:1px solid rgba(16,185,129,.35);}
+.btn-success:hover{background:rgba(16,185,129,.35);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ========== PALMARES ========== */
+.palmares-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
+.palmares-title{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--gold);}
+.rank-table{width:100%;border-collapse:collapse;font-size:13px;}
+.rank-table th{background:rgba(30,58,95,.8);color:var(--gold-light);padding:10px 12px;text-align:left;font-size:11px;letter-spacing:.8px;text-transform:uppercase;}
+.rank-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.85);}
+.rank-medal{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-weight:900;font-size:13px;}
+.medal-1{background:linear-gradient(135deg,#ffd700,#ffed4a);color:#1f2937;}
+.medal-2{background:linear-gradient(135deg,#c0c0c0,#e8e8e8);color:#1f2937;}
+.medal-3{background:linear-gradient(135deg,#cd7f32,#e8a85b);color:#1f2937;}
+.medal-n{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);}
+.palmares-actions button{margin:2px 2px;min-width:96px;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:700;transition:transform .2s,box-shadow .2s;}
+.palmares-actions button:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.25);}
+.pct-bar-wrap{width:120px;height:6px;background:rgba(255,255,255,.1);border-radius:3px;display:inline-block;vertical-align:middle;overflow:hidden;}
+.pct-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--gold-light));}
+
+/* ========== TOAST ========== */
+.toasts{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:#1e2533;color:#fff;border:1px solid rgba(200,168,75,.2);padding:12px 16px;border-radius:12px;font-size:13px;animation:slideIn .3s ease;max-width:320px;}
+.toast.success{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.1);}
+.toast.error{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.1);}
+@keyframes slideIn{from{opacity:0;transform:translateX(30px);}to{opacity:1;transform:translateX(0);}}
+
+/* ========== MODAL ========== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:8888;align-items:center;justify-content:center;}
+.modal-overlay.visible{display:flex;}
+.modal-box{background:#1e2533;border:1px solid rgba(200,168,75,.3);border-radius:20px;padding:32px;max-width:440px;width:90%;text-align:center;}
+.modal-icon{font-size:3rem;margin-bottom:12px;}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--gold);margin-bottom:8px;}
+.modal-msg{color:rgba(255,255,255,.7);font-size:14px;line-height:1.6;margin-bottom:24px;}
+.modal-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+/* ========== PAGE NAV ========== */
+.page-nav{display:flex;gap:10px;margin-bottom:20px;}
+.page-tab{padding:10px 20px;border:1.5px solid rgba(200,168,75,.2);border-radius:999px;background:rgba(255,255,255,.03);color:rgba(255,255,255,.5);cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;transition:all .3s;font-family:'DM Sans',sans-serif;}
+.page-tab.active{border-color:var(--gold);background:rgba(200,168,75,.12);color:var(--gold);}
+.empty-state{text-align:center;padding:60px 20px;color:rgba(255,255,255,.3);}
+.empty-state .icon{font-size:3rem;margin-bottom:12px;}
+
+/* ====================================================
+   PRINT STYLES — A4 PORTRAIT, FIDÈLE AU PDF OFFICIEL
+   ==================================================== */
+#print-area{display:none;}
+
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html, body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    color: #000;
+  }
+
+  .sidebar, .topbar, .bottom-nav, .no-print, .toast-wrap, .modal-overlay,
+  .sec-hd, .form-tabs, .tab-pane:not(#t-apercu), .card, .btn,
+  .page:not(#page-bulletins), #printBtnContainer, #app-shell, #particles, .shell, .page-nav { display: none !important; }
+
+  #print-area, #printArea { display: block !important; margin: 0; padding: 0; }
+
+  /* ── Chaque bulletin = exactement une page A4 ── */
+  .bul-print {
+    box-shadow: none !important;
+    border: 4px solid #1a1a2e !important;
+    border-radius: 12px !important;
+
+    /* Taille fixe = une page A4 pile */
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+
+    /* Padding interne (compris dans height grâce à border-box) */
+    padding: 8mm !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+
+    /* Casser AVANT et empêcher coupure interne */
+    page-break-before: always !important;
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+    break-before: page !important;
+    break-after: page !important;
+    break-inside: avoid !important;
+
+    overflow: hidden !important;
+
+    background: #ffffff !important;
+    position: relative !important;
+    padding: 4mm !important;
+    font-size: 0.78rem !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Premier bulletin : pas de saut avant */
+  .bul-print:first-child {
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+  }
+
+  /* Dernier bulletin : pas de saut après */
+  .bul-print:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Empêcher TOUS les enfants de créer des sauts internes */
+  .bul-print * {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Décorations ::before / ::after visibles */
+  .bul-print::before,
+  .bul-print::after {
+    display: inline-block !important;
+    opacity: 0.5 !important;
+  }
+
+  /* Watermark visible */
+  .bul-print .bul-watermark {
+    display: block !important;
+  }
+
+  /* Images visibles */
+  .bul-print img {
+    display: block !important;
+    max-width: 100% !important;
+    height: auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Le contenu flex grandit pour remplir toute la hauteur */
+  .bul-print > *:not(.bul-sig-row) {
+    flex-shrink: 0;
+  }
+
+  .bul-print .bul-comment-body,
+  .bul-print [class*="comments"],
+  .bul-print [class*="decisions"] {
+    flex: 1 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  /* Évite le grand vide avant les signatures */
+  .bul-print .bul-sig-row {
+    margin-top: 1.2mm !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* ── HEADER ── */
+  .bul-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #1a1a2e;
+    padding-bottom: 1.5mm;
+    margin-bottom: 1.5mm;
+  }
+  .bul-logo {
+    width: 16mm;
+    height: 16mm;
+    object-fit: contain;
+  }
+  .bul-school-info {
+    text-align: center;
+    flex: 1;
+    padding: 0 2mm;
+  }
+  .bul-year {
+    font-size: 9pt;
+    font-weight: 900;
+    color: #1a1a2e;
+    letter-spacing: 0.5px;
+  }
+  .bul-school-name {
+    font-size: 11pt;
+    font-weight: 900;
+    color: #1a1a2e;
+    line-height: 1;
+  }
+  .bul-school-name span { color: #f0c040; }
+  .bul-tagline {
+    font-size: 7pt;
+    color: #f0c040;
+    font-style: italic;
+    font-weight: 700;
+  }
+  .bul-doc-title {
+    font-size: 9pt;
+    font-weight: 900;
+    color: #1a1a2e;
+    letter-spacing: 1px;
+    margin-top: 1mm;
+    text-decoration: underline;
+    text-underline-offset: 1px;
+  }
+
+  /* ── STUDENT INFO ROW ── */
+  .bul-info-row {
+    display: flex;
+    gap: 1.5mm;
+    margin-bottom: 1mm;
+    flex-wrap: wrap;
+  }
+  .bul-info-box {
+    display: flex;
+    align-items: stretch;
+    border: 1pt solid #1a1a2e;
+    border-radius: 2pt;
+    overflow: hidden;
+    flex: 1;
+    min-width: 65mm;
+  }
+  .bul-info-box.wide { flex: 2; }
+  .bul-info-lbl {
+    background: #1a1a2e;
+    color: #fff;
+    font-weight: 900;
+    font-size: 6pt;
+    padding: 1.5mm 2mm;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    letter-spacing: .3px;
+  }
+  .bul-info-val {
+    padding: 1.5mm 2mm;
+    font-weight: 700;
+    font-size: 7pt;
+    display: flex;
+    align-items: center;
+    min-width: 25mm;
+    border-left: 1pt solid #f0c040;
+  }
+
+  /* ── MAIN TABLE — TABLEAU 1 ── */
+  .bul-section-title {
+    font-size: 5.5pt;
+    font-weight: 900;
+    color: #1a1a2e;
+    background: #e8e8e8;
+    padding: 1mm 2mm;
+    margin: 0.8mm 0 0.6mm 0;
+    border-left: 2pt solid #f0c040;
+    letter-spacing: .3px;
+  }
+
+  .bul-tbl1 {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 5.5pt;
+    margin-bottom: 1.5mm;
+  }
+  .bul-tbl1 th, .bul-tbl1 td {
+    border: 0.5pt solid #f0c040;
+    padding: 0.4mm 0.5mm;
+    text-align: center;
+    vertical-align: middle;
+  }
+  /* Header row 1 — group headers */
+  .bul-tbl1 thead tr:first-child th {
+    background: #1a1a2e !important;
+    color: #fff !important;
+    font-weight: 900;
+    font-size: 6pt;
+    letter-spacing: .2px;
+  }
+  /* Header row 2 — sub-headers */
+  .bul-tbl1 thead tr:last-child th {
+    background: #f0c040 !important;
+    color: #1f2937 !important;
+    font-weight: 900;
+    font-size: 5.5pt;
+  }
+  .bul-tbl1 td:first-child {
+    text-align: left;
+    padding-left: 2mm;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+  .bul-tbl1 tbody tr:nth-child(even) td {
+    background: #f5f5f5;
+  }
+  .bul-tbl1 .grand-row td {
+    background: #2c2c54 !important;
+    color: #fff !important;
+    font-weight: 900;
+    font-size: 6.5pt;
+  }
+  .bul-tbl1 .grand-row td:first-child { color: #fff !important; }
+  .bul-tbl1 .pct-row td {
+    background: #ffeaa7 !important;
+    font-weight: 900;
+    color: #2d3436 !important;
+    font-size: 6pt;
+  }
+
+  /* ── TABLE 2 — EXAMENS ── */
+  .bul-tbl2 {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 5.5pt;
+    margin-bottom: 1.5mm;
+  }
+  .bul-tbl2 th, .bul-tbl2 td {
+    border: 0.5pt solid #f0c040;
+    padding: 0.4mm 0.5mm;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .bul-tbl2 thead th {
+    background: #1a1a2e !important;
+    color: #fff !important;
+    font-weight: 900;
+    font-size: 7pt;
+  }
+  .bul-tbl2 td:first-child {
+    text-align: left;
+    padding-left: 2mm;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+  .bul-tbl2 tbody tr:nth-child(even) td { background: #f5f5f5; }
+  .bul-tbl2 .grand-row td {
+    background: #2c2c54 !important;
+    color: #fff !important;
+    font-weight: 900;
+    font-size: 6pt;
+  }
+
+  /* ── GRADE TABLE ── */
+  .bul-grade-wrap {
+    border: 1pt solid #1a1a2e;
+    border-radius: 2pt;
+    overflow: hidden;
+    margin-bottom: 1.5mm;
+  }
+  .bul-grade-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 5.5pt;
+  }
+  .bul-grade-tbl th, .bul-grade-tbl td {
+    border: 0.5pt solid #f0c040;
+    padding: 0.4mm 0.5mm;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .bul-grade-tbl thead th {
+    background: #1a1a2e !important;
+    color: #fff !important;
+    font-size: 6pt;
+    font-weight: 900;
+  }
+  .bul-grade-row-label {
+    background: #e8e8e8 !important;
+    font-weight: 900;
+    color: #1a1a2e !important;
+    text-align: left !important;
+    padding-left: 1.5mm !important;
+  }
+  .bul-grade-d1  { background: #00b894 !important; color: #fff !important; font-weight: 900; }
+  .bul-grade-c2  { background: #0984e3 !important; color: #fff !important; font-weight: 900; }
+  .bul-grade-c3  { background: #2d3436 !important; color: #fff !important; font-weight: 900; }
+  .bul-grade-c4  { background: #00cec9 !important; color: #fff !important; font-weight: 900; }
+  .bul-grade-c5  { background: #fdcb6e !important; color: #fff !important; font-weight: 900; }
+  .bul-grade-p6  { background: #6c5ce7 !important; color: #fff !important; font-weight: 900; }
+  .bul-grade-p7  { background: #e84393 !important; color: #fff !important; font-weight: 900; }
+  .bul-grade-p8  { background: #d63031 !important; color: #fff !important; font-weight: 900; }
+  .bul-grade-p9  { background: #636e72 !important; color: #fff !important; font-weight: 900; }
+
+  /* ── FOOTER ROW ── */
+  .bul-footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.8mm;
+    margin-bottom: 1mm;
+  }
+  .bul-footer-box {
+    border: 1pt solid #1a1a2e;
+    border-radius: 2pt;
+    overflow: hidden;
+  }
+  .bul-footer-lbl {
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 7pt;
+    font-weight: 900;
+    padding: 1.2mm 1.5mm;
+    letter-spacing: .2px;
+  }
+  .bul-footer-val {
+    padding: 0.8mm 1mm;
+    font-size: 7.5pt;
+    font-weight: 700;
+    min-height: 5mm;
+  }
+
+  /* ── DÉCISIONS ── */
+  .bul-decision-row {
+    display: flex;
+    gap: 1mm;
+    margin-top: 0mm;
+    margin-bottom: 1mm;
+    flex-wrap: wrap;
+  }
+  .bul-decision-box {
+    flex: 1;
+    border: 1pt solid #1a1a2e;
+    border-radius: 2pt;
+    overflow: hidden;
+    min-width: 30mm;
+    min-height: 6mm;
+    padding: 0.8mm 1mm;
+  }
+  .bul-decision-lbl {
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 6.5pt;
+    font-weight: 900;
+    padding: 1mm 1.5mm;
+  }
+  .bul-decision-val {
+    padding: 0.5mm 1mm;
+    font-size: 7pt;
+    font-weight: 900;
+    color: #1a1a2e;
+    min-height: 4mm;
+  }
+
+  /* ── SIGNATURES ── */
+  .bul-sig-row {
+    display: flex;
+    gap: 1mm;
+    margin: 1mm 0 1mm;
+  }
+  .bul-sig-box {
+    flex: 1;
+    border: 1pt solid #f0c040;
+    border-radius: 2pt;
+    padding: 1mm 1mm 3mm 1mm;
+    min-height: 10mm;
+    font-size: 5.5pt;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+
+  /* ── WATERMARK TEXT ── */
+  .bul-watermark {
+    text-align: center;
+    font-size: 5pt;
+    color: #999;
+    font-style: italic;
+    margin-top: 0.5mm;
+    border-top: 0.5pt solid #f0c040;
+    padding-top: 1mm;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- PARTICLES -->
+<div id="particles"></div>
+<div class="toasts" id="toastWrap"></div>
+
+<!-- ALERT MODAL -->
+<div class="modal-overlay" id="alertModal">
+  <div class="modal-box">
+    <div class="modal-icon" id="modalIcon">⚠️</div>
+    <div class="modal-title" id="modalTitle">Attention</div>
+    <div class="modal-msg" id="modalMsg"></div>
+    <div class="modal-btns" id="modalBtns"></div>
+  </div>
+</div>
+
+<!-- PRINT AREA -->
+<div id="print-area"></div>
+
+<!-- MAIN APP -->
+<div class="shell" id="app-shell">
+  <div class="hdr">
+    <div class="hdr-badge">✦ Eden Family School</div>
+    <h1>Bulletin <em>Primaire</em></h1>
+    <p>Formulaire guidé · Firebase Realtime DB · Palmarès automatique</p>
+  </div>
+
+  <div class="page-nav">
+    <button class="page-tab active" onclick="showPage('form')">📝 Créer Bulletin</button>
+    <button class="page-tab" onclick="showPage('palmares')">🏆 Palmarès</button>
+  </div>
+
+  <!-- FORM PAGE -->
+  <div id="form-page">
+    <div class="stepper" id="stepper"></div>
+
+    <!-- STEP 1 -->
+    <div class="step-panel" id="panel-1">
+      <div class="card">
+        <div class="card-title">� Mes élèves Primaires</div>
+        <p style="color:rgba(255,255,255,.5);font-size:12px;margin-bottom:16px;">Cliquez sur un élève pour le sélectionner et générer son bulletin</p>
+        
+        <!-- Search and Filters -->
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:180px;">
+            <input type="text" id="student-search-input" placeholder="🔍 Rechercher un élève..." style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(200,168,75,.2);border-radius:10px;padding:10px 14px;font-size:12px;color:#fff;font-family:'DM Sans',sans-serif;" oninput="filterStudentsTable()">
+          </div>
+          <select id="student-class-filter" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(200,168,75,.2);border-radius:10px;padding:10px 14px;font-size:12px;color:#fff;font-family:'DM Sans',sans-serif;" onchange="filterStudentsTable()">
+            <option value="">Toutes les classes</option>
+          </select>
+          <button class="btn btn-success" style="padding:10px 16px;" onclick="reloadStudents()">🔄 Actualiser</button>
+        </div>
+
+        <!-- Students Table -->
+        <div class="table-wrap" style="margin-bottom:16px;">
+          <table class="notes-table" style="font-size:12px;">
+            <thead>
+              <tr>
+                <th>Rang</th>
+                <th style="text-align:left;padding-left:14px;">Nom Complet</th>
+                <th>Classe</th>
+                <th>%</th>
+                <th style="text-align:center;">Sélectionner</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body">
+              <tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.4);padding:20px;">🔄 Chargement...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Statistics -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+          <div class="stat-card">
+            <div class="stat-val" id="total-students-count">0</div>
+            <div class="stat-lbl">Total d'élèves</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="male-students-count">0</div>
+            <div class="stat-lbl">Garçons</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="female-students-count">0</div>
+            <div class="stat-lbl">Filles</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Selected Student Info Card -->
+      <div class="card" id="selected-student-card" style="display:none;">
+        <div class="card-title">✅ Élève sélectionné</div>
+        <div style="display:flex;gap:12px;align-items:center;padding:14px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:10px;">
+          <div style="width:50px;height:50px;border-radius:50%;background:rgba(200,168,75,.2);display:flex;align-items:center;justify-content:center;color:var(--gold);font-weight:700;font-size:16px;" id="selected-student-initials">??</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;color:#fff;font-size:14px;" id="selected-student-name">—</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;" id="selected-student-meta">—</div>
+          </div>
+          <button class="btn btn-ghost" style="padding:8px 12px;font-size:11px;" onclick="clearSelectedStudent()">✕ Désélectionner</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📝 Informations de l'Élève</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Nom complet de l'élève *</label><input id="student-name-input" type="text" placeholder="Sélectionnez ou entrez..." readonly></div>
+          <div class="form-group"><label>Branche</label><input id="student-branch" type="text" readonly placeholder="Automatique"></div>
+          <div class="form-group"><label>Classe</label><input id="student-class" type="text" readonly placeholder="Automatique"></div>
+          <div class="form-group"><label>Enseignant(e)</label><input id="teacher-name" type="text" readonly placeholder="Automatique"></div>
+          <div class="form-group"><label>Année scolaire</label><input id="school-year" type="text" readonly placeholder="Automatique"></div>
+        </div>
+        <div class="btn-row"><button class="btn btn-gold" onclick="goStep(2)">Suivant →</button></div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-panel" id="panel-2">
+      <div class="card">
+        <div class="card-title">📅 Sélectionner le Trimestre</div>
+        <div class="trim-selector">
+          <button class="trim-btn" onclick="selectTrim(1)">📘 1er Trimestre</button>
+          <button class="trim-btn" onclick="selectTrim(2)">📗 2e Trimestre</button>
+          <button class="trim-btn" onclick="selectTrim(3)">📕 3e Trimestre</button>
+          <button class="trim-btn" id="annual-btn" onclick="showAnnualBulletin()" style="background: linear-gradient(135deg, rgba(200,168,75,.8), rgba(200,168,75,.6)); border: 2px solid var(--gold); color: #000; font-weight: bold;">📊 Bulletin Annuels</button>
+        </div>
+        <p style="color:rgba(255,255,255,.4);font-size:12px;">Sélectionnez le trimestre pour lequel vous souhaitez saisir les notes.</p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="goStep(1)">← Retour</button>
+          <button class="btn btn-gold" onclick="goStep(3)">Suivant →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step-panel" id="panel-3">
+      <div class="card">
+        <div class="card-title">📊 Notes par Matière</div>
+        <div style="margin-bottom:14px;font-size:12px;color:rgba(255,255,255,.5);">Saisie pour : <span id="trim-label-active" style="color:var(--gold);font-weight:700;">—</span></div>
+        <div class="table-wrap">
+          <table class="notes-table">
+            <thead>
+              <tr>
+                <th rowspan="2" style="text-align:left;padding-left:14px;">Matière</th>
+                <th rowspan="2">Max Test</th><th rowspan="2">Max Ex</th><th rowspan="2">Max Tot</th>
+                <th colspan="3" id="th-trim1">1er Trimestre</th>
+                <th colspan="3" id="th-trim2">2e Trimestre</th>
+                <th colspan="3" id="th-trim3">3e Trimestre</th>
+                <th colspan="3">Année</th>
+              </tr>
+              <tr>
+                <th>Test</th><th>Ex</th><th>Tot</th>
+                <th>Test</th><th>Ex</th><th>Tot</th>
+                <th>Test</th><th>Ex</th><th>Tot</th>
+                <th>Max</th><th>Total</th><th>%</th>
+              </tr>
+            </thead>
+            <tbody id="scores-body"></tbody>
+          </table>
+        </div>
+        <div class="stats-bar">
+          <div class="stat-card"><div class="stat-val" id="disp-total">0</div><div class="stat-lbl" id="disp-total-lbl">Total Annuel</div></div>
+          <div class="stat-card"><div class="stat-val" id="disp-max">3000</div><div class="stat-lbl" id="disp-max-lbl">Max Annuel</div></div>
+          <div class="stat-card"><div class="stat-val" id="disp-pct">0%</div><div class="stat-lbl">Pourcentage</div></div>
+          <div class="stat-card"><div class="stat-val" id="disp-grade">—</div><div class="stat-lbl">Grade Global</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="goStep(2)">← Retour</button>
+          <button class="btn btn-gold" onclick="goStep(4)">Suivant →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step-panel" id="panel-4">
+      <div class="card">
+        <div class="card-title">📋 Informations Complémentaires</div>
+        <div class="form-grid">
+            <div class="form-group"><label>Remarque en délibération</label><select id="remarque-delib"><option value="">-- Sélectionner --</option><option value="PROMU(E)">PROMU(E)</option><option value="REDOUBLÉ(E)">REDOUBLÉ(E)</option><option value="EXCLU(E)">EXCLU(E)</option></select></div>
+          <div class="form-group"><label>Date du bulletin</label><input type="date" id="bul-date"></div>
+        </div>
+        <div style="margin-top:24px;">
+          <div class="card-title" style="margin-bottom:14px;">🎖️ Conduite</div>
+          <div class="conduite-grid">
+            <button class="conduite-btn excellent" onclick="selectConduite('EXCELLENT')">⭐ EXCELLENT</button>
+            <button class="conduite-btn tres-bien" onclick="selectConduite('TRÈS BIEN')">👍 TRÈS BIEN</button>
+            <button class="conduite-btn bien" onclick="selectConduite('BIEN')">✓ BIEN</button>
+            <button class="conduite-btn mediocre" onclick="selectConduite('MÉDIOCRE')">⚠ MÉDIOCRE</button>
+          </div>
+          <input type="hidden" id="conduite-val">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="goStep(3)">← Retour</button>
+          <button class="btn btn-gold" onclick="goStep(5)">Suivant →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step-panel" id="panel-5">
+      <div class="card">
+        <div class="card-title">✅ Résumé & Enregistrement</div>
+        <div id="summary-view" style="margin-bottom:24px;"></div>
+        <div class="btn-row" style="justify-content:center;">
+          <button class="btn btn-ghost" onclick="goStep(4)">← Modifier</button>
+          <button class="btn btn-success" id="save-bulletin-btn" onclick="saveBulletin()">💾 Enregistrer dans Firebase</button>
+          <button class="btn btn-gold" onclick="previewAndPrint()">🖨️ Aperçu & Imprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PALMARES PAGE -->
+  <div id="palmares-page" style="display:none;">
+    <div class="card">
+      <div class="palmares-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="palmares-title">🏆 Palmarès des Élèves</div>
+        </div>
+
+        <!-- TRIMESTER SELECT -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <select id="class-select" onchange="loadPalmares()" style="background:#fff;border:1.5px solid rgba(200,168,75,.9);border-radius:10px;padding:8px 12px;font-size:14px;color:#000;font-weight:600;">
+            <option value="">Toutes les classes</option>
+          </select>
+          <select id="trimester-select" onchange="loadPalmares()" style="background:#fff;border:1.5px solid rgba(200,168,75,.9);border-radius:10px;padding:8px 12px;font-size:14px;color:#000;font-weight:600;">
+            <option value="1">Trimestre 1</option>
+            <option value="2">Trimestre 2</option>
+            <option value="3">Trimestre 3</option>
+            <option value="annuel">Bulletin Annuel</option>
+          </select>
+          <button class="btn btn-success" onclick="loadPalmares()">🔄 Actualiser</button>
+          <button class="btn btn-primary" onclick="assignPlaces()">💾 Appliquer Rangs</button>
+          <button class="btn btn-gold" onclick="confirmDownloadZip()">📦 Bulletins Finals</button>
+        </div>
+      </div>
+      <div id="palmares-body">
+        <div class="table-wrap">
+          <table class="rank-table">
+            <thead>
+              <tr>
+                <th>Rang</th>
+                <th>Nom complet</th>
+                <th>Classe</th>
+                <th>Branche</th>
+                <th>Total</th>
+                <th>%</th>
+                <th>Grade</th>
+                <th>Conduite</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="palmaresTable">
+              <tr>
+                <td colspan="8">
+                  <div class="empty-state">
+                    <div class="icon">🏆</div>
+                    <p>Chargement...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== FIREBASE =====
+const FC={apiKey:"AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",authDomain:"edensmart-app.firebaseapp.com",databaseURL:"https://edensmart-app-default-rtdb.firebaseio.com",projectId:"edensmart-app",storageBucket:"edensmart-app.firebasestorage.app",messagingSenderId:"1093120876724",appId:"1:1093120876724:web:bc37448cadd18d651c77e1"};
+firebase.initializeApp(FC);
+const db=firebase.database();
+const auth=firebase.auth();
+
+function handleImageFallback(img) {
+  if (!img) return;
+  img.onerror = null;
+  img.src = 'https://via.placeholder.com/40x40.png?text=Image+manquante';
+}
+
+// No named query helpers needed with compat API; use ref().orderByChild().equalTo() directly.
+
+// ===== SUBJECTS =====
+const SUBJECTS=[
+  {name:'MATHEMATIQUES',testMax:100,exMax:100},
+  {name:'ENGLISH',testMax:100,exMax:100},
+  {name:'KINYARWANDA',testMax:60,exMax:60},
+  {name:'FRANÇAIS',testMax:50,exMax:50},
+  {name:'SCIENCE ET I.C.T',testMax:80,exMax:80},
+  {name:'ET. SOCI ET RELIG',testMax:80,exMax:80},
+  {name:'ART ET CULTURE',testMax:20,exMax:20},
+  {name:'EDUCATION PHYS',testMax:10,exMax:10}
+];
+// Subjects included in Tableau 2 (exams only — no ART/PHYS)
+const SUBJECTS_EXAM=['MATHEMATIQUES','ENGLISH','KINYARWANDA','FRANÇAIS','SCIENCE ET I.C.T','ET. SOCI ET RELIG'];
+
+// Max total des points pour 1 seul trimestre (tous les sujets)
+const TRIM_MAX_GRAND = SUBJECTS.reduce((sum,s)=>sum + s.testMax + s.exMax, 0);
+const ANNUAL_MAX_GRAND = TRIM_MAX_GRAND * 3;
+
+// ===== STATE =====
+let currentStep=1,currentTrim=null,currentTeacher=null;
+let allStudents=[],filteredStudents=[],selectedStudent=null;
+let conduiteVal='',allBulletins=[],rankedStudents=[];
+let isAnnualMode=false;
+let isTrimEditMode=false;
+
+// ===== TRIMESTRE =====
+function selectTrim(t){
+  isAnnualMode=false;
+  currentTrim=t;
+  document.querySelectorAll('.trim-btn').forEach((b,i)=>b.classList.toggle('active',i+1===t));
+  const annualBtn=document.getElementById('annual-btn');
+  if(annualBtn)annualBtn.classList.remove('active');
+  syncTrimModificationMode(t);
+  highlightActiveTrim();
+}
+
+function updateSaveButtonMode(){
+  const btn=document.getElementById('save-bulletin-btn');
+  if(!btn)return;
+  btn.textContent=isTrimEditMode?'✏️ Modifier le bulletin':'💾 Enregistrer dans Firebase';
+}
+
+async function syncTrimModificationMode(trim){
+  if(!trim||!selectedStudent){
+    isTrimEditMode=false;
+    updateSaveButtonMode();
+    return;
+  }
+
+  try{
+    const studentClass=(selectedStudent.classes||selectedStudent.classe||selectedStudent.class||document.getElementById('student-class').value||'');
+    const className=normalizeClass(studentClass);
+    if(!className){
+      isTrimEditMode=false;
+      updateSaveButtonMode();
+      return;
+    }
+
+    const snap=await db.ref(`bulletins_primaire_${className}/${selectedStudent._id}`).once('value');
+    if(!snap.exists()){
+      isTrimEditMode=false;
+      updateSaveButtonMode();
+      return;
+    }
+
+    const bulletin=snap.val()||{};
+    const trimKey=`t${trim}`;
+    let hasTrimData=false;
+
+    if(Array.isArray(bulletin.scores)){
+      bulletin.scores.forEach((row,idx)=>{
+        const tr=(row&&row[trimKey])||{};
+        const t=Number(tr.test)||0;
+        const e=Number(tr.ex)||0;
+        if(t>0||e>0)hasTrimData=true;
+        setV(`si-${trimKey}-test-${idx}`,t||'');
+        setV(`si-${trimKey}-ex-${idx}`,e||'');
+      });
+    }
+
+    isTrimEditMode=hasTrimData;
+    updateSaveButtonMode();
+    recalculate();
+    if(hasTrimData)toast(`✏️ Mode modification activé (${trim}e trimestre)`,'');
+  }catch(e){
+    isTrimEditMode=false;
+    updateSaveButtonMode();
+    console.error('Erreur syncTrimModificationMode:',e);
+  }
+}
+
+function showAnnualBulletin() {
+  if (!selectedStudent) {
+    toast('Veuillez d\'abord sélectionner un élève', 'error');
+    return;
+  }
+
+  isAnnualMode = true;
+  currentTrim = null;
+  isTrimEditMode = false;
+  updateSaveButtonMode();
+  document.querySelectorAll('.trim-btn').forEach((b,i)=>b.classList.toggle('active',i===3));
+  highlightActiveTrim();
+
+  const studentClass = selectedStudent.classes || selectedStudent.classe || selectedStudent.class || '';
+  const className = normalizeClass(studentClass);
+
+  if (!className) {
+    toast('Classe de l\'élève non trouvée', 'error');
+    return;
+  }
+
+  toast('Chargement des bulletins annuels de la classe...', '');
+
+  // Charger les données de tous les élèves de la classe
+  const refPath = `bulletins_primaire_${className}`;
+  db.ref(refPath).once('value').then(snap => {
+    if (!snap.exists()) {
+      toast('Aucun bulletin trouvé pour cette classe', 'error');
+      return;
+    }
+
+    const classData = snap.val();
+    const annualStudents = [];
+
+    // Traiter chaque élève de la classe
+    Object.keys(classData).forEach(studentId => {
+      const studentBulletin = classData[studentId];
+      const t1 = studentBulletin.trim1Total || 0;
+      const t2 = studentBulletin.trim2Total || 0;
+      const t3 = studentBulletin.trim3Total || 0;
+      const totalAnnual = t1 + t2 + t3;
+      const averageAnnual = totalAnnual / 3;
+
+      // Trouver le nom de l'élève
+      const student = allStudents.find(s => s._id === studentId);
+      const studentName = student ? getStudentName(student) : `Élève ${studentId}`;
+
+      annualStudents.push({
+        studentId,
+        studentName,
+        trimestre1: {
+          total: t1,
+          percentage: t1 > 0 ? formatDecimal((t1 / 1000) * 100) : '0.0'
+        },
+        trimestre2: {
+          total: t2,
+          percentage: t2 > 0 ? formatDecimal((t2 / 1000) * 100) : '0.0'
+        },
+        trimestre3: {
+          total: t3,
+          percentage: t3 > 0 ? formatDecimal((t3 / 1000) * 100) : '0.0'
+        },
+        annuel: {
+          total: totalAnnual,
+          percentage: totalAnnual > 0 ? formatDecimal((totalAnnual / 3000) * 100) : '0.0',
+          average: formatDecimal(averageAnnual)
+        },
+        scores: studentBulletin.scores || []
+      });
+    });
+
+    // Trier par place manuelle si existante, sinon par total décroissant
+    annualStudents.sort((a, b) => {
+      const pa = a.place || Number.MAX_SAFE_INTEGER;
+      const pb = b.place || Number.MAX_SAFE_INTEGER;
+      if (pa !== pb) return pa - pb;
+      return (b.annuel.total || 0) - (a.annuel.total || 0);
+    });
+
+    // Définir le rang d'affichage
+    annualStudents.forEach((student, index) => {
+      student.rank = student.place || index + 1;
+    });
+
+    // Trouver l'élève sélectionné
+    const selectedAnnualData = annualStudents.find(s => s.studentId === selectedStudent._id);
+
+    if (!selectedAnnualData) {
+      toast('Bulletin annuel non trouvé pour cet élève', 'error');
+      return;
+    }
+
+    // Afficher les données dans la section notes
+    displayAnnualData(selectedAnnualData, annualStudents);
+
+    // Naviguer vers l'étape 3 (notes)
+    goStep(3);
+
+    toast('✅ Bulletins annuels chargés avec succès !', 'success');
+
+  }).catch(e => {
+    console.error(e);
+    toast('Erreur lors du chargement des bulletins annuels', 'error');
+  });
+}
+
+// ===== PARTICLES =====
+(()=>{const c=document.getElementById('particles');for(let i=0;i<18;i++){const d=document.createElement('div');d.className='p';const sz=Math.random()*6+2;d.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;background:${Math.random()>.5?'#c8a84b':'#3b82f6'};animation-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*10}s;`;c.appendChild(d);}})();
+
+// ===== STEPPER =====
+const STEPS=[{label:'Élève',icon:'👤'},{label:'Trimestre',icon:'📅'},{label:'Notes',icon:'📊'},{label:'Infos',icon:'📋'},{label:'Valider',icon:'✅'}];
+function renderStepper(){
+  const el=document.getElementById('stepper');el.innerHTML='';
+  STEPS.forEach((s,i)=>{
+    const n=i+1,isDone=n<currentStep,isActive=n===currentStep;
+    const item=document.createElement('div');item.className='step-item';
+    item.innerHTML=`<div class="step-circle ${isDone?'done':isActive?'active':''}">${isDone?'✓':s.icon}</div><div class="step-label ${isDone?'done':isActive?'active':''}">${s.label}</div>`;
+    el.appendChild(item);
+    if(i<STEPS.length-1){const conn=document.createElement('div');conn.className='step-connector'+(isDone?' done':'');el.appendChild(conn);}
+  });
+}
+
+// ===== UTILS =====
+function toast(msg,type=''){const w=document.getElementById('toastWrap');const d=document.createElement('div');d.className='toast '+type;d.textContent=msg;w.appendChild(d);setTimeout(()=>d.remove(),3500);}
+function getStudentName(s){if(s.name)return s.name.trim();const first=(s.firstName||s.prenom||'').trim();const last=(s.lastName||s.nom||'').trim();return `${first} ${last}`.trim()||'Élève inconnu';}
+function normalize(v){return(v||'').toString().trim().toLowerCase();}
+function normalizeClass(c){return(c||'').toString().trim().toLowerCase().replace(/[^a-z0-9]/g,'');}
+function normalizeSection(s){return(s||'').toString().trim().toLowerCase().replace(/level/g,'section');}
+function parsePlaceValue(raw){
+  const value = (raw||'').toString().trim();
+  if(!value) return null;
+  if(value.includes('/')){
+    const num = parseInt(value.split('/')[0], 10);
+    return Number.isInteger(num) ? num : null;
+  }
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+function parseClasses(raw){if(Array.isArray(raw))return raw.map(v=>normalize(v)).filter(Boolean);return(raw||'').toString().split(',').map(v=>normalize(v)).filter(Boolean);}
+function teacherName(t){return(t?.name||`${t?.firstName||''} ${t?.lastName||''}`.trim()||'Enseignant').trim();}
+// Function to truncate to 1 decimal place without rounding and use period as decimal separator
+function formatDecimal(num) {
+  if (typeof num !== 'number' || isNaN(num)) return '0.0';
+  // Truncate to 1 decimal place (floor the number multiplied by 10, then divide by 10)
+  const truncated = Math.floor(num * 10) / 10;
+  // Convert to string with period as decimal separator
+  return truncated.toString().replace(',', '.');
+}
+function grade(p){if(p>=80)return'D1';if(p>=75)return'C2';if(p>=70)return'C3';if(p>=60)return'C4';if(p>=55)return'C5';if(p>=50)return'P6';if(p>=45)return'P7';if(p>=40)return'P8';return'P9';}
+function getSchoolYear(){const y=new Date().getFullYear();return`${y-1}–${y}`;}
+
+// ===== MODAL =====
+function showModal(icon,title,msg,btns){
+  document.getElementById('modalIcon').textContent=icon;document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalMsg').textContent=msg;
+  const bc=document.getElementById('modalBtns');bc.innerHTML='';
+  btns.forEach(b=>{const btn=document.createElement('button');btn.className='btn '+b.cls;btn.textContent=b.label;btn.onclick=()=>{document.getElementById('alertModal').classList.remove('visible');b.action&&b.action();};bc.appendChild(btn);});
+  document.getElementById('alertModal').classList.add('visible');
+}
+
+// ===== NAV =====
+function goStep(n){
+  if(n===2&&!selectedStudent&&!document.getElementById('student-name-input').value.trim()){toast('Veuillez entrer le nom de l\'élève','error');return;}
+  if(n===3&&!currentTrim&&!isAnnualMode){toast('Veuillez sélectionner un trimestre','error');return;}
+  if(n===5)buildSummary();
+  currentStep=n;renderStepper();
+  document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('visible'));
+  const panel=document.getElementById('panel-'+n);if(panel){panel.classList.add('visible');panel.scrollIntoView({behavior:'smooth',block:'start'});}
+  if(n===3)highlightActiveTrim();
+}
+
+function showPage(p){
+  document.getElementById('form-page').style.display=p==='form'?'block':'none';
+  document.getElementById('palmares-page').style.display=p==='palmares'?'block':'none';
+  document.querySelectorAll('.page-tab').forEach((t,i)=>t.classList.toggle('active',(p==='form'&&i===0)||(p==='palmares'&&i===1)));
+  if(p==='palmares')loadPalmares();
+}
+window.showPage = showPage;
+
+// ===== PROFILE =====
+async function loadUserProfile(uid,email){
+  let snap=null;
+  if(uid)snap=await db.ref(`teachers/${uid}`).once('value');
+  if((!snap||!snap.exists())&&email)snap=await db.ref('teachers').orderByChild('email').equalTo(email).once('value');
+  if(snap&&snap.exists()){
+    if(uid&&snap.key===uid)return{id:uid,uid,...snap.val()};
+    let t=null;snap.forEach(c=>{t={id:c.key,uid:uid||c.key,...c.val()};});if(t)return t;
+  }
+  if(uid){const us=await db.ref(`users/${uid}`).once('value');if(us.exists())return{id:uid,uid,...us.val()};}
+  return null;
+}
+
+// ===== GET ACCESSIBLE STUDENTS - Same logic as teacher_clean.html =====
+async function getAccessibleStudents(students) {
+  if (!Array.isArray(students)) {
+    students = [];
+  }
+
+  if (!currentTeacher) {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      return [];
+    }
+
+    try {
+      const userSnap = await db.ref(`users/${uid}`).once('value');
+      if (userSnap.exists()) {
+        currentTeacher = userSnap.val();
+        currentTeacher.uid = uid;
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
+
+  const teacherBranch = (currentTeacher.branche || currentTeacher.branch || currentTeacher.schoolBranch || currentTeacher.branchName || '').toString().toLowerCase().trim();
+
+  let teacherClassesRaw = currentTeacher.classe || currentTeacher.class || currentTeacher.classes || '';
+  let teacherClasses = [];
+
+  if (Array.isArray(teacherClassesRaw)) {
+    teacherClasses = teacherClassesRaw;
+  } else if (typeof teacherClassesRaw === 'string') {
+    teacherClasses = teacherClassesRaw.split(',').map(c => c.trim()).filter(Boolean);
+  } else if (teacherClassesRaw !== null && teacherClassesRaw !== undefined) {
+    teacherClasses = [String(teacherClassesRaw).trim()];
+  }
+
+  teacherClasses = teacherClasses.map(c => c.toLowerCase().trim()).filter(Boolean);
+
+  const matchedStudents = [];
+
+  students.forEach((student) => {
+    const studentBranch = (student.branche || student.branch || student.schoolBranch || student.branchName || '').toString().toLowerCase().trim();
+    const studentClass = (student.classe || student.class || student.classes || '').toString().toLowerCase().trim();
+
+    const branchMatch = studentBranch === teacherBranch;
+    const classMatch = teacherClasses.length === 0 ? true : teacherClasses.includes(studentClass);
+
+    if (branchMatch && classMatch) {
+      matchedStudents.push(student);
+    }
+  });
+
+  return matchedStudents;
+}
+
+// ===== STUDENTS =====
+async function loadStudents(){
+  const uid = auth.currentUser?.uid;
+  if (!uid) {
+    toast('Utilisateur non connecté', 'error');
+    return;
+  }
+
+  try {
+    // 🔥 SERVER-SIDE FILTERING: Only load students assigned to this teacher
+    const studentsRef = db.ref('students').orderByChild('teacherId').equalTo(uid);
+    const teacherSnapshot = await studentsRef.once('value');
+
+    allStudents = [];
+    const teacherStudents = [];
+
+    if (teacherSnapshot.exists()) {
+      teacherSnapshot.forEach(c => {
+        const studentRecord = { _id: c.key, ...c.val() };
+        allStudents.push(studentRecord);
+        teacherStudents.push(studentRecord);
+      });
+    }
+
+    // Get teacher profile for additional filtering
+    const teacherSnap = await db.ref(`users/${uid}`).once('value');
+    const teacher = teacherSnap.val() || {};
+
+    const teacherBranch = (teacher.branch || teacher.branche || "").toString().toLowerCase().trim();
+    let teacherClasses = teacher.classes || teacher.classe || teacher.class || null;
+
+    if (Array.isArray(teacherClasses)) {
+      teacherClasses = teacherClasses.map(c => c.toString().toLowerCase().trim()).filter(Boolean);
+    } else if (teacherClasses) {
+      teacherClasses = teacherClasses.toString().split(',').map(c => c.toString().toLowerCase().trim()).filter(Boolean);
+    } else {
+      teacherClasses = [];
+    }
+
+    const teacherSection = (teacher.section || teacher.sectionName || teacher.branchSection || "primaire").toString().toLowerCase().trim();
+
+    console.log("Teacher:", teacher);
+    console.log("Raw teacher students:", teacherStudents.length);
+
+    const normalizeSection = (val) => {
+      if (!val) return "";
+      val = val.toString().toLowerCase().trim();
+      if (val.includes("primaire")) return "primaire";
+      if (val.includes("maternelle")) return "maternelle";
+      return val;
+    };
+
+    // 🔥 SECONDARY FILTERING: Branch + Section + Classes
+    filteredStudents = teacherStudents.filter(student => {
+      console.log("Filtering student:", student);
+
+      const studentBranch = (student.branch || "").toString().toLowerCase().trim();
+      const studentClass = (student.classes || student.classe || student.class || "").toString().toLowerCase().trim();
+      const studentSection = normalizeSection(student.section || student.level || student.levelName || "");
+
+      // Branch match
+      if (studentBranch !== teacherBranch) {
+        console.log(`Branch mismatch: ${studentBranch} !== ${teacherBranch}`);
+        return false;
+      }
+
+      // Section match (cms compatible)
+      if (studentSection) {
+        if (studentSection !== teacherSection) {
+          console.log("Section mismatch:", studentSection, "!=", teacherSection);
+          return false;
+        }
+      }
+
+      // Classes match
+      let matchClass = false;
+      if (!teacherClasses || teacherClasses.length === 0) {
+        matchClass = true;
+      } else if (Array.isArray(teacherClasses)) {
+        matchClass = teacherClasses.includes(studentClass);
+        console.log(`Array classes check: ${teacherClasses} includes ${studentClass} = ${matchClass}`);
+      } else {
+        matchClass = teacherClasses.toString().trim() === studentClass;
+        console.log(`String classes check: ${teacherClasses} === ${studentClass} = ${matchClass}`);
+      }
+
+      if (!matchClass) {
+        console.log(`Class mismatch for student ${student.name || 'unnamed'}`);
+        return false;
+      }
+
+      return true;
+    });
+
+    console.log("Filtered students:", filteredStudents);
+
+    // Sort by class then by student name
+    filteredStudents.sort((a, b) => {
+      const ca = (a.classe || a.class || a.classes || '').toString().toLowerCase().trim();
+      const cb = (b.classe || b.class || b.classes || '').toString().toLowerCase().trim();
+      if (ca !== cb) return ca.localeCompare(cb, 'fr');
+      return getStudentName(a).localeCompare(getStudentName(b), 'fr');
+    });
+
+    // 4. CALCULER POURCENTAGES ET CLASSEMENT
+    const classBulletinCache = {};
+    for (const cls of teacherClasses) {
+      const classKey = normalizeClass(cls);
+      if (!classKey) continue;
+      try {
+        const bulletinsSnap = await db.ref(`bulletins_primaire_${classKey}`).once('value');
+        if (bulletinsSnap.exists()) {
+          bulletinsSnap.forEach(b => {
+            classBulletinCache[b.key] = b.val();
+          });
+        }
+      } catch (e) {
+        console.warn('Impossible de charger les bulletins de classe', classKey, e);
+      }
+    }
+
+    filteredStudents = filteredStudents.map(student => {
+      const studentId = student._id || student.id || '';
+      const studentClass = (student.classe || student.class || student.classes || '').toString().toLowerCase().trim();
+      const rawBulletin = classBulletinCache[studentId] || {};
+      const total = Number(rawBulletin.annualTotal || rawBulletin.total || 0);
+      const max = Number(rawBulletin.maxGrand || rawBulletin.max || 1000);
+      const percentage = max > 0 ? formatDecimal((total / max) * 100) : '0.0';
+      const placeRaw = rawBulletin.place || '';
+      const place = parsePlaceValue(placeRaw);
+      const placeLabel = placeRaw || '';
+      return {
+        ...student,
+        studentClass,
+        total: total,
+        max: max,
+        percentage: percentage,
+        place: place
+      };
+    });
+
+    // 5. TRIER PAR PLACE MANUELLE SI DÉFINIE, SINON PAR PERFORMANCE
+    filteredStudents.sort((a, b) => {
+      const pa = a.place || Number.MAX_SAFE_INTEGER;
+      const pb = b.place || Number.MAX_SAFE_INTEGER;
+      if (pa !== pb) return pa - pb;
+      return b.percentage - a.percentage;
+    });
+
+    // 6. ASSIGNER LE RANG POUR AFFICHAGE
+    filteredStudents = filteredStudents.map((s, index) => ({ ...s, rank: s.place || index + 1 }));
+
+    renderStudentsTable();
+    populateClassFilters();
+    updateStudentStats();
+
+    toast(`✅ ${filteredStudents.length} élève(s) Primaire chargé(s)`, 'success');
+
+  } catch (error) {
+    console.error('Erreur lors du chargement des élèves:', error);
+    toast('Erreur lors du chargement des élèves', 'error');
+  }
+}
+
+function reloadStudents(){
+  loadStudents().catch(e => {
+    console.error('Erreur lors du rechargement:', e);
+    toast('Erreur lors du rechargement des élèves', 'error');
+  });
+}
+
+function renderStudentsTable(){
+  const tbody=document.getElementById('students-table-body');
+  tbody.innerHTML='';
+  
+  if(!filteredStudents.length){
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.4);padding:20px;">Aucun élève primaire trouvé</td></tr>';
+    return;
+  }
+  
+  filteredStudents.forEach(s=>{
+    const name=getStudentName(s);
+    const cls=(s.classe||s.class||s.classes||'').toString().trim();
+    const rank = s.place || s.rank || '-';
+    const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+    const rowStyle = rank === 1 ? 'background:rgba(255,215,0,0.12);' : rank === 2 ? 'background:rgba(192,192,192,0.1);' : rank === 3 ? 'background:rgba(205,127,50,0.08);' : '';
+    const percentage = formatDecimal(s.percentage || 0);
+
+    const tr=document.createElement('tr');
+    tr.setAttribute('style', rowStyle);
+    tr.innerHTML=`
+      <td style="text-align:center;">${rankIcon}</td>
+      <td style="text-align:left;padding-left:14px;"><strong>${name}</strong></td>
+      <td style="text-align:center;">${cls}</td>
+      <td style="text-align:center;"><strong>${percentage}%</strong></td>
+      <td style="text-align:center;">
+        <button class="btn btn-gold" style="padding:6px 12px;font-size:11px;" onclick="selectStudentFromTable('${s._id}','${name.replace(/'/g,"\\'")}')">
+          ➜ Sélectionner
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function filterStudentsTable(){
+  const searchVal=(document.getElementById('student-search-input').value||'').toString().toLowerCase().trim();
+  const classVal=(document.getElementById('student-class-filter').value||'').toString().toLowerCase().trim();
+  
+  const tbody=document.getElementById('students-table-body');
+  tbody.innerHTML='';
+  
+  let filtered=filteredStudents.filter(s=>{
+    const name=getStudentName(s).toLowerCase();
+    const cls=(s.classe||s.class||s.classes||'').toString().toLowerCase().trim();
+    const matchesSearch=!searchVal||name.includes(searchVal);
+    const matchesClass=!classVal||cls===classVal;
+    return matchesSearch&&matchesClass;
+  });
+  
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.4);padding:20px;">Aucun résultat</td></tr>';
+    return;
+  }
+  
+  filtered.forEach(s=>{
+    const name=getStudentName(s);
+    const cls=(s.classe||s.class||s.classes||'').toString().trim();
+    const rankIcon = s.rank===1 ? '🥇' : s.rank===2 ? '🥈' : s.rank===3 ? '🥉' : s.rank || '-';
+    const rowStyle = s.rank===1 ? 'background:rgba(255,215,0,0.12);' : s.rank===2 ? 'background:rgba(192,192,192,0.1);' : s.rank===3 ? 'background:rgba(205,127,50,0.08);' : '';
+    const percentage = formatDecimal(s.percentage || 0);
+    const tr=document.createElement('tr');
+    tr.setAttribute('style', rowStyle);
+    tr.innerHTML=`
+      <td style="text-align:center;">${rankIcon}</td>
+      <td style="text-align:left;padding-left:14px;"><strong>${name}</strong></td>
+      <td style="text-align:center;">${cls}</td>
+      <td style="text-align:center;">${percentage}%</td>
+      <td style="text-align:center;">
+        <button class="btn btn-gold" style="padding:6px 12px;font-size:11px;" onclick="selectStudentFromTable('${s._id}','${name.replace(/'/g,"\\'")}')">
+          ➜ Sélectionner
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function selectStudentFromTable(studentId,studentName){
+  const student=filteredStudents.find(s=>s._id===studentId);
+  if(!student){toast('Élève non trouvé','error');return;}
+  
+  selectedStudent=student;
+  document.getElementById('student-name-input').value=studentName;
+  fillAutoFields();
+  
+  // Show selected student card
+  const card=document.getElementById('selected-student-card');
+  const initials=(studentName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('selected-student-initials').textContent=initials;
+  document.getElementById('selected-student-name').textContent=studentName;
+  const cls=(student.classe||student.class||student.classes||'').toString().trim();
+  document.getElementById('selected-student-meta').textContent=`Classe: ${cls}`;
+  card.style.display='block';
+  
+  // Charger les scores existants de cet élève
+  await loadStudentScores(studentId, cls);
+
+  if(currentTrim){
+    await syncTrimModificationMode(currentTrim);
+  }else{
+    isTrimEditMode=false;
+    updateSaveButtonMode();
+  }
+  
+  toast('✅ '+studentName+' sélectionné(e)','success');
+}
+
+function clearSelectedStudent(){
+  selectedStudent=null;
+  isTrimEditMode=false;
+  updateSaveButtonMode();
+  document.getElementById('student-name-input').value='';
+  document.getElementById('student-branch').value='';
+  document.getElementById('student-class').value='';
+  document.getElementById('selected-student-card').style.display='none';
+  document.querySelectorAll('.score-inp').forEach(i=>i.value='');
+}
+
+// ===== CHARGER LES SCORES EXISTANTS =====
+async function loadStudentScores(studentId, studentClass){
+  try {
+    const className = normalizeClass(studentClass || '');
+    if(!className) {
+      return; // Pas de classe, pas de données à charger
+    }
+
+    const bulletinRef = db.ref(`bulletins_primaire_${className}/${studentId}`);
+    const snap = await bulletinRef.once('value');
+    
+    if (!snap.exists()) {
+      console.log('Aucun bulletin existant pour cet élève');
+      return; // Pas de données existantes
+    }
+
+    const bulletin = snap.val();
+    console.log('Bulletin chargé:', bulletin);
+
+    // Charger les scores par sujet et par trimestre
+    if (bulletin.scores && Array.isArray(bulletin.scores)) {
+      bulletin.scores.forEach((scoreRow, idx) => {
+        // Charger T1
+        if (scoreRow.t1) {
+          setV(`si-t1-test-${idx}`, scoreRow.t1.test || '');
+          setV(`si-t1-ex-${idx}`, scoreRow.t1.ex || '');
+        }
+        // Charger T2
+        if (scoreRow.t2) {
+          setV(`si-t2-test-${idx}`, scoreRow.t2.test || '');
+          setV(`si-t2-ex-${idx}`, scoreRow.t2.ex || '');
+        }
+        // Charger T3
+        if (scoreRow.t3) {
+          setV(`si-t3-test-${idx}`, scoreRow.t3.test || '');
+          setV(`si-t3-ex-${idx}`, scoreRow.t3.ex || '');
+        }
+      });
+    }
+
+    // Charger les autres informations du bulletin
+    if (bulletin.remarqueDelib) {
+      document.getElementById('remarque-delib').value = bulletin.remarqueDelib;
+    }
+    if (bulletin.conduite) {
+      document.getElementById('conduite-val').value = bulletin.conduite;
+      selectConduite(bulletin.conduite);
+    }
+    if (bulletin.bulletinDate) {
+      const dateInput = document.getElementById('bul-date');
+      if (dateInput) dateInput.value = bulletin.bulletinDate;
+    }
+
+    // Activer les inputs pour modification
+    document.querySelectorAll('.score-inp').forEach(inp => {
+      inp.disabled = false;
+    });
+
+    // Recalculer après chargement
+    recalculate();
+    
+    toast('✅ Données de l\'élève chargées','success');
+  } catch (error) {
+    console.error('Erreur lors du chargement des scores:', error);
+    toast('Données non trouvées ou erreur de chargement','warning');
+  }
+}
+
+function populateClassFilters(){
+  const classSet=new Set();
+  filteredStudents.forEach(s=>{
+    const cls=(s.classe||s.class||s.classes||'').toString().trim();
+    if(cls) classSet.add(cls);
+  });
+  
+  const select=document.getElementById('student-class-filter');
+  const currentVal=select.value;
+  select.innerHTML='<option value="">Toutes les classes</option>';
+  
+  Array.from(classSet).sort().forEach(cls=>{
+    const opt=document.createElement('option');
+    opt.value=cls;
+    opt.textContent=cls;
+    select.appendChild(opt);
+  });
+  
+  select.value=currentVal;
+  
+  // Also populate class-select for palmares
+  const palmaresSelect=document.getElementById('class-select');
+  const palmaresCurrentVal=palmaresSelect.value;
+  palmaresSelect.innerHTML='<option value="">Toutes les classes</option>';
+  
+  Array.from(classSet).sort().forEach(cls=>{
+    const opt=document.createElement('option');
+    opt.value=cls;
+    opt.textContent=cls;
+    palmaresSelect.appendChild(opt);
+  });
+  
+  palmaresSelect.value=palmaresCurrentVal;
+}
+
+function updateStudentStats(){
+  const total=filteredStudents.length;
+  const males=filteredStudents.filter(s=>(s.gender||s.sexe||'').toLowerCase()==='m').length;
+  const females=filteredStudents.filter(s=>(s.gender||s.sexe||'').toLowerCase()==='f').length;
+  
+  document.getElementById('total-students-count').textContent=total;
+  document.getElementById('male-students-count').textContent=males;
+  document.getElementById('female-students-count').textContent=females;
+}
+
+// ===== AUTOCOMPLETE / FILL AUTO FIELDS =====
+function onNameInput(){
+  // This function is now just for the read-only field or future extensions
+}
+function fillAutoFields(){
+  if(!selectedStudent)return;
+  // Populate with student's branch and class (they are guaranteed to match teacher's due to filtering)
+  const studentBranch=selectedStudent.branche||selectedStudent.branch||selectedStudent.branchName||selectedStudent.schoolBranch||'';
+  const studentClass=selectedStudent.classes||selectedStudent.classe||selectedStudent.class||'';
+  document.getElementById('student-branch').value=studentBranch;
+  document.getElementById('student-class').value=studentClass;
+  document.getElementById('teacher-name').value=teacherName(currentTeacher);
+  document.getElementById('school-year').value=getSchoolYear();
+}
+function clearAutoFields(){
+  document.getElementById('student-branch').value='';
+  document.getElementById('student-class').value='';
+}
+
+async function addStudentPrompt(){
+  if(!currentTeacher){toast('Profil enseignant non chargé','error');return;}
+  const fullName=prompt("Nom complet de l'élève ?");
+  if(!fullName||!fullName.trim()) return;
+  const teacherUid=(auth.currentUser&&auth.currentUser.uid)||currentTeacher?.uid||currentTeacher?.id||'';
+  const payload={name:fullName.trim(),teacherId:teacherUid,level:'Primaire',createdAt:Date.now()};
+  await db.ref('students').push(payload);
+  toast('Élève ajouté avec succès','success');
+  await loadStudents();
+}
+
+async function editSelectedStudentNamePrompt(){
+  if(!selectedStudent||!selectedStudent._id){toast("Sélectionnez d'abord un élève",'error');return;}
+  const currentName=getStudentName(selectedStudent);
+  const nextName=prompt("Nouveau nom complet",currentName);
+  if(nextName===null) return;
+  if(!nextName.trim()){toast('Nom invalide','error');return;}
+  await db.ref(`students/${selectedStudent._id}`).update({name:nextName.trim(),updatedAt:Date.now()});
+  toast("Nom de l'élève modifié",'success');
+  await loadStudents();
+  const refreshed=filteredStudents.find(s=>s._id===selectedStudent._id);
+  if(refreshed){selectedStudent=refreshed;document.getElementById('student-name-input').value=getStudentName(refreshed);fillAutoFields();}
+}
+
+// ===== TRIMESTRE =====
+function selectTrim(t){
+  isAnnualMode=false;
+  currentTrim=t;
+  document.querySelectorAll('.trim-btn').forEach((b,i)=>b.classList.toggle('active',i+1===t));
+  const annualBtn=document.getElementById('annual-btn');
+  if(annualBtn)annualBtn.classList.remove('active');
+  syncTrimModificationMode(t);
+  highlightActiveTrim();
+}
+
+function highlightActiveTrim(){
+  const labelEl=document.getElementById('trim-label-active');
+  if(labelEl)labelEl.textContent=currentTrim?['1er Trimestre','2e Trimestre','3e Trimestre'][currentTrim-1]:'Bulletin Annuel';
+  ['th-trim1','th-trim2','th-trim3'].forEach((id,i)=>{
+    const th=document.getElementById(id);th.style.background=currentTrim&&i+1===currentTrim?'rgba(200,168,75,.25)':'';th.style.color=currentTrim&&i+1===currentTrim?'var(--gold)':'';
+  });
+  SUBJECTS.forEach((_,idx)=>{for(let t=1;t<=3;t++){
+    const te=document.querySelector(`.si-t${t}-test-${idx}`);
+    const ex=document.querySelector(`.si-t${t}-ex-${idx}`);
+    if(te)te.disabled=!!currentTrim&&t!==currentTrim;
+    if(ex)ex.disabled=!!currentTrim&&t!==currentTrim;
+  }});
+  // Met à jour total/percent/grade selon le trimestre actif
+  recalculate();
+}
+
+// ===== SCORES TABLE =====
+function buildScoresTable(){
+  const tbody=document.getElementById('scores-body');tbody.innerHTML='';
+  SUBJECTS.forEach((s,idx)=>{
+    const maxTot=s.testMax+s.exMax,anMax=maxTot*3;
+    const tr=document.createElement('tr');
+    let cols=`<td>${s.name}</td><td>${s.testMax}</td><td>${s.exMax}</td><td>${maxTot}</td>`;
+    for(let t=1;t<=3;t++)cols+=`<td><input class="score-inp si-t${t}-test-${idx}" type="number" min="0" max="${s.testMax}" oninput="recalculate()"></td><td><input class="score-inp si-t${t}-ex-${idx}" type="number" min="0" max="${s.exMax}" oninput="recalculate()"></td><td><input class="score-inp si-t${t}-tot-${idx}" type="text" readonly></td>`;
+    cols+=`<td id="si-max-${idx}">${anMax}</td><td><input class="score-inp si-an-tot-${idx}" type="text" readonly></td><td><input class="score-inp si-an-pct-${idx}" type="text" readonly></td>`;
+    tr.innerHTML=cols;tbody.appendChild(tr);
+  });
+}
+function getV(cls){const el=document.querySelector('.'+CSS.escape(cls));if(!el)return 0;const v=parseFloat(el.value);if(isNaN(v))return 0;const m=parseFloat(el.max);return(!isNaN(m)&&v>m)?m:Math.max(v,0);}
+function setV(cls,v){const el=document.querySelector('.'+CSS.escape(cls));if(el)el.value=v!==''&&v!=null?v:'';}
+function recalculate(){
+  const tri=[0,0,0];
+  const activeT=currentTrim; // 1..3 ou null
+  const grandMax = activeT ? TRIM_MAX_GRAND : ANNUAL_MAX_GRAND;
+
+  SUBJECTS.forEach((s,idx)=>{
+    const maxPerSubjectTrim = s.testMax + s.exMax;
+    const maxPerSubjectShown = activeT ? maxPerSubjectTrim : maxPerSubjectTrim*3;
+    const maxEl = document.getElementById(`si-max-${idx}`);
+    if(maxEl) maxEl.textContent = maxPerSubjectShown;
+
+    let annualLike=0;
+    for(let t=1;t<=3;t++){
+      const test=getV(`si-t${t}-test-${idx}`);
+      const ex=getV(`si-t${t}-ex-${idx}`);
+      const tot=test+ex;
+      setV(`si-t${t}-tot-${idx}`,tot||'');
+
+      // Quand un trimestre est actif, on ne calcule que celui-ci.
+      if(!activeT || t===activeT){
+        annualLike += tot;
+        tri[t-1] += tot;
+      }
+    }
+
+    const pct = maxPerSubjectShown ? formatDecimal(annualLike / maxPerSubjectShown * 100) : '';
+    setV(`si-an-tot-${idx}`, annualLike || '');
+    setV(`si-an-pct-${idx}`, annualLike ? pct + '%' : '');
+  });
+
+  const total = tri.reduce((a,b)=>a+b,0);
+  const pct = grandMax ? formatDecimal(total / grandMax * 100) : '';
+  document.getElementById('disp-total').textContent = total;
+  document.getElementById('disp-pct').textContent = total ? pct + '%' : '0%';
+  document.getElementById('disp-grade').textContent = total ? grade(parseFloat(pct)) : '—';
+  // MAJ des libellés "Total" / "Max"
+  const maxLblEl = document.getElementById('disp-max-lbl');
+  const maxValEl = document.getElementById('disp-max');
+  const totalLblEl = document.getElementById('disp-total-lbl');
+  if(maxValEl) maxValEl.textContent = grandMax;
+  if(maxLblEl) maxLblEl.textContent = activeT ? 'Max Trimestre' : 'Max Annuel';
+  if(totalLblEl) totalLblEl.textContent = activeT ? 'Total Trimestre' : 'Total Annuel';
+}
+function collectScores(){
+  const activeT=currentTrim; // 1..3 ou null
+  const grandMax = activeT ? TRIM_MAX_GRAND : ANNUAL_MAX_GRAND;
+
+  const rows=[];
+  const tri=[0,0,0];
+
+  SUBJECTS.forEach((s,idx)=>{
+    const maxPerSubjectTrim = s.testMax + s.exMax;
+    const maxPerSubjectShown = activeT ? maxPerSubjectTrim : maxPerSubjectTrim*3;
+
+    const t1={test:getV(`si-t1-test-${idx}`),ex:getV(`si-t1-ex-${idx}`)};
+    const t2={test:getV(`si-t2-test-${idx}`),ex:getV(`si-t2-ex-${idx}`)};
+    const t3={test:getV(`si-t3-test-${idx}`),ex:getV(`si-t3-ex-${idx}`)};
+    t1.total=t1.test+t1.ex;
+    t2.total=t2.test+t2.ex;
+    t3.total=t3.test+t3.ex;
+
+    // Si un trimestre est actif, on ignore les autres (pour ne pas "tirer" 1er/2e quand on est sur 3e).
+    if(activeT){
+      if(activeT!==1){ t1.test=0; t1.ex=0; t1.total=0; }
+      if(activeT!==2){ t2.test=0; t2.ex=0; t2.total=0; }
+      if(activeT!==3){ t3.test=0; t3.ex=0; t3.total=0; }
+    }
+
+    tri[0]+=t1.total; tri[1]+=t2.total; tri[2]+=t3.total;
+
+    const shownTotal = t1.total + t2.total + t3.total;
+    const shownPct = maxPerSubjectShown ? formatDecimal(shownTotal / maxPerSubjectShown * 100) : '0.0';
+
+    rows.push({
+      subject:s.name,
+      maxTest:s.testMax,
+      maxEx:s.exMax,
+      maxTotal:s.testMax+s.exMax,
+      annualMax: maxPerSubjectShown,
+      annualTotal: shownTotal,
+      annualPct: shownPct,
+      t1,t2,t3
+    });
+  });
+
+  const totalAnnual = tri[0] + tri[1] + tri[2];
+  const annualPct = grandMax ? formatDecimal(totalAnnual / grandMax * 100) : '0.0';
+  return { rows, tri, totalAnnual, annualPct, maxGrand: grandMax };
+}
+
+// ===== CONDUITE =====
+function selectConduite(v){
+  conduiteVal=v;document.getElementById('conduite-val').value=v;
+  document.querySelectorAll('.conduite-btn').forEach(b=>{
+    const map={'EXCELLENT':'excellent','TRÈS BIEN':'tres-bien','BIEN':'bien','MÉDIOCRE':'mediocre'};
+    const key=b.textContent.includes('EXCELL')?'EXCELLENT':b.textContent.includes('TRÈS')?'TRÈS BIEN':b.textContent.includes('BIEN')&&!b.textContent.includes('TRÈS')?'BIEN':'MÉDIOCRE';
+    b.classList.toggle('active',key===v);
+  });
+}
+
+// ===== SUMMARY =====
+function buildSummary(){
+  const s=collectScores();
+  const activePeriod=currentTrim?(['1er','2e','3e'][currentTrim-1]||'—')+' Trimestre':'Bulletin Annuel';
+  const maxShown=currentTrim?TRIM_MAX_GRAND:ANNUAL_MAX_GRAND;
+  const items=[
+    ['Élève',document.getElementById('student-name-input').value||'—'],
+    ['Branche',document.getElementById('student-branch').value||'—'],
+    ['Classe',document.getElementById('student-class').value||'—'],
+    ['Enseignant',document.getElementById('teacher-name').value||'—'],
+    ['Trimestre actif',activePeriod],
+    ['Total',s.totalAnnual+' / '+(s.maxGrand||maxShown)],
+    ['Pourcentage',s.annualPct+'%'],
+    ['Grade',grade(s.annualPct)],
+    ['Conduite',document.getElementById('conduite-val').value||'—'],
+    ['Remarque en délibération',document.getElementById('remarque-delib').value||'—']
+  ];
+  document.getElementById('summary-view').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">${items.map(([l,v])=>`<div style="background:rgba(255,255,255,.04);border:1px solid rgba(200,168,75,.15);border-radius:10px;padding:12px;"><div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">${l}</div><div style="font-size:14px;font-weight:600;">${v}</div></div>`).join('')}</div>`;
+}
+
+// ===== SAVE =====
+async function saveBulletin(){
+  const name=document.getElementById('student-name-input').value.trim();
+  if(!name){toast('Nom élève manquant','error');return;}
+  if(!currentTrim){toast('Veuillez sélectionner un trimestre','error');return;}
+
+  const scores=collectScores();
+  const className = normalizeClass(document.getElementById('student-class').value || '');
+  if(!className){toast('Classe manquante','error');return;}
+
+  const studentId = selectedStudent?._id || '';
+  if(!studentId){toast('Sélectionnez un élève existant','error');return;}
+
+  const bulletinRef = db.ref(`bulletins_primaire_${className}/${studentId}`);
+  const snap = await bulletinRef.once('value');
+  const existing = snap.exists() ? snap.val() : {};
+
+  const existingRows = Array.isArray(existing.scores) ? existing.scores : [];
+  const mergedRows = SUBJECTS.map((s,idx)=>{
+    const oldRow = existingRows[idx] || {};
+    const newRow = scores.rows[idx] || {};
+
+    const row = {
+      subject: s.name,
+      maxTest: s.testMax,
+      maxEx: s.exMax,
+      maxTotal: s.testMax + s.exMax,
+      t1: oldRow.t1 ? {...oldRow.t1} : {test:0,ex:0,total:0},
+      t2: oldRow.t2 ? {...oldRow.t2} : {test:0,ex:0,total:0},
+      t3: oldRow.t3 ? {...oldRow.t3} : {test:0,ex:0,total:0}
+    };
+
+    if(currentTrim===1&&newRow.t1)row.t1={...newRow.t1};
+    if(currentTrim===2&&newRow.t2)row.t2={...newRow.t2};
+    if(currentTrim===3&&newRow.t3)row.t3={...newRow.t3};
+
+    ['t1','t2','t3'].forEach(k=>{
+      row[k].test=Number(row[k].test)||0;
+      row[k].ex=Number(row[k].ex)||0;
+      row[k].total=row[k].test+row[k].ex;
+    });
+
+    row.annualMax=(s.testMax+s.exMax)*3;
+    row.annualTotal=row.t1.total+row.t2.total+row.t3.total;
+    row.annualPct=row.annualMax?formatDecimal(row.annualTotal/row.annualMax*100):'0.0';
+    return row;
+  });
+
+  // Mise à jour des totaux par trimestre en conservant les autres trimestres existants.
+  const trim1Total = mergedRows.reduce((sum,r)=>sum+(r.t1.total||0),0);
+  const trim2Total = mergedRows.reduce((sum,r)=>sum+(r.t2.total||0),0);
+  const trim3Total = mergedRows.reduce((sum,r)=>sum+(r.t3.total||0),0);
+
+  const annualTotal = trim1Total + trim2Total + trim3Total;
+  const averageScore = annualTotal / 3;
+  const annualPct = averageScore ? formatDecimal(averageScore / 1000 * 100) : '0.0';
+  const currentTrimTotal = currentTrim===1 ? trim1Total : currentTrim===2 ? trim2Total : trim3Total;
+  const currentTrimPct = formatDecimal((currentTrimTotal / TRIM_MAX_GRAND) * 100);
+
+  // Calcul des pourcentages par trimestre
+  const trim1Pct = trim1Total ? formatDecimal(trim1Total / 1000 * 100) : '0.0';
+  const trim2Pct = trim2Total ? formatDecimal(trim2Total / 1000 * 100) : '0.0';
+  const trim3Pct = trim3Total ? formatDecimal(trim3Total / 1000 * 100) : '0.0';
+
+  const payload={
+    studentId,
+    name: name,
+    branch: document.getElementById('student-branch').value || '',
+    class: document.getElementById('student-class').value || '',
+    teacherId: (auth.currentUser&&auth.currentUser.uid)||currentTeacher?.uid||currentTeacher?.id||'',
+    teacherName: document.getElementById('teacher-name').value || '',
+    trimestre: currentTrim,
+    total: currentTrimTotal,
+    average: currentTrimPct,
+    createdAt: new Date().toISOString(),
+    updatedAt: Date.now(),
+    mode: isTrimEditMode ? 'modification' : 'creation',
+    remarqueDelib: document.getElementById('remarque-delib').value || '',
+    conduite: document.getElementById('conduite-val').value || '',
+    bulletinDate: document.getElementById('bul-date').value || new Date().toISOString().split('T')[0],
+    annualTotal,
+    annualPct,
+    maxGrand: ANNUAL_MAX_GRAND,
+    trim1Total,
+    trim2Total,
+    trim3Total,
+    trim1Pct,
+    trim2Pct,
+    trim3Pct,
+    scores: mergedRows,
+    place: existing.place || null // Conserver l'ancien rang si déjà attribué
+  };
+  await bulletinRef.set(payload);
+  isTrimEditMode=true;
+  updateSaveButtonMode();
+  toast('✅ Bulletin enregistré dans Firebase','success');
+  showModal('✅','Enregistré !','Le bulletin a été sauvegardé avec succès. Créer un autre bulletin ?',[{label:'Nouveau bulletin',cls:'btn-gold',action:resetForm},{label:'Voir palmarès',cls:'btn-success',action:()=>showPage('palmares')},{label:'Rester ici',cls:'btn-ghost',action:null}]);
+}
+function resetForm(){
+  currentStep=1;currentTrim=null;selectedStudent=null;conduiteVal='';
+  isAnnualMode=false;
+  isTrimEditMode=false;
+  ['student-name-input','student-branch','student-class','remarque-delib','conduite-val'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('.score-inp').forEach(i=>i.value='');
+  updateSaveButtonMode();
+  document.getElementById('selected-student-card').style.display='none';
+  recalculate();renderStepper();
+  document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('visible'));
+  document.getElementById('panel-1').classList.add('visible');
+}
+
+// ===== SAVE ANNUAL =====
+async function saveAnnualBulletins(selectedStudentId) {
+  if (!selectedStudentId) {
+    toast('Aucun élève sélectionné', 'error');
+    return;
+  }
+
+  // Trouver l'élève sélectionné pour obtenir sa classe
+  const student = allStudents.find(s => s._id === selectedStudentId);
+  if (!student) {
+    toast('Élève non trouvé', 'error');
+    return;
+  }
+
+  const studentClass = student.classes || student.classe || student.class || '';
+  const className = normalizeClass(studentClass);
+
+  if (!className) {
+    toast('Classe de l\'élève non trouvée', 'error');
+    return;
+  }
+
+  toast('Enregistrement des bulletins annuels...', '');
+
+  try {
+    // Charger les données actuelles de la classe
+    const refPath = `bulletins_primaire_${className}`;
+    const snap = await db.ref(refPath).once('value');
+
+    if (!snap.exists()) {
+      toast('Aucun bulletin trouvé pour cette classe', 'error');
+      return;
+    }
+
+    const classData = snap.val();
+    const updates = {};
+
+    // Calculer et préparer les mises à jour pour chaque élève
+    Object.keys(classData).forEach(studentId => {
+      const studentBulletin = classData[studentId];
+      const t1 = studentBulletin.trim1Total || 0;
+      const t2 = studentBulletin.trim2Total || 0;
+      const t3 = studentBulletin.trim3Total || 0;
+      const totalAnnual = t1 + t2 + t3;
+
+      // Calculer le rang (sera mis à jour après tri)
+      const averageScore = totalAnnual / 3;
+      const annualPct = averageScore > 0 ? formatDecimal(averageScore / 1000 * 100) : '0.0';
+      updates[`${refPath}/${studentId}/annualTotal`] = totalAnnual;
+      updates[`${refPath}/${studentId}/annualAverage`] = averageScore;
+      updates[`${refPath}/${studentId}/annualPct`] = annualPct;
+      updates[`${refPath}/${studentId}/annualPercentage`] = annualPct;
+      updates[`${refPath}/${studentId}/updatedAt`] = Date.now();
+    });
+
+    // Appliquer les mises à jour
+    await db.ref().update(updates);
+
+    // Garder les classements manuels (place) et éviter la réécriture automatique des rangs.
+    const annualStudents = Object.keys(classData).map(studentId => {
+      const studentBulletin = classData[studentId];
+      const totalAnnual = (studentBulletin.trim1Total || 0) + (studentBulletin.trim2Total || 0) + (studentBulletin.trim3Total || 0);
+      return { studentId, totalAnnual, place: studentBulletin.place || null };
+    });
+
+    // Trie local par place si présent, sinon par total pour affichage.
+    annualStudents.sort((a, b) => {
+      const pa = a.place || Number.MAX_SAFE_INTEGER;
+      const pb = b.place || Number.MAX_SAFE_INTEGER;
+      if (pa !== pb) return pa - pb;
+      return (b.totalAnnual || 0) - (a.totalAnnual || 0);
+    });
+
+    // Pas d'écriture automatique de annualRank ici, place manuelle garde la priorité.
+    // (La fonction assignPlaces() est disponible dans l'interface pour valider.)
+
+    toast('✅ Bulletins annuels enregistrés avec succès !', 'success');
+
+    // Recharger les données annuelles pour mettre à jour l'affichage
+    showAnnualBulletin();
+
+  } catch (error) {
+    console.error('Erreur lors de l\'enregistrement des bulletins annuels:', error);
+    toast('Erreur lors de l\'enregistrement des bulletins annuels', 'error');
+  }
+}
+
+// ===== PRINT =====
+function previewAndPrint(){
+  const name=document.getElementById('student-name-input').value.trim();
+  if(!name){toast('Nom élève manquant','error');return;}
+  const data=collectScores();
+  document.getElementById('print-area').innerHTML=buildBulletinHtml({
+    studentName:name,
+    branch:document.getElementById('student-branch').value||'—',
+    class:document.getElementById('student-class').value||'—',
+    teacher:document.getElementById('teacher-name').value||'—',
+    date:document.getElementById('bul-date').value||new Date().toISOString().split('T')[0],
+    remarqueDelib:document.getElementById('remarque-delib').value||'',
+    conduite:document.getElementById('conduite-val').value||'',
+    data
+  });
+  window.print();
+}
+
+// ===== BUILD BULLETIN HTML — A4 PORTRAIT FIDÈLE AU PDF =====
+function buildBulletinHtml(b) {
+  const d = b.data;
+  const maxGrand = d.maxGrand || (currentTrim ? TRIM_MAX_GRAND : ANNUAL_MAX_GRAND);
+
+  // ── Tableau 1 rows ──
+  const tbl1Rows = d.rows.map(r => `
+    <tr>
+      <td>${r.subject}</td>
+      <td>${r.maxTest}</td><td>${r.maxEx}</td><td>${r.maxTotal}</td>
+      <td>${r.t1.test||''}</td><td>${r.t1.ex||''}</td><td>${r.t1.total ? formatDecimal(r.t1.total) : ''}</td>
+      <td>${r.t2.test||''}</td><td>${r.t2.ex||''}</td><td>${r.t2.total ? formatDecimal(r.t2.total) : ''}</td>
+      <td>${r.t3.test||''}</td><td>${r.t3.ex||''}</td><td>${r.t3.total ? formatDecimal(r.t3.total) : ''}</td>
+      <td>${r.annualMax}</td><td>${r.annualTotal ? formatDecimal(r.annualTotal) : ''}</td><td>${r.annualTotal?r.annualPct+'%':''}</td>
+    </tr>`).join('');
+
+  const grandPct = d.totalAnnual ? d.annualPct+'%' : '';
+
+  // ── Tableau 2 — only the 6 main subjects (no Art/Phys) ──
+  const tbl2Rows = d.rows.filter(r => SUBJECTS_EXAM.includes(r.subject)).map(r => {
+    const subMax = r.annualMax;
+    const subTotal = r.annualTotal;
+    const subPct = subMax && subTotal ? formatDecimal(subTotal/subMax*100) + '%' : '';
+    const g = subMax && subTotal ? grade(parseFloat(subTotal/subMax*100)) : '';
+    const gradeClass = g ? 'bul-grade-'+g.toLowerCase() : '';
+    return `<tr>
+      <td>${r.subject}</td>
+      <td>${subMax}</td>
+      <td>${subTotal||''}</td>
+      <td>${subPct}</td>
+      <td class="${gradeClass}">${g}</td>
+      <td>${g}</td>
+    </tr>`;
+  }).join('');
+
+  const examSubjects = d.rows.filter(r => SUBJECTS_EXAM.includes(r.subject));
+  const examTotal = examSubjects.reduce((s,r)=>s+r.annualTotal,0);
+  const examMax = examSubjects.reduce((s,r)=>s+r.annualMax,0);
+  const examPct = examMax && examTotal ? formatDecimal(examTotal/examMax*100) + '%' : '';
+
+  // ── Logos — use local assets to avoid DNS failure (ERR_NAME_NOT_RESOLVED) ──
+  const logoRwanda  = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931378/logo_rwanda_nb0ize.png';
+  const logoEden = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931288/logo_eden_yg7o6h.png';
+
+
+  // ── Grade table data ──
+  const gradeRows = [
+    ['POURCENTAGE','80–100','75–79','70–74','60–69','55–59','50–54','45–49','40–44','39–0'],
+    ['GRADE','D1','C2','C3','C4','C5','P6','P7','P8','P9'],
+    ['POINTS','1','2','3','4','5','6','7','8','9'],
+    ['DIVISION','I:6-17','','II:18-36','','III:37-42','','IV:43-49','','V:50-54']
+  ];
+
+  const bulletinCSS = `
+.bul-print {
+  width: auto;
+  height: auto;
+  min-height: auto;
+  max-height: auto;
+  max-width: 210mm;
+  margin: 0 auto;
+  background: white;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  font-size: 8pt;
+  line-height: 1;
+  color: #000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.bul-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #1e3a5f;
+  padding-bottom: 3mm;
+  margin-bottom: 3mm;
+}
+.bul-logo {
+  width: 16mm;
+  height: 16mm;
+  object-fit: contain;
+}
+.bul-school-info {
+  text-align: center;
+  flex: 1;
+  padding: 0 2mm;
+}
+.bul-year {
+  font-size: 10pt;
+  font-weight: 900;
+  color: #1e3a5f;
+}
+.bul-school-name {
+  font-size: 11pt;
+  font-weight: 900;
+  color: #1e3a5f;
+  line-height: 1;
+}
+.bul-school-name span {
+  color: #c8a84b;
+}
+.bul-tagline {
+  font-size: 7pt;
+  color: #c8a84b;
+  font-style: italic;
+  font-weight: 700;
+}
+.bul-doc-title {
+  font-size: 9pt;
+  font-weight: 900;
+  color: #1e3a5f;
+  letter-spacing: 1px;
+  margin-top: 1mm;
+  text-decoration: underline;
+  text-underline-offset: 1px;
+}
+.bul-info-row {
+  display: flex;
+  gap: 2mm;
+  margin-bottom: 2mm;
+}
+.bul-info-box {
+  flex: 1;
+  border: 1px solid #000;
+  padding: 1.5mm;
+  text-align: center;
+}
+.bul-info-box.wide {
+  flex: 2;
+}
+.bul-info-lbl {
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 1mm;
+}
+.bul-info-val {
+  font-size: 9pt;
+  font-weight: 600;
+}
+.bul-section-title {
+  font-size: 11pt;
+  font-weight: 900;
+  color: #1e3a5f;
+  text-align: center;
+  margin: 5mm 0 2mm;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.bul-tbl1, .bul-tbl2 {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 7.5pt;
+  margin-bottom: 5mm;
+  table-layout: auto;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+.bul-tbl1 th, .bul-tbl2 th {
+  border: 1px solid #000;
+  padding: 0.6mm;
+  background: white;
+  font-weight: 700;
+  text-align: center;
+  word-break: break-word;
+  font-size: 6.5pt;
+}
+.bul-tbl1 td, .bul-tbl2 td {
+  border: 1px solid #000;
+  padding: 0.6mm;
+  text-align: center;
+  word-break: break-word;
+  font-size: 7pt;
+}
+.bul-tbl1 td:first-child, .bul-tbl2 td:first-child {
+  text-align: left;
+  padding-left: 0.6mm;
+  max-width: 30mm;
+  word-break: break-word;
+  font-size: 7pt;
+}
+.grand-row {
+  font-weight: 900;
+}
+.pct-row {
+  background: #f9f9f9;
+}
+.bul-grade-wrap {
+  margin: 5mm 0;
+}
+.bul-grade-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 6.5pt;
+  table-layout: auto;
+  word-wrap: break-word;
+  margin: 5mm 0;
+}
+.bul-grade-tbl th, .bul-grade-tbl td {
+  border: 1px solid #000;
+  padding: 0.5mm;
+  text-align: center;
+  word-break: break-word;
+  font-size: 6.5pt;
+}
+.bul-grade-row-label {
+  font-weight: 700;
+  text-align: left;
+}
+.bul-grade-d1 { background: white; }
+.bul-grade-c2 { background: white; }
+.bul-grade-c3 { background: white; }
+.bul-grade-c4 { background: white; }
+.bul-grade-c5 { background: white; }
+.bul-grade-p6 { background: white; }
+.bul-grade-p7 { background: white; }
+.bul-grade-p8 { background: white; }
+.bul-grade-p9 { background: white; }
+.bul-footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1mm;
+  margin: 3mm 0;
+}
+.bul-footer-box {
+  border: 1px solid #000;
+  padding: 1.5mm;
+  text-align: center;
+}
+.bul-footer-lbl {
+  font-size: 7pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 1mm;
+}
+.bul-footer-val {
+  font-size: 8pt;
+}
+.bul-footer-box:nth-child(3) .bul-footer-lbl {
+  font-size: 6pt;
+}
+.bul-footer-box:nth-child(3) .bul-footer-val {
+  font-size: 7pt;
+}
+.bul-decision-row {
+  display: flex;
+  justify-content: space-around;
+  margin: 2mm 0;
+}
+.bul-decision-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid #000;
+  padding: 1mm;
+  width: 20mm;
+}
+.bul-decision-lbl {
+  font-size: 7pt;
+  font-weight: 700;
+  margin-bottom: 0.5mm;
+}
+.bul-decision-val {
+  font-size: 10pt;
+  font-weight: 900;
+}
+.bul-sig-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1mm;
+  margin: 4mm 0 2mm;
+}
+.bul-sig-box {
+  border: 1px solid #000;
+  padding: 3mm;
+  text-align: center;
+  font-size: 6pt;
+  min-height: 15mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bul-watermark {
+  position: absolute;
+  bottom: 5mm;
+  left: 5mm;
+  right: 5mm;
+  text-align: center;
+  font-size: 5pt;
+  color: #999;
+  font-style: italic;
+}
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  .bul-print {
+    width: 210mm;
+    min-height: 297mm;
+    page-break-after: always;
+  }
+}
+`;
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Bulletin Scolaire</title>
+<style>
+${bulletinCSS}
+</style>
+</head>
+<body>
+<div class="bul-print">
+
+    <!-- ══ HEADER ══ -->
+    <div class="bul-header">
+      <img class="bul-logo" src="${logoEden}" alt="Eden Logo" onerror="handleImageFallback(this)">
+      <div class="bul-school-info">
+        <div class="bul-year">ANNÉE SCOLAIRE 2025–2026</div>
+        <div class="bul-school-name">EDEN<span>FAMILY</span>SCHOOL</div>
+        <div class="bul-tagline">Learning by doing</div>
+        <div class="bul-doc-title">BULLETIN SCOLAIRE</div>
+      </div>
+      <img class="bul-logo" src="${logoRwanda}" alt="Rwanda Logo" onerror="handleImageFallback(this)">
+    </div>
+
+    <!-- ══ STUDENT INFO ══ -->
+    <div class="bul-info-row">
+      <div class="bul-info-box wide">
+        <div class="bul-info-lbl">NOMS</div>
+        <div class="bul-info-val">${b.studentName}</div>
+      </div>
+      <div class="bul-info-box">
+        <div class="bul-info-lbl">DATE</div>
+        <div class="bul-info-val">${b.date||'—'}</div>
+      </div>
+    </div>
+    <div class="bul-info-row">
+      <div class="bul-info-box wide">
+        <div class="bul-info-lbl">ENSEIGNANT(E)</div>
+        <div class="bul-info-val">${b.teacher}</div>
+      </div>
+      <div class="bul-info-box">
+        <div class="bul-info-lbl">BRANCHE</div>
+        <div class="bul-info-val">${b.branch ? b.branch.toUpperCase() : '—'}</div>
+      </div>
+      <div class="bul-info-box">
+        <div class="bul-info-lbl">CLASSE</div>
+        <div class="bul-info-val">${b.class||'—'}</div>
+      </div>
+    </div>
+
+    <!-- ══ TABLEAU 1 ══ -->
+    <div class="bul-section-title">TABLEAU 1 — RÉSULTATS PAR MATIÈRE</div>
+    <table class="bul-tbl1">
+      <thead>
+        <tr>
+          <th rowspan="2">SUBJECT</th>
+          <th colspan="3">MAX Tot</th>
+          <th colspan="3">1ère Trimestre</th>
+          <th colspan="3">2ème Trimestre</th>
+          <th colspan="3">3ème Trimestre</th>
+          <th colspan="3">Année</th>
+        </tr>
+        <tr>
+          <th>Test</th><th>Ex</th><th>Tot</th>
+          <th>Test</th><th>Ex</th><th>Tot</th>
+          <th>Test</th><th>Ex</th><th>Tot</th>
+          <th>Test</th><th>Ex</th><th>Tot</th>
+          <th>Mx</th><th>Tot</th><th>%</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tbl1Rows}
+        <tr class="grand-row">
+          <td>GRAND TOTAL</td>
+          <td>500</td><td>500</td><td>1000</td>
+          <td></td><td></td><td>${d.tri[0] ? formatDecimal(d.tri[0]) : ''}</td>
+          <td></td><td></td><td>${d.tri[1] ? formatDecimal(d.tri[1]) : ''}</td>
+          <td></td><td></td><td>${d.tri[2] ? formatDecimal(d.tri[2]) : ''}</td>
+          <td>${maxGrand}</td><td>${d.totalAnnual ? formatDecimal(d.totalAnnual) : ''}</td><td>${grandPct}</td>
+        </tr>
+        <tr class="pct-row">
+          <td colspan="13" style="text-align:left;padding-left:4mm;font-weight:900;">POURCENTAGE</td>
+          <td colspan="2"></td>
+          <td>${grandPct}</td>
+        </tr>
+        <tr class="pct-row">
+          <td colspan="13" style="text-align:left;padding-left:4mm;font-weight:900;">PLACE</td>
+          <td colspan="3">${b.place||''}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ══ TABLEAU 2 ══ -->
+    <div class="bul-section-title">TABLEAU 2 : LEÇONS DES EXAMENS</div>
+    <table class="bul-tbl2">
+      <thead>
+        <tr>
+          <th>SUBJECTS</th>
+          <th>MAX</th>
+          <th>LES POINTS</th>
+          <th>POURCENTAGE</th>
+          <th>GRADE</th>
+          <th>TOT EN GRADE</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tbl2Rows}
+        <tr class="grand-row">
+          <td>GRAND TOTAL</td>
+          <td>${examMax||0}</td>
+          <td>${examTotal ? formatDecimal(examTotal) : ''}</td>
+          <td>${examPct}</td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ══ GRADE TABLE ══ -->
+    <div class="bul-grade-wrap">
+      <table class="bul-grade-tbl">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="bul-grade-d1">D1</th>
+            <th class="bul-grade-c2">C2</th>
+            <th class="bul-grade-c3">C3</th>
+            <th class="bul-grade-c4">C4</th>
+            <th class="bul-grade-c5">C5</th>
+            <th class="bul-grade-p6">P6</th>
+            <th class="bul-grade-p7">P7</th>
+            <th class="bul-grade-p8">P8</th>
+            <th class="bul-grade-p9">P9</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="bul-grade-row-label">POURCENTAGE</td>
+            <td>80–100</td><td>75–79</td><td>70–74</td><td>60–69</td><td>55–59</td><td>50–54</td><td>45–49</td><td>40–44</td><td>39–0</td>
+          </tr>
+          <tr>
+            <td class="bul-grade-row-label">GRADE</td>
+            <td class="bul-grade-d1">D1</td><td class="bul-grade-c2">C2</td><td class="bul-grade-c3">C3</td><td class="bul-grade-c4">C4</td><td class="bul-grade-c5">C5</td><td class="bul-grade-p6">P6</td><td class="bul-grade-p7">P7</td><td class="bul-grade-p8">P8</td><td class="bul-grade-p9">P9</td>
+          </tr>
+          <tr>
+            <td class="bul-grade-row-label">POINTS</td>
+            <td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td>
+          </tr>
+          <tr>
+            <td class="bul-grade-row-label">DIVISION</td>
+            <td colspan="2">I : 6–17</td><td colspan="2">II : 18–36</td><td colspan="2">III : 37–42</td><td colspan="2">IV : 43–49</td><td>V : 50–54</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ FOOTER INFO ══ -->
+    <div class="bul-footer-grid">
+      <div class="bul-footer-box">
+        <div class="bul-footer-lbl">Conduite</div>
+        <div class="bul-footer-val">${b.conduite||'—'}</div>
+      </div>
+      <div class="bul-footer-box">
+        <div class="bul-footer-lbl">Place du Bulletin</div>
+        <div class="bul-footer-val">${b.place||'—'}</div>
+      </div>
+      <div class="bul-footer-box">
+        <div class="bul-footer-lbl">Remarque en Délibération</div>
+        <div class="bul-footer-val">${b.remarqueDelib||'—'}</div>
+      </div>
+    </div>
+
+    <!-- ══ DÉCISION │ STATUTS ══ -->
+    <div class="bul-decision-row">
+      <div class="bul-decision-box"><div class="bul-decision-lbl">PROMU(E)</div><div class="bul-decision-val">${b.remarqueDelib==='PROMU(E)'?'✓':''}</div></div>
+      <div class="bul-decision-box"><div class="bul-decision-lbl">REDOUBLÉ(E)</div><div class="bul-decision-val">${b.remarqueDelib==='REDOUBLÉ(E)'?'✓':''}</div></div>
+      <div class="bul-decision-box"><div class="bul-decision-lbl">EXCLU(E)</div><div class="bul-decision-val">${b.remarqueDelib==='EXCLU(E)'?'✓':''}</div></div>
+    </div>
+
+    <!-- ══ SIGNATURES ══ -->
+    <div class="bul-sig-row">
+      <div class="bul-sig-box">Signature de l'enseignant(e)</div>
+      <div class="bul-sig-box">Signature des Parents</div>
+      <div class="bul-sig-box">Fait à ………… le ……/……/20…<br>Directeur de l'École :…………</div>
+      <div class="bul-sig-box">Sceau de l'école et signature :…………</div>
+    </div>
+
+    <!-- ══ WATERMARK ══ -->
+    <div class="bul-watermark"><em>Interdiction formelle de reproduire ce bulletin sous peine des sanctions prévues par la loi.</em></div>
+
+  </div></body></html>`;
+}
+
+// ===== PALMARES =====
+function gradeLabel(p){return p>=80?'D1':p>=75?'C2':p>=70?'C3':p>=60?'C4':p>=55?'C5':p>=50?'P6':p>=45?'P7':p>=40?'P8':'P9';}
+
+async function loadPalmares(){
+  const selectedClassRaw = document.getElementById('class-select').value;
+  const selectedTrim = document.getElementById('trimester-select').value || 'annuel';
+  document.getElementById('palmaresTable').innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">⏳</div><p>Chargement...</p></div></td></tr>';
+
+  // Fetch all students
+  const studentsSnap = await db.ref('students').once('value');
+  if (!studentsSnap.exists()) {
+    document.getElementById('palmaresTable').innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">📭</div><p>Aucun élève trouvé.</p></div></td></tr>';
+    return;
+  }
+  const allStudentsData = [];
+  studentsSnap.forEach(child => {
+    allStudentsData.push({ id: child.key, ...child.val() });
+  });
+
+  // Determine class
+  let className = '';
+  if (selectedClassRaw) {
+    className = normalizeClass(selectedClassRaw);
+  } else if (currentTeacher) {
+    const teacherClassRaw = currentTeacher.classe || currentTeacher.class || currentTeacher.classes || '';
+    const teacherClasses = Array.isArray(teacherClassRaw)
+      ? teacherClassRaw
+      : (typeof teacherClassRaw === 'string' ? teacherClassRaw.split(',') : []);
+    className = normalizeClass(teacherClasses[0] || teacherClassRaw);
+  }
+
+  if (!className) {
+    document.getElementById('palmaresTable').innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">⚠</div><p>Classe non définie.</p></div></td></tr>';
+    return;
+  }
+
+  // Filter students by class
+  const filteredStudents = allStudentsData.filter(s => normalizeClass(s.class || s.classe || s.classes || '') === className);
+
+  if (!filteredStudents.length) {
+    document.getElementById('palmaresTable').innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">📭</div><p>Aucun élève trouvé pour cette classe.</p></div></td></tr>';
+    return;
+  }
+
+  // Fetch bulletins for the class
+  const bulletinsSnap = await db.ref(`bulletins_primaire_${className}`).once('value');
+  const bulletins = {};
+  if (bulletinsSnap.exists()) {
+    bulletinsSnap.forEach(child => {
+      bulletins[child.key] = child.val();
+    });
+  }
+
+  // Merge
+  const students = filteredStudents.map(s => {
+    const b = bulletins[s.id] || {};
+    const trim1Total = Number(b.trim1Total || 0);
+    const trim2Total = Number(b.trim2Total || 0);
+    const trim3Total = Number(b.trim3Total || 0);
+    const annualTotal = trim1Total + trim2Total + trim3Total;
+    const averageScore = annualTotal / 3;
+
+    let displayTotal;
+    let computedPct;
+
+    if (selectedTrim === '1') {
+      displayTotal = trim1Total;
+      computedPct = trim1Total ? formatDecimal(trim1Total / 1000 * 100) : '0.0';
+    } else if (selectedTrim === '2') {
+      displayTotal = trim2Total;
+      computedPct = trim2Total ? formatDecimal(trim2Total / 1000 * 100) : '0.0';
+    } else if (selectedTrim === '3') {
+      displayTotal = trim3Total;
+      computedPct = trim3Total ? formatDecimal(trim3Total / 1000 * 100) : '0.0';
+    } else {
+      displayTotal = averageScore;
+      computedPct = (b.annualPct != null && b.annualPct !== '' ? formatDecimal(b.annualPct) :
+        (b.annualPercentage != null && b.annualPercentage !== '' ? formatDecimal(b.annualPercentage) :
+          (averageScore ? formatDecimal(averageScore / 1000 * 100) : '0.0')));
+    }
+
+    const grade = gradeLabel(Number(computedPct));
+
+    return {
+      id: s.id,
+      name: s.name,
+      class: s.class || s.classe || s.classes || '',
+      branch: s.branch || s.branche || '',
+      total: displayTotal,
+      conduct: s.conduct || s.conduite || b.conduite || '',
+      percentage: Number(computedPct),
+      grade
+    };
+  });
+
+  // Sort by percentage DESC
+  students.sort((a, b) => b.percentage - a.percentage);
+
+  // Assign rank and label (1/N)
+  const totalStudents = students.length;
+  students.forEach((s, index) => {
+    s.rank = index + 1;
+    s.rankLabel = `${s.rank}/${totalStudents}`;
+  });
+
+  // Store globally
+  rankedStudents = students;
+
+  // Also keep the currently affiché bulletins dans global memory pour ZIP export
+  allBulletins = Object.keys(bulletins).map(key => {
+    const b = bulletins[key] || {};
+    const student = students.find(s => s.id === key) || {};
+    return {
+      studentId: key,
+      studentName: b.name || student.name || '',
+      class: b.class || student.class || '',
+      branch: b.branch || student.branch || '',
+      scores: b.scores || [],
+      trim1Total: b.trim1Total || 0,
+      trim2Total: b.trim2Total || 0,
+      trim3Total: b.trim3Total || 0,
+      annualTotal: b.annualTotal || b.total || 0,
+      annualPct: b.annualPct || b.percentage || 0,
+      maxGrand: b.maxGrand || 3000,
+      place: b.place || student.rankLabel || ''
+    };
+  });
+
+  // Render table
+  let html = '';
+  students.forEach(s => {
+    html += `<tr>
+      <td>${s.rankLabel || ''}</td>
+      <td>${s.name}</td>
+      <td>${s.class}</td>
+      <td>${s.branch}</td>
+      <td>${formatDecimal(s.total)} ${selectedTrim === 'annuel' ? '/ 1000 (annuel)' : '/ 1000'}</td>
+      <td>${s.percentage}%</td>
+      <td>${s.grade}</td>
+      <td>${s.conduct}</td>
+      <td class="palmares-actions">
+        <button class="btn btn-blue" onclick="selectPalmares('${s.id}')">➜ Sélectionner</button>
+        <button class="btn btn-gold" onclick="viewBulletin('${s.id}')">Voir Bulletin</button>
+        <button class="btn btn-success" onclick="downloadPDF('${s.id}')">PDF</button>
+      </td>
+    </tr>`;
+  });
+  document.getElementById('palmaresTable').innerHTML = html;
+}
+
+function printSingleFromPalmares(key){
+  showModal('🖨️','Imprimer le bulletin','Voulez-vous imprimer le bulletin de cet élève ?',[
+    {label:'Imprimer',cls:'btn-gold',action:()=>{
+      const b=allBulletins.find(x=>x._key===key);if(!b){toast('Bulletin introuvable','error');return;}
+      const mockData={rows:b.scores||[],tri:[0,0,0],totalAnnual:b.annualTotal||0,annualPct:b.annualPct||0,maxGrand:b.maxGrand||3000};
+      if(b.scores)b.scores.forEach(r=>{mockData.tri[0]+=r.t1?.total||0;mockData.tri[1]+=r.t2?.total||0;mockData.tri[2]+=r.t3?.total||0;});
+      document.getElementById('print-area').innerHTML=buildBulletinHtml({studentName:b.studentName,branch:b.branch,class:b.class,teacher:b.teacherName,date:b.bulletinDate,remarqueDelib:b.remarqueDelib,conduite:b.conduite,data:mockData,place:b.place});
+      window.print();
+    }},
+    {label:'Annuler',cls:'btn-ghost',action:null}
+  ]);
+}
+
+function updateLocalPlace(key, newPlace) {
+  const student = rankedStudents.find(s => s._key === key);
+  if (student) {
+    const numericPlace = parseInt(newPlace, 10);
+    student.place = Number.isInteger(numericPlace) && numericPlace > 0 ? numericPlace : null;
+  }
+}
+
+async function viewBulletin(studentId){
+  if (!studentId) {
+    toast('Erreur: ID étudiant manquant', 'error');
+    return;
+  }
+
+  // First try to find in rankedStudents (from loaded palmares)
+  let student = rankedStudents?.find(s => s.id === studentId);
+  
+  // If not found, try to load directly from database
+  if (!student) {
+    console.log('Étudiant non trouvé dans rankedStudents, chargement direct...');
+    
+    try {
+      // Get all students to find this one
+      const studentsSnap = await db.ref('students').once('value');
+      if (studentsSnap.exists()) {
+        studentsSnap.forEach(child => {
+          if (child.key === studentId) {
+            student = { id: child.key, ...child.val() };
+          }
+        });
+      }
+    } catch(e) {
+      console.error('Erreur lors du chargement de l\'étudiant:', e);
+      toast('Erreur lors du chargement de l\'étudiant', 'error');
+      return;
+    }
+  }
+
+  if (!student) {
+    toast('Étudiant introuvable', 'error');
+    return;
+  }
+
+  const className = normalizeClass(student.class || student.classe || student.classes || '');
+  if (!className) {
+    toast('Classe non définie pour cet étudiant', 'error');
+    return;
+  }
+
+  try {
+    const snap = await db.ref(`bulletins_primaire_${className}/${studentId}`).once('value');
+    if (!snap.exists()) {
+      toast('Bulletin introuvable pour cet étudiant', 'error');
+      return;
+    }
+
+    const b = snap.val();
+    const trim1Total = Number(b.trim1Total || 0);
+    const trim2Total = Number(b.trim2Total || 0);
+    const trim3Total = Number(b.trim3Total || 0);
+    const annualTotal = trim1Total + trim2Total + trim3Total;
+
+    const mockData = { 
+      rows: b.scores || [], 
+      tri: [trim1Total, trim2Total, trim3Total],
+      totalAnnual: annualTotal || 0, 
+      annualPct: b.annualPct || formatDecimal(annualTotal / 3 / 1000 * 100) || '0.0', 
+      maxGrand: b.maxGrand || 3000 
+    };
+
+    const place = student.rankLabel || student.rank || b.place || '';
+    
+    if (!buildBulletinHtml) {
+      toast('Erreur: Fonction buildBulletinHtml non définie', 'error');
+      return;
+    }
+
+    try {
+      const bulletinHtml = buildBulletinHtml({
+        studentName: b.name || student.name || 'Sans nom',
+        branch: b.branch || student.branch || student.branche || '',
+        class: b.class || student.class || student.classe || student.classes || '',
+        teacher: b.teacherName || '',
+        date: b.bulletinDate || new Date().toISOString().split('T')[0],
+        remarqueDelib: b.remarqueDelib || '',
+        conduite: b.conduite || student.conduct || student.conduite || '',
+        data: mockData,
+        place: place
+      });
+
+      const printArea = document.getElementById('print-area');
+      if (!printArea) {
+        toast('Erreur: Élément print-area non trouvé', 'error');
+        return;
+      }
+
+      printArea.innerHTML = bulletinHtml;
+      console.log('✅ Bulletin HTML généré avec succès');
+      
+      setTimeout(() => {
+        console.log('🖨️ Ouverture de la fenêtre print...');
+        window.print();
+      }, 150);
+    } catch(buildError) {
+      console.error('Erreur lors du build du bulletin HTML:', buildError);
+      toast('Erreur lors de la génération du bulletin: ' + buildError.message, 'error');
+    }
+  } catch(e) {
+    console.error('Erreur lors du chargement du bulletin:', e);
+    toast('Erreur lors de la préparation du bulletin: ' + e.message, 'error');
+  }
+}
+
+function selectPalmares(studentId) {
+  const student = rankedStudents.find(s => s.id === studentId);
+  if (!student) { toast('Élève introuvable', 'error'); return; }
+  selectedStudent = allStudents.find(s => s._id === studentId) || allStudents.find(s => s.id === studentId) || null;
+  if (selectedStudent) {
+    document.getElementById('student-name-input').value = selectedStudent.name || '';
+    fillAutoFields();
+    showPage('form');
+    toast('Élève sélectionné depuis le palmarès', 'success');
+  } else {
+    toast('Élève non chargé dans la liste des étudiants', 'error');
+  }
+}
+
+async function downloadPDF(studentId){
+  // Same as viewBulletin for now, since print can be saved as PDF
+  await viewBulletin(studentId);
+}
+
+async function generateAnnual(studentId, className) {
+  const refPath = `bulletins_primaire_${className}/${studentId}`;
+  const snap = await db.ref(refPath).once('value');
+  if (!snap.exists()) return;
+
+  const data = snap.val();
+
+  const t1 = data.trim1Total || 0;
+  const t2 = data.trim2Total || 0;
+  const t3 = data.trim3Total || 0;
+  const totalAnnual = t1 + t2 + t3;
+  const averageAnnual = totalAnnual / 3;
+
+  const annualPayload = {
+    studentId,
+    studentName: data.name || '',
+    class: data.class || '',
+    branch: data.branch || '',
+    trim1Total: t1,
+    trim2Total: t2,
+    trim3Total: t3,
+    totalAnnual,
+    averageAnnual,
+    annualPct: averageAnnual ? formatDecimal(averageAnnual / 1000 * 100) : '0.0',
+    max: 3000,
+    generatedAt: new Date().toISOString(),
+    sourceBulletin: `bulletins_primaire_${className}/${studentId}`
+  };
+
+  const annualRef = db.ref(`bulletins_annuel_${className}/${studentId}`);
+  await annualRef.set(annualPayload);
+  return annualPayload;
+}
+
+async function generateAllAnnual() {
+  const classFromInput = document.getElementById('student-class')?.value || '';
+  const classFromSelect = document.getElementById('class-select')?.value || '';
+  const className = normalizeClass(classFromInput || classFromSelect || (selectedStudent?.classes || selectedStudent?.classe || selectedStudent?.class || ''));
+
+  if (!className) {
+    toast('Veuillez sélectionner un élève ou une classe pour générer les bulletins annuels', 'error');
+    return;
+  }
+
+  const studentId = selectedStudent?._id || null;
+  toast('Génération des bulletins annuels en cours...', '');
+
+  try {
+    const basePath = `bulletins_primaire_${className}`;
+    const classSnap = await db.ref(basePath).once('value');
+    if (!classSnap.exists()) {
+      toast('Aucun bulletin trouvé pour la classe ' + className, 'error');
+      return;
+    }
+
+    const promises = [];
+    classSnap.forEach(child => {
+      const sid = child.key;
+      if (!studentId || studentId === sid) {
+        promises.push(generateAnnual(sid, className));
+      }
+    });
+
+    const results = await Promise.all(promises);
+
+    toast('✅ Bulletins annuels générés avec succès !', 'success');
+
+    if (studentId) {
+      // Afficher le bulletin annuel de l'élève sélectionné dans Notes
+      const annualData = results.find(r => r && r.studentId === studentId);
+      if (annualData) {
+        displayAnnualData(annualData);
+      }
+      // Aller à l'étape Notes (panel 3) pour voir le détail
+      goStep(3);
+      showPage('form');
+    } else {
+      // Recharger le palmarès pour voir le classement annuel
+      await loadPalmares();
+      showPage('palmares');
+    }
+
+  } catch (e) {
+    console.error(e);
+    toast('Erreur lors de la génération des bulletins annuels', 'error');
+  }
+}
+
+function displayAnnualData(annualData, allClassStudents = []) {
+  // Créer un tableau récapitulatif annuel
+  let summaryHTML = `
+    <div style="background: rgba(200,168,75,.1); border: 1px solid rgba(200,168,75,.3); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+      <h3 style="color: var(--gold); margin-bottom: 15px; text-align: center;">📊 RÉCAPITULATIF ANNUEL - ${annualData.studentName}</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
+          <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 1</div>
+          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre1.total}/1000</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,.8);">${annualData.trimestre1.percentage}%</div>
+        </div>
+        <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
+          <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 2</div>
+          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre2.total}/1000</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,.8);">${annualData.trimestre2.percentage}%</div>
+        </div>
+        <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
+          <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 3</div>
+          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre3.total}/1000</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,.8);">${annualData.trimestre3.percentage}%</div>
+        </div>
+        <div style="text-align: center; padding: 10px; background: linear-gradient(135deg, rgba(200,168,75,.2), rgba(200,168,75,.1)); border-radius: 8px; border: 2px solid var(--gold);">
+          <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">TOTAL ANNUEL</div>
+          <div style="font-size: 24px; font-weight: bold; color: var(--gold);">${annualData.annuel.total}/3000</div>
+          <div style="font-size: 16px; color: rgba(255,255,255,.9);">${annualData.annuel.percentage}%</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top: 5px;">Moyenne: ${annualData.annuel.average}</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top: 5px;">Rang: ${annualData.place || annualData.rank || 'N/A'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Ajouter le classement de classe si disponible
+  if (allClassStudents.length > 0) {
+    const topStudents = allClassStudents.slice(0, 10); // Top 10 élèves
+    const rankingHTML = `
+      <div style="background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.3); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #3b82f6; margin-bottom: 15px; text-align: center;">🏆 CLASSEMENT ANNUEL DE LA CLASSE</h3>
+        <div style="max-height: 300px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: rgba(59,130,246,.2);">
+                <th style="padding: 8px; text-align: center; color: #3b82f6; font-weight: bold;">Rang</th>
+                <th style="padding: 8px; text-align: left; color: #3b82f6; font-weight: bold;">Élève</th>
+                <th style="padding: 8px; text-align: center; color: #3b82f6; font-weight: bold;">Total/3000</th>
+                <th style="padding: 8px; text-align: center; color: #3b82f6; font-weight: bold;">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${topStudents.map(student => `
+                <tr style="border-bottom: 1px solid rgba(59,130,246,.2); ${student.studentId === annualData.studentId ? 'background: rgba(200,168,75,.1);' : ''}">
+                  <td style="padding: 8px; text-align: center; font-weight: bold; color: ${student.studentId === annualData.studentId ? 'var(--gold)' : 'rgba(255,255,255,.8)'};">${student.rank}</td>
+                  <td style="padding: 8px; color: ${student.studentId === annualData.studentId ? 'var(--gold)' : 'rgba(255,255,255,.8)'}; font-weight: ${student.studentId === annualData.studentId ? 'bold' : 'normal'};">${student.studentName}</td>
+                  <td style="padding: 8px; text-align: center; color: ${student.studentId === annualData.studentId ? 'var(--gold)' : 'rgba(255,255,255,.8)'};">${student.annuel.total}</td>
+                  <td style="padding: 8px; text-align: center; color: ${student.studentId === annualData.studentId ? 'var(--gold)' : 'rgba(255,255,255,.8)'};">${student.annuel.percentage}%</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    summaryHTML += rankingHTML;
+
+    // Ajouter le bouton d'enregistrement
+    summaryHTML += `
+      <div style="text-align: center; margin-top: 20px;">
+        <button onclick="saveAnnualBulletins('${annualData.studentId}')" class="btn btn-gold" style="padding: 12px 24px; font-size: 16px;">
+          💾 Enregistrer Bulletins Annuels
+        </button>
+        <p style="color: rgba(255,255,255,.6); font-size: 12px; margin-top: 10px;">
+          Cette action enregistrera les totaux annuels et les classements pour tous les élèves de la classe
+        </p>
+      </div>
+    `;
+  }
+
+  // Insérer le récapitulatif au début de la section notes
+  const notesPanel = document.getElementById('panel-3');
+  const existingSummary = notesPanel.querySelector('.annual-summary');
+  if (existingSummary) {
+    existingSummary.remove();
+  }
+
+  const summaryDiv = document.createElement('div');
+  summaryDiv.className = 'annual-summary';
+  summaryDiv.innerHTML = summaryHTML;
+
+  const card = notesPanel.querySelector('.card');
+  if (card) {
+    card.insertBefore(summaryDiv, card.querySelector('.table-wrap'));
+  }
+}
+
+async function assignPlaces(){
+  if(!rankedStudents.length){toast('Aucun élève à classer','error');return;}
+
+  const totalStudents = rankedStudents.length;
+
+  // Recalculate ranking
+  rankedStudents.sort((a, b) => b.percentage - a.percentage);
+  rankedStudents.forEach((s, index) => {
+    s.rank = index + 1;
+    s.rankLabel = `${s.rank}/${totalStudents}`;
+  });
+
+  // Save to Firebase
+  const updates = {};
+  rankedStudents.forEach(s => {
+    updates[`students/${s.id}/rank`] = s.rank;
+    updates[`students/${s.id}/rankLabel`] = s.rankLabel;
+    updates[`students/${s.id}/percentage`] = s.percentage;
+    updates[`students/${s.id}/grade`] = s.grade;
+
+    // Also update bulletins with label + numeric place + percentage
+    const className = normalizeClass(s.class);
+    updates[`bulletins_primaire_${className}/${s.id}/place`] = s.rankLabel;
+    updates[`bulletins_primaire_${className}/${s.id}/placeNum`] = s.rank;
+    updates[`bulletins_primaire_${className}/${s.id}/annualPct`] = s.percentage;
+    updates[`bulletins_primaire_${className}/${s.id}/percentage`] = s.percentage;
+  });
+
+  await db.ref().update(updates);
+
+  // Update UI
+  await loadPalmares();
+  toast('✅ Rangs appliqués et sauvegardés !','success');
+}
+
+// ===== ZIP =====
+function confirmDownloadZip(){showModal('📦','Télécharger ZIP','Générer un ZIP avec tous les bulletins HTML ?',[{label:'Télécharger',cls:'btn-gold',action:downloadZip},{label:'Annuler',cls:'btn-ghost',action:null}]);}
+async function downloadZip(){
+  const className = normalizeClass(document.getElementById('class-select')?.value || currentTeacher?.classe || currentTeacher?.class || '');
+  if(!allBulletins.length){
+    toast('Chargement des bulletins pour export ZIP...', '');
+    await loadPalmares();
+    if(!allBulletins.length){
+      // fallback: chercher classe manuellement
+      if(!className){
+        toast('Classe non définie pour ZIP', 'error');
+        return;
+      }
+      const bulletinsSnap = await db.ref(`bulletins_primaire_${className}`).once('value');
+      if(!bulletinsSnap.exists()){
+        toast('Aucun bulletin trouvé pour cette classe', 'error');
+        return;
+      }
+      allBulletins = [];
+      bulletinsSnap.forEach(child => {
+        allBulletins.push({ studentId: child.key, ...child.val() });
+      });
+    }
+  }
+
+  if(!allBulletins.length && !rankedStudents.length){toast('Aucun bulletin à exporter','error');return;}
+  toast('Génération ZIP...','');
+  const zip=new JSZip(),folder=zip.folder('bulletins_eden');
+
+  // Use palmarès list first (rankedStudents), otherwise fallback on allBulletins.
+  let filteredBulletins = [];
+  if (rankedStudents && rankedStudents.length) {
+    for (const s of rankedStudents) {
+      const className = normalizeClass(s.class || '');
+      if (!className || !s.id) continue;
+      const bSnap = await db.ref(`bulletins_primaire_${className}/${s.id}`).once('value');
+      if (bSnap.exists()) {
+        const b = bSnap.val();
+        filteredBulletins.push({
+          ...b,
+          studentId: s.id,
+          studentName: s.name,
+          class: s.class,
+          branch: s.branch,
+          place: s.rankLabel || s.rank || b.place || ''
+        });
+      }
+    }
+  }
+
+  if (!filteredBulletins.length && allBulletins.length) {
+    filteredBulletins = allBulletins;
+  }
+
+  if (!filteredBulletins.length) {
+    const className = normalizeClass(document.getElementById('class-select')?.value || currentTeacher?.classe || currentTeacher?.class || '');
+    if (className) {
+      const bulletinsSnap = await db.ref(`bulletins_primaire_${className}`).once('value');
+      if (bulletinsSnap.exists()) {
+        bulletinsSnap.forEach(child => {
+          filteredBulletins.push({ studentId: child.key, ...child.val() });
+        });
+      }
+    }
+  }
+
+  if (!filteredBulletins.length){toast('Aucun bulletin trouvé pour la création du ZIP','error');return;}
+
+  const map={};
+  filteredBulletins.forEach(b=>{
+    const k = b.studentId || b.studentName;
+    if (!k) return;
+    if (!map[k] || (Number(b.annualPct || b.percentage || 0) > Number(map[k].annualPct || map[k].percentage || 0))) {
+      map[k] = b;
+    }
+  });
+  const list=Object.values(map).sort((a,b)=>Number(b.annualPct || b.percentage || 0)-Number(a.annualPct || a.percentage || 0));
+  list.forEach((b,i)=>{
+    b.place = i+1; // Assign place
+    const mockData={rows:b.scores||[],tri:[0,0,0],totalAnnual:b.annualTotal||0,annualPct:b.annualPct||0,maxGrand:b.maxGrand||3000};
+    if(b.scores)b.scores.forEach(r=>{mockData.tri[0]+=r.t1?.total||0;mockData.tri[1]+=r.t2?.total||0;mockData.tri[2]+=r.t3?.total||0;});
+    const inner=buildBulletinHtml({studentName:b.studentName,branch:b.branch,class:b.class,teacher:b.teacherName,date:b.bulletinDate,remarqueDelib:b.remarqueDelib,conduite:b.conduite,data:mockData,place:b.place});
+    const full=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Bulletin - ${b.studentName}</title><style>@page{size:A4 portrait;margin:0;}html,body{width:210mm;height:297mm;margin:0;padding:0;}.bul-print{width:210mm;min-height:297mm;padding:10mm;margin:auto;background:white;box-sizing:border-box;font-family:Arial,sans-serif;font-size:8pt;line-height:1;color:#000;overflow:hidden;display:flex;flex-direction:column;}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}@media print{body{margin:0;padding:0;}.bul-print{width:210mm;min-height:297mm;page-break-after:always;}}.bul-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #1e3a5f;padding-bottom:3mm;margin-bottom:3mm;}.bul-logo{width:16mm;height:16mm;object-fit:contain;}.bul-school-info{text-align:center;flex:1;padding:0 2mm;}.bul-year{font-size:10pt;font-weight:900;color:#1e3a5f;}.bul-school-name{font-size:11pt;font-weight:900;color:#1e3a5f;line-height:1;}.bul-school-name span{color:#c8a84b;}.bul-tagline{font-size:7pt;color:#c8a84b;font-style:italic;font-weight:700;}.bul-doc-title{font-size:9pt;font-weight:900;color:#1e3a5f;letter-spacing:1px;margin-top:1mm;text-decoration:underline;text-underline-offset:1px;}.bul-info-row{display:flex;gap:1.5mm;margin-bottom:1.5mm;flex-wrap:wrap;}.bul-info-box{display:flex;align-items:stretch;border:1pt solid #1e3a5f;border-radius:2pt;overflow:hidden;flex:1;min-width:65mm;}.bul-info-box.wide{flex:2;}.bul-info-lbl{background:#1e3a5f;color:#fff;font-weight:900;font-size:6.5pt;padding:1.5mm 2mm;white-space:nowrap;display:flex;align-items:center;letter-spacing:.3px;}.bul-info-val{padding:1.5mm 2mm;font-weight:700;font-size:7pt;display:flex;align-items:center;min-width:25mm;border-left:1pt solid #c8a84b;}.bul-section-title{font-size:6.5pt;font-weight:900;color:#1e3a5f;background:#e8e8e8;padding:1mm 2mm;margin:1.5mm 0 1mm 0;border-left:2pt solid #c8a84b;letter-spacing:.3px;}.bul-tbl1,.bul-grade-tbl{width:100%;border-collapse:collapse;font-size:6.5pt;margin-bottom:1.5mm;}.bul-tbl2{width:100%;border-collapse:collapse;font-size:7.5pt;margin-bottom:1.5mm;}.bul-tbl1 th,.bul-tbl1 td,.bul-tbl2 th,.bul-tbl2 td,.bul-grade-tbl th,.bul-grade-tbl td{border:0.5pt solid #c8a84b;padding:1mm 1mm;text-align:center;vertical-align:middle;}.bul-tbl1 thead tr:first-child th,.bul-tbl2 thead th,.bul-grade-tbl thead th{background:#1e3a5f!important;color:#fff!important;font-weight:900;}.bul-tbl1 thead tr:last-child th{background:#c8a84b!important;color:#1f2937!important;font-weight:900;font-size:5.5pt;}.bul-tbl1 td:first-child,.bul-tbl2 td:first-child{text-align:left;padding-left:2mm;font-weight:700;color:#1e3a5f;}.bul-tbl1 tbody tr:nth-child(even) td,.bul-tbl2 tbody tr:nth-child(even) td{background:#fdf8ed;}.bul-tbl1 .grand-row td,.bul-tbl2 .grand-row td{background:#1e3a5f!important;color:#fff!important;font-weight:900;}.bul-tbl1 .pct-row td{background:#e8c97a!important;font-weight:900;color:#1f2937!important;}.bul-grade-wrap{border:1pt solid #1e3a5f;border-radius:2pt;overflow:hidden;margin-bottom:1.5mm;}.bul-grade-row-label{background:#e8e8e8!important;font-weight:900;color:#1e3a5f!important;text-align:left!important;padding-left:1.5mm!important;}.bul-grade-d1{background:#c8a84b!important;color:#fff!important;font-weight:900;}.bul-grade-c2{background:#1d4ed8!important;color:#fff!important;font-weight:900;}.bul-grade-c3{background:#1e3a5f!important;color:#fff!important;font-weight:900;}.bul-grade-c4{background:#065f46!important;color:#fff!important;font-weight:900;}.bul-grade-c5{background:#d97706!important;color:#fff!important;font-weight:900;}.bul-grade-p6{background:#7c3aed!important;color:#fff!important;font-weight:900;}.bul-grade-p7{background:#db2777!important;color:#fff!important;font-weight:900;}.bul-grade-p8{background:#dc2626!important;color:#fff!important;font-weight:900;}.bul-grade-p9{background:#374151!important;color:#fff!important;font-weight:900;}.bul-footer-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5mm;margin-bottom:1.5mm;flex-shrink:0;}.bul-footer-box{border:1pt solid #1e3a5f;border-radius:2pt;overflow:hidden;}.bul-footer-lbl{background:#1e3a5f;color:#fff;font-size:7pt;font-weight:900;padding:1.2mm 1.5mm;letter-spacing:.2px;}.bul-footer-val{padding:1.2mm 1.5mm;font-size:7.5pt;font-weight:700;min-height:8mm;}.bul-decision-row{display:flex;gap:1.5mm;margin-bottom:1.5mm;flex-wrap:wrap;}.bul-decision-box{flex:1;border:1pt solid #c8a84b;border-radius:2pt;padding:1mm 1.5mm;text-align:center;min-width:30mm;}.bul-decision-lbl{background:#1e3a5f;color:#fff;font-size:6.5pt;font-weight:900;padding:1mm 1.5mm;}.bul-decision-val{padding:1mm 1.5mm;font-size:7pt;font-weight:900;color:#1e3a5f;min-height:8mm;}.bul-sig-row{display:flex;gap:2mm;margin-bottom:1mm;}.bul-sig-box{flex:1;border:1pt solid #c8a84b;border-radius:2pt;padding:1.5mm 1.5mm 6mm 1.5mm;font-size:5.5pt;font-weight:700;color:#1e3a5f;}.bul-watermark{text-align:center;font-size:5pt;color:#999;font-style:italic;margin-top:1.5mm;border-top:0.5pt solid #e8c97a;padding-top:1mm;}</style></head><body>${inner}</body></html>`;
+    folder.file(`${String(i+1).padStart(2,'0')}_${(b.studentName||'eleve').replace(/[^a-z0-9]/gi,'_')}.html`,full);
+  });
+  const blob=await zip.generateAsync({type:'blob'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`${teacherName(currentTeacher || {}).replace(/[^a-z0-9]/gi, '_')}_${className}.zip`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  toast('✅ ZIP téléchargé !','success');
+}
+
+// ===== TEACHER FIELDS =====
+function fillTeacherFields(){
+  if(!currentTeacher)return;
+  document.getElementById('teacher-name').value=teacherName(currentTeacher);
+  // Updated to use 'branche' from new Firebase structure, with fallbacks
+  document.getElementById('student-branch').value=currentTeacher.branche||currentTeacher.branch||currentTeacher.branchName||currentTeacher.schoolBranch||'';
+  // Updated to use 'classe' from new Firebase structure, with fallbacks
+  const teacherClasseRaw=currentTeacher.classe||currentTeacher.class||currentTeacher.classes||'';
+  const teacherClass=Array.isArray(teacherClasseRaw)?(teacherClasseRaw[0]||''):(teacherClasseRaw||'');
+  document.getElementById('student-class').value=teacherClass.toString();
+  document.getElementById('school-year').value=getSchoolYear();
+}
+
+// ===== BOOT =====
+async function boot(){
+  buildScoresTable();recalculate();
+  document.getElementById('bul-date').value=new Date().toISOString().split('T')[0];
+  currentStep=1;renderStepper();document.getElementById('panel-1').classList.add('visible');
+  auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(()=>{});
+  auth.onAuthStateChanged(async user=>{
+    const raw=sessionStorage.getItem('eden_user_data');
+    const su=raw?JSON.parse(raw):null;
+    const uid=(user&&user.uid)||(su&&su.uid)||null;
+    const email=(user&&user.email)||(su&&su.email)||'';
+    currentTeacher=await loadUserProfile(uid,email);
+    if(!currentTeacher){toast('Profil enseignant introuvable','error');return;}
+    fillTeacherFields();await loadStudents();
+    toast('✓ Profil chargé — '+teacherName(currentTeacher),'success');
+  });
+}
+boot();
+</script>
+</body>
+</html>

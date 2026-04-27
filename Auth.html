@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="stylesheet" href="responsive.css">
+  <title>Eden Family School - Portail Staff</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
+  <!-- Firebase SDK (Modern) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword,
+      signOut,
+      setPersistence,
+      browserSessionPersistence
+    } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import { getDatabase, ref as rtdbRef, get as rtdbGet } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+      authDomain: "edensmart-app.firebaseapp.com",
+      databaseURL: "https://edensmart-app-default-rtdb.firebaseio.com",
+      projectId: "edensmart-app",
+      storageBucket: "edensmart-app.firebasestorage.app",
+      messagingSenderId: "1093120876724",
+      appId: "1:1093120876724:web:bc37448cadd18d651c77e1",
+      measurementId: "G-1FL70PZZSW"
+    };
+
+    // Initialize Firebase
+    window.firebaseApp = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(window.firebaseApp);
+    window.auth = getAuth();
+    window.realtimeDB = getDatabase(window.firebaseApp);
+    // Permet de contrôler la persistance de session (évite le "kick" entre onglets)
+    window.setPersistence = setPersistence;
+    window.browserSessionPersistence = browserSessionPersistence;
+    
+    // Exposer globalement (wrappers for modular API)
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.signOut = () => signOut(window.auth);
+    window.rtdbRef = rtdbRef;
+    window.rtdbGet = rtdbGet;
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Poppins', sans-serif; 
+      line-height: 1.6; 
+      color: #333; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+      min-height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      padding: 20px;
+      opacity: 0;
+      animation: pageFadeIn 0.8s ease-out forwards;
+    }
+    
+    @keyframes pageFadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .auth-container { 
+      background: white; 
+      border-radius: 20px; 
+      box-shadow: 0 25px 70px rgba(0,0,0,0.3); 
+      width: 100%; 
+      max-width: 450px; 
+      padding: 2.5rem 2rem; 
+      margin: 1rem;
+      overflow: hidden;
+      position: relative;
+      transform: scale(0.95);
+      animation: containerPopIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.3s forwards;
+    }
+    
+    @keyframes containerPopIn {
+      0% { transform: scale(0.95) translateY(30px); opacity: 0; }
+      60% { transform: scale(1.02) translateY(-5px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    
+    .auth-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      animation: borderGrow 1s ease-out 0.5s forwards;
+      transform-origin: left;
+      transform: scaleX(0);
+    }
+    
+    @keyframes borderGrow {
+      to { transform: scaleX(1); }
+    }
+    
+    .auth-header { 
+      text-align: center; 
+      margin-bottom: 1.5rem; 
+      animation: slideDownFade 0.8s ease-out 0.5s forwards;
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    
+    @keyframes slideDownFade {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .auth-header h1 { 
+      color: #667eea; 
+      font-size: 2rem; 
+      margin-bottom: 0.35rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .auth-header h1::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 2px;
+      animation: lineExpand 0.8s ease-out 1s forwards;
+      transform-origin: center;
+      transform: translateX(-50%) scaleX(0);
+    }
+    
+    @keyframes lineExpand {
+      to { transform: translateX(-50%) scaleX(1); }
+    }
+    
+    .auth-header p { 
+      color: #666; 
+      font-size: 0.95rem; 
+      animation: fadeIn 0.8s ease-out 1.2s forwards;
+      opacity: 0;
+    }
+    
+    .role-badges {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.8s ease-out 1.4s forwards;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    
+    @keyframes fadeInUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .role-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      background: #f8f9fa;
+      border-radius: 18px;
+      font-size: 0.75rem;
+      color: #667eea;
+      border: 1.5px solid #e0e0e0;
+      transition: all 0.3s ease;
+      animation: badgePulse 2s infinite 2s;
+    }
+    
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1); }
+    }
+    
+    .role-badge:hover {
+      transform: translateY(-2px) scale(1.1);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+      border-color: #667eea;
+      animation: none;
+    }
+    
+    .role-badge i {
+      font-size: 0.8rem;
+    }
+    
+    .role-badge.accountant {
+      color: #10b981;
+      border-color: #a7f3d0;
+      animation-delay: 2.1s;
+    }
+    
+    .role-badge.director {
+      color: #667eea;
+      border-color: #c7d2fe;
+      animation-delay: 1.8s;
+    }
+    
+    .role-badge.secretary {
+      color: #8b5cf6;
+      border-color: #ddd6fe;
+      animation-delay: 2.4s;
+    }
+    
+    .role-badge.teacher {
+      color: #f59e0b;
+      border-color: #fde68a;
+      animation-delay: 2.7s;
+    }
+    
+    .auth-form { 
+      opacity: 0;
+      animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) 1.6s forwards;
+    }
+    
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    
+    .input-group { 
+      margin-bottom: 1.8rem; 
+      position: relative;
+      animation: slideIn 0.6s ease-out forwards;
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    
+    .input-group:nth-child(1) { animation-delay: 1.8s; }
+    .input-group:nth-child(2) { animation-delay: 2s; }
+    
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    .input-group label { 
+      display: block; 
+      margin-bottom: 0.8rem; 
+      font-weight: 600; 
+      color: #333; 
+      font-size: 1.05rem;
+    }
+    .input-group label i { 
+      color: #667eea; 
+      margin-right: 0.8rem; 
+      width: 20px;
+      text-align: center;
+    }
+    .input-group input { 
+      width: 100%; 
+      padding: 1rem 1.2rem; 
+      border: 2px solid #e0e0e0; 
+      border-radius: 12px; 
+      font-size: 1.05rem; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      font-family: 'Poppins', sans-serif; 
+      background: white;
+    }
+    .input-group input:focus { 
+      outline: none; 
+      border-color: #667eea; 
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.2); 
+      transform: translateY(-2px);
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+      animation: fadeIn 0.8s ease-out 2.2s forwards;
+      opacity: 0;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #667eea;
+      cursor: pointer;
+    }
+    
+    .checkbox-group label {
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: #666;
+      user-select: none;
+    }
+    
+    /* ===== BOUTON CORRIGÉ ===== */
+    @keyframes buttonAppear {
+      0% { 
+        opacity: 0; 
+        transform: translateY(20px) scale(0.9); 
+      }
+      70% { 
+        opacity: 1; 
+        transform: translateY(-5px) scale(1.05); 
+      }
+      100% { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+      }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(var(--float-amount, -3px)); }
+    }
+
+    .btn-primary { 
+      width: 100%; 
+      padding: 1.2rem; 
+      background: linear-gradient(135deg, #667eea, #764ba2); 
+      color: white; 
+      border: none; 
+      border-radius: 12px; 
+      font-size: 1.2rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: box-shadow 0.3s ease; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 0.8rem; 
+      margin-top: 1rem;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      opacity: 0;
+      --float-amount: -3px;
+      animation: buttonAppear 0.8s ease-out 2.4s forwards, float 3s ease-in-out infinite;
+      visibility: visible !important;
+    }
+    
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: 0.5s;
+      z-index: -1;
+    }
+
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary:hover {
+      --float-amount: -6px;
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4); 
+    }
+    
+    .btn-primary:active { 
+      transform: translateY(-2px) scale(0.98);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3); 
+    }
+
+    .btn-primary:disabled { 
+      opacity: 0.6; 
+      cursor: not-allowed; 
+      transform: none !important;
+      box-shadow: none;
+      animation: none;
+    }
+    
+    .alert { 
+      padding: 1.2rem 1.5rem; 
+      border-radius: 12px; 
+      margin-bottom: 1.5rem; 
+      display: none; 
+      position: relative;
+      overflow: hidden;
+      animation: alertSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    
+    @keyframes alertSlideIn {
+      from { transform: translateX(-100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .alert::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 6px;
+      height: 100%;
+    }
+    .alert.success { 
+      background: #f0f9f0; 
+      color: #166534; 
+      border: 2px solid #dcfce7; 
+    }
+    .alert.success::before {
+      background: #22c55e;
+    }
+    .alert.error { 
+      background: #fef2f2; 
+      color: #991b1b; 
+      border: 2px solid #fee2e2; 
+    }
+    .alert.error::before {
+      background: #ef4444;
+    }
+    .alert.show { 
+      display: block; 
+      animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+    }
+    
+    @keyframes slideDown { 
+      from { transform: translateY(-30px); opacity: 0; } 
+      to { transform: translateY(0); opacity: 1; } 
+    }
+    
+    .info-box { 
+      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); 
+      border-left: 5px solid #667eea; 
+      padding: 1.5rem; 
+      border-radius: 12px; 
+      margin-bottom: 2rem; 
+      position: relative;
+      overflow: hidden;
+      animation: infoBoxPulse 4s ease-in-out infinite 1.2s, fadeIn 0.8s ease-out 1.2s forwards;
+      opacity: 0;
+    }
+    
+    @keyframes infoBoxPulse {
+      0%, 100% { box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1); }
+      50% { box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2); }
+    }
+    
+    .info-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23667eea' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+    .info-box i { 
+      color: #667eea; 
+      margin-right: 1rem; 
+      font-size: 1.2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .info-box strong { 
+      position: relative;
+      z-index: 1;
+    }
+    
+    .separator {
+      display: flex;
+      align-items: center;
+      margin: 1.5rem 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .separator::before,
+    .separator::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e0e0e0;
+    }
+    
+    .separator span {
+      padding: 0 1rem;
+    }
+    
+    .access-portal-btn {
+      display: block;
+      text-align: center;
+      margin-top: 2rem;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: color 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      animation: fadeIn 0.8s ease-out 2.6s forwards;
+      opacity: 0;
+    }
+    
+    .access-portal-btn:hover {
+      color: #764ba2;
+      text-decoration: underline;
+      transform: translateY(-2px);
+    }
+    
+    /* Loading Animation Styles */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .btn-loading {
+      opacity: 0.7 !important;
+      pointer-events: none !important;
+      cursor: not-allowed !important;
+    }
+    
+    .spinner-inline {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    
+    .loader {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      backdrop-filter: blur(2px);
+    }
+    
+    .loader.active {
+      display: flex;
+      animation: fadeInLoader 0.3s ease-in-out;
+    }
+    
+    .spinner {
+      width: 80px;
+      height: 80px;
+      border: 6px solid rgba(255, 255, 255, 0.2);
+      border-top: 6px solid #667eea;
+      border-right: 6px solid #764ba2;
+      border-radius: 50%;
+      animation: spin 1.2s linear infinite;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .loader-text {
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 1px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes fadeInLoader {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+    
+    @keyframes spinIt {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* ========== MOT DE PASSE : CORRECTION POUR MOBILE ========== */
+    .password-input-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-input-container input {
+      width: 100%;
+      padding: 1rem 3.5rem 1rem 1.2rem; /* espace à droite pour l'icône */
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'Poppins', sans-serif;
+      background: white;
+      box-sizing: border-box;
+    }
+
+    .password-toggle-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #999;
+      font-size: 1.2rem;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s, transform 0.1s;
+      z-index: 2;
+      touch-action: manipulation;
+      border-radius: 30px;
+      width: 40px;
+      height: 40px;
+    }
+
+    .password-toggle-btn:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    .password-toggle-btn:hover {
+      color: #667eea;
+    }
+
+    /* ========== AMÉLIORATIONS RESPONSIVE MOBILE ========== */
+    @media (max-width: 768px) {
+      .auth-container { 
+        padding: 2rem 1.5rem; 
+        margin: 0.5rem; 
+        border-radius: 20px;
+        max-width: 100%;
+      }
+      .auth-header h1 { 
+        font-size: 1.8rem; 
+      }
+      .auth-header h1 img {
+        height: 40px !important;
+        margin-right: 10px !important;
+      }
+      .role-badges {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .role-badge {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      .auth-container {
+        padding: 1.5rem 1rem;
+        margin: 0;
+        border-radius: 15px;
+        max-width: 100%;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+      }
+
+      .auth-header h1 {
+        font-size: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .auth-header h1 img {
+        height: 35px !important;
+        margin-right: 0 !important;
+        margin-bottom: 5px;
+      }
+
+      .auth-header p {
+        font-size: 0.9rem;
+      }
+
+      .role-badges {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+      }
+
+      .role-badge {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        border-radius: 8px;
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+      }
+
+      .input-group {
+        margin-bottom: 1.2rem;
+      }
+
+      .input-group label {
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+      }
+
+      input[type="email"],
+      input[type="password"] {
+        font-size: 16px;
+        padding: 0.9rem 1rem;
+        width: 100%;
+        border-radius: 10px;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      /* Ajustements spécifiques pour le mot de passe sur petit écran */
+      .password-input-container input {
+        padding: 0.9rem 3.8rem 0.9rem 1rem;
+        font-size: 16px;
+      }
+
+      .password-toggle-btn {
+        right: 8px;
+        width: 44px;
+        height: 44px;
+        font-size: 1.3rem;
+        padding: 0;
+      }
+
+      .btn-primary {
+        padding: 1rem;
+        font-size: 1.1rem;
+        width: 100%;
+        border-radius: 10px;
+        margin-top: 1.5rem;
+      }
+
+      .info-box {
+        padding: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .info-box i {
+        font-size: 1rem;
+      }
+
+      .access-portal-btn {
+        margin-top: 1.5rem;
+        font-size: 0.85rem;
+      }
+
+      .it-button-container {
+        bottom: 10px;
+        left: 10px;
+      }
+
+      .it-button {
+        width: 42px;
+        height: 42px;
+      }
+
+      .it-button i {
+        font-size: 1.2rem;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .auth-container {
+        padding: 1rem 0.8rem;
+      }
+
+      .auth-header h1 {
+        font-size: 1.3rem;
+      }
+
+      .auth-header h1 img {
+        height: 30px !important;
+      }
+
+      .input-group input {
+        padding: 0.8rem;
+      }
+
+      .password-input-container input {
+        padding: 0.8rem 3.5rem 0.8rem 0.8rem;
+      }
+
+      .btn-primary {
+        padding: 0.8rem;
+        font-size: 1rem;
+      }
+
+      .role-badge {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.75rem;
+      }
+    }
+
+    .it-button-container {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1000;
+      animation: slideInLeft 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 3s forwards;
+      opacity: 0;
+      transform: translateX(-100px);
+    }
+    
+    @keyframes slideInLeft {
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    .it-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 50%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      position: relative;
+      animation: pulseIt 2s infinite 3.5s;
+    }
+    
+    .it-button i {
+      font-size: 1.5rem;
+    }
+    
+    .it-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-bottom: 10px;
+      background: #333;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    @keyframes pulseIt {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+      }
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.8);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+      }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loader de chargement -->
+  <div id="loadingLoader" class="loader">
+    <div class="spinner"></div>
+    <div class="loader-text">Connexion en cours...</div>
+  </div>
+
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1><img src="asset/img/logo_eden.png" alt="Logo Eden Family School" style="height: 50px; width: auto; object-fit: contain; vertical-align: middle; margin-right: 15px;" onerror="this.style.display='none';"> EDEN FAMILY SCHOOL</h1>
+      <p>Portail Staff - Accès Professionnel</p>
+    </div>
+
+    <div class="role-badges">
+      <div class="role-badge director">
+        <i class="fas fa-user-tie"></i>
+        <span>Directeurs</span>
+      </div>
+      <div class="role-badge secretary">
+        <i class="fas fa-user-shield"></i>
+        <span>Secrétaires</span>
+      </div>
+      <div class="role-badge teacher">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <span>Enseignants</span>
+      </div>
+      <div class="role-badge accountant">
+        <i class="fas fa-calculator"></i>
+        <span>Comptables</span>
+      </div>
+    </div>
+
+    <div id="alertBox" class="alert"></div>
+
+    <div class="info-box">
+      <i class="fas fa-info-circle"></i>
+      <strong>Accès réservé au personnel</strong> - Connectez-vous avec vos identifiants professionnels.
+    </div>
+
+    <!-- Formulaire de Connexion -->
+    <div class="auth-form">
+      <div class="input-group">
+        <label for="loginEmail"><i class="fas fa-envelope"></i> Email professionnel</label>
+        <input type="email" id="loginEmail" placeholder="prenom.nom@edenschool.edu" required>
+      </div>
+      <div class="input-group">
+        <label for="loginPassword"><i class="fas fa-lock"></i> Mot de passe</label>
+        <div class="password-input-container">
+          <input type="password" id="loginPassword" placeholder="Votre mot de passe professionnel" required>
+          <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility(event, 'loginPassword')">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+      
+      <button class="btn-primary" onclick="login(this)">
+        <i class="fas fa-sign-in-alt"></i> Connexion Staff
+      </button>
+    </div>
+
+    <a href="index.html" class="access-portal-btn">
+      <i class="fas fa-user-friends"></i> Accéder au portail parents
+    </a>
+  </div>
+
+  <!-- Bouton IT animé (coin inférieur gauche) -->
+  <div class="it-button-container">
+    <a href="IT.html" class="it-button">
+      <i class="fas fa-cog"></i>
+      <span class="it-tooltip">Accès IT</span>
+    </a>
+  </div>
+
+  <script>
+    // Configuration Firebase - Chargée depuis le head avec le SDK moderne
+    console.log('✅ Firebase initialisé avec succès - Realtime Database uniquement');
+
+    // Gestion des alertes
+    function showAlert(message, type) {
+      const alertBox = document.getElementById('alertBox');
+      alertBox.textContent = message;
+      alertBox.className = `alert ${type} show`;
+      
+      // Ajouter un effet de vibration en cas d'erreur
+      if (type === 'error') {
+        const container = document.querySelector('.auth-container');
+        container.style.animation = 'shake 0.5s ease-in-out';
+        setTimeout(() => {
+          container.style.animation = '';
+        }, 500);
+      }
+      
+      setTimeout(() => {
+        hideAlert();
+      }, 5000);
+    }
+
+    function hideAlert() {
+      const alertBox = document.getElementById('alertBox');
+      alertBox.classList.remove('show');
+    }
+
+    // Fonction pour créer une session sécurisée
+    async function createSecureSession(user) {
+      try {
+        // Créer une session sécurisée dans sessionStorage
+        const session = {
+          createdAt: Date.now(),
+          expiresAt: Date.now() + (30 * 60 * 1000), // 30 minutes
+          token: btoa(user.uid + ':' + Date.now()),
+          userAgent: navigator.userAgent.substring(0, 50)
+        };
+        
+        const userData = {
+          uid: user.uid,
+          email: user.email,
+          role: user.role,
+          name: user.name || 'Utilisateur',
+          branch: user.branch || user.branche || user.fullData?.branch || user.fullData?.branche || ''
+        };
+        
+        // Sauvegarder dans sessionStorage
+        sessionStorage.setItem('eden_secure_session', JSON.stringify(session));
+        sessionStorage.setItem('eden_user_data', JSON.stringify(userData));
+        sessionStorage.setItem('eden_auth_token', session.token);
+        
+        console.log('✅ Secure session créée pour:', user.email);
+      } catch (error) {
+        console.error('Erreur création session sécurisée:', error);
+      }
+    }
+
+    // Fonction pour rechercher un utilisateur par email dans Realtime Database (corrigée)
+    async function findUserByEmail(email) {
+      try {
+        console.log('🔍 Recherche utilisateur par email:', email);
+        
+        // Chercher dans tous les utilisateurs
+        const usersRef = window.rtdbRef(window.realtimeDB, 'users');
+        const usersSnapshot = await window.rtdbGet(usersRef);
+        
+        if (!usersSnapshot.exists()) {
+          console.log('❌ Aucun utilisateur trouvé dans la base de données');
+          return null;
+        }
+        
+        const users = usersSnapshot.val();
+        let foundUser = null;
+        
+        // Parcourir tous les utilisateurs pour trouver celui avec l'email correspondant
+        for (const userId in users) {
+          const userData = users[userId];
+          if (userData.email && userData.email.toLowerCase() === email.toLowerCase()) {
+            foundUser = {
+              id: userId,
+              ...userData
+            };
+            console.log('✅ Utilisateur trouvé:', foundUser);
+            break;
+          }
+        }
+        
+        return foundUser;
+      } catch (error) {
+        console.error('❌ Erreur lors de la recherche par email:', error);
+        return null;
+      }
+    }
+
+    // Fonction pour obtenir le rôle de l'utilisateur et rediriger
+    async function getUserRoleAndRedirect(user, email) {
+      const uid = user.uid;
+      const emailLower = email.toLowerCase();
+
+      try {
+        console.log('🔍 Vérification du rôle pour UID:', uid);
+        console.log('📊 Recherche dans Realtime Database...');
+        
+        // Chercher d'abord par UID
+        const userRef = window.rtdbRef(window.realtimeDB, 'users/' + uid);
+        const userSnapshot = await window.rtdbGet(userRef);
+        
+        let userData = null;
+        let userRole = null;
+        
+        if (userSnapshot.exists()) {
+          // Utilisateur trouvé par UID
+          userData = userSnapshot.val();
+          console.log('👤 Utilisateur trouvé par UID:', userData);
+        } else {
+          // Si pas trouvé par UID, chercher par email
+          console.log('📍 Utilisateur non trouvé par UID, recherche par email...');
+          const foundUser = await findUserByEmail(email);
+          
+          if (foundUser) {
+            userData = foundUser;
+            console.log('👤 Utilisateur trouvé par email:', userData);
+          }
+        }
+        
+        // Si aucun utilisateur trouvé
+        if (!userData) {
+          console.log('❌ Utilisateur non trouvé dans la base de données');
+          showAlert('Accès refusé. Vos identifiants ne sont pas reconnus comme membre du personnel.', 'error');
+          await window.signOut();
+          return false;
+        }
+        
+        // Vérifier le rôle et le normaliser (accepte variantes FR/EN et casse)
+        userRole = userData.role;
+
+        if (!userRole) {
+          console.log('❌ Aucun rôle défini pour l\'utilisateur');
+          showAlert('Votre compte n\'a pas de rôle défini. Contactez l\'administration.', 'error');
+          await window.signOut();
+          return false;
+        }
+
+        // Normaliser le rôle: lowercase, retirer espaces et accents
+        const normalizedRole = userRole
+          .toString()
+          .toLowerCase()
+          .replace(/\s+/g, '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, ''); // Retirer les accents diacritiques
+        console.log('📊 Rôle trouvé (raw):', userRole, '=> normalisé:', normalizedRole);
+
+        // Mapper les rôles (touchant les variantes françaises/anglaises avec et sans accents)
+        const roleMapping = {
+          'directeur': { page: 'director.html', roleKey: 'director', name: userData.nom || 'Directeur' },
+          'director': { page: 'director.html', roleKey: 'director', name: userData.nom || 'Directeur' },
+          'itadmin': { page: 'IT.html', roleKey: 'itadmin', name: userData.nom || 'Administrateur IT' },
+          'itadminstr': { page: 'IT.html', roleKey: 'itadmin', name: userData.nom || 'Administrateur IT' },
+          'secretaire': { page: 'secretary.html', roleKey: 'secretary', name: userData.nom || 'Secrétaire' },
+          'secretary': { page: 'secretary.html', roleKey: 'secretary', name: userData.nom || 'Secrétaire' },
+          'enseignant': { page: 'teacher_clean.html', roleKey: 'teacher', name: userData.nom || 'Enseignant' },
+          'teacher': { page: 'teacher_clean.html', roleKey: 'teacher', name: userData.nom || 'Enseignant' },
+          'comptable': { page: 'comptable.html', roleKey: 'accountant', name: userData.nom || 'Comptable' },
+          'accountant': { page: 'comptable.html', roleKey: 'accountant', name: userData.nom || 'Comptable' },
+          'administrateur': { page: 'director.html', roleKey: 'admin', name: userData.nom || 'Administrateur' },
+          'admin': { page: 'director.html', roleKey: 'admin', name: userData.nom || 'Administrateur' }
+        };
+
+        const mapping = roleMapping[normalizedRole];
+        if (mapping) {
+          const secureUser = {
+            uid: userData.id || uid,
+            email: email,
+            role: mapping.roleKey,
+            name: mapping.name,
+            branch: userData.branch || userData.branche || '',
+            fullData: userData
+          };
+          
+          // Sauvegarder dans sessionStorage (par onglet)
+          createSecureSession(secureUser);
+          
+          console.log(`✅ ${userRole} authentifié, redirection vers ${mapping.page}...`);
+          showAlert(`Connexion réussie! Redirection vers le portail ${userRole}...`, 'success');
+          
+          // Rediriger après 1 seconde
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log(`🔄 Redirection vers ${mapping.page}...`);
+          window.location.href = `./${mapping.page}`;
+          return true;
+        } else {
+          // Rôle non reconnu
+          console.log('❌ Rôle non reconnu:', userRole);
+          console.log('🔍 Rôle normalisé:', normalizedRole);
+          console.log('📋 Rôles autorisés:', Object.keys(roleMapping));
+          showAlert(`Votre rôle "${userRole}" n'est pas autorisé à accéder à ce portail. Contactez l'administration.`, 'error');
+          await window.signOut();
+          return false;
+        }
+        
+      } catch (error) {
+        console.error('❌ Erreur lors de la vérification du rôle:', error);
+        showAlert('Erreur technique lors de la vérification du rôle: ' + error.message, 'error');
+        return false;
+      }
+    }
+
+    // Fonction pour gérer le loading des boutons
+    function setAuthButtonLoading(button, isLoading, originalText = 'Se connecter') {
+      if (!button) return;
+      
+      if (isLoading) {
+        // Sauvegarder le texte original avant de le modifier
+        if (!button.hasAttribute('data-original-html')) {
+          button.setAttribute('data-original-html', button.innerHTML);
+        }
+        button.classList.add('btn-loading');
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-inline"></span>Chargement...';
+      } else {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        // Restaurer le texte original
+        const original = button.getAttribute('data-original-html');
+        if (original) {
+          button.innerHTML = original;
+          button.removeAttribute('data-original-html');
+        } else {
+          button.innerHTML = originalText;
+        }
+      }
+    }
+
+    // Fonction pour basculer la visibilité du mot de passe (corrigée)
+    function togglePasswordVisibility(event, inputId) {
+      // Empêche la propagation pour éviter des conflits
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const button = event.currentTarget; // Le bouton cliqué
+      const input = document.getElementById(inputId);
+      const icon = button.querySelector('i');
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+        button.style.color = '#667eea';
+      } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+        button.style.color = '#999';
+      }
+    }
+
+    // Connexion
+    async function login(buttonElement = null) {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const button = buttonElement || document.querySelector('.btn-primary');
+      const originalText = button?.innerHTML || '<i class="fas fa-sign-in-alt"></i> Connexion Staff';
+
+      if (!email || !password) {
+        showAlert('Veuillez remplir tous les champs.', 'error');
+        return;
+      }
+
+      // Vérifier si l'email est valide
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(email)) {
+        showAlert('Veuillez entrer une adresse email valide.', 'error');
+        return;
+      }
+
+      // Afficher le loading
+      if (button) {
+        setAuthButtonLoading(button, true);
+      }
+
+      try {
+        console.log('🔐 Tentative de connexion pour:', email);
+        // Important: isoler la session par onglet (pas de persistance globale)
+        await window.setPersistence(window.auth, window.browserSessionPersistence);
+        const userCredential = await window.signInWithEmailAndPassword(window.auth, email, password);
+        const user = userCredential.user;
+        console.log('✅ Authentification Firebase réussie');
+        console.log('👤 UID utilisateur:', user.uid);
+        console.log('📧 Email utilisateur:', user.email);
+        console.log('🔍 Vérification du rôle en cours...');
+        
+        const isStaff = await getUserRoleAndRedirect(user, email);
+        
+        if (!isStaff) {
+          // Réactiver le bouton si la connexion échoue
+          if (button) {
+            setAuthButtonLoading(button, false);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Erreur de connexion:', error.code, error.message);
+        
+        // Réactiver le bouton
+        if (button) {
+          setAuthButtonLoading(button, false);
+        }
+        
+        let errorMessage = 'Erreur de connexion. ';
+        
+        switch(error.code) {
+          case 'auth/user-not-found':
+            errorMessage = 'Email non trouvé. Vérifiez votre adresse email.';
+            break;
+          case 'auth/wrong-password':
+            errorMessage = 'Mot de passe incorrect.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Format d\'email invalide.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Trop de tentatives échouées. Veuillez réessayer plus tard.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'Ce compte a été désactivé. Contactez l\'administration.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
+            break;
+          default:
+            errorMessage = 'Erreur de connexion. Vérifiez vos identifiants.';
+        }
+        
+        showAlert(errorMessage, 'error');
+      }
+    }
+
+    // Permettre la connexion avec la touche Entrée
+    document.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        login();
+      }
+    });
+
+    // Animation pour le bouton IT et garantie de visibilité du bouton de connexion
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('📋 Page chargée avec succès');
+      
+      // Focus sur le champ email
+      setTimeout(() => {
+        const emailInput = document.getElementById('loginEmail');
+        if (emailInput) {
+          emailInput.focus();
+          // Petit effet de pulse sur le champ email
+          emailInput.style.boxShadow = '0 0 0 2px rgba(102, 126, 234, 0.3)';
+          setTimeout(() => {
+            emailInput.style.boxShadow = '';
+          }, 1000);
+        }
+      }, 500);
+
+      // Animation du bouton IT
+      const itButton = document.querySelector('.it-button');
+      if (itButton) {
+        const itIcon = itButton.querySelector('i');
+        
+        itButton.addEventListener('mouseenter', function() {
+          // Afficher le tooltip
+          const tooltip = this.querySelector('.it-tooltip');
+          tooltip.style.opacity = '1';
+          tooltip.style.visibility = 'visible';
+          tooltip.style.transform = 'translateX(-50%) translateY(-5px)';
+          
+          // Animation de l'icône
+          itIcon.style.animation = 'spinIt 1s linear infinite';
+          this.style.transform = 'scale(1.2) rotate(5deg)';
+          this.style.boxShadow = '0 8px 30px rgba(102, 126, 234, 0.9)';
+        });
+        
+        itButton.addEventListener('mouseleave', function() {
+          // Cacher le tooltip
+          const tooltip = this.querySelector('.it-tooltip');
+          tooltip.style.opacity = '0';
+          tooltip.style.visibility = 'hidden';
+          tooltip.style.transform = 'translateX(-50%) translateY(0)';
+          
+          // Arrêter la rotation et réinitialiser
+          itIcon.style.animation = 'pulseIt 2s infinite 3.5s';
+          this.style.transform = 'scale(1) rotate(0deg)';
+        });
+        
+        // Animation de clic
+        itButton.addEventListener('click', function(e) {
+          // Effet de clic
+          this.style.transform = 'scale(0.9) rotate(-5deg)';
+          setTimeout(() => {
+            this.style.transform = 'scale(1) rotate(0deg)';
+          }, 200);
+        });
+      }
+
+      // Garantir que le bouton de connexion est toujours visible
+      const loginButton = document.querySelector('.btn-primary');
+      if (loginButton) {
+        // Forcer la visibilité du bouton (sécurité)
+        loginButton.style.visibility = 'visible';
+        loginButton.style.opacity = '1';
+        loginButton.style.display = 'flex';
+        
+        // Surveiller les changements de style pour prévenir la disparition
+        const observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && 
+                (mutation.attributeName === 'style' || 
+                 mutation.attributeName === 'class')) {
+              // Vérifier que le bouton reste visible
+              const btn = document.querySelector('.btn-primary');
+              if (btn && (btn.style.visibility === 'hidden' || 
+                          btn.style.display === 'none' || 
+                          btn.style.opacity === '0')) {
+                console.warn('⚠️ Bouton caché détecté - restauration...');
+                btn.style.visibility = 'visible';
+                btn.style.display = 'flex';
+                btn.style.opacity = '1';
+              }
+            }
+          });
+        });
+        
+        observer.observe(loginButton, { 
+          attributes: true, 
+          attributeFilter: ['style', 'class'] 
+        });
+      }
+
+      // Animation de flottement périodique pour les badges
+      setInterval(() => {
+        const badges = document.querySelectorAll('.role-badge');
+        badges.forEach((badge, index) => {
+          setTimeout(() => {
+            badge.style.transform = 'translateY(-3px)';
+            setTimeout(() => {
+              badge.style.transform = 'translateY(0)';
+            }, 300);
+          }, index * 200);
+        });
+      }, 8000);
+    });
+
+    // Sécurité supplémentaire : forcer la visibilité du bouton après chargement complet
+    window.addEventListener('load', function() {
+      const loginButton = document.querySelector('.btn-primary');
+      if (loginButton) {
+        loginButton.style.setProperty('visibility', 'visible', 'important');
+        loginButton.style.setProperty('opacity', '1', 'important');
+        loginButton.style.setProperty('display', 'flex', 'important');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+﻿                loadCoaching();
+                recalculateExpectedIncome();
+            } catch (error) {
+                console.error('Error deleting coaching payment:', error);
+                showToast('Error deleting coaching payment', 'error');
+            }
+        }
+
+        // Recalculate expected income including coaching
+        function recalculateExpectedIncome() {
+            const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+            const branchStudents = students.filter(s => s.branch === firebaseBranch && s.coachingEnrolled);
+            
+            const expectedCoaching = branchStudents.reduce((sum, student) => {
+                return sum + ((student.coachingMonthlyFee || 0) * 3); // 3 months per trimester
+            }, 0);
+            
+            // Update dashboard if coaching stats exist
+            const elem = document.getElementById('coachingExpectedTrimester');
+            if (elem) {
+                elem.textContent = expectedCoaching.toLocaleString('en-RW');
+            }
+        }
+
+        // Set up Firebase listeners for coaching
+        function setupCoachingListeners() {
+            if (!coachingPaymentsRef) return;
+            
+            coachingPaymentsRef.on('value', (snapshot) => {
+                window.coachingPayments = [];
+                snapshot.forEach((childSnapshot) => {
+                    window.coachingPayments.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+                
+                const coachingSection = document.getElementById('coaching');
+                if (coachingSection && coachingSection.classList.contains('active')) {
+                    loadCoaching();
+                }
+                recalculateExpectedIncome();
+            });
+        }
+
+        // Initialize coaching on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setupCoachingListeners();
+        });
+
+        // ============ FEES SECTION FUNCTIONS ============
+
+        // Global array for fee configurations
+        let feeConfigs = []; // stores { studentId, amount, dateConfigured }
+
+        function getStudentLevelTag(student) {
+          return (student.level || student.degre || student.section || student.levelName || student.sectionName || '')
+            .toString()
+            .trim()
+            .toLowerCase();
+        }
+
+        function matchesSelectedBranch(student, branch) {
+          const studentBranch = (student.branch || '').toString().trim().toLowerCase();
+          const levelTag = getStudentLevelTag(student);
+
+          if (branch === 'gisozi_maternelle') {
+            const nurseryLevel = ['nursery', 'maternelle'].includes(levelTag);
+            return ['gisozi', 'gisozi_maternelle'].includes(studentBranch) && (nurseryLevel || studentBranch === 'gisozi_maternelle');
+          }
+
+          if (branch === 'gisozi_primaire') {
+            const primaryLevel = ['primary', 'primaire'].includes(levelTag);
+            return ['gisozi', 'gisozi_primaire'].includes(studentBranch) && (primaryLevel || studentBranch === 'gisozi_primaire');
+          }
+
+          return studentBranch === branch;
+        }
+
+        // Load and display the fees configuration table
+        function loadFeesSection() {
+          const tbody = document.getElementById('feesConfigTableBody');
+          tbody.innerHTML = '';
+
+          const branch = selectedBranch;
+          // Filter students in this branch that have feesMonthlyAmount configured
+          let branchStudents = students.filter(s => matchesSelectedBranch(s, branch));
+
+          // Apply class filter if selected
+          const classFilter = document.getElementById('filterFeesClass')?.value;
+          if (classFilter) {
+            branchStudents = branchStudents.filter(s => (s.classes || s.class) === classFilter);
+          }
+
+          if (branchStudents.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">
+              <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
+              <p>No students found. Configure fees using the buttons above.</p>
+            </td></tr>`;
+            return;
+          }
+
+          branchStudents.forEach((student, index) => {
+            const amount = student.feesMonthlyAmount || 0;
+            const dateConfigured = student.feesDateConfigured || 'â€”';
+            const studentClass = student.classes || student.class || 'â€”';
+            const amountDisplay = amount > 0
+              ? `<span class="fw-bold text-primary">${formatCurrencyRWF(amount)}</span>`
+              : `<span class="badge bg-warning text-dark">Not configured</span>`;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><strong>${student.name || student.fullName}</strong></td>
+              <td><span class="badge bg-secondary">${studentClass}</span></td>
+              <td>${amountDisplay}</td>
+              <td>${dateConfigured !== 'â€”' ? new Date(dateConfigured).toLocaleDateString('en-US') : 'â€”'}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editSingleFee('${student.id}')" title="Edit fee">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeFeeConfig('${student.id}')" title="Remove fee">
+                  <i class="fas fa-times"></i>
+                </button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          // Update class filter dropdown
+          populateFeesClassFilter();
+
+          // Trigger recalculation
+          recalculateExpectedIncome();
+        }
+
+        // Apply class filter on fees table
+        function applyFeesFilter() {
+          loadFeesSection();
+        }
+
+        // Populate the class filter dropdown for fees section
+        function populateFeesClassFilter() {
+          const select = document.getElementById('filterFeesClass');
+          if (!select) return;
+          const currentVal = select.value;
+          select.innerHTML = '<option value="">All classes</option>';
+
+          const branchStudents = students.filter(s => matchesSelectedBranch(s, selectedBranch));
+          const uniqueClasses = [...new Set(branchStudents.map(s => (s.classes || s.class || '').trim()))].filter(c => c).sort();
+
+          uniqueClasses.forEach(cls => {
+            const opt = document.createElement('option');
+            opt.value = cls;
+            opt.textContent = cls;
+            select.appendChild(opt);
+          });
+
+          if (currentVal) select.value = currentVal;
+        }
+
+        // ---- SINGLE FEE MODAL ----
+
+        function showSingleFeeModal() {
+          // Reset form
+          document.getElementById('singleFeeClass').value = '';
+          document.getElementById('singleFeeStudent').innerHTML = '<option value="">First select a class</option>';
+          document.getElementById('singleFeeStudentInfo').style.display = 'none';
+          document.getElementById('singleFeeAmount').value = '';
+          document.getElementById('singleFeeCustomAmount').style.display = 'none';
+          document.getElementById('singleFeeCustomAmount').value = '';
+          document.getElementById('singleFeeDate').value = new Date().toISOString().split('T')[0];
+
+          // Remove active state from all preset buttons
+          document.querySelectorAll('.fee-preset-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+          document.querySelectorAll('.fee-preset-btn').forEach(b => b.classList.add('btn-outline-primary'));
+
+          // Populate class dropdown
+          populateSingleFeeClassDropdown();
+
+          const modal = new bootstrap.Modal(document.getElementById('singleFeeModal'));
+          modal.show();
+        }
+
+        function populateSingleFeeClassDropdown() {
+          const select = document.getElementById('singleFeeClass');
+          select.innerHTML = '<option value="">Select a class</option>';
+          const branchStudents = students.filter(s => s.branch === selectedBranch);
+          const uniqueClasses = [...new Set(branchStudents.map(s => (s.classes || s.class || '').trim()))].filter(c => c).sort();
+          uniqueClasses.forEach(cls => {
+            const opt = document.createElement('option');
+            opt.value = cls;
+            opt.textContent = cls;
+            select.appendChild(opt);
+          });
+        }
+
+        function loadSingleFeeStudents() {
+          const selectedClass = document.getElementById('singleFeeClass').value;
+          const select = document.getElementById('singleFeeStudent');
+          select.innerHTML = '<option value="">Select a student</option>';
+          document.getElementById('singleFeeStudentInfo').style.display = 'none';
+
+          if (!selectedClass) return;
+
+          const filtered = students.filter(s =>
+            s.branch === selectedBranch &&
+            (s.classes || s.class) === selectedClass
+          );
+
+          filtered.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = `${s.reference || ''} - ${s.name || s.fullName}`;
+            select.appendChild(opt);
+          });
+        }
+
+        function loadSingleFeeStudentInfo() {
+          const studentId = document.getElementById('singleFeeStudent').value;
+          if (!studentId) {
+            document.getElementById('singleFeeStudentInfo').style.display = 'none';
+            return;
+          }
+
+          const student = students.find(s => s.id === studentId);
+          if (!student) return;
+
+          document.getElementById('singleFeeRef').textContent = student.reference || 'N/A';
+          document.getElementById('singleFeeClassName').textContent = student.classes || student.class || 'N/A';
+
+          const currentFee = student.feesMonthlyAmount;
+          document.getElementById('singleFeeCurrentAmount').textContent =
+            currentFee ? formatCurrencyRWF(currentFee) + ' / month' : 'Not configured';
+
+          document.getElementById('singleFeeStudentInfo').style.display = 'block';
+
+          // Pre-select current amount if exists
+          if (currentFee) {
+            const presets = [20000, 25000, 30000, 35000, 40000, 45000, 50000];
+            if (presets.includes(currentFee)) {
+              document.querySelectorAll('.fee-preset-btn').forEach(b => {
+                if (parseInt(b.getAttribute('onclick').match(/\d+/)?.[0]) === currentFee) {
+                  b.classList.remove('btn-outline-primary', 'btn-outline-secondary');
+                  b.classList.add('btn-primary', 'active');
+                }
+              });
+            }
+            document.getElementById('singleFeeAmount').value = currentFee;
+          }
+        }
+
+        // Edit fee directly from table
+        function editSingleFee(studentId) {
+          showSingleFeeModal();
+          setTimeout(() => {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            const studentClass = student.classes || student.class;
+            document.getElementById('singleFeeClass').value = studentClass;
+            loadSingleFeeStudents();
+            setTimeout(() => {
+              document.getElementById('singleFeeStudent').value = studentId;
+              loadSingleFeeStudentInfo();
+            }, 100);
+          }, 300);
+        }
+
+        function selectFeePreset(btn, amount) {
+          // Remove active from all preset buttons
+          document.querySelectorAll('.fee-preset-btn').forEach(b => {
+            b.classList.remove('btn-primary', 'btn-secondary', 'active');
+            b.classList.add('btn-outline-primary');
+          });
+          // Activate clicked button
+          btn.classList.remove('btn-outline-primary', 'btn-outline-secondary');
+          btn.classList.add('btn-primary', 'active');
+          // Set amount
+          document.getElementById('singleFeeAmount').value = amount;
+          // Hide custom input
+          document.getElementById('singleFeeCustomAmount').style.display = 'none';
+          document.getElementById('singleFeeCustomAmount').value = '';
+        }
+
+        function showFeeOtherInput(btn) {
+          document.querySelectorAll('.fee-preset-btn').forEach(b => {
+            b.classList.remove('btn-primary', 'btn-secondary', 'active');
+            b.classList.add('btn-outline-primary');
+          });
+          btn.classList.remove('btn-outline-secondary');
+          btn.classList.add('btn-secondary', 'active');
+          document.getElementById('singleFeeCustomAmount').style.display = 'block';
+          document.getElementById('singleFeeCustomAmount').focus();
+          document.getElementById('singleFeeAmount').value = '';
+        }
+
+        function setSingleFeeFromCustom(value) {
+          document.getElementById('singleFeeAmount').value = value;
+        }
+
+        async function saveSingleFee() {
+          const studentId = document.getElementById('singleFeeStudent').value;
+          const amount = parseFloat(document.getElementById('singleFeeAmount').value);
+          const date = document.getElementById('singleFeeDate').value;
+
+          if (!studentId) { showToast('Please select a student', 'error'); return; }
+          if (!amount || amount <= 0) { showToast('Please select or enter a fee amount', 'error'); return; }
+          if (!date) { showToast('Please select a date', 'error'); return; }
+
+          try {
+            await db.ref('students/' + studentId).update({
+              feesMonthlyAmount: amount,
+              feesDateConfigured: date,
+              feesConfiguredBy: currentUserName,
+              feesUpdatedAt: Date.now()
+            });
+
+            showToast('Fee configured successfully! ' + formatCurrencyRWF(amount) + '/month', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('singleFeeModal')).hide();
+            loadFeesSection();
+            recalculateExpectedIncome();
+
+          } catch(error) {
+            console.error('Error saving fee:', error);
+            showToast('Error saving fee: ' + error.message, 'error');
+          }
+        }
+
+        async function removeFeeConfig(studentId) {
+          const student = students.find(s => s.id === studentId);
+          if (!student) return;
+          if (!confirm(`Remove fee configuration for ${student.name || student.fullName}?`)) return;
+
+          try {
+            await db.ref('students/' + studentId).update({
+              feesMonthlyAmount: 0,
+              feesDateConfigured: null,
+              feesConfiguredBy: null
+            });
+            showToast('Fee configuration removed', 'success');
+            loadFeesSection();
+            recalculateExpectedIncome();
+          } catch(error) {
+            showToast('Error removing fee: ' + error.message, 'error');
+          }
+        }
+
+        // ---- BULK FEE MODAL ----
+
+        function showBulkFeeModal() {
+          document.getElementById('bulkFeeClass').value = '';
+          document.getElementById('bulkFeeAmount').value = '';
+          document.getElementById('bulkFeeCustomAmount').style.display = 'none';
+          document.getElementById('bulkFeeCustomAmount').value = '';
+          document.getElementById('bulkFeeDate').value = new Date().toISOString().split('T')[0];
+          document.getElementById('bulkFeePreview').style.display = 'none';
+          document.getElementById('bulkSelectedCount').textContent = '0';
+          document.querySelectorAll('.bulk-fee-preset-btn').forEach(b => {
+            b.classList.remove('btn-primary', 'active');
+            b.classList.add('btn-outline-primary');
+          });
+
+          // Populate class dropdown
+          const classSelect = document.getElementById('bulkFeeClass');
+          classSelect.innerHTML = '<option value="">All classes</option>';
+          const branchStudents = students.filter(s => s.branch === selectedBranch);
+          const uniqueClasses = [...new Set(branchStudents.map(s => (s.classes || s.class || '').trim()))].filter(c => c).sort();
+          uniqueClasses.forEach(cls => {
+            const opt = document.createElement('option');
+            opt.value = cls;
+            opt.textContent = cls;
+            classSelect.appendChild(opt);
+          });
+
+          loadBulkFeeStudents();
+
+          const modal = new bootstrap.Modal(document.getElementById('bulkFeeModal'));
+          modal.show();
+        }
+
+        function loadBulkFeeStudents() {
+          const classFilter = document.getElementById('bulkFeeClass').value;
+          const tbody = document.getElementById('bulkFeeStudentsList');
+          tbody.innerHTML = '';
+
+          let filtered = students.filter(s => s.branch === selectedBranch);
+          if (classFilter) filtered = filtered.filter(s => (s.classes || s.class) === classFilter);
+
+          if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No students found</td></tr>';
+            return;
+          }
+
+          filtered.forEach(student => {
+            const currentFee = student.feesMonthlyAmount;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>
+                <input type="checkbox" class="bulk-student-checkbox" value="${student.id}"
+                       onchange="updateBulkSelectedCount()">
+              </td>
+              <td><strong>${student.name || student.fullName}</strong><br>
+                  <small class="text-muted">${student.reference || ''}</small></td>
+              <td><span class="badge bg-secondary">${student.classes || student.class || 'â€”'}</span></td>
+              <td>${currentFee && currentFee > 0
+                   ? '<span class="text-primary fw-bold">' + formatCurrencyRWF(currentFee) + '</span>'
+                   : '<span class="badge bg-warning text-dark">Not set</span>'}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          document.getElementById('selectAllCheckbox').checked = false;
+          updateBulkSelectedCount();
+        }
+
+        function updateBulkSelectedCount() {
+          const checked = document.querySelectorAll('.bulk-student-checkbox:checked').length;
+          document.getElementById('bulkSelectedCount').textContent = checked;
+
+          const amount = parseFloat(document.getElementById('bulkFeeAmount').value) || 0;
+          if (checked > 0 && amount > 0) {
+            document.getElementById('bulkFeePreview').style.display = 'block';
+            document.getElementById('bulkFeePreviewAmount').textContent = formatCurrencyRWF(amount);
+            document.getElementById('bulkFeePreviewCount').textContent = checked;
+          } else {
+            document.getElementById('bulkFeePreview').style.display = 'none';
+          }
+        }
+
+        function toggleAllBulkStudents(masterCheckbox) {
+          document.querySelectorAll('.bulk-student-checkbox').forEach(cb => {
+            cb.checked = masterCheckbox.checked;
+          });
+          updateBulkSelectedCount();
+        }
+
+        function selectAllBulkStudents() {
+          document.querySelectorAll('.bulk-student-checkbox').forEach(cb => cb.checked = true);
+          document.getElementById('selectAllCheckbox').checked = true;
+          updateBulkSelectedCount();
+        }
+
+        function deselectAllBulkStudents() {
+          document.querySelectorAll('.bulk-student-checkbox').forEach(cb => cb.checked = false);
+          document.getElementById('selectAllCheckbox').checked = false;
+          updateBulkSelectedCount();
+        }
+
+        function selectBulkFeePreset(btn, amount) {
+          document.querySelectorAll('.bulk-fee-preset-btn').forEach(b => {
+            b.classList.remove('btn-primary', 'btn-secondary', 'active');
+            b.classList.add('btn-outline-primary');
+          });
+          btn.classList.remove('btn-outline-primary');
+          btn.classList.add('btn-primary', 'active');
+          document.getElementById('bulkFeeAmount').value = amount;
+          document.getElementById('bulkFeeCustomAmount').style.display = 'none';
+          document.getElementById('bulkFeeCustomAmount').value = '';
+          updateBulkSelectedCount();
+        }
+
+        function showBulkFeeOtherInput(btn) {
+          document.querySelectorAll('.bulk-fee-preset-btn').forEach(b => {
+            b.classList.remove('btn-primary', 'active');
+            b.classList.add('btn-outline-primary');
+          });
+          btn.classList.remove('btn-outline-secondary');
+          btn.classList.add('btn-secondary', 'active');
+          document.getElementById('bulkFeeCustomAmount').style.display = 'block';
+          document.getElementById('bulkFeeCustomAmount').focus();
+          document.getElementById('bulkFeeAmount').value = '';
+        }
+
+        function setBulkFeeFromCustom(value) {
+          document.getElementById('bulkFeeAmount').value = value;
+          updateBulkSelectedCount();
+        }
+
+        async function saveBulkFees() {
+          const checkedBoxes = document.querySelectorAll('.bulk-student-checkbox:checked');
+          const amount = parseFloat(document.getElementById('bulkFeeAmount').value);
+          const date = document.getElementById('bulkFeeDate').value;
+
+          if (checkedBoxes.length === 0) { showToast('Please select at least one student', 'error'); return; }
+          if (!amount || amount <= 0) { showToast('Please select or enter a fee amount', 'error'); return; }
+          if (!date) { showToast('Please select a date', 'error'); return; }
+
+          const saveBtn = document.querySelector('#bulkFeeModal .btn-modern.btn-primary-modern');
+          const originalText = saveBtn.innerHTML;
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Saving...';
+
+          try {
+            const updates = {};
+            checkedBoxes.forEach(cb => {
+              updates['students/' + cb.value + '/feesMonthlyAmount'] = amount;
+              updates['students/' + cb.value + '/feesDateConfigured'] = date;
+              updates['students/' + cb.value + '/feesConfiguredBy'] = currentUserName;
+              updates['students/' + cb.value + '/feesUpdatedAt'] = Date.now();
+            });
+
+            await db.ref().update(updates);
+
+            showToast(`Fee ${formatCurrencyRWF(amount)} applied to ${checkedBoxes.length} student(s)!`, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('bulkFeeModal')).hide();
+            loadFeesSection();
+            recalculateExpectedIncome();
+
+          } catch(error) {
+            console.error('Error saving bulk fees:', error);
+            showToast('Error: ' + error.message, 'error');
+          } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+          }
+        }
+
+        // Call loadFeesSection when fees section becomes active
+        // Add in showSection() function: else if (sectionId === 'fees') { loadFeesSection(); }
+
+    </script>
+</body>
+</html>

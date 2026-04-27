@@ -1,0 +1,79 @@
+<!-- 
+  🔒 SNIPPET À AJOUTER AU HTML DES PAGES PROTÉGÉES
+  Pour implémenter rapidement la sécurité sur d'autres pages
+-->
+
+<!-- 1️⃣ AJOUTER DANS LE <HEAD> DE CHAQUE PAGE PROTÉGÉE -->
+<script src="security-auth.js"></script>
+<script src="security-tests.js"></script><!-- Optionnel: pour tests -->
+
+<!-- 2️⃣ AJOUTER DANS LE <SCRIPT> PRINCIPAL (après DOMContentLoaded) -->
+<script>
+  // 🔒 PROTÉGER LA PAGE (remplacer par le nom réel du fichier)
+  if (!protectPage('votre-page.html')) {
+    throw new Error('Accès non autorisé - Redirection en cours...');
+  }
+</script>
+
+<!-- 3️⃣ AJOUTER UN BOUTON DE DÉCONNEXION DANS LA NAVIGATION -->
+<button onclick="secureLogout()" class="btn btn-danger">
+  <i class="fas fa-sign-out-alt"></i> Déconnexion
+</button>
+
+<!-- 4️⃣ AFFICHER LES INFORMATIONS DE L'UTILISATEUR (OPTIONNEL) -->
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const user = getCurrentUser();
+    if (user) {
+      console.log('Utilisateur connecté:', user.name, `(${user.role})`);
+      
+      // Afficher dans l'interface
+      const userDisplayEl = document.getElementById('user-display');
+      if (userDisplayEl) {
+        userDisplayEl.textContent = `${user.name} - ${user.role}`;
+      }
+    }
+  });
+</script>
+
+<!-- 5️⃣ EXEMPLE COMPLET MINIMAL -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Ma Page Protégée</title>
+  <script src="security-auth.js"></script>
+</head>
+<body>
+  <h1>Bienvenue <span id="user-display"></span></h1>
+  <button onclick="secureLogout()">Déconnexion</button>
+
+  <script>
+    // 🔒 Protéger la page
+    if (!protectPage('ma-page.html')) {
+      throw new Error('Accès non autorisé');
+    }
+
+    // Afficher les infos utilisateur
+    const user = getCurrentUser();
+    if (user) {
+      document.getElementById('user-display').textContent = user.name;
+    }
+  </script>
+</body>
+</html>
+
+<!-- 
+  ================================================================================
+  
+  🔒 CHECKLIST D'IMPLÉMENTATION POUR UNE NOUVELLE PAGE PROTÉGÉE:
+
+  ✅ 1. Ajouter <script src="security-auth.js"></script> dans le <head>
+  ✅ 2. Ajouter le code de protection protectPage() au démarrage
+  ✅ 3. Ajouter un bouton de déconnexion secureLogout()
+  ✅ 4. Tester l'accès sans authentification (doit rediriger)
+  ✅ 5. Tester avec un rôle invalide (doit refuser)
+  ✅ 6. Vérifier les logs dans la console (F12)
+
+  ================================================================================
+-->
