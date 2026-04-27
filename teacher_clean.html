@@ -10,6 +10,8 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
+<link rel="preload" href="node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="node_modules/@fortawesome/fontawesome-free/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -2657,8 +2659,12 @@ body {
         <div class="no-print" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
           <button class="btn btn-blue" style="flex:1;" onclick="printBulletin()"><i class="fas fa-print"></i> Imprimer</button>
           <button class="btn btn-gold" style="flex:1;" onclick="saveBulletin()"><i class="fas fa-save"></i> Sauvegarder</button>
-          <button class="btn btn-green" style="flex:1;" onclick="publishBulletin()"><i class="fas fa-paper-plane"></i> Publier</button>
+          <button class="btn btn-green" id="publishBtn" style="flex:1;" onclick="publishBulletin()"><i class="fas fa-paper-plane"></i> Publier</button>
         </div>
+        <label class="no-print" style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.78rem;color:var(--txt-md);cursor:pointer;user-select:none;">
+          <input type="checkbox" id="preventDuplicatePublish" checked style="width:15px;height:15px;accent-color:var(--blue);">
+          Bloquer la republication du meme bulletin (eleve + trimestre)
+        </label>
         <button class="btn btn-ghost btn-full no-print" style="margin-top:8px;" onclick="switchBulletinTab('t-conduite')"><i class="fas fa-arrow-left"></i> Modifier</button>
       </div>
       </div>
@@ -3391,6 +3397,7 @@ const debugStudentBranchData = {
 let allTeachers     = [];  // All teachers filtered from /users (role === "teacher")
 let filteredTeachers= [];  // Filtered teacher list for display
 let notificationsListenerRef = null;
+let isPublishingBulletin = false;
 
 const BULLETIN = {
   notes:{}, conduite:{}, application:null,
@@ -3710,6 +3717,34 @@ function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 function dchart(k) { if(charts[k]) { charts[k].destroy(); delete charts[k]; } }
+
+function shouldBlockDuplicatePublish() {
+  const el = document.getElementById('preventDuplicatePublish');
+  // Default safety ON if option is not rendered yet.
+  return !el || !!el.checked;
+}
+
+async function upsertPublishedReport(reportPayload, bulletinId, reportType) {
+  const snapshot = await db.ref('reports').orderByChild('bulletinId').equalTo(bulletinId).once('value');
+  let targetKey = null;
+
+  if (snapshot.exists()) {
+    snapshot.forEach(child => {
+      const existing = child.val() || {};
+      if (!targetKey && existing.reportType === reportType) {
+        targetKey = child.key;
+      }
+    });
+  }
+
+  if (targetKey) {
+    await db.ref(`reports/${targetKey}`).set(reportPayload);
+    return targetKey;
+  }
+
+  const newRef = await db.ref('reports').push(reportPayload);
+  return newRef.key;
+}
 
 /* ══════════════════════════════════════
    AUTH
@@ -6012,7 +6047,7 @@ async function loadExistingBulletinData(student, trimester) {
     // Populate BULLETIN object with existing data
     BULLETIN.notes = migrateBulletinData(existingData.skills || {});
     BULLETIN.commentaire = existingData.appreciation || '';
-    BULLETIN.conduite = existingData.conduct || {}; // Load conduct data
+    BULLETIN.conduite = existingData.conduct || existingData.conduite || {}; // Load conduct data
     BULLETIN.trimestre = existingData.trimester || trimester;
     BULLETIN.annee = existingData.annee || new Date().getFullYear();
     BULLETIN.enseignant = existingData.teacherName || existingData.teacher || '';
@@ -6305,7 +6340,6 @@ async function saveBulletin() {
   const studentBranch = selectedStudent.branch || selectedStudent.schoolBranch || '';
   
   const teacherBranch = (currentTeacher?.branch || currentTeacher?.schoolBranch || '').toString().trim() || '';
-  const teacherClass  = (currentTeacher?.class || currentTeacher?.classes || currentTeacher?.classe || '').toString().trim() || '';
   const teacherName = (currentTeacher?.name || `${currentTeacher?.firstName||''} ${currentTeacher?.lastName||''}`.trim() || 'Enseignant').trim();
 
   // Normalize class key for saving paths and bulletin data
@@ -6313,7 +6347,7 @@ async function saveBulletin() {
   const selectedTrimester = BULLETIN.trimestre || '1';
   const normalizedClass = normalizeClassKey(studentClasse);
 
-  const cleanClass = (teacherClass || '')
+  const cleanClass = (studentClasse || '')
     .toString()
     .trim()
     .split('_')[0]
@@ -6323,6 +6357,7 @@ async function saveBulletin() {
 
   const data = {
     studentId: selectedStudentId,
+    studentName: studentName,
     name: studentName,
     branch: teacherBranch || studentBranch || '',
     class: cleanClass || classKey || (studentClasse || ''),
@@ -6330,11 +6365,18 @@ async function saveBulletin() {
     degree: 'Maternelle',
     teacherId: currentTeacher?.id || currentTeacher?.uid || '',
     trimester: selectedTrimester,
+    schoolYear: (BULLETIN.annee || '2025-2026').toString(),
+    annee: (BULLETIN.annee || '2025-2026').toString(),
     skills: BULLETIN.notes || {}, // observation-based (no heavy scoring)
     appreciation: BULLETIN.commentaire || '',
     conduct: BULLETIN.conduite || {}, // conduct data
+    conduite: BULLETIN.conduite || {},
+    applicationGrade: calculateApplicationGrade(BULLETIN.notes),
     teacherName: teacherName,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    updatedAt: Date.now(),
+    status: 'published',
+    publishedAt: new Date().toISOString()
   };
   
   // Normalisation requise avant d'écrire dans la base de données
@@ -6588,10 +6630,21 @@ async function generateAnnualMaternelle(studentId, className, branchName) {
 }
 
 async function publishBulletin() {
+  if (isPublishingBulletin) {
+    toast('Publication deja en cours... patientez.', 'warn');
+    return;
+  }
   if (!selectedStudent) { toast('Aucun élève', 'warn'); return; }
   if (!ensureOnlineForFirebase('publier le bulletin')) return;
   const selectedStudentId = selectedStudent._id || selectedStudent.id || '';
   if (!selectedStudentId) { toast('ID élève introuvable', 'err'); return; }
+
+  isPublishingBulletin = true;
+  const publishBtn = document.getElementById('publishBtn');
+  if (publishBtn) {
+    publishBtn.disabled = true;
+    publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publication...';
+  }
   
   // Use selected student data with safe fallbacks
   const studentName = selectedStudent.name || selectedStudent.nom || (selectedStudent.firstName && selectedStudent.lastName ? `${selectedStudent.firstName} ${selectedStudent.lastName}` : '') || 'Nom inconnu';
@@ -6599,7 +6652,6 @@ async function publishBulletin() {
   const studentBranch = selectedStudent.branch || selectedStudent.schoolBranch || '';
   
   const teacherBranch = (currentTeacher?.branch || currentTeacher?.schoolBranch || '').toString().trim() || '';
-  const teacherClass  = (currentTeacher?.class || currentTeacher?.classes || currentTeacher?.classe || '').toString().trim() || '';
   const teacherName = (currentTeacher?.name || `${currentTeacher?.firstName||''} ${currentTeacher?.lastName||''}`.trim() || 'Enseignant').trim();
 
   // Normalize class+branch key for path
@@ -6607,13 +6659,29 @@ async function publishBulletin() {
   const selectedTrimester = BULLETIN.trimestre || '1';
   const normalizedClass = normalizeClassKey(studentClasse);
 
-  const cleanClass = (teacherClass || '')
+  const cleanClass = (studentClasse || '')
     .toString()
     .trim()
     .split('_')[0]
     .toUpperCase();
 
   const effectiveBranch = (teacherBranch || studentBranch || 'maternelle').toLowerCase();
+  const savePaths = getBulletinStorePaths(effectiveBranch, studentClasse || normalizedClass, selectedStudentId, selectedTrimester);
+
+  try {
+    if (shouldBlockDuplicatePublish()) {
+      for (const path of savePaths) {
+        const existingSnap = await db.ref(path).once('value');
+        if (!existingSnap.exists()) continue;
+
+        const existing = existingSnap.val() || {};
+        const alreadyPublished = (existing.status || '').toString().toLowerCase() === 'published' || !!existing.publishedAt;
+        if (alreadyPublished) {
+          toast(`Publication bloquee: bulletin deja publie pour T${selectedTrimester}.`, 'warn');
+          return;
+        }
+      }
+    }
 
   const data = {
     studentId: selectedStudentId,
@@ -6629,6 +6697,7 @@ async function publishBulletin() {
     skills: BULLETIN.notes || {},
     appreciation: BULLETIN.commentaire || '',
     conduct: BULLETIN.conduite || {},
+    conduite: BULLETIN.conduite || {},
     applicationGrade: calculateApplicationGrade(BULLETIN.notes),
     teacherName: teacherName,
     createdAt: new Date().toISOString(),
@@ -6637,20 +6706,19 @@ async function publishBulletin() {
   };
   
   console.log('📤 Publishing bulletin with data:', data);
-  try {
     // Save to one or several paths (Kimisagara: dual path)
-    const savePaths = getBulletinStorePaths(effectiveBranch, studentClasse || normalizedClass, selectedStudentId, selectedTrimester);
     await Promise.all(savePaths.map(path => db.ref(path).set(data)));
     
     allBulletins.push({...data, _id: `${selectedStudentId}_${selectedTrimester}`});
 
-    await db.ref('reports').push({
+    const bulletinId = `${selectedStudentId}_${selectedTrimester}`;
+    await upsertPublishedReport({
       ...data,
-      bulletinId: `${selectedStudentId}_${selectedTrimester}`,
+      bulletinId,
       reportType: 'bulletin_maternelle',
       savedBy: currentTeacher?.id || 'unknown',
       savedAt: Date.now()
-    });
+    }, bulletinId, 'bulletin_maternelle');
 
     toast(`✅ Bulletin maternelle de ${studentName} publié et enregistré dans la base de données !`, 'ok');
     
@@ -6668,6 +6736,12 @@ async function publishBulletin() {
       toast('Échec publication: connexion Firebase indisponible.', 'err');
     } else {
       toast('Erreur lors de la publication du bulletin: ' + e.message, 'err');
+    }
+  } finally {
+    isPublishingBulletin = false;
+    if (publishBtn) {
+      publishBtn.disabled = false;
+      publishBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publier';
     }
   }
 }
@@ -7005,7 +7079,11 @@ async function loadBulletinHistory() {
         
         // Build conduct HTML
         let conductHtml = '';
-        if (!isAnnualBulletin && bulletin.conduct && Object.keys(bulletin.conduct).length > 0) {
+        const conductSource = (bulletin.conduct && typeof bulletin.conduct === 'object')
+          ? bulletin.conduct
+          : ((bulletin.conduite && typeof bulletin.conduite === 'object') ? bulletin.conduite : null);
+
+        if (!isAnnualBulletin && conductSource && Object.keys(conductSource).length > 0) {
           conductHtml = `<div style="padding:10px 0;border-top:1px solid var(--bdr);margin-top:8px;">
             <div style="font-size:.7rem;font-weight:700;color:var(--txt-lt);margin-bottom:8px;text-transform:uppercase;letter-spacing:.3px;">Conduite:</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(50px,1fr));gap:6px;font-size:.65rem;">`;
@@ -7020,7 +7098,7 @@ async function loadBulletinHistory() {
             'Collaboration'
           ];
           conductItems.forEach((item, idx) => {
-            const rawGrade = bulletin.conduct['c'+idx];
+            const rawGrade = conductSource['c'+idx];
             const grade = typeof rawGrade === 'number' ? getGrade(rawGrade) : (rawGrade || '—');
             conductHtml += `<div style="padding:4px;background:var(--e-bg);border-radius:4px;text-align:center;font-weight:600;">${grade}</div>`;
           });
@@ -8180,11 +8258,6 @@ async function loadBulletinData(bulletin, student) {
     return;
   }
 
-  if (bulletin.status !== 'published') {
-    console.warn('Bulletin non publié');
-    return;
-  }
-
   // Get elements
   const elements = {
     bulNom: document.getElementById('bulNom'),
@@ -8356,7 +8429,9 @@ async function loadBulletinData(bulletin, student) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, ' ')
       .trim();
-    const conductData = (bulletin.conduct && typeof bulletin.conduct === 'object') ? bulletin.conduct : {};
+    const conductData = (bulletin.conduct && typeof bulletin.conduct === 'object')
+      ? bulletin.conduct
+      : ((bulletin.conduite && typeof bulletin.conduite === 'object') ? bulletin.conduite : {});
 
     conductItems.forEach((item, idx) => {
       const normalizedItem = normalizeConductKey(item);
@@ -9133,11 +9208,6 @@ async function loadBulletinConduite(bulletin, student) {
     return;
   }
   
-  if (bulletin.status !== 'published') {
-    console.warn('Bulletin non publié');
-    return;
-  }
-  
   // Get elements - load bulletin template first if not loaded
   const printArea = document.getElementById('printArea');
   if (!printArea.innerHTML.includes('bulCondBody')) {
@@ -9147,7 +9217,11 @@ async function loadBulletinConduite(bulletin, student) {
   
   // Now load conduct - use the requested bulletin's conduct
   const bulCondBody = document.getElementById('bulCondBody');
-  if (bulCondBody && bulletin.conduct) {
+  const conductSource = (bulletin.conduct && typeof bulletin.conduct === 'object')
+    ? bulletin.conduct
+    : ((bulletin.conduite && typeof bulletin.conduite === 'object') ? bulletin.conduite : null);
+
+  if (bulCondBody && conductSource) {
     let conductHtml = '';
     const conductItems = [
       'Respect des enseignants et des camarades',
@@ -9160,9 +9234,9 @@ async function loadBulletinConduite(bulletin, student) {
       "Esprit de partage et de collaboration"
     ];
     
-    if (typeof bulletin.conduct === 'object' && Object.keys(bulletin.conduct).length > 0) {
+    if (typeof conductSource === 'object' && Object.keys(conductSource).length > 0) {
       conductItems.forEach((item, idx) => {
-        const rawGrade = bulletin.conduct['c'+idx];
+        const rawGrade = conductSource['c'+idx];
         const grade = typeof rawGrade === 'number' ? getGrade(rawGrade) : (rawGrade || '—');
         const gradeText = grade==='E'?'Excellents(E)':grade==='TB'?'Très Bien(TB)':grade==='B'?'Bien(B)':grade==='Ef'?'Effort(Ef)':grade||'—';
         const vcls = grade==='E'?'bul-e':grade==='TB'?'bul-tb':grade==='B'?'bul-b':grade==='Ef'?'bul-ef':'bul-nd';
