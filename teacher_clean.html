@@ -2903,15 +2903,24 @@ body {
         </div>
         <div class="f-group">
           <label class="f-label">Mot de passe actuel (requis pour confirmer)</label>
-          <input class="f-input" type="password" id="accountCurrentPassword" placeholder="Mot de passe actuel" autocomplete="current-password">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="f-input" style="flex:1;" type="password" id="accountCurrentPassword" placeholder="Mot de passe actuel" autocomplete="current-password">
+            <button type="button" class="btn btn-ghost" style="padding:8px 10px;" onclick="toggleTeacherPasswordVisibility('accountCurrentPassword', this)">Afficher</button>
+          </div>
         </div>
         <div class="f-group">
           <label class="f-label">Nouveau mot de passe (laisser vide si inchangé)</label>
-          <input class="f-input" type="password" id="accountNewPassword" placeholder="Nouveau mot de passe" autocomplete="new-password">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="f-input" style="flex:1;" type="password" id="accountNewPassword" placeholder="Nouveau mot de passe" autocomplete="new-password">
+            <button type="button" class="btn btn-ghost" style="padding:8px 10px;" onclick="toggleTeacherPasswordVisibility('accountNewPassword', this)">Afficher</button>
+          </div>
         </div>
         <div class="f-group">
           <label class="f-label">Confirmer le nouveau mot de passe</label>
-          <input class="f-input" type="password" id="accountConfirmPassword" placeholder="Confirmer le nouveau mot de passe" autocomplete="new-password">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="f-input" style="flex:1;" type="password" id="accountConfirmPassword" placeholder="Confirmer le nouveau mot de passe" autocomplete="new-password">
+            <button type="button" class="btn btn-ghost" style="padding:8px 10px;" onclick="toggleTeacherPasswordVisibility('accountConfirmPassword', this)">Afficher</button>
+          </div>
         </div>
         <button class="btn btn-green" id="updateCredsBtn" onclick="updateAccountCredentials()" style="margin-bottom:10px;">
           <i class="fas fa-key"></i> Mettre a jour email / mot de passe
@@ -4574,6 +4583,15 @@ function reportBug() {
 
 function saveSettings() {
   toast('Paramètres enregistrés', 'ok');
+}
+
+function toggleTeacherPasswordVisibility(inputId, triggerBtn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  const reveal = input.type === 'password';
+  input.type = reveal ? 'text' : 'password';
+  if (triggerBtn) triggerBtn.textContent = reveal ? 'Masquer' : 'Afficher';
 }
 
 function getFriendlyAuthError(error) {

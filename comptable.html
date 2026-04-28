@@ -2999,15 +2999,24 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Current password</label>
-                            <input type="password" class="form-control-modern" id="accountCredsCurrentPassword" placeholder="Current password" autocomplete="current-password">
+                            <div class="input-group">
+                                <input type="password" class="form-control-modern" id="accountCredsCurrentPassword" placeholder="Current password" autocomplete="current-password">
+                                <button class="btn btn-outline-secondary" type="button" onclick="toggleAccountantPasswordVisibility('accountCredsCurrentPassword', this)">Show</button>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">New password</label>
-                            <input type="password" class="form-control-modern" id="accountCredsNewPassword" placeholder="Leave empty if unchanged" autocomplete="new-password">
+                            <div class="input-group">
+                                <input type="password" class="form-control-modern" id="accountCredsNewPassword" placeholder="Leave empty if unchanged" autocomplete="new-password">
+                                <button class="btn btn-outline-secondary" type="button" onclick="toggleAccountantPasswordVisibility('accountCredsNewPassword', this)">Show</button>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Confirm new password</label>
-                            <input type="password" class="form-control-modern" id="accountCredsConfirmPassword" placeholder="Confirm new password" autocomplete="new-password">
+                            <div class="input-group">
+                                <input type="password" class="form-control-modern" id="accountCredsConfirmPassword" placeholder="Confirm new password" autocomplete="new-password">
+                                <button class="btn btn-outline-secondary" type="button" onclick="toggleAccountantPasswordVisibility('accountCredsConfirmPassword', this)">Show</button>
+                            </div>
                         </div>
                         <div class="d-grid mb-3">
                             <button class="btn-modern btn-warning" id="updateAccountantCredsBtn" onclick="updateAccountantCredentials()">
@@ -14460,6 +14469,15 @@
                 console.error('Error saving accountant info:', error);
                 showToast('Error saving accountant info', 'error');
             }
+        }
+
+        function toggleAccountantPasswordVisibility(inputId, triggerBtn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            const reveal = input.type === 'password';
+            input.type = reveal ? 'text' : 'password';
+            if (triggerBtn) triggerBtn.textContent = reveal ? 'Hide' : 'Show';
         }
 
         function getAccountantFriendlyAuthError(error) {
