@@ -1176,6 +1176,15 @@
           <label for="parentPassword">Mot de passe</label>
           <input type="password" id="parentPassword" required placeholder="Votre mot de passe">
         </div>
+        <div class="form-group" style="padding:0.8rem; border:2px dashed #d7def7; border-radius:10px; background:#f8faff;">
+          <label for="loginRobotAnswer">Vérification anti-robot (puzzle)</label>
+          <p id="loginRobotHint" style="margin:0.35rem 0; font-size:0.9rem; color:#445;">Chargement du puzzle...</p>
+          <div id="loginRobotScrambled" style="font-weight:700; letter-spacing:0.25rem; color:#0b63ce; margin-bottom:0.5rem;"></div>
+          <input type="text" id="loginRobotAnswer" required autocomplete="off" placeholder="Recomposez le mot bizarre">
+          <button type="button" onclick="createRobotPuzzle('login')" style="margin-top:0.5rem; border:1px solid #0b63ce; color:#0b63ce; background:#fff; padding:0.35rem 0.7rem; border-radius:6px; cursor:pointer;">
+            Nouveau puzzle
+          </button>
+        </div>
         <button type="submit" class="btn-primary" style="width: 100%;"><i class="fas fa-sign-in-alt"></i> Se connecter</button>
       </form>
       <div style="text-align:center; margin: 1rem 0; color: #666">ou</div>
@@ -1216,6 +1225,15 @@
             <option value="primaire5">Primaire 5</option>
             <option value="primaire6">Primaire 6</option>
           </select>
+        </div>
+        <div class="form-group" style="padding:0.8rem; border:2px dashed #d7def7; border-radius:10px; background:#f8faff;">
+          <label for="registerRobotAnswer">Vérification anti-robot (puzzle)</label>
+          <p id="registerRobotHint" style="margin:0.35rem 0; font-size:0.9rem; color:#445;">Chargement du puzzle...</p>
+          <div id="registerRobotScrambled" style="font-weight:700; letter-spacing:0.25rem; color:#0b63ce; margin-bottom:0.5rem;"></div>
+          <input type="text" id="registerRobotAnswer" required autocomplete="off" placeholder="Recomposez le mot bizarre">
+          <button type="button" onclick="createRobotPuzzle('register')" style="margin-top:0.5rem; border:1px solid #0b63ce; color:#0b63ce; background:#fff; padding:0.35rem 0.7rem; border-radius:6px; cursor:pointer;">
+            Nouveau puzzle
+          </button>
         </div>
         <button type="submit" class="btn-primary" style="width: 100%;"><i class="fas fa-user-plus"></i> S'inscrire</button>
       </form>
@@ -2256,9 +2274,9 @@ function closeModal(){
   document.body.style.overflow='';
 }
 
-function openLoginModal(){document.getElementById('loginModal').style.display='flex';document.body.style.overflow='hidden';}
+function openLoginModal(){document.getElementById('loginModal').style.display='flex';document.body.style.overflow='hidden';createRobotPuzzle('login');}
 function closeLoginModal(){document.getElementById('loginModal').style.display='none';document.body.style.overflow='';}
-function openRegisterModal(){document.getElementById('registerModal').style.display='flex';document.body.style.overflow='hidden';}
+function openRegisterModal(){document.getElementById('registerModal').style.display='flex';document.body.style.overflow='hidden';createRobotPuzzle('register');}
 function closeRegisterModal(){document.getElementById('registerModal').style.display='none';document.body.style.overflow='';}
 function openRegistrationModal(){document.getElementById('registrationFormModal').style.display='flex';document.body.style.overflow='hidden';}
 function closeRegistrationModal(){document.getElementById('registrationFormModal').style.display='none';document.body.style.overflow='';}
@@ -2348,14 +2366,79 @@ function handleGoogleSignIn(){
     }).catch(err=>{console.error(err);showToast('Erreur connexion Google','error');});
 }
 
+function isValidEmail(email){
+  const normalized=String(email||'').trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
+}
+
+const ROBOT_PUZZLES = {
+  login: { solution: '' },
+  register: { solution: '' }
+};
+
+function generateWeirdWord(){
+  const syllables=['xra','vok','zun','mep','qil','dro','fyn','taz','bri','glo','nax','pud','kri','wom'];
+  const partsCount=3;
+  let word='';
+  for(let i=0;i<partsCount;i++) word+=syllables[Math.floor(Math.random()*syllables.length)];
+  return word.slice(0,8).toUpperCase();
+}
+
+function shuffleWord(word){
+  const chars=word.split('');
+  for(let i=chars.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [chars[i],chars[j]]=[chars[j],chars[i]];
+  }
+  const shuffled=chars.join('');
+  return shuffled===word ? shuffleWord(word) : shuffled;
+}
+
+function createRobotPuzzle(type){
+  const hintEl=document.getElementById(type+'RobotHint');
+  const scrambledEl=document.getElementById(type+'RobotScrambled');
+  const answerEl=document.getElementById(type+'RobotAnswer');
+  if(!hintEl||!scrambledEl||!answerEl) return;
+
+  const solution=generateWeirdWord();
+  const scrambled=shuffleWord(solution);
+  ROBOT_PUZZLES[type].solution=solution;
+
+  hintEl.textContent='Mémorisez ce mot bizarre: '+solution+' (il disparaît ensuite), puis recomposez-le avec les lettres mélangées.';
+  scrambledEl.textContent=scrambled.split('').join(' ');
+  answerEl.value='';
+
+  setTimeout(()=>{
+    if(ROBOT_PUZZLES[type].solution===solution){
+      hintEl.textContent='Recomposez maintenant le mot bizarre à partir des lettres ci-dessus.';
+    }
+  },2200);
+}
+
+function validateRobotPuzzle(type){
+  const answerEl=document.getElementById(type+'RobotAnswer');
+  if(!answerEl) return false;
+  const expected=(ROBOT_PUZZLES[type]&&ROBOT_PUZZLES[type].solution?ROBOT_PUZZLES[type].solution:'').toUpperCase();
+  const actual=String(answerEl.value||'').trim().toUpperCase();
+  return !!expected && actual===expected;
+}
+
 function handleLogin(event){
   event.preventDefault();
-  const email=document.getElementById('parentEmail').value;
+  const email=document.getElementById('parentEmail').value.trim().toLowerCase();
   const password=document.getElementById('parentPassword').value;
   if(!email||!password){showToast('Veuillez remplir tous les champs','error');return;}
+  if(!isValidEmail(email)){showToast('Adresse email invalide','error');return;}
+  if(!validateRobotPuzzle('login')){showToast('Puzzle anti-robot incorrect. Essayez encore.','error');createRobotPuzzle('login');return;}
   firebase.auth().signInWithEmailAndPassword(email,password)
     .then(async(cred)=>{
       const user=cred.user;if(!user)return;
+      if(!user.emailVerified){
+        await user.sendEmailVerification();
+        await firebase.auth().signOut();
+        showToast('Email non vérifié. Un lien de vérification vient d\'être envoyé.','warning');
+        return;
+      }
       const snapshot=await firebase.database().ref('parents/'+user.uid).once('value');
       const userData=snapshot.val()||{};
       CONFIG.isLoggedIn=true;CONFIG.currentUser=userData;
@@ -2366,20 +2449,24 @@ function handleLogin(event){
 
 async function handleRegister(event){
   event.preventDefault();
-  const email=document.getElementById('registerEmail').value;
+  const email=document.getElementById('registerEmail').value.trim().toLowerCase();
   const password=document.getElementById('registerPassword').value;
   const confirm=document.getElementById('registerConfirmPassword').value;
   const studentName=document.getElementById('registerStudentName').value;
   const classLevel=document.getElementById('registerClassLevel').value;
   if(!email||!password||!confirm||!studentName||!classLevel){showToast('Veuillez remplir tous les champs','error');return;}
+  if(!isValidEmail(email)){showToast('Adresse email invalide','error');return;}
+  if(!validateRobotPuzzle('register')){showToast('Puzzle anti-robot incorrect. Essayez encore.','error');createRobotPuzzle('register');return;}
   if(password!==confirm){showToast('Les mots de passe ne correspondent pas','error');return;}
   try {
     const cred=await firebase.auth().createUserWithEmailAndPassword(email,password);
     const user=cred.user;if(!user) throw new Error('Erreur');
+    await user.sendEmailVerification();
     const parentData={email,studentName,classLevel,createdAt:Date.now()};
     await firebase.database().ref('parents/'+user.uid).set(parentData);
-    CONFIG.isLoggedIn=true;CONFIG.currentUser=parentData;
-    closeRegisterModal();showToast('Inscription réussie','success');
+    await firebase.auth().signOut();
+    CONFIG.isLoggedIn=false;CONFIG.currentUser=null;
+    closeRegisterModal();showToast('Inscription réussie. Vérifiez votre email avant de vous connecter.','success');
   } catch(err){console.error(err);showToast(err.message||'Erreur','error');}
 }
 

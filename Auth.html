@@ -1411,6 +1411,7 @@
         await window.setPersistence(window.auth, window.browserSessionPersistence);
         const userCredential = await window.signInWithEmailAndPassword(window.auth, email, password);
         const user = userCredential.user;
+
         console.log('✅ Authentification Firebase réussie');
         console.log('👤 UID utilisateur:', user.uid);
         console.log('📧 Email utilisateur:', user.email);
@@ -1461,11 +1462,23 @@
       }
     }
 
-    // Permettre la connexion avec la touche Entrée
-    document.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        login();
+    // Gérer la touche Entrée selon le panneau visible
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter') return;
+
+      const forgotPanel = document.getElementById('forgotPasswordPanel');
+      const forgotVisible = forgotPanel && forgotPanel.style.display !== 'none';
+
+      if (forgotVisible) {
+        e.preventDefault();
+        const forgotBtn = document.getElementById('forgotSubmitBtn');
+        forgotPassword(forgotBtn);
+        return;
       }
+
+      e.preventDefault();
+      const loginBtn = document.querySelector('.auth-form .btn-primary');
+      login(loginBtn);
     });
 
     // Animation pour le bouton IT et garantie de visibilité du bouton de connexion

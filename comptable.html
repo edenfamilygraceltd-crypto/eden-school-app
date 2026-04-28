@@ -12939,10 +12939,10 @@
             document.getElementById('feeFees').closest('.mb-3').style.display = 'block';
             document.getElementById('feeFees').required = true;
 
-            // Breakfast - mandatory for kacyiru, kimisagara, gisozi_maternelle; hidden for gisozi_primaire
+            // Breakfast - configurable for all branches except explicit exclusions
             const breakfastDiv = document.getElementById('feeBreakfast').closest('.mb-3');
             const breakfastInput = document.getElementById('feeBreakfast');
-            if (['kacyiru', 'kimisagara', 'gisozi_maternelle'].includes(branchId)) {
+            if (['kacyiru', 'kimisagara', 'gisozi_maternelle', 'gisozi_primaire'].includes(branchId)) {
                 breakfastDiv.style.display = 'block';
                 breakfastInput.required = true;
             } else {
@@ -15816,6 +15816,23 @@
 
                         const branchStudents = getStudentsForCurrentBranch(branch);
 
+                        const branchNames = {
+                            kacyiru: 'EDEN FAMILY SCHOOL KACYIRU',
+                            kimisagara: 'EDEN FAMILY SCHOOL KIMISAGARA',
+                            gisozi_maternelle: 'EDEN FAMILY SCHOOL GISOZI NURSERY',
+                            gisozi_primaire: 'EDEN FAMILY SCHOOL GISOZI PRIMARY'
+                        };
+                        const fullBranchName = branchNames[branch];
+                        const feeConfigList = Array.isArray(feeConfigurations) ? feeConfigurations : [];
+                        const feeConfig = feeConfigList.find(config =>
+                            config.branch === fullBranchName &&
+                            config.trimester == currentTermConfig?.trimester &&
+                            config.academicYear === currentTermConfig?.academicYear
+                        );
+                        const breakfastPerStudent = (branch === 'gisozi_primaire')
+                            ? (Number(feeConfig?.additionalFees?.breakfast) || 0)
+                            : 0;
+
                         let totalStudentsFees = 0;
                         let expectedFeesTrimester = 0;
                         let totalStudentsCoaching = 0;
@@ -15843,6 +15860,9 @@
                                 expectedTransportTrimester += transportMonthly * 3;
                             }
                         });
+
+                        const expectedBreakfastTrimester = totalStudentsFees * breakfastPerStudent;
+                        expectedFeesTrimester += expectedBreakfastTrimester;
 
                         const expectedFeesMonthly = expectedFeesTrimester / 3;
                         const expectedCoachingMonthly = expectedCoachingTrimester / 3;
@@ -15996,10 +16016,11 @@
             const studentsWithTransport = branchStudents.filter(student => student.transportEnrolled).length;
 
             const feesAmount = feeConfig.schoolFees?.fees || 0;
+            const breakfastAmount = (branch === 'gisozi_primaire') ? (feeConfig.additionalFees?.breakfast || 0) : 0;
             const coachingAmount = feeConfig.schoolFees?.coaching || 0;
             const transportAmount = feeConfig.schoolFees?.transport || 0;
 
-            const totalFees = totalStudents * feesAmount;
+            const totalFees = totalStudents * (feesAmount + breakfastAmount);
             const totalCoaching = studentsWithCoaching * coachingAmount * 3;
             const totalTransport = studentsWithTransport * transportAmount * 3;
             const totalExpected = totalFees + totalCoaching + totalTransport;
