@@ -2991,6 +2991,30 @@
                             <label class="form-label">Email</label>
                             <input type="email" class="form-control-modern" id="accountantEmail" placeholder="email@example.com">
                         </div>
+                        <hr>
+                        <h6 class="fw-bold mb-3">Account Security</h6>
+                        <div class="mb-3">
+                            <label class="form-label">New login email</label>
+                            <input type="email" class="form-control-modern" id="accountCredsNewEmail" placeholder="email@example.com" autocomplete="email">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Current password</label>
+                            <input type="password" class="form-control-modern" id="accountCredsCurrentPassword" placeholder="Current password" autocomplete="current-password">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">New password</label>
+                            <input type="password" class="form-control-modern" id="accountCredsNewPassword" placeholder="Leave empty if unchanged" autocomplete="new-password">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Confirm new password</label>
+                            <input type="password" class="form-control-modern" id="accountCredsConfirmPassword" placeholder="Confirm new password" autocomplete="new-password">
+                        </div>
+                        <div class="d-grid mb-3">
+                            <button class="btn-modern btn-warning" id="updateAccountantCredsBtn" onclick="updateAccountantCredentials()">
+                                <i class="fas fa-key me-2"></i>
+                                Update Email / Password (Firebase Auth)
+                            </button>
+                        </div>
                         <div class="d-grid">
                             <button class="btn-modern btn-primary-modern" onclick="saveAccountantInfo()">
                                 <i class="fas fa-save me-2"></i>
@@ -5183,6 +5207,8 @@
             document.getElementById('accountantName').value = currentUser.name;
             document.getElementById('accountantTitle').value = getRoleLabel(currentUser.role);
             document.getElementById('accountantEmail').value = currentUser.email || '';
+            const accountCredsNewEmailEl = document.getElementById('accountCredsNewEmail');
+            if (accountCredsNewEmailEl) accountCredsNewEmailEl.value = currentUser.email || '';
 
             applyBranchAccessControl();
             
@@ -14433,6 +14459,110 @@
             } catch (error) {
                 console.error('Error saving accountant info:', error);
                 showToast('Error saving accountant info', 'error');
+            }
+        }
+
+        function getAccountantFriendlyAuthError(error) {
+            const code = (error && error.code) || '';
+            switch (code) {
+                case 'auth/invalid-email':
+                    return 'Invalid email address.';
+                case 'auth/email-already-in-use':
+                    return 'This email is already used by another account.';
+                case 'auth/weak-password':
+                    return 'The new password is too weak.';
+                case 'auth/wrong-password':
+                    return 'Current password is incorrect.';
+                case 'auth/requires-recent-login':
+                    return 'Sensitive action requires a recent login. Please reconnect and try again.';
+                default:
+                    return (error && error.message) || 'Unable to update credentials.';
+            }
+        }
+
+        async function updateAccountantCredentials() {
+            const user = auth.currentUser;
+            if (!user) {
+                showToast('No authenticated user. Please sign in again.', 'error');
+                return;
+            }
+
+            const newEmailInput = document.getElementById('accountCredsNewEmail');
+            const currentPasswordInput = document.getElementById('accountCredsCurrentPassword');
+            const newPasswordInput = document.getElementById('accountCredsNewPassword');
+            const confirmPasswordInput = document.getElementById('accountCredsConfirmPassword');
+            const updateBtn = document.getElementById('updateAccountantCredsBtn');
+
+            const newEmail = (newEmailInput && newEmailInput.value || '').trim();
+            const currentPassword = (currentPasswordInput && currentPasswordInput.value || '').trim();
+            const newPassword = (newPasswordInput && newPasswordInput.value || '').trim();
+            const confirmPassword = (confirmPasswordInput && confirmPasswordInput.value || '').trim();
+
+            const currentEmail = (user.email || '').trim();
+            const wantsEmailChange = !!newEmail && newEmail.toLowerCase() !== currentEmail.toLowerCase();
+            const wantsPasswordChange = !!newPassword;
+
+            if (!wantsEmailChange && !wantsPasswordChange) {
+                showToast('No changes detected.', 'warning');
+                return;
+            }
+
+            if (!currentPassword) {
+                showToast('Please enter your current password to confirm.', 'warning');
+                return;
+            }
+
+            if (wantsPasswordChange) {
+                if (newPassword.length < 6) {
+                    showToast('New password must be at least 6 characters.', 'warning');
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    showToast('Password confirmation does not match.', 'warning');
+                    return;
+                }
+            }
+
+            const originalBtnHtml = updateBtn ? updateBtn.innerHTML : '';
+            if (updateBtn) {
+                updateBtn.disabled = true;
+                updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+            }
+
+            try {
+                const credential = firebase.auth.EmailAuthProvider.credential(currentEmail || newEmail, currentPassword);
+                await user.reauthenticateWithCredential(credential);
+
+                if (wantsEmailChange) {
+                    await user.updateEmail(newEmail);
+                    await usersRef.child(user.uid).update({
+                        email: newEmail,
+                        updatedAt: Date.now(),
+                        updatedBy: currentUserName || 'system'
+                    });
+                    if (currentUser) currentUser.email = newEmail;
+                    const accountantEmailEl = document.getElementById('accountantEmail');
+                    if (accountantEmailEl) accountantEmailEl.value = newEmail;
+                    if (newEmailInput) newEmailInput.value = newEmail;
+                }
+
+                if (wantsPasswordChange) {
+                    await user.updatePassword(newPassword);
+                }
+
+                if (currentPasswordInput) currentPasswordInput.value = '';
+                if (newPasswordInput) newPasswordInput.value = '';
+                if (confirmPasswordInput) confirmPasswordInput.value = '';
+
+                showToast('Credentials updated successfully in Firebase Auth.', 'success');
+            } catch (error) {
+                console.error('Error updating accountant credentials:', error);
+                showToast(getAccountantFriendlyAuthError(error), 'error');
+            } finally {
+                if (updateBtn) {
+                    updateBtn.disabled = false;
+                    updateBtn.innerHTML = originalBtnHtml;
+                }
             }
         }
 

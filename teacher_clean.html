@@ -2896,6 +2896,26 @@ body {
             <option value="en">English</option>
           </select>
         </div>
+        <hr style="border:none;border-top:1px solid var(--bdr);margin:14px 0;">
+        <div class="f-group">
+          <label class="f-label">Nouvel email de connexion</label>
+          <input class="f-input" type="email" id="accountNewEmail" placeholder="exemple@ecole.rw" autocomplete="email">
+        </div>
+        <div class="f-group">
+          <label class="f-label">Mot de passe actuel (requis pour confirmer)</label>
+          <input class="f-input" type="password" id="accountCurrentPassword" placeholder="Mot de passe actuel" autocomplete="current-password">
+        </div>
+        <div class="f-group">
+          <label class="f-label">Nouveau mot de passe (laisser vide si inchangé)</label>
+          <input class="f-input" type="password" id="accountNewPassword" placeholder="Nouveau mot de passe" autocomplete="new-password">
+        </div>
+        <div class="f-group">
+          <label class="f-label">Confirmer le nouveau mot de passe</label>
+          <input class="f-input" type="password" id="accountConfirmPassword" placeholder="Confirmer le nouveau mot de passe" autocomplete="new-password">
+        </div>
+        <button class="btn btn-green" id="updateCredsBtn" onclick="updateAccountCredentials()" style="margin-bottom:10px;">
+          <i class="fas fa-key"></i> Mettre a jour email / mot de passe
+        </button>
         <button class="btn btn-blue" onclick="saveSettings()">Enregistrer les paramètres</button>
       </div>
 
@@ -3773,6 +3793,8 @@ auth.onAuthStateChanged(async user => {
     currentTeacher = null;
   }
 
+  syncAccountCredentialInputs();
+
   // Toujours initialiser le dashboard (sinon page vide si session absente)
   await initDashboard();
   // Don't redirect - let user work in demo mode
@@ -4516,6 +4538,20 @@ function openSettings() {
   navTo('profile');
 }
 
+function syncAccountCredentialInputs() {
+  const emailInput = document.getElementById('accountNewEmail');
+  if (!emailInput) return;
+
+  const activeEmail = (auth.currentUser && auth.currentUser.email)
+    || (currentUser && currentUser.email)
+    || '';
+
+  if (!activeEmail) return;
+  if (document.activeElement === emailInput) return;
+
+  emailInput.value = activeEmail;
+}
+
 function openHelp() {
   navTo('profile');
   const helpSection = document.querySelector('#page-profile .help-section');
@@ -4538,6 +4574,139 @@ function reportBug() {
 
 function saveSettings() {
   toast('Paramètres enregistrés', 'ok');
+}
+
+function getFriendlyAuthError(error) {
+  const code = (error && error.code) || '';
+  switch (code) {
+    case 'auth/invalid-email':
+      return 'Adresse email invalide.';
+    case 'auth/email-already-in-use':
+      return 'Cet email est deja utilise par un autre compte.';
+    case 'auth/weak-password':
+      return 'Le nouveau mot de passe est trop faible.';
+    case 'auth/wrong-password':
+      return 'Le mot de passe actuel est incorrect.';
+    case 'auth/requires-recent-login':
+      return 'Session sensible expirée. Reconnectez-vous puis recommencez.';
+    default:
+      return (error && error.message) || 'Erreur lors de la mise a jour du compte.';
+  }
+}
+
+async function updateAccountCredentials() {
+  if (!ensureOnlineForFirebase('mettre a jour les identifiants')) return;
+
+  const user = auth.currentUser;
+  if (!user) {
+    toast('Aucun utilisateur connecte. Veuillez vous reconnecter.', 'err');
+    return;
+  }
+
+  const emailInput = document.getElementById('accountNewEmail');
+  const currentPasswordInput = document.getElementById('accountCurrentPassword');
+  const newPasswordInput = document.getElementById('accountNewPassword');
+  const confirmPasswordInput = document.getElementById('accountConfirmPassword');
+  const submitBtn = document.getElementById('updateCredsBtn');
+
+  const newEmail = (emailInput && emailInput.value || '').trim();
+  const currentPassword = (currentPasswordInput && currentPasswordInput.value || '').trim();
+  const newPassword = (newPasswordInput && newPasswordInput.value || '').trim();
+  const confirmPassword = (confirmPasswordInput && confirmPasswordInput.value || '').trim();
+
+  const currentEmail = (user.email || '').trim();
+  const wantsEmailChange = !!newEmail && newEmail.toLowerCase() !== currentEmail.toLowerCase();
+  const wantsPasswordChange = !!newPassword;
+
+  if (!wantsEmailChange && !wantsPasswordChange) {
+    toast('Aucun changement detecte.', 'warn');
+    return;
+  }
+
+  if (!currentPassword) {
+    toast('Entrez votre mot de passe actuel pour confirmer.', 'warn');
+    return;
+  }
+
+  if (wantsPasswordChange) {
+    if (newPassword.length < 6) {
+      toast('Le nouveau mot de passe doit contenir au moins 6 caracteres.', 'warn');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast('La confirmation du nouveau mot de passe ne correspond pas.', 'warn');
+      return;
+    }
+  }
+
+  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mise a jour...';
+  }
+
+  try {
+    const emailForCredential = currentEmail || newEmail;
+    const credential = firebase.auth.EmailAuthProvider.credential(emailForCredential, currentPassword);
+    await user.reauthenticateWithCredential(credential);
+
+    if (wantsEmailChange) {
+      await user.updateEmail(newEmail);
+    }
+
+    if (wantsPasswordChange) {
+      await user.updatePassword(newPassword);
+    }
+
+    if (wantsEmailChange) {
+      const uid = user.uid;
+
+      if (uid) {
+        try {
+          await db.ref(`teachers/${uid}`).update({
+            email: newEmail,
+            updatedAt: Date.now()
+          });
+        } catch (dbErr) {
+          console.warn('Impossible de synchroniser email dans teachers/' + uid, dbErr);
+        }
+      }
+
+      if (currentTeacher) currentTeacher.email = newEmail;
+      if (currentUser) currentUser.email = newEmail;
+
+      const profileEmailEl = document.getElementById('profileEmail');
+      if (profileEmailEl) profileEmailEl.textContent = newEmail;
+
+      const rawSession = sessionStorage.getItem('eden_user_data');
+      if (rawSession) {
+        try {
+          const parsed = JSON.parse(rawSession);
+          parsed.email = newEmail;
+          sessionStorage.setItem('eden_user_data', JSON.stringify(parsed));
+        } catch (e) {
+          console.warn('Impossible de mettre a jour eden_user_data apres changement email.', e);
+        }
+      }
+
+      await loadUserProfile({ uid: user.uid, email: newEmail });
+    }
+
+    if (currentPasswordInput) currentPasswordInput.value = '';
+    if (newPasswordInput) newPasswordInput.value = '';
+    if (confirmPasswordInput) confirmPasswordInput.value = '';
+    syncAccountCredentialInputs();
+
+    toast('Identifiants mis a jour avec succes dans Firebase Auth.', 'ok');
+  } catch (error) {
+    console.error('Erreur updateAccountCredentials:', error);
+    toast(getFriendlyAuthError(error), 'err');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHtml;
+    }
+  }
 }
 
 /* ══════════════════════════════════════
