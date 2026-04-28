@@ -19,7 +19,8 @@
       signInWithEmailAndPassword,
       signOut,
       setPersistence,
-      browserSessionPersistence
+      browserSessionPersistence,
+      sendPasswordResetEmail
     } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
     import { getDatabase, ref as rtdbRef, get as rtdbGet } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
@@ -46,6 +47,7 @@
     
     // Exposer globalement (wrappers for modular API)
     window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.sendPasswordResetEmail = sendPasswordResetEmail;
     window.signOut = () => signOut(window.auth);
     window.rtdbRef = rtdbRef;
     window.rtdbGet = rtdbGet;
@@ -889,6 +891,53 @@
       10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
       20%, 40%, 60%, 80% { transform: translateX(5px); }
     }
+
+    .forgot-password-link {
+      color: #667eea;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .forgot-password-link:hover {
+      color: #764ba2;
+      text-decoration: underline;
+    }
+
+    .forgot-password-panel {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .forgot-password-header {
+      text-align: center;
+      margin-bottom: 1.8rem;
+    }
+
+    .forgot-password-icon {
+      font-size: 3rem;
+      color: #667eea;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .forgot-password-header h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .forgot-password-header p {
+      color: #666;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      opacity: 1;
+      animation: none;
+    }
   </style>
 </head>
 <body>
@@ -949,6 +998,38 @@
       <button class="btn-primary" onclick="login(this)">
         <i class="fas fa-sign-in-alt"></i> Connexion Staff
       </button>
+
+      <div style="text-align: center; margin-top: 1.2rem;">
+        <a href="#" class="forgot-password-link" onclick="showForgotPassword(event)">
+          <i class="fas fa-key"></i> Mot de passe oublié ?
+        </a>
+      </div>
+    </div>
+
+    <!-- Panneau réinitialisation mot de passe -->
+    <div id="forgotPasswordPanel" class="forgot-password-panel" style="display:none;">
+      <div class="forgot-password-header">
+        <i class="fas fa-envelope-open-text forgot-password-icon"></i>
+        <h3>Réinitialisation du mot de passe</h3>
+        <p>Entrez votre email professionnel. Vous recevrez un lien pour créer un nouveau mot de passe.</p>
+      </div>
+
+      <div id="forgotAlertBox" class="alert" style="margin-bottom: 1rem;"></div>
+
+      <div class="input-group" style="animation: none; opacity: 1; transform: none;">
+        <label for="forgotEmail"><i class="fas fa-envelope"></i> Email professionnel</label>
+        <input type="email" id="forgotEmail" placeholder="prenom.nom@edenschool.edu">
+      </div>
+
+      <button class="btn-primary" id="forgotSubmitBtn" onclick="forgotPassword(this)" style="animation: none; opacity: 1;">
+        <i class="fas fa-paper-plane"></i> Envoyer le lien de réinitialisation
+      </button>
+
+      <div style="text-align: center; margin-top: 1.2rem;">
+        <a href="#" class="forgot-password-link" onclick="showLogin(event)">
+          <i class="fas fa-arrow-left"></i> Retour à la connexion
+        </a>
+      </div>
     </div>
 
     <a href="index.html" class="access-portal-btn">
@@ -1219,6 +1300,84 @@
         icon.classList.remove('fa-eye-slash');
         icon.classList.add('fa-eye');
         button.style.color = '#999';
+      }
+    }
+
+    // Basculer vers le panneau mot de passe oublié
+    function showForgotPassword(event) {
+      event.preventDefault();
+      document.querySelector('.auth-form').style.display = 'none';
+      document.getElementById('forgotPasswordPanel').style.display = 'block';
+      document.getElementById('forgotAlertBox').className = 'alert';
+      document.getElementById('forgotAlertBox').textContent = '';
+      setTimeout(() => {
+        const input = document.getElementById('forgotEmail');
+        // Pré-remplir avec l'email de la page de connexion si disponible
+        const loginEmail = document.getElementById('loginEmail').value.trim();
+        if (loginEmail) input.value = loginEmail;
+        input.focus();
+      }, 100);
+    }
+
+    // Retour vers le formulaire de connexion
+    function showLogin(event) {
+      event.preventDefault();
+      document.getElementById('forgotPasswordPanel').style.display = 'none';
+      document.querySelector('.auth-form').style.display = 'block';
+    }
+
+    // Réinitialisation du mot de passe
+    async function forgotPassword(buttonElement) {
+      const email = document.getElementById('forgotEmail').value.trim();
+      const alertBox = document.getElementById('forgotAlertBox');
+
+      // Réinitialiser l'alerte
+      alertBox.className = 'alert';
+      alertBox.textContent = '';
+
+      if (!email) {
+        alertBox.textContent = 'Veuillez entrer votre adresse email.';
+        alertBox.className = 'alert error show';
+        return;
+      }
+
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(email)) {
+        alertBox.textContent = 'Format d\'email invalide.';
+        alertBox.className = 'alert error show';
+        return;
+      }
+
+      setAuthButtonLoading(buttonElement, true);
+
+      try {
+        await window.sendPasswordResetEmail(window.auth, email);
+        alertBox.innerHTML = '<i class="fas fa-check-circle" style="margin-right:8px;"></i>Un email de réinitialisation a été envoyé à <strong>' + email + '</strong>. Vérifiez votre boîte de réception (et vos spams).';
+        alertBox.className = 'alert success show';
+        document.getElementById('forgotEmail').value = '';
+        setAuthButtonLoading(buttonElement, false);
+      } catch (error) {
+        console.error('Erreur réinitialisation mot de passe:', error.code, error.message);
+        let errorMessage = 'Erreur lors de l\'envoi de l\'email. ';
+        switch (error.code) {
+          case 'auth/user-not-found':
+            errorMessage = 'Aucun compte trouvé avec cet email.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Format d\'email invalide.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Trop de tentatives. Veuillez réessayer plus tard.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
+            break;
+          default:
+            errorMessage = 'Erreur lors de l\'envoi. Vérifiez votre email et réessayez.';
+        }
+        alertBox.textContent = errorMessage;
+        alertBox.className = 'alert error show';
+        setAuthButtonLoading(buttonElement, false);
       }
     }
 
