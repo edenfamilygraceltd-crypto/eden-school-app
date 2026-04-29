@@ -2043,25 +2043,24 @@ body {
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-left">
-      <button class="hamburger" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-      <div class="topbar-page-info">
-        <h2 id="tbTitle">Tableau de bord</h2>
-        <p id="tbSub">Bienvenue sur le portail Eden Family School</p>
-      </div>
+      <h2 id="tbTitle">Tableau de bord</h2>
+      <p id="tbSub">Bienvenue sur le portail Eden Family School</p>
     </div>
+
     <div class="topbar-right">
       <div class="search-bar">
         <i class="fas fa-search"></i>
         <input type="text" id="globalSearch" placeholder="Rechercher un élève, une classe…" oninput="globalSearch()">
       </div>
-      <button class="topbar-icon-btn" id="notifBtn" onclick="toggleNotifications()" title="Notifications">
+
+      <button class="topbar-icon-btn" onclick="toggleNotifications()" title="Notifications">
         <i class="fas fa-bell"></i>
         <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
       </button>
+
       <div class="topbar-user-btn" onclick="toggleUserMenu()">
         <div class="tb-ava" id="tbAva">?</div>
         <span class="tb-uname" id="tbName">Utilisateur</span>
-        <i class="fas fa-chevron-down" style="font-size:.65rem;color:var(--blue-lt);"></i>
       </div>
     </div>
   </div>
@@ -2069,7 +2068,7 @@ body {
   <!-- USER MENU -->
   <div class="user-menu" id="userMenu">
     <div class="user-menu-hd">
-      <div class="um-name" id="umName">—</div>
+      <div class="um-name" id="umName">Utilisateur</div>
       <div class="um-role" id="umRole">Enseignant</div>
     </div>
     <div class="um-item" onclick="navTo('profile'); closeUserMenu();"><i class="fas fa-user-circle"></i> Mon profil</div>
@@ -2899,13 +2898,17 @@ body {
         <hr style="border:none;border-top:1px solid var(--bdr);margin:14px 0;">
         <div class="f-group">
           <label class="f-label">Nouvel email de connexion</label>
-          <input class="f-input" type="email" id="accountNewEmail" placeholder="exemple@ecole.rw" autocomplete="email">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="f-input" style="flex:1;" type="email" id="accountNewEmail" placeholder="exemple@ecole.rw" autocomplete="email">
+            <span id="accountEmailStatus" title="Validation email" style="font-size:1rem;line-height:1;">❌</span>
+          </div>
         </div>
         <div class="f-group">
           <label class="f-label">Mot de passe actuel (requis pour confirmer)</label>
           <div style="display:flex;gap:8px;align-items:center;">
             <input class="f-input" style="flex:1;" type="password" id="accountCurrentPassword" placeholder="Mot de passe actuel" autocomplete="current-password">
             <button type="button" class="btn btn-ghost" style="padding:8px 10px;" onclick="toggleTeacherPasswordVisibility('accountCurrentPassword', this)">Afficher</button>
+            <span id="accountCurrentPasswordStatus" title="Mot de passe actuel" style="font-size:1rem;line-height:1;">❌</span>
           </div>
         </div>
         <div class="f-group">
@@ -2913,6 +2916,7 @@ body {
           <div style="display:flex;gap:8px;align-items:center;">
             <input class="f-input" style="flex:1;" type="password" id="accountNewPassword" placeholder="Nouveau mot de passe" autocomplete="new-password">
             <button type="button" class="btn btn-ghost" style="padding:8px 10px;" onclick="toggleTeacherPasswordVisibility('accountNewPassword', this)">Afficher</button>
+            <span id="accountNewPasswordStatus" title="Force du mot de passe" style="font-size:1rem;line-height:1;">❌</span>
           </div>
         </div>
         <div class="f-group">
@@ -2920,11 +2924,25 @@ body {
           <div style="display:flex;gap:8px;align-items:center;">
             <input class="f-input" style="flex:1;" type="password" id="accountConfirmPassword" placeholder="Confirmer le nouveau mot de passe" autocomplete="new-password">
             <button type="button" class="btn btn-ghost" style="padding:8px 10px;" onclick="toggleTeacherPasswordVisibility('accountConfirmPassword', this)">Afficher</button>
+            <span id="accountConfirmPasswordStatus" title="Correspondance" style="font-size:1rem;line-height:1;">❌</span>
           </div>
         </div>
-        <button class="btn btn-green" id="updateCredsBtn" onclick="updateAccountCredentials()" style="margin-bottom:10px;">
-          <i class="fas fa-key"></i> Mettre a jour email / mot de passe
-        </button>
+
+        <div class="f-group" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+          <button class="btn btn-green" id="updateEmailBtn" onclick="updateUserEmail()" disabled>
+            <i class="fas fa-envelope"></i> Mettre a jour email
+          </button>
+          <button class="btn btn-blue" id="updatePasswordBtn" onclick="updateUserPassword()" disabled>
+            <i class="fas fa-lock"></i> Mettre a jour mot de passe
+          </button>
+          <button class="btn btn-ghost" id="updateCredsBtn" onclick="updateAccountCredentials()" disabled>
+            <i class="fas fa-key"></i> Mettre a jour les deux
+          </button>
+        </div>
+
+        <div id="updateEmailMsg" style="display:none;margin:8px 0 4px;padding:8px 10px;border-radius:8px;font-size:.82rem;"></div>
+        <div id="updatePasswordMsg" style="display:none;margin:4px 0 10px;padding:8px 10px;border-radius:8px;font-size:.82rem;"></div>
+
         <button class="btn btn-blue" onclick="saveSettings()">Enregistrer les paramètres</button>
       </div>
 
@@ -4559,6 +4577,24 @@ function syncAccountCredentialInputs() {
   if (document.activeElement === emailInput) return;
 
   emailInput.value = activeEmail;
+  validateCredentialForm();
+}
+
+function initAccountCredentialForm() {
+  const ids = [
+    'accountNewEmail',
+    'accountCurrentPassword',
+    'accountNewPassword',
+    'accountConfirmPassword'
+  ];
+
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', validateCredentialForm);
+  });
+
+  validateCredentialForm();
 }
 
 function openHelp() {
@@ -4594,26 +4630,247 @@ function toggleTeacherPasswordVisibility(inputId, triggerBtn) {
   if (triggerBtn) triggerBtn.textContent = reveal ? 'Masquer' : 'Afficher';
 }
 
-function getFriendlyAuthError(error) {
+function setCredentialFieldStatus(id, isValid) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = isValid ? '✅' : '❌';
+}
+
+function showCredentialMessage(targetId, message, type) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const styleMap = {
+    success: { bg: 'rgba(21,128,61,.12)', color: '#15803d', border: '1px solid rgba(21,128,61,.25)' },
+    error: { bg: 'rgba(185,28,28,.12)', color: '#b91c1c', border: '1px solid rgba(185,28,28,.25)' },
+    info: { bg: 'rgba(26,92,168,.12)', color: '#1a5ca8', border: '1px solid rgba(26,92,168,.25)' }
+  };
+  const s = styleMap[type] || styleMap.info;
+  el.style.display = 'block';
+  el.style.background = s.bg;
+  el.style.color = s.color;
+  el.style.border = s.border;
+  el.textContent = message;
+}
+
+function clearCredentialMessages() {
+  const emailMsg = document.getElementById('updateEmailMsg');
+  const passMsg = document.getElementById('updatePasswordMsg');
+  if (emailMsg) emailMsg.style.display = 'none';
+  if (passMsg) passMsg.style.display = 'none';
+}
+
+function setCredentialButtonLoading(buttonId, isLoading, defaultHtml) {
+  const btn = document.getElementById(buttonId);
+  if (!btn) return;
+  if (isLoading) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
+  } else {
+    btn.innerHTML = defaultHtml;
+    validateCredentialForm();
+  }
+}
+
+function translateFirebaseError(error) {
   const code = (error && error.code) || '';
   switch (code) {
+    case 'auth/wrong-password':
+      return 'Mot de passe actuel incorrect.';
+    case 'auth/invalid-login-credentials':
+      return 'Mot de passe actuel incorrect.';
     case 'auth/invalid-email':
       return 'Adresse email invalide.';
     case 'auth/email-already-in-use':
       return 'Cet email est deja utilise par un autre compte.';
     case 'auth/weak-password':
-      return 'Le nouveau mot de passe est trop faible.';
-    case 'auth/wrong-password':
-      return 'Le mot de passe actuel est incorrect.';
+      return 'Le mot de passe est trop faible (minimum 6 caracteres).';
+    case 'auth/operation-not-allowed':
+      return 'Operation non autorisee. Verifiez les parametres Firebase Console et la verification de la nouvelle adresse.';
     case 'auth/requires-recent-login':
-      return 'Session sensible expirée. Reconnectez-vous puis recommencez.';
+      return 'Session sensible expiree. Reconnectez-vous puis recommencez.';
+    case 'auth/too-many-requests':
+      return 'Trop de tentatives. Veuillez reessayer plus tard.';
+    case 'auth/user-not-found':
+      return 'Utilisateur introuvable.';
+    case 'auth/network-request-failed':
+      return 'Erreur reseau. Verifiez votre connexion internet.';
+    case 'auth/invalid-credential':
+      return 'Identifiants invalides.';
     default:
-      return (error && error.message) || 'Erreur lors de la mise a jour du compte.';
+      return (error && error.message) || 'Erreur Firebase inconnue.';
+  }
+}
+
+async function reAuthenticate(currentPassword) {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('Aucun utilisateur connecte.');
+  }
+  if (!currentPassword) {
+    throw new Error('Le mot de passe actuel est obligatoire.');
+  }
+
+  // Firebase exige une re-authentification recente pour les actions sensibles
+  // (changement d'email/mot de passe) afin d'eviter les modifications malveillantes.
+  const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+  await user.reauthenticateWithCredential(credential);
+  return true;
+}
+
+function validateCredentialForm() {
+  const user = auth.currentUser;
+  const currentEmail = ((user && user.email) || '').trim();
+
+  const emailInput = document.getElementById('accountNewEmail');
+  const currentPasswordInput = document.getElementById('accountCurrentPassword');
+  const newPasswordInput = document.getElementById('accountNewPassword');
+  const confirmPasswordInput = document.getElementById('accountConfirmPassword');
+
+  const newEmail = (emailInput && emailInput.value || '').trim();
+  const currentPassword = (currentPasswordInput && currentPasswordInput.value || '').trim();
+  const newPassword = (newPasswordInput && newPasswordInput.value || '').trim();
+  const confirmPassword = (confirmPasswordInput && confirmPasswordInput.value || '').trim();
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailFormatValid = !!newEmail && emailRegex.test(newEmail);
+  const emailChanged = emailFormatValid && newEmail.toLowerCase() !== currentEmail.toLowerCase();
+  const currentPasswordValid = currentPassword.length > 0;
+  const passwordStrong = newPassword.length >= 6;
+  const passwordMatch = !!newPassword && newPassword === confirmPassword;
+
+  setCredentialFieldStatus('accountEmailStatus', emailFormatValid);
+  setCredentialFieldStatus('accountCurrentPasswordStatus', currentPasswordValid);
+  setCredentialFieldStatus('accountNewPasswordStatus', newPassword.length === 0 ? false : passwordStrong);
+  setCredentialFieldStatus('accountConfirmPasswordStatus', confirmPassword.length === 0 ? false : passwordMatch);
+
+  const canUpdateEmail = emailChanged && currentPasswordValid;
+  const canUpdatePassword = passwordStrong && passwordMatch && currentPasswordValid;
+  const canUpdateEither = canUpdateEmail || canUpdatePassword;
+
+  const emailBtn = document.getElementById('updateEmailBtn');
+  const passBtn = document.getElementById('updatePasswordBtn');
+  const bothBtn = document.getElementById('updateCredsBtn');
+
+  if (emailBtn) emailBtn.disabled = !canUpdateEmail;
+  if (passBtn) passBtn.disabled = !canUpdatePassword;
+  if (bothBtn) bothBtn.disabled = !canUpdateEither;
+
+  return {
+    emailFormatValid,
+    emailChanged,
+    currentPasswordValid,
+    passwordStrong,
+    passwordMatch,
+    canUpdateEmail,
+    canUpdatePassword,
+    canUpdateEither
+  };
+}
+
+async function updateUserEmail() {
+  if (!ensureOnlineForFirebase('mettre a jour l\'email')) return;
+  clearCredentialMessages();
+
+  const user = auth.currentUser;
+  if (!user) {
+    showCredentialMessage('updateEmailMsg', 'Aucun utilisateur connecte.', 'error');
+    return;
+  }
+
+  const newEmail = (document.getElementById('accountNewEmail')?.value || '').trim();
+  const currentPassword = (document.getElementById('accountCurrentPassword')?.value || '').trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!newEmail || !emailRegex.test(newEmail)) {
+    showCredentialMessage('updateEmailMsg', 'Veuillez entrer un email valide.', 'error');
+    return;
+  }
+
+  if (!currentPassword) {
+    showCredentialMessage('updateEmailMsg', 'Veuillez entrer votre mot de passe actuel.', 'error');
+    return;
+  }
+
+  if (newEmail.toLowerCase() === (user.email || '').toLowerCase()) {
+    showCredentialMessage('updateEmailMsg', 'Le nouvel email est identique a l\'email actuel.', 'info');
+    return;
+  }
+
+  const originalHtml = '<i class="fas fa-envelope"></i> Mettre a jour email';
+  setCredentialButtonLoading('updateEmailBtn', true, originalHtml);
+
+  try {
+    const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+    await user.reauthenticateWithCredential(credential);
+    await user.verifyBeforeUpdateEmail(newEmail);
+
+    const successMessage = `Firebase a envoyé un email de vérification à ${newEmail}. Cliquez le lien reçu pour confirmer le changement.`;
+    showCredentialMessage('updateEmailMsg', successMessage, 'info');
+    toast(successMessage, 'ok');
+  } catch (error) {
+    console.error('Erreur updateUserEmail:', error);
+    const authErrorMessage = translateFirebaseError(error);
+    showCredentialMessage('updateEmailMsg', authErrorMessage, 'error');
+    toast(authErrorMessage, 'err');
+  } finally {
+    setCredentialButtonLoading('updateEmailBtn', false, originalHtml);
+    syncAccountCredentialInputs();
+  }
+}
+
+async function updateUserPassword() {
+  if (!ensureOnlineForFirebase('mettre a jour le mot de passe')) return;
+  clearCredentialMessages();
+
+  const user = auth.currentUser;
+  if (!user) {
+    showCredentialMessage('updatePasswordMsg', 'Aucun utilisateur connecte.', 'error');
+    return;
+  }
+
+  const currentPasswordInput = document.getElementById('accountCurrentPassword');
+  const newPasswordInput = document.getElementById('accountNewPassword');
+  const confirmPasswordInput = document.getElementById('accountConfirmPassword');
+
+  const currentPassword = (currentPasswordInput?.value || '').trim();
+  const newPassword = (newPasswordInput?.value || '').trim();
+  const confirmPassword = (confirmPasswordInput?.value || '').trim();
+
+  if (newPassword.length < 6) {
+    showCredentialMessage('updatePasswordMsg', 'Le nouveau mot de passe doit contenir au moins 6 caracteres.', 'error');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showCredentialMessage('updatePasswordMsg', 'La confirmation du mot de passe ne correspond pas.', 'error');
+    return;
+  }
+
+  const originalHtml = '<i class="fas fa-lock"></i> Mettre a jour mot de passe';
+  setCredentialButtonLoading('updatePasswordBtn', true, originalHtml);
+
+  try {
+    await reAuthenticate(currentPassword);
+    await user.updatePassword(newPassword);
+
+    if (newPasswordInput) newPasswordInput.value = '';
+    if (confirmPasswordInput) confirmPasswordInput.value = '';
+
+    showCredentialMessage('updatePasswordMsg', 'Mot de passe mis a jour avec succes.', 'success');
+    toast('Mot de passe mis a jour avec succes.', 'ok');
+  } catch (error) {
+    console.error('Erreur updateUserPassword:', error);
+    showCredentialMessage('updatePasswordMsg', translateFirebaseError(error), 'error');
+    toast(translateFirebaseError(error), 'err');
+  } finally {
+    setCredentialButtonLoading('updatePasswordBtn', false, originalHtml);
+    validateCredentialForm();
   }
 }
 
 async function updateAccountCredentials() {
   if (!ensureOnlineForFirebase('mettre a jour les identifiants')) return;
+  clearCredentialMessages();
 
   const user = auth.currentUser;
   if (!user) {
@@ -4625,7 +4882,6 @@ async function updateAccountCredentials() {
   const currentPasswordInput = document.getElementById('accountCurrentPassword');
   const newPasswordInput = document.getElementById('accountNewPassword');
   const confirmPasswordInput = document.getElementById('accountConfirmPassword');
-  const submitBtn = document.getElementById('updateCredsBtn');
 
   const newEmail = (emailInput && emailInput.value || '').trim();
   const currentPassword = (currentPasswordInput && currentPasswordInput.value || '').trim();
@@ -4641,89 +4897,54 @@ async function updateAccountCredentials() {
     return;
   }
 
-  if (!currentPassword) {
-    toast('Entrez votre mot de passe actuel pour confirmer.', 'warn');
-    return;
-  }
-
   if (wantsPasswordChange) {
     if (newPassword.length < 6) {
       toast('Le nouveau mot de passe doit contenir au moins 6 caracteres.', 'warn');
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast('La confirmation du nouveau mot de passe ne correspond pas.', 'warn');
+      toast('La confirmation du mot de passe ne correspond pas.', 'warn');
       return;
     }
   }
 
-  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mise a jour...';
-  }
+  const submitBtn = document.getElementById('updateCredsBtn');
+  const originalBtnHtml = '<i class="fas fa-key"></i> Mettre a jour les deux';
+  setCredentialButtonLoading('updateCredsBtn', true, originalBtnHtml);
 
   try {
-    const emailForCredential = currentEmail || newEmail;
-    const credential = firebase.auth.EmailAuthProvider.credential(emailForCredential, currentPassword);
-    await user.reauthenticateWithCredential(credential);
+    if (wantsEmailChange || wantsPasswordChange) {
+      await reAuthenticate(currentPassword);
+    }
 
     if (wantsEmailChange) {
       await user.updateEmail(newEmail);
+      toast('Email mis a jour avec succes.', 'ok');
+
+      if (currentTeacher) currentTeacher.email = newEmail;
+      if (currentUser) currentUser.email = newEmail;
+      const profileEmailEl = document.getElementById('profileEmail');
+      if (profileEmailEl) profileEmailEl.textContent = newEmail;
     }
 
     if (wantsPasswordChange) {
       await user.updatePassword(newPassword);
-    }
-
-    if (wantsEmailChange) {
-      const uid = user.uid;
-
-      if (uid) {
-        try {
-          await db.ref(`teachers/${uid}`).update({
-            email: newEmail,
-            updatedAt: Date.now()
-          });
-        } catch (dbErr) {
-          console.warn('Impossible de synchroniser email dans teachers/' + uid, dbErr);
-        }
-      }
-
-      if (currentTeacher) currentTeacher.email = newEmail;
-      if (currentUser) currentUser.email = newEmail;
-
-      const profileEmailEl = document.getElementById('profileEmail');
-      if (profileEmailEl) profileEmailEl.textContent = newEmail;
-
-      const rawSession = sessionStorage.getItem('eden_user_data');
-      if (rawSession) {
-        try {
-          const parsed = JSON.parse(rawSession);
-          parsed.email = newEmail;
-          sessionStorage.setItem('eden_user_data', JSON.stringify(parsed));
-        } catch (e) {
-          console.warn('Impossible de mettre a jour eden_user_data apres changement email.', e);
-        }
-      }
-
-      await loadUserProfile({ uid: user.uid, email: newEmail });
+      toast('Mot de passe mis a jour avec succes.', 'ok');
+      if (newPasswordInput) newPasswordInput.value = '';
+      if (confirmPasswordInput) confirmPasswordInput.value = '';
     }
 
     if (currentPasswordInput) currentPasswordInput.value = '';
-    if (newPasswordInput) newPasswordInput.value = '';
-    if (confirmPasswordInput) confirmPasswordInput.value = '';
     syncAccountCredentialInputs();
-
-    toast('Identifiants mis a jour avec succes dans Firebase Auth.', 'ok');
   } catch (error) {
     console.error('Erreur updateAccountCredentials:', error);
-    toast(getFriendlyAuthError(error), 'err');
+    toast(translateFirebaseError(error), 'err');
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalBtnHtml;
     }
+    validateCredentialForm();
   }
 }
 
@@ -10115,6 +10336,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Init dashboard (will load firebase)
   initDashboard();
+  initAccountCredentialForm();
 
   // Close user menu on outside click
   document.addEventListener('click', e => {

@@ -6120,10 +6120,10 @@
                 if (document.getElementById('reports').classList.contains('active')) {
                     updateDailyReportTable();
                     // Mettre à jour les rapports hebdo/mensuel si actifs
-                    if (document.querySelector('.weekly-report-section').style.display === 'block') {
+                    if (document.querySelector('.weekly-report-section')?.style.display === 'block') {
                         loadWeeklyReport();
                     }
-                    if (document.querySelector('.monthly-report-section').style.display === 'block') {
+                    if (document.querySelector('.monthly-report-section')?.style.display === 'block') {
                         loadMonthlyReport();
                     }
                 }
@@ -6256,10 +6256,10 @@
                 if (document.getElementById('reports').classList.contains('active')) {
                     updateExpensesList();
                     updateDailyReportTable();
-                    if (document.querySelector('.weekly-report-section').style.display === 'block') {
+                    if (document.querySelector('.weekly-report-section')?.style.display === 'block') {
                         loadWeeklyReport();
                     }
-                    if (document.querySelector('.monthly-report-section').style.display === 'block') {
+                    if (document.querySelector('.monthly-report-section')?.style.display === 'block') {
                         loadMonthlyReport();
                     }
                 }
@@ -13230,10 +13230,10 @@
                 updateExpensesList();
                 updateDailyReportTable();
                 // Mettre à jour les rapports hebdo/mensuel si ouverts
-                if (document.querySelector('.weekly-report-section').style.display === 'block') {
+                if (document.querySelector('.weekly-report-section')?.style.display === 'block') {
                     loadWeeklyReport();
                 }
-                if (document.querySelector('.monthly-report-section').style.display === 'block') {
+                if (document.querySelector('.monthly-report-section')?.style.display === 'block') {
                     loadMonthlyReport();
                 }
                 
@@ -13266,10 +13266,10 @@
                 updateExpensesList();
                 updateDailyReportTable();
                 // Mettre à jour les rapports hebdo/mensuel si ouverts
-                if (document.querySelector('.weekly-report-section').style.display === 'block') {
+                if (document.querySelector('.weekly-report-section')?.style.display === 'block') {
                     loadWeeklyReport();
                 }
-                if (document.querySelector('.monthly-report-section').style.display === 'block') {
+                if (document.querySelector('.monthly-report-section')?.style.display === 'block') {
                     loadMonthlyReport();
                 }
                 

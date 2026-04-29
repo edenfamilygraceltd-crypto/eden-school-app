@@ -6,6 +6,8 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const path = require('path');
 const fs = require('fs');
+const multer = require('multer');
+const { google } = require('googleapis');
 
 // Importer les credentials Firebase
 const serviceAccount = require('./serviceAccountKey.json');
@@ -22,7 +24,7 @@ const db = admin.database(); // Realtime Database
 const bucket = admin.storage().bucket(); // Firebase Storage
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -152,6 +154,176 @@ app.get('/teacher.html', (req, res) => {
 
 app.get('/teacher', (req, res) => {
   res.sendFile(path.join(__dirname, 'teacher_clean.html'));
+});
+
+/* ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   GOOGLE DRIVE — UPLOAD DOCUMENTS ACADÉMIQUES
+   ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+// ── Multer : stockage temporaire local ──
+const upload = multer({
+  dest: "uploads/",
+  limits: { fileSize: 50 * 1024 * 1024 } // 50 MB max
+});
+
+// ── Dossiers Drive par type ──
+const DRIVE_FOLDERS = {
+  examen:   "1HLflt6qTu_UDtbTLjQU6UNHNS0MEHbA0",
+  devoir:   "19Z-HL0ttxFCoIJeSwp1MxYuzzGe5Ipd-",
+  photo:    "1T17ES75mQyAWrzCB8KZuZQDAPU3hKSCw",
+  test:     "1k_jBwSr0nASiQ27ow6Tib7Ukug24xIO0",
+  travaux:  "1pybPOwSy7-Gp4Kx-sWfm5x5dBKR_ekIV",
+  video:    "1upIgjidP2I9yA2N4BqxB26JkUqIu60O2",
+  vacances: "1HLflt6qTu_UDtbTLjQU6UNHNS0MEHbA0"
+};
+
+function getFolderByType(type) {
+  const key = (type || "").toLowerCase().trim();
+  return DRIVE_FOLDERS[key] || DRIVE_FOLDERS["test"];
+}
+
+// ── Auth Google Drive ──
+async function getAuthClient() {
+  const auth = new google.auth.GoogleAuth({
+    keyFile: "drive-key.json",
+    scopes: ["https://www.googleapis.com/auth/drive"]
+  });
+  return await auth.getClient();
+}
+
+// ── Upload + Permissions + URL ──
+async function uploadToDrive(filePath, fileName, mimeType, folderId) {
+  const authClient = await getAuthClient();
+  const drive = google.drive({ version: "v3", auth: authClient });
+
+  // 1. Créer le fichier dans Drive
+  const file = await drive.files.create({
+    resource: {
+      name:    fileName,
+      parents: [folderId]
+    },
+    media: {
+      mimeType: mimeType,
+      body:     fs.createReadStream(filePath)
+    },
+    fields: "id, name, webViewLink, webContentLink"
+  });
+
+  const fileId = file.data.id;
+
+  // 2. Rendre le fichier public
+  await drive.permissions.create({
+    fileId:      fileId,
+    requestBody: {
+      role: "reader",
+      type: "anyone"
+    }
+  });
+
+  // 3. Supprimer le fichier temporaire local
+  fs.unlinkSync(filePath);
+
+  // 4. Retourner les URLs
+  return {
+    fileId:       fileId,
+    fileName:     file.data.name,
+    directUrl:    `https://drive.google.com/uc?export=view&id=${fileId}`,
+    previewUrl:   `https://drive.google.com/file/d/${fileId}/preview`,
+    downloadUrl:  `https://drive.google.com/uc?export=download&id=${fileId}`,
+    driveLink:    file.data.webViewLink
+  };
+}
+
+// ── ROUTE POST /upload ──
+app.post("/upload", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error:   "Aucun fichier reçu"
+      });
+    }
+
+    const type      = req.body.type || "test";
+    const classe    = req.body.classe    || "";
+    const matiere   = req.body.matiere   || "";
+    const trimestre = req.body.trimestre || "";
+
+    const folderId = getFolderByType(type);
+    const timestamp = Date.now();
+    const ext       = path.extname(req.file.originalname);
+    const safeName  = `${type}_${classe}_${matiere}_${trimestre}_${timestamp}${ext}`.replace(/\s+/g, "_");
+
+    console.log(`📤 Upload: ${safeName} → dossier ${type} (${folderId})`);
+
+    const result = await uploadToDrive(req.file.path, safeName, req.file.mimetype, folderId);
+
+    console.log(`✅ Fichier uploadé: ${result.fileId}`);
+
+    res.json({
+      success:     true,
+      fileId:      result.fileId,
+      fileName:    result.fileName,
+      directUrl:   result.directUrl,
+      previewUrl:  result.previewUrl,
+      downloadUrl: result.downloadUrl,
+      driveLink:   result.driveLink,
+      type,
+      classe,
+      matiere,
+      trimestre
+    });
+
+  } catch (error) {
+    console.error("❌ Erreur upload:", error.message);
+
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    res.status(500).json({
+      success: false,
+      error:   error.message
+    });
+  }
+});
+
+// ── ROUTE GET /files/:type ──
+app.get("/files/:type", async (req, res) => {
+  try {
+    const folderId  = getFolderByType(req.params.type);
+    const authClient = await getAuthClient();
+    const drive     = google.drive({ version: "v3", auth: authClient });
+
+    const response = await drive.files.list({
+      q:      `'${folderId}' in parents and trashed = false`,
+      fields: "files(id, name, mimeType, createdTime, size)",
+      orderBy: "createdTime desc"
+    });
+
+    res.json({
+      success: true,
+      files:   response.data.files
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ── ROUTE DELETE /delete/:fileId ──
+app.delete("/delete/:fileId", async (req, res) => {
+  try {
+    const fileId = req.params.fileId;
+    const authClient = await getAuthClient();
+    const drive = google.drive({ version: "v3", auth: authClient });
+
+    await drive.files.delete({ fileId });
+
+    res.json({ success: true, message: "Fichier supprimé" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 app.listen(PORT, () => {
