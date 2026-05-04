@@ -25,6 +25,23 @@ const bucket = admin.storage().bucket(); // Firebase Storage
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const DRIVE_KEY_PATH = path.join(__dirname, 'drive-key.json');
+
+// ── Auth Google Drive (initialisée une seule fois) ──
+const driveAuth = new google.auth.GoogleAuth({
+  keyFile: DRIVE_KEY_PATH,
+  scopes: ['https://www.googleapis.com/auth/drive']
+});
+const drive = google.drive({ version: 'v3', auth: driveAuth });
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+if (!fs.existsSync(DRIVE_KEY_PATH)) {
+  console.warn(`⚠️ Fichier Google Drive introuvable: ${DRIVE_KEY_PATH}`);
+}
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -162,19 +179,20 @@ app.get('/teacher', (req, res) => {
 
 // ── Multer : stockage temporaire local ──
 const upload = multer({
-  dest: "uploads/",
-  limits: { fileSize: 50 * 1024 * 1024 } // 50 MB max
+  dest: UPLOADS_DIR,
+  limits: { fileSize: 500 * 1024 * 1024 } // 500 MB max
 });
 
 // ── Dossiers Drive par type ──
 const DRIVE_FOLDERS = {
   examen:   "1HLflt6qTu_UDtbTLjQU6UNHNS0MEHbA0",
   devoir:   "19Z-HL0ttxFCoIJeSwp1MxYuzzGe5Ipd-",
-  photo:    "1T17ES75mQyAWrzCB8KZuZQDAPU3hKSCw",
+  photo:    "1PFf3ZQgssGbvtcAKxdHtO97xBQi6m399",
   test:     "1k_jBwSr0nASiQ27ow6Tib7Ukug24xIO0",
   travaux:  "1pybPOwSy7-Gp4Kx-sWfm5x5dBKR_ekIV",
   video:    "1upIgjidP2I9yA2N4BqxB26JkUqIu60O2",
-  vacances: "1HLflt6qTu_UDtbTLjQU6UNHNS0MEHbA0"
+  vacances: "1pybPOwSy7-Gp4Kx-sWfm5x5dBKR_ekIV",
+  presentation: "1upIgjidP2I9yA2N4BqxB26JkUqIu60O2"
 };
 
 function getFolderByType(type) {
@@ -182,19 +200,27 @@ function getFolderByType(type) {
   return DRIVE_FOLDERS[key] || DRIVE_FOLDERS["test"];
 }
 
-// ── Auth Google Drive ──
-async function getAuthClient() {
-  const auth = new google.auth.GoogleAuth({
-    keyFile: "drive-key.json",
-    scopes: ["https://www.googleapis.com/auth/drive"]
+// Les comptes de service n'ont pas de quota My Drive :
+// les uploads doivent cibler un dossier situe dans un Shared Drive.
+async function assertSharedDriveFolder(folderId) {
+  const folder = await drive.files.get({
+    fileId: folderId,
+    fields: 'id, name, driveId, mimeType',
+    supportsAllDrives: true
   });
-  return await auth.getClient();
+
+  const driveId = folder?.data?.driveId;
+  if (!driveId) {
+    throw new Error(
+      `Le dossier Drive (${folderId}) n'est pas dans un Shared Drive. ` +
+      `Avec un compte de service, creez/utilisez un Shared Drive puis placez ce dossier dedans.`
+    );
+  }
 }
 
 // ── Upload + Permissions + URL ──
 async function uploadToDrive(filePath, fileName, mimeType, folderId) {
-  const authClient = await getAuthClient();
-  const drive = google.drive({ version: "v3", auth: authClient });
+  await assertSharedDriveFolder(folderId);
 
   // 1. Créer le fichier dans Drive
   const file = await drive.files.create({
@@ -206,7 +232,8 @@ async function uploadToDrive(filePath, fileName, mimeType, folderId) {
       mimeType: mimeType,
       body:     fs.createReadStream(filePath)
     },
-    fields: "id, name, webViewLink, webContentLink"
+    fields: "id, name, webViewLink, webContentLink",
+    supportsAllDrives: true
   });
 
   const fileId = file.data.id;
@@ -217,7 +244,8 @@ async function uploadToDrive(filePath, fileName, mimeType, folderId) {
     requestBody: {
       role: "reader",
       type: "anyone"
-    }
+    },
+    supportsAllDrives: true
   });
 
   // 3. Supprimer le fichier temporaire local
@@ -245,14 +273,16 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     }
 
     const type      = req.body.type || "test";
+    const title     = (req.body.title || '').toString().trim();
     const classe    = req.body.classe    || "";
     const matiere   = req.body.matiere   || "";
     const trimestre = req.body.trimestre || "";
 
     const folderId = getFolderByType(type);
-    const timestamp = Date.now();
-    const ext       = path.extname(req.file.originalname);
-    const safeName  = `${type}_${classe}_${matiere}_${trimestre}_${timestamp}${ext}`.replace(/\s+/g, "_");
+    const ext = path.extname(req.file.originalname);
+    const providedName = title || req.file.originalname;
+    const baseName = providedName.replace(/\.[^/.]+$/, '');
+    const safeName = `${baseName}${ext || ''}`.replace(/\s+/g, "_");
 
     console.log(`📤 Upload: ${safeName} → dossier ${type} (${folderId})`);
 
@@ -268,6 +298,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       previewUrl:  result.previewUrl,
       downloadUrl: result.downloadUrl,
       driveLink:   result.driveLink,
+      url:         result.directUrl,
       type,
       classe,
       matiere,
@@ -275,30 +306,49 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Erreur upload:", error.message);
+    const backendMessage = error?.response?.data?.error?.message || error?.message || 'Erreur inconnue';
+    console.error("❌ Erreur upload:", backendMessage);
 
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
 
+    const uploadType = req?.body?.type || "test";
+    const folderId = getFolderByType(uploadType);
+    const isFolderError = /File not found/i.test(backendMessage);
+    const isQuotaError = /Service Accounts do not have storage quota/i.test(backendMessage);
+    const isSharedDriveError = /n'est pas dans un Shared Drive/i.test(backendMessage);
+
+    let clientError = backendMessage;
+    if (isFolderError) {
+      clientError = `Dossier Drive inaccessible pour le type '${uploadType}' (folderId: ${folderId}). Partagez ce dossier avec le compte de service et reessayez.`;
+    } else if (isQuotaError || isSharedDriveError) {
+      clientError = `Le dossier Drive du type '${uploadType}' doit etre dans un Shared Drive (pas My Drive) pour un compte de service. ` +
+        `Action: creez/choisissez un Shared Drive, deplacez le dossier cible dedans, partagez-le avec l'email du compte de service, puis mettez a jour l'ID dans server.js.`;
+    }
+
     res.status(500).json({
       success: false,
-      error:   error.message
+      error: clientError
     });
   }
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Serveur Eden Family School operationnel' });
 });
 
 // ── ROUTE GET /files/:type ──
 app.get("/files/:type", async (req, res) => {
   try {
     const folderId  = getFolderByType(req.params.type);
-    const authClient = await getAuthClient();
-    const drive     = google.drive({ version: "v3", auth: authClient });
 
     const response = await drive.files.list({
       q:      `'${folderId}' in parents and trashed = false`,
       fields: "files(id, name, mimeType, createdTime, size)",
-      orderBy: "createdTime desc"
+      orderBy: "createdTime desc",
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true
     });
 
     res.json({
@@ -315,10 +365,8 @@ app.get("/files/:type", async (req, res) => {
 app.delete("/delete/:fileId", async (req, res) => {
   try {
     const fileId = req.params.fileId;
-    const authClient = await getAuthClient();
-    const drive = google.drive({ version: "v3", auth: authClient });
 
-    await drive.files.delete({ fileId });
+    await drive.files.delete({ fileId, supportsAllDrives: true });
 
     res.json({ success: true, message: "Fichier supprimé" });
   } catch (error) {
@@ -328,6 +376,8 @@ app.delete("/delete/:fileId", async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`✅ Backend Node.js démarré sur le port ${PORT}`);
+  console.log(`📁 Dossiers Drive configurés pour: examen, devoir, photo, video, test, travaux, vacances, presentation`);
+  console.log(`🔑 Clé Drive: ${fs.existsSync(DRIVE_KEY_PATH) ? 'trouvée' : 'MANQUANTE'}`);
 });
 
 

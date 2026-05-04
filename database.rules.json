@@ -86,6 +86,12 @@
       }
     },
 
+    "academic_documents": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": ["type", "uploadedAt"]
+    },
+
     "global": {
       "settings": {
         ".read": "auth != null",
