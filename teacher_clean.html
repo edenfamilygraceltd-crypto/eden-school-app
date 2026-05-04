@@ -3254,6 +3254,43 @@ function areBranchesCompatible(studentBranchValue, teacherBranchValue) {
   return studentBranch === teacherBranch;
 }
 
+function getTeacherIdentityCandidates(teacher) {
+  const fullName = `${teacher?.firstName || ''} ${teacher?.lastName || ''}`.trim();
+  return [
+    teacher?.uid,
+    teacher?.id,
+    teacher?.email,
+    teacher?.name,
+    fullName
+  ]
+    .map(v => (v || '').toString().trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function getBulletinTeacherCandidates(bulletin) {
+  return [
+    bulletin?.teacherId,
+    bulletin?.teacherUid,
+    bulletin?.teacherUID,
+    bulletin?.uid,
+    bulletin?.createdBy,
+    bulletin?.publishedBy,
+    bulletin?.teacher,
+    bulletin?.teacherName,
+    bulletin?.enseignant,
+    bulletin?.teacherEmail
+  ]
+    .map(v => (v || '').toString().trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function doesBulletinBelongToTeacher(bulletin, teacher) {
+  const teacherCandidates = getTeacherIdentityCandidates(teacher);
+  const bulletinCandidates = getBulletinTeacherCandidates(bulletin);
+  if (!teacherCandidates.length || !bulletinCandidates.length) return false;
+  return bulletinCandidates.some(v => teacherCandidates.includes(v));
+}
+
 function normalizeClassKey(value) {
   return (value || '')
     .toString()
@@ -3985,177 +4022,145 @@ function getTeacherBranchClassFilter() {
 }
 
 async function getAccessibleStudents(students) {
-  if (!Array.isArray(students)) {
-    console.warn('getAccessibleStudents: students is not an array; using empty array');
-    students = [];
-  }
+  if (!Array.isArray(students)) students = [];
 
+  // ── Charger currentTeacher si absent ─────────────────────────────────
   if (!currentTeacher) {
-    console.log('❌ No currentTeacher found, fetching from /users...');
     const uid = auth.currentUser?.uid;
     if (!uid) {
-      console.error('❌ CRITICAL: No Firebase Auth UID available');
-      console.error('⚠️  User must be logged in with valid Firebase Auth credentials');
+      console.error('❌ Aucun UID Firebase disponible');
       return [];
     }
-
-    console.log(`📥 Fetching teacher from Firebase path: users/${uid}`);
-
     try {
-      const userSnap = await db.ref(`users/${uid}`).once('value');
-      if (userSnap.exists()) {
-        currentTeacher = userSnap.val();
-        currentTeacher.uid = uid;
-        console.log('✅ Fetched teacher from /users:', currentTeacher);
+      // Chercher d'abord dans /users (new structure)
+      let snap = await db.ref(`users/${uid}`).once('value');
+      if (!snap.exists()) {
+        // Fallback /teachers (old structure)
+        snap = await db.ref(`teachers/${uid}`).once('value');
+      }
+      if (snap.exists()) {
+        currentTeacher = { uid, ...snap.val() };
+        console.log('✅ currentTeacher chargé:', currentTeacher);
       } else {
-        console.error(`❌ No teacher profile found at path: users/${uid}`);
-        console.error('⚠️  Teacher must have a profile in /users');
-        alert('Impossible de trouver le profil enseignant pour votre UID.');
+        console.error(`❌ Aucun profil enseignant trouvé pour l'UID: ${uid}`);
         return [];
       }
     } catch (e) {
-      console.error('❌ Error fetching teacher from /users:', e);
-      alert('Erreur lors du chargement du profil enseignant.');
+      console.error('❌ Erreur chargement profil enseignant:', e);
       return [];
     }
   }
 
-  // Debug: check N3 kacyiru students and teacher identifiers before filtering
-  const n3kacyiru = students.filter(s => (s.classes || s.classe || s.class) === 'N3' && normalizeBranchForMatch(s.branch || s.branche || s.schoolBranch || s.branchName) === 'kacyiru');
-  console.log("🔍 N3 kacyiru students in DB:", n3kacyiru.length, n3kacyiru);
-  console.log("🔑 Connected teacher UID:", currentTeacher?.uid || currentTeacher?.id);
-  console.log("🔑 Sample student teacherIDs:", students.slice(0, 5).map(s => s.teacherId || s.teacher || s.assignedTeacher));
-
+  // Debug
   debugStudentBranchData.uniqueBranches.clear();
   debugStudentBranchData.nonMatchSamples = [];
 
-  // Use the safe filtering function
-  const allBranches = new Set(students.map(s => normalizeBranchForMatch(s.branch || s.branche || s.schoolBranch || s.branchName || s.location || '')).filter(Boolean));
-  console.log("🧾 Unique student branch values (normalized):", Array.from(allBranches));
+  const result = students.filter(s => isStudentMatch(s, currentTeacher));
 
-  const filteredStudents = students.filter(s => isStudentMatch(s, currentTeacher));
+  console.log('🔍 Total students checked:', students.length);
+  console.log('✅ Filtered students:', result.length);
+  console.log('🧾 Unique branches in data:',
+    Array.from(debugStudentBranchData.uniqueBranches));
+  console.log('🧾 Non-match samples:',
+    debugStudentBranchData.nonMatchSamples);
 
-  console.log("🔍 Total students checked:", students.length);
-  console.log("✅ Filtered students:", filteredStudents.length);
-  console.log("🧾 Debug unique raw branches collected in isStudentMatch:", Array.from(debugStudentBranchData.uniqueBranches));
-  console.log("🧾 First non-branch-match samples:", debugStudentBranchData.nonMatchSamples);
-
-  if (!filteredStudents.length) {
-    const message = 'Aucun élève ne correspond à vos critères (branche/classe/enseignant). Vérifiez votre profil enseignant.';
-    console.warn(message);
-    alert(message);
+  if (result.length === 0) {
+    console.warn(
+      'Aucun élève trouvé. Profil enseignant:',
+      JSON.stringify({
+        uid: currentTeacher.uid || currentTeacher.id,
+        branch: currentTeacher.branch || currentTeacher.branche || currentTeacher.schoolBranch,
+        classes: currentTeacher.classes || currentTeacher.class,
+      })
+    );
   }
 
-  return filteredStudents;
+  return result;
 }
 
-// SAFE STUDENT MATCHING FUNCTION
 function isStudentMatch(student, teacher) {
-  console.log("----- CHECK STUDENT -----");
-  console.log("Student:", student);
-  console.log("Teacher:", teacher);
+  if (!student || !teacher) return false;
 
-  if (!student || !teacher) {
-    console.log("❌ Student or teacher is null/undefined");
-    return false;
-  }
+  // ── 1. Extraire les valeurs brutes ───────────────────────────────────
+  const studentBranchRaw = student.branch || student.branche
+    || student.schoolBranch || student.branchName
+    || student.location || '';
+  const studentClassRaw  = student.class || student.classes || student.classe || '';
 
-  const studentClass = (student.class || student.classes || student.classe || '').toString().trim();
-  const studentBranchRaw = student.branch || student.branche || student.schoolBranch || student.branchName || student.location || getBranchFromClassSuffix(studentClass) || '';
-  const studentBranch = normalizeBranchForMatch(studentBranchRaw);
+  const teacherBranchRaw = teacher.branch || teacher.branche
+    || teacher.schoolBranch || teacher.branchName || '';
 
   const rawTeacherClasses = Array.isArray(teacher.classes)
-    ? teacher.classes.map(c => (c || '').toString().trim()).filter(c => c)
-    : (typeof teacher.classes === 'string' && teacher.classes.toString().trim())
-      ? [teacher.classes.toString().trim()]
+    ? teacher.classes.map(c => (c || '').toString().trim()).filter(Boolean)
+    : typeof teacher.classes === 'string' && teacher.classes.trim()
+      ? [teacher.classes.trim()]
       : teacher.class
         ? [(teacher.class || '').toString().trim()]
         : teacher.classe
           ? [(teacher.classe || '').toString().trim()]
           : [];
 
-  const teacherBranchRaw = teacher.branch || teacher.branche || teacher.schoolBranch || teacher.branchName || getBranchFromClassSuffix(rawTeacherClasses[0] || '');
-  const teacherBranch = normalizeBranchForMatch(teacherBranchRaw);
+  // ── 2. Normaliser ────────────────────────────────────────────────────
+  const studentBranch = normalizeBranchForMatch(studentBranchRaw
+    || getBranchFromClassSuffix(studentClassRaw));
+  const teacherBranch = normalizeBranchForMatch(teacherBranchRaw
+    || getBranchFromClassSuffix(rawTeacherClasses[0] || ''));
 
-  // Track all unique branch values seen while filtering
-  if (studentBranchRaw) {
-    debugStudentBranchData.uniqueBranches.add(studentBranchRaw);
-  }
+  // Collecter les branches uniques pour le debug
+  if (studentBranchRaw) debugStudentBranchData.uniqueBranches.add(studentBranchRaw);
 
-  const studentClassBase = normalizeClassWithoutBranchSuffix(studentClass);
+  // ── 3. BRANCH MATCH ──────────────────────────────────────────────────
+  const branchMatch = areBranchesCompatible(studentBranch, teacherBranch);
+
+  // ── 4. CLASS MATCH ───────────────────────────────────────────────────
+  const classMatch = areClassesCompatible(studentClassRaw, rawTeacherClasses);
+
+  // ── 5. TEACHER-ID MATCH (optionnel, en bonus) ────────────────────────
+  const teacherIds = [
+    auth.currentUser?.uid,
+    teacher.uid,
+    teacher.id,
+  ].map(v => (v || '').toString().trim()).filter(Boolean);
+
   const studentTeacherIds = [
     student.teacherId,
     student.teacher,
     student.assignedTeacher,
     student.assignedTeacherId,
     student.teacherUid,
-    student.teacherUID
-  ]
-    .map(v => (v || '').toString().trim())
-    .filter(Boolean);
-  const teacherIds = [
-    auth.currentUser?.uid,
-    teacher.uid,
-    teacher.id
-  ]
-    .map(v => (v || '').toString().trim())
-    .filter(Boolean);
+    student.teacherUID,
+  ].map(v => (v || '').toString().trim()).filter(Boolean);
 
-  const teacherClassBases = rawTeacherClasses
-    .map(c => normalizeClassWithoutBranchSuffix(c))
-    .filter(c => c);
+  const teacherIdMatch = studentTeacherIds.some(id => teacherIds.includes(id));
 
-  console.log("Teacher classes raw:", rawTeacherClasses);
-  console.log("Teacher classes extracted:", teacherClassBases);
-  console.log("Looking for students with class:", teacherClassBases);
+  // ── 6. LOGIQUE FINALE ────────────────────────────────────────────────
+  //  branchMatch obligatoire
+  //  classMatch obligatoire si l'enseignant a des classes configurées
+  //  teacherIdMatch est un bonus non bloquant
+  const teacherHasClasses = rawTeacherClasses.length > 0
+    && rawTeacherClasses.some(c => c.trim().length > 0);
 
-  //----------------------------------
-  // BRANCH MATCH
-  //----------------------------------
-  const branchMatch = areBranchesCompatible(studentBranch, teacherBranch);
-  console.log("Student Branch:", studentBranch, "| Teacher Branch:", teacherBranch, "| Match:", branchMatch);
-
-  //----------------------------------
-  // CLASS MATCH (classe de base)
-  //----------------------------------
-  const classMatch = areClassesCompatible(studentClass, rawTeacherClasses);
-  console.log("Student Class:", studentClassBase, "| Teacher Class Bases:", teacherClassBases, "| Match:", classMatch);
-
-  //----------------------------------
-  // Debug non-branch matches (first 5)
-  //----------------------------------
-  if (!branchMatch && debugStudentBranchData.nonMatchSamples.length < 5) {
-    debugStudentBranchData.nonMatchSamples.push({
-      branch: student.branch,
-      branche: student.branche,
-      schoolBranch: student.schoolBranch,
-      branchName: student.branchName,
-      location: student.location,
-      studentClassBase,
-      teacherBranch,
-      teacherBranchRaw
-    });
-    console.log("🔍 Non-match sample", debugStudentBranchData.nonMatchSamples.length, debugStudentBranchData.nonMatchSamples[debugStudentBranchData.nonMatchSamples.length-1]);
+  let finalMatch;
+  if (!teacherHasClasses) {
+    // Pas de classe configurée → filtre sur branche uniquement
+    finalMatch = branchMatch;
+  } else {
+    // Classe configurée → branche ET classe obligatoires
+    finalMatch = branchMatch && classMatch;
   }
 
-  //----------------------------------
-  // TEACHER ID MATCH
-  //----------------------------------
-  const teacherIdMatch = studentTeacherIds.some(id => teacherIds.includes(id));
-  console.log("Student Teacher IDs:", studentTeacherIds, "| Teacher IDs:", teacherIds, "| Match:", teacherIdMatch);
-
-  //----------------------------------
-  // FINAL MATCH
-  //----------------------------------
-  const hasExplicitTeacherAssignment = studentTeacherIds.length > 0;
-  const finalMatch = branchMatch && (hasExplicitTeacherAssignment ? teacherIdMatch : classMatch);
-
-  console.log("🎯 Branch Match:", branchMatch);
-  console.log("🎯 Class Match:", classMatch);
-  console.log("🎯 UID Match:", teacherIdMatch);
-  console.log("🎯 Has Explicit Assignment:", hasExplicitTeacherAssignment);
-  console.log("🎯 Final Match:", finalMatch);
-  console.log("----- END CHECK -----\n");
+  // Debug (premiers non-matches)
+  if (!finalMatch && debugStudentBranchData.nonMatchSamples.length < 5) {
+    debugStudentBranchData.nonMatchSamples.push({
+      studentName: student.name || '—',
+      studentBranch,
+      teacherBranch,
+      studentClass: studentClassRaw,
+      teacherClasses: rawTeacherClasses,
+      branchMatch,
+      classMatch,
+    });
+  }
 
   return finalMatch;
 }
@@ -4200,12 +4205,11 @@ function getAccessibleBulletins(bulletins) {
     const normalizedBulletinBranch = normalizeBranchForMatch(b.branch || b.branche || b.branchName || bulletinBranchFromClass);
     const normalizedTeacherBranch = normalizeBranchForMatch(teacherBranch);
     const normalizedBulletinClass = (b.class || b.classes || b.classe || '').toString().toLowerCase().trim();
-    const normalizedTeacherClass = (teacherClassBases[0] || '').toString().toLowerCase().trim();
-
     const classMatch = areClassesCompatible(normalizedBulletinClass, teacherClassBases);
     const branchMatch = areBranchesCompatible(normalizedBulletinBranch, normalizedTeacherBranch);
+    const teacherMatch = doesBulletinBelongToTeacher(b, currentTeacher);
 
-    const finalMatch = branchMatch && classMatch;
+    const finalMatch = branchMatch && classMatch && teacherMatch;
 
     console.log("Bulletin filtering:", {
       bulletinClass: b.class || b.classes || b.classe,
@@ -4215,6 +4219,7 @@ function getAccessibleBulletins(bulletins) {
       teacherBranch,
       classMatch,
       branchMatch,
+      teacherMatch,
       finalMatch
     });
 
@@ -7310,7 +7315,8 @@ async function loadBulletinHistory() {
             : [];
 
     const teacherClasses = rawTeacherClasses.map(c => c.split('_')[0]);
-    const teacherBranch = (teacher.branch || teacher.schoolBranch || teacher.branchName || '').toString().trim().toLowerCase();
+    const teacherBranch = (teacher.branch || teacher.branche || teacher.schoolBranch || teacher.branchName || '').toString().trim().toLowerCase();
+    const teacherClassBases = teacherClasses.map(c => normalizeClassWithoutBranchSuffix(c));
 
     console.log("🔍 Loading bulletins for teacher classes:", teacherClasses, "branch:", teacherBranch);
 
@@ -7350,9 +7356,19 @@ async function loadBulletinHistory() {
           if (snapshot.exists()) {
             snapshot.forEach(child => {
               const bulletin = { id: child.key, ...child.val() };
-              // No branch/class filter needed - path already scoped
-              allBulletins.push(bulletin);
-              console.log(`✅ Loaded bulletin: ${bulletin.studentName || 'Unknown'} (${classKey})`);
+              const normalizedBulletinBranch = normalizeBranchForMatch(bulletin.branch || bulletin.branche || bulletin.branchName || teacherBranch);
+              const normalizedTeacherBranch = normalizeBranchForMatch(teacherBranch || '');
+              const normalizedBulletinClass = (bulletin.class || bulletin.classes || bulletin.classe || '').toString().trim();
+              const classMatch = areClassesCompatible(normalizedBulletinClass, [classKey]);
+              const branchMatch = areBranchesCompatible(normalizedBulletinBranch, normalizedTeacherBranch);
+              const teacherMatch = doesBulletinBelongToTeacher(bulletin, teacher);
+
+              if (branchMatch && classMatch && teacherMatch) {
+                allBulletins.push(bulletin);
+                console.log(`✅ Loaded bulletin: ${bulletin.studentName || 'Unknown'} (${classKey})`);
+              } else {
+                console.log(`⚠️ Skipped nested bulletin - mismatch: branch=${branchMatch}, class=${classMatch}, teacher=${teacherMatch}`);
+              }
             });
           } else {
             console.log(`ℹ️ No bulletins found at path: ${path}`);
@@ -7384,12 +7400,13 @@ async function loadBulletinHistory() {
               const normalizedTeacherBranch = normalizeBranchForMatch(teacherBranch || '');
               const classMatch = areClassesCompatible(normalizedBulletinClass, [classKey]);
               const branchMatch = areBranchesCompatible(normalizedBulletinBranch, normalizedTeacherBranch);
+              const teacherMatch = doesBulletinBelongToTeacher(bulletin, teacher);
 
-              if (branchMatch && classMatch) {
+              if (branchMatch && classMatch && teacherMatch) {
                 allBulletins.push(bulletin);
                 console.log(`✅ Loaded bulletin: ${bulletin.studentName || 'Unknown'} (${classKey}) - branch: ${bulletin.branch}`);
               } else {
-                console.log(`⚠️ Skipped bulletin - filter mismatch: branch=${bulletin.branch} (expected: ${teacherBranch}), class=${bulletin.class} (expected: ${classKey})`);
+                console.log(`⚠️ Skipped bulletin - filter mismatch: branch=${branchMatch}, class=${classMatch}, teacher=${teacherMatch}`);
               }
             });
           } else {
@@ -7403,10 +7420,14 @@ async function loadBulletinHistory() {
 
     console.log("📄 All bulletins loaded:", allBulletins.length);
 
-    // Filtrer par branche du professeur
+    // Filtrer strictement par branche + classe + enseignant
     const normalizedTeacherBranch2 = normalizeBranchForMatch(teacherBranch);
+    const allowedStudentIds = new Set(filteredStudents.map(s => (s.id || s._id || '').toString().trim()).filter(Boolean));
     const filtered = allBulletins.filter(b =>
       areBranchesCompatible((b.branch || b.branche || b.branchName || ''), normalizedTeacherBranch2)
+      && areClassesCompatible((b.class || b.classes || b.classe || '').toString().trim(), teacherClassBases)
+      && doesBulletinBelongToTeacher(b, teacher)
+      && (!allowedStudentIds.size || allowedStudentIds.has((b.studentId || '').toString().trim()))
     );
     console.log("✅ Filtered bulletins:", filtered.length);
 

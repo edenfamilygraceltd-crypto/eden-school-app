@@ -200,28 +200,8 @@ function getFolderByType(type) {
   return DRIVE_FOLDERS[key] || DRIVE_FOLDERS["test"];
 }
 
-// Les comptes de service n'ont pas de quota My Drive :
-// les uploads doivent cibler un dossier situe dans un Shared Drive.
-async function assertSharedDriveFolder(folderId) {
-  const folder = await drive.files.get({
-    fileId: folderId,
-    fields: 'id, name, driveId, mimeType',
-    supportsAllDrives: true
-  });
-
-  const driveId = folder?.data?.driveId;
-  if (!driveId) {
-    throw new Error(
-      `Le dossier Drive (${folderId}) n'est pas dans un Shared Drive. ` +
-      `Avec un compte de service, creez/utilisez un Shared Drive puis placez ce dossier dedans.`
-    );
-  }
-}
-
 // ── Upload + Permissions + URL ──
 async function uploadToDrive(filePath, fileName, mimeType, folderId) {
-  await assertSharedDriveFolder(folderId);
-
   // 1. Créer le fichier dans Drive
   const file = await drive.files.create({
     resource: {
@@ -315,16 +295,16 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
     const uploadType = req?.body?.type || "test";
     const folderId = getFolderByType(uploadType);
-    const isFolderError = /File not found/i.test(backendMessage);
-    const isQuotaError = /Service Accounts do not have storage quota/i.test(backendMessage);
-    const isSharedDriveError = /n'est pas dans un Shared Drive/i.test(backendMessage);
 
     let clientError = backendMessage;
-    if (isFolderError) {
-      clientError = `Dossier Drive inaccessible pour le type '${uploadType}' (folderId: ${folderId}). Partagez ce dossier avec le compte de service et reessayez.`;
-    } else if (isQuotaError || isSharedDriveError) {
-      clientError = `Le dossier Drive du type '${uploadType}' doit etre dans un Shared Drive (pas My Drive) pour un compte de service. ` +
-        `Action: creez/choisissez un Shared Drive, deplacez le dossier cible dedans, partagez-le avec l'email du compte de service, puis mettez a jour l'ID dans server.js.`;
+    if (/File not found/i.test(backendMessage)) {
+      clientError = `Dossier Drive inaccessible (type: '${uploadType}', id: ${folderId}). Verifiez que le dossier existe et est partage avec le compte de service.`;
+    } else if (/Service Accounts do not have storage quota/i.test(backendMessage)) {
+      clientError = `Quota Drive: le dossier '${uploadType}' (${folderId}) doit etre place dans un Shared Drive. ` +
+        `1) Creez un Shared Drive dans drive.google.com. ` +
+        `2) Ajoutez le compte de service comme membre. ` +
+        `3) Creez les dossiers dans ce Shared Drive. ` +
+        `4) Mettez a jour les IDs dans DRIVE_FOLDERS (server.js).`;
     }
 
     res.status(500).json({
