@@ -2710,6 +2710,9 @@ body {
         <div class="sec-hd-left"><h1>Historique des Bulletins</h1><p>Bulletins publiés • Visualiser & Télécharger</p></div>
         <div class="sec-hd-right">
           <button class="btn btn-ghost btn-sm" onclick="loadBulletinHistory()"><i class="fas fa-sync"></i> Actualiser</button>
+          <button class="btn btn-ghost btn-sm" onclick="showMissingBulletinsModal()" id="missingBulletinsBtn">
+            <i class="fas fa-user-clock"></i> Eleves manquants (0)
+          </button>
           <button class="btn btn-blue btn-sm" onclick="downloadAllBulletinsAsZip()" id="downloadZipBtn">
             <i class="fas fa-download"></i> Télécharger ZIP
           </button>
@@ -3484,6 +3487,8 @@ let allStudents     = [];
 let filteredStudents= [];
 let selectedStudent = null;
 let allBulletins    = [];
+let lastMissingStudents = [];
+let lastHistoryTrimesterFilter = 'ALL';
 let currentGalleryBranch = 'maternelle';
 let currentUser     = null;
 let currentTeacher  = null; // profile info for the logged-in teacher
@@ -7463,10 +7468,19 @@ async function loadBulletinHistory() {
     const studentIds = filteredStudents.map(s => s.id);
     const bulletinIds = bulletinsArray.map(b => b.studentId);
     const missingStudents = filteredStudents.filter(s => !bulletinIds.includes(s.id));
+    lastMissingStudents = missingStudents.map(s => ({
+      id: s.id || s._id || '',
+      name: s.name || `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.nom || 'Eleve inconnu',
+      className: s.class || s.classes || s.classe || 'Classe inconnue',
+      branch: s.branch || s.branche || s.schoolBranch || s.branchName || '',
+      teacherId: s.teacherId || s.teacher || s.assignedTeacherId || s.assignedTeacher || ''
+    }));
+    lastHistoryTrimesterFilter = normalizedTrimesterFilter;
     
     // Update counters
     document.getElementById('totalStudents').textContent = filteredStudents.length;
     document.getElementById('totalBulletins').textContent = bulletinsArray.length;
+    updateMissingStudentsButton();
     
     // Create notifications for missing bulletins
     if (missingStudents.length > 0) {
@@ -7606,11 +7620,107 @@ async function loadBulletinHistory() {
     
   } catch (error) {
     console.error('Erreur lors du chargement de l\'historique:', error);
+    lastMissingStudents = [];
+    updateMissingStudentsButton();
     container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h4>Erreur de chargement</h4><p>Vérifiez votre connexion</p></div>';
     toast('Erreur lors du chargement: ' + error.message, 'err');
   } finally {
     document.getElementById('histLoad').style.display = 'none';
   }
+}
+
+function updateMissingStudentsButton() {
+  const btn = document.getElementById('missingBulletinsBtn');
+  if (!btn) return;
+  const count = Array.isArray(lastMissingStudents) ? lastMissingStudents.length : 0;
+  btn.innerHTML = `<i class="fas fa-user-clock"></i> Eleves manquants (${count})`;
+}
+
+function showMissingBulletinsModal() {
+  const existingModal = document.getElementById('missingBulletinsModal');
+  if (existingModal) existingModal.remove();
+
+  const count = Array.isArray(lastMissingStudents) ? lastMissingStudents.length : 0;
+  const trimesterLabel = lastHistoryTrimesterFilter === 'ALL'
+    ? 'Tous les trimestres'
+    : `Trimestre ${lastHistoryTrimesterFilter}`;
+
+  let listHtml = '';
+  if (!count) {
+    listHtml = '<div class="empty-state" style="margin:0;"><i class="fas fa-check-circle"></i><h4>Aucun eleve manquant</h4><p>Tous les eleves ont un bulletin pour ce filtre.</p></div>';
+  } else {
+    listHtml = lastMissingStudents
+      .map((s, idx) => `
+        <div style="display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--bdr);border-radius:10px;background:#fff;">
+          <div style="font-weight:800;color:var(--blue-dk);">${idx + 1}</div>
+          <div>
+            <div style="font-weight:700;color:var(--txt);">${s.name}</div>
+            <div style="font-size:.78rem;color:var(--txt-lt);">Classe: ${s.className} • Branche: ${s.branch || '—'}</div>
+          </div>
+          <div style="font-size:.75rem;color:var(--txt-lt);">${s.id || '—'}</div>
+        </div>
+      `)
+      .join('');
+  }
+
+  const modal = document.createElement('div');
+  modal.id = 'missingBulletinsModal';
+  modal.className = 'modal-overlay open';
+  modal.innerHTML = `
+    <div class="modal-box" style="width:100%;max-width:760px;border-radius:16px;">
+      <div class="modal-hd">
+        <div class="modal-ttl">Eleves sans bulletin (${count})</div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-times"></i></button>
+      </div>
+      <div style="padding:16px 20px 4px;color:var(--txt-lt);font-size:.85rem;">Filtre actif: ${trimesterLabel}</div>
+      <div style="padding:12px 20px 20px;display:flex;flex-direction:column;gap:10px;max-height:55vh;overflow:auto;">${listHtml}</div>
+      <div style="padding:14px 20px;border-top:1px solid var(--bdr);display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fermer</button>
+        <button class="btn btn-blue" onclick="downloadMissingStudentsCsv()" ${count ? '' : 'disabled'}>
+          <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function downloadMissingStudentsCsv() {
+  if (!Array.isArray(lastMissingStudents) || !lastMissingStudents.length) {
+    toast('Aucun eleve manquant a exporter', 'warn');
+    return;
+  }
+
+  const rows = [
+    ['studentId', 'name', 'class', 'branch', 'teacherId']
+  ];
+
+  lastMissingStudents.forEach(s => {
+    rows.push([
+      s.id || '',
+      s.name || '',
+      s.className || '',
+      s.branch || '',
+      s.teacherId || ''
+    ]);
+  });
+
+  const csv = rows
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  const tri = (lastHistoryTrimesterFilter || 'ALL').toString().toUpperCase();
+  link.download = `eleves_sans_bulletin_${tri}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+
+  toast(`${lastMissingStudents.length} eleve(s) exporte(s)`, 'ok');
 }
 
 // Calculate general average from bulletin notes
