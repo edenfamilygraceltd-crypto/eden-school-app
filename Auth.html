@@ -20,7 +20,8 @@
       signOut,
       setPersistence,
       browserSessionPersistence,
-      sendPasswordResetEmail
+      sendPasswordResetEmail,
+      fetchSignInMethodsForEmail
     } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
     import { getDatabase, ref as rtdbRef, get as rtdbGet } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
@@ -48,6 +49,7 @@
     // Exposer globalement (wrappers for modular API)
     window.signInWithEmailAndPassword = signInWithEmailAndPassword;
     window.sendPasswordResetEmail = sendPasswordResetEmail;
+    window.fetchSignInMethodsForEmail = fetchSignInMethodsForEmail;
     window.signOut = () => signOut(window.auth);
     window.rtdbRef = rtdbRef;
     window.rtdbGet = rtdbGet;
@@ -1331,19 +1333,21 @@
       const email = document.getElementById('forgotEmail').value.trim();
       const alertBox = document.getElementById('forgotAlertBox');
 
-      // Réinitialiser l'alerte
+      // Reset alert
       alertBox.className = 'alert';
       alertBox.textContent = '';
 
+      // 1. Validation format email
       if (!email) {
         alertBox.textContent = 'Veuillez entrer votre adresse email.';
         alertBox.className = 'alert error show';
         return;
       }
 
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(email)) {
-        alertBox.textContent = 'Format d\'email invalide.';
+      // Regex stricte : doit avoir @ et extension (.com, .rw, .fr, etc.)
+      const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email)) {
+        alertBox.innerHTML = '<i class="fas fa-exclamation-circle" style="margin-right:6px;"></i>Format email invalide. Exemple : nom@gmail.com';
         alertBox.className = 'alert error show';
         return;
       }
@@ -1351,14 +1355,45 @@
       setAuthButtonLoading(buttonElement, true);
 
       try {
+        // 2. Vérifier si l'email existe dans Firebase Auth
+        alertBox.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Vérification de l\'email...';
+        alertBox.className = 'alert show';
+        alertBox.style.background = '#eef2ff';
+        alertBox.style.color = '#667eea';
+        alertBox.style.border = '2px solid #c7d2fe';
+
+        let signInMethods = [];
+        try {
+          signInMethods = await window.fetchSignInMethodsForEmail(window.auth, email);
+        } catch (checkError) {
+          // Si fetchSignInMethodsForEmail échoue, on tente directement l'envoi
+          console.warn('fetchSignInMethodsForEmail non disponible, envoi direct:', checkError.code);
+          signInMethods = ['fallback'];
+        }
+
+        if (signInMethods.length === 0) {
+          alertBox.innerHTML = '<i class="fas fa-user-slash" style="margin-right:6px;"></i>Aucun compte trouvé avec cet email. Vérifiez l\'adresse saisie.';
+          alertBox.className = 'alert error show';
+          alertBox.style = '';
+          setAuthButtonLoading(buttonElement, false);
+          return;
+        }
+
+        // 3. Envoyer le lien de réinitialisation Firebase
         await window.sendPasswordResetEmail(window.auth, email);
-        alertBox.innerHTML = '<i class="fas fa-check-circle" style="margin-right:8px;"></i>Un email de réinitialisation a été envoyé à <strong>' + email + '</strong>. Vérifiez votre boîte de réception (et vos spams).';
+
+        alertBox.innerHTML =
+          '<i class="fas fa-check-circle" style="margin-right:8px;color:#22c55e;"></i>' +
+          '<strong>Email envoyé !</strong> Un lien de réinitialisation a été envoyé à <strong>' + email + '</strong>.<br>' +
+          '<small style="display:block;margin-top:6px;opacity:.8;">Vérifiez votre boîte de réception et vos spams. Le lien expire dans 1 heure.</small>';
         alertBox.className = 'alert success show';
+        alertBox.style = '';
         document.getElementById('forgotEmail').value = '';
-        setAuthButtonLoading(buttonElement, false);
+
       } catch (error) {
-        console.error('Erreur réinitialisation mot de passe:', error.code, error.message);
-        let errorMessage = 'Erreur lors de l\'envoi de l\'email. ';
+        console.error('Erreur reset password:', error.code, error.message);
+
+        let errorMessage = 'Erreur lors de l\'envoi. ';
         switch (error.code) {
           case 'auth/user-not-found':
             errorMessage = 'Aucun compte trouvé avec cet email.';
@@ -1367,16 +1402,24 @@
             errorMessage = 'Format d\'email invalide.';
             break;
           case 'auth/too-many-requests':
-            errorMessage = 'Trop de tentatives. Veuillez réessayer plus tard.';
+            errorMessage = 'Trop de tentatives. Attendez quelques minutes avant de réessayer.';
             break;
           case 'auth/network-request-failed':
             errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
             break;
+          case 'auth/missing-android-pkg-name':
+          case 'auth/missing-continue-uri':
+          case 'auth/invalid-continue-uri':
+            errorMessage = 'Configuration Firebase incorrecte. Contactez l\'administrateur.';
+            break;
           default:
-            errorMessage = 'Erreur lors de l\'envoi. Vérifiez votre email et réessayez.';
+            errorMessage = 'Impossible d\'envoyer l\'email. Vérifiez l\'adresse et réessayez.';
         }
-        alertBox.textContent = errorMessage;
+
+        alertBox.innerHTML = '<i class="fas fa-times-circle" style="margin-right:6px;"></i>' + errorMessage;
         alertBox.className = 'alert error show';
+        alertBox.style = '';
+      } finally {
         setAuthButtonLoading(buttonElement, false);
       }
     }

@@ -2049,7 +2049,7 @@ body {
     <div class="topbar-right">
       <div class="search-bar">
         <i class="fas fa-search"></i>
-        <input type="text" id="globalSearch" placeholder="Rechercher un élève, une classe…" oninput="globalSearch()">
+        <input type="text" id="globalSearch" placeholder="Rechercher un élève, une classe…" oninput="doGlobalSearch()">
       </div>
 
       <button class="topbar-icon-btn" onclick="toggleNotifications()" title="Notifications">
@@ -2713,6 +2713,9 @@ body {
           <button class="btn btn-ghost btn-sm" onclick="showMissingBulletinsModal()" id="missingBulletinsBtn">
             <i class="fas fa-user-clock"></i> Eleves manquants (0)
           </button>
+          <button class="btn btn-ghost btn-sm" onclick="showDuplicatesModal()" id="duplicatesBtn" style="color:var(--warn,#f59e0b);">
+            <i class="fas fa-copy"></i> Doublons (0)
+          </button>
           <button class="btn btn-blue btn-sm" onclick="downloadAllBulletinsAsZip()" id="downloadZipBtn">
             <i class="fas fa-download"></i> Télécharger ZIP
           </button>
@@ -2919,6 +2922,12 @@ body {
             <input class="f-input" style="flex:1;" type="password" id="accountNewPassword" placeholder="Nouveau mot de passe" autocomplete="new-password">
             <button type="button" class="btn btn-ghost" style="padding:8px 10px;" onclick="toggleTeacherPasswordVisibility('accountNewPassword', this)">Afficher</button>
             <span id="accountNewPasswordStatus" title="Force du mot de passe" style="font-size:1rem;line-height:1;">❌</span>
+          </div>
+          <div id="passwordStrengthBar" style="margin-top:6px;display:none;">
+            <div style="height:5px;background:#eee;border-radius:10px;overflow:hidden;">
+              <div id="strengthFill" style="height:100%;width:0%;border-radius:10px;transition:all .3s;"></div>
+            </div>
+            <div id="strengthLabel" style="font-size:.7rem;margin-top:3px;font-weight:600;"></div>
           </div>
         </div>
         <div class="f-group">
@@ -3488,6 +3497,7 @@ let filteredStudents= [];
 let selectedStudent = null;
 let allBulletins    = [];
 let lastMissingStudents = [];
+let lastDuplicateBulletins = [];
 let lastHistoryTrimesterFilter = 'ALL';
 let currentGalleryBranch = 'maternelle';
 let currentUser     = null;
@@ -4418,6 +4428,22 @@ function filterMyClass() {
   renderMyClassTable();
 }
 
+function doGlobalSearch() {
+  const q = (document.getElementById('globalSearch')?.value || '').toLowerCase().trim();
+
+  const myClassSearch = document.getElementById('myClassSearch');
+  if (myClassSearch) {
+    myClassSearch.value = q;
+    if (typeof filterMyClass === 'function') filterMyClass();
+  }
+
+  const histSearch = document.getElementById('histSearch');
+  if (histSearch) {
+    histSearch.value = q;
+    if (typeof filterBulletinHistory === 'function') filterBulletinHistory();
+  }
+}
+
 function renderMyClassTable() {
   const tbody = document.getElementById('myClassTable');
   if (!tbody) return;
@@ -4455,55 +4481,32 @@ function renderMyClassTable() {
 }
 
 function updateMyClassStats() {
-  const total = filteredMyClassStudents.length;
   const males = filteredMyClassStudents.filter(s => s.gender === 'M').length;
   const females = filteredMyClassStudents.filter(s => s.gender === 'F').length;
 
   const myClassCountEl = document.getElementById('myClassCount');
-  if (myClassCountEl) myClassCountEl.textContent = total;
-
+  if (myClassCountEl) myClassCountEl.textContent = filteredMyClassStudents.length;
   const myClassMaleEl = document.getElementById('myClassMale');
   if (myClassMaleEl) myClassMaleEl.textContent = males;
-
   const myClassFemaleEl = document.getElementById('myClassFemale');
   if (myClassFemaleEl) myClassFemaleEl.textContent = females;
 }
 
 function viewStudentDetails(studentId) {
   const s = myClassStudents.find(x => x._id === studentId);
-  if (s) {
-    const name = `${s.firstName || ''} ${s.lastName || ''}`.trim();
-    toast(`Détails: ${name} - ${s.classes || '—'}`, 'info');
-  }
-}
-
-/* ══════════════════════════════════════
-   GLOBAL SEARCH & UTILITIES
-══════════════════════════════════════ */
-// allStudents est défini globalement en haut du script (évite la double déclaration)
-
-function globalSearch() {
-  const q = document.getElementById('globalSearch').value.toLowerCase();
-  if (!q) return;
-  const results = allStudents.filter(s => {
-    const name = `${s.firstName || ''} ${s.lastName || ''}`.toLowerCase();
-    const cls = (s.classes || s.classe || '').toLowerCase();
-    return name.includes(q) || cls.includes(q);
-  });
-  if (results.length) {
-    toast(`${results.length} résultat(s) trouvé(s)`, 'info');
-  }
+  if (!s) return;
+  const name = `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.name || 'Eleve';
+  const cls = s.classes || s.classe || 'Classe inconnue';
+  toast(`${name} - ${cls}`, 'info');
 }
 
 function getCurrentTeacherUid() {
   return currentTeacher?.id || currentTeacher?.uid || currentUser?.uid || '';
 }
 
-function toggleNotifications() {
-  // Toggle notification dropdown or panel
+function openNotifications() {
   let notifPanel = document.getElementById('notificationPanel');
   if (!notifPanel) {
-    // Create notification panel if it doesn't exist
     const panel = document.createElement('div');
     panel.id = 'notificationPanel';
     panel.className = 'notif-dropdown';
@@ -4518,15 +4521,12 @@ function toggleNotifications() {
     `;
     document.body.appendChild(panel);
     notifPanel = panel;
-    
   }
 
-  // Load notifications each time panel is opened to keep data fresh
   if (notifPanel && !notifPanel.classList.contains('open')) {
     loadNotificationDropdown();
   }
-  
-  // Toggle visibility
+
   if (notifPanel) notifPanel.classList.toggle('open');
 }
 
@@ -4627,6 +4627,11 @@ function initAccountCredentialForm() {
     el.addEventListener('input', validateCredentialForm);
   });
 
+  document.getElementById('accountNewPassword')?.addEventListener('input', function() {
+    updatePasswordStrength(this.value);
+    validateCredentialForm();
+  });
+
   validateCredentialForm();
 }
 
@@ -4690,6 +4695,39 @@ function clearCredentialMessages() {
   const passMsg = document.getElementById('updatePasswordMsg');
   if (emailMsg) emailMsg.style.display = 'none';
   if (passMsg) passMsg.style.display = 'none';
+}
+
+function updatePasswordStrength(password) {
+  const bar = document.getElementById('passwordStrengthBar');
+  const fill = document.getElementById('strengthFill');
+  const label = document.getElementById('strengthLabel');
+  if (!bar || !fill || !label) return;
+
+  if (!password) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = 'block';
+
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 10) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  const levels = [
+    { width: '20%', color: '#ef4444', text: 'Très faible' },
+    { width: '40%', color: '#f97316', text: 'Faible' },
+    { width: '60%', color: '#eab308', text: 'Moyen' },
+    { width: '80%', color: '#22c55e', text: 'Fort' },
+    { width: '100%', color: '#15803d', text: 'Très fort' }
+  ];
+  const level = levels[Math.min(score, 4)];
+  fill.style.width = level.width;
+  fill.style.background = level.color;
+  label.style.color = level.color;
+  label.textContent = level.text;
 }
 
 function setCredentialButtonLoading(buttonId, isLoading, defaultHtml) {
@@ -4771,6 +4809,8 @@ function validateCredentialForm() {
   const passwordStrong = newPassword.length >= 6;
   const passwordMatch = !!newPassword && newPassword === confirmPassword;
 
+  updatePasswordStrength(newPassword);
+
   setCredentialFieldStatus('accountEmailStatus', emailFormatValid);
   setCredentialFieldStatus('accountCurrentPasswordStatus', currentPasswordValid);
   setCredentialFieldStatus('accountNewPasswordStatus', newPassword.length === 0 ? false : passwordStrong);
@@ -4801,53 +4841,91 @@ function validateCredentialForm() {
 }
 
 async function updateUserEmail() {
-  if (!ensureOnlineForFirebase('mettre a jour l\'email')) return;
   clearCredentialMessages();
-
   const user = auth.currentUser;
   if (!user) {
-    showCredentialMessage('updateEmailMsg', 'Aucun utilisateur connecte.', 'error');
+    showCredentialMessage('updateEmailMsg', 'Aucun utilisateur connecté. Reconnectez-vous.', 'error');
     return;
   }
 
   const newEmail = (document.getElementById('accountNewEmail')?.value || '').trim();
-  const currentPassword = (document.getElementById('accountCurrentPassword')?.value || '').trim();
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const currPassword = (document.getElementById('accountCurrentPassword')?.value || '').trim();
 
+  // Validation format email
+  const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
   if (!newEmail || !emailRegex.test(newEmail)) {
-    showCredentialMessage('updateEmailMsg', 'Veuillez entrer un email valide.', 'error');
+    showCredentialMessage('updateEmailMsg', 'Format email invalide. Exemple : nom@gmail.com', 'error');
     return;
   }
-
-  if (!currentPassword) {
-    showCredentialMessage('updateEmailMsg', 'Veuillez entrer votre mot de passe actuel.', 'error');
-    return;
-  }
-
   if (newEmail.toLowerCase() === (user.email || '').toLowerCase()) {
-    showCredentialMessage('updateEmailMsg', 'Le nouvel email est identique a l\'email actuel.', 'info');
+    showCredentialMessage('updateEmailMsg', 'Le nouvel email est identique à l\'actuel.', 'info');
+    return;
+  }
+  if (!currPassword) {
+    showCredentialMessage('updateEmailMsg', 'Mot de passe actuel requis.', 'error');
     return;
   }
 
-  const originalHtml = '<i class="fas fa-envelope"></i> Mettre a jour email';
-  setCredentialButtonLoading('updateEmailBtn', true, originalHtml);
+  const btn = document.getElementById('updateEmailBtn');
+  const originalHtml = '<i class="fas fa-envelope"></i> Mettre à jour email';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mise à jour...'; }
 
   try {
-    const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+    // 1. Reauthentification
+    const credential = firebase.auth.EmailAuthProvider.credential(user.email, currPassword);
     await user.reauthenticateWithCredential(credential);
-    await user.verifyBeforeUpdateEmail(newEmail);
 
-    const successMessage = `Firebase a envoyé un email de vérification à ${newEmail}. Cliquez le lien reçu pour confirmer le changement.`;
-    showCredentialMessage('updateEmailMsg', successMessage, 'info');
-    toast(successMessage, 'ok');
+    // 2. Mettre à jour l'email dans Firebase Auth
+    await user.updateEmail(newEmail);
+
+    // 3. Mettre à jour dans Realtime Database
+    const uid = user.uid;
+    const updates = {};
+    updates[`users/${uid}/email`] = newEmail;
+    updates[`teachers/${uid}/email`] = newEmail;
+    try { await db.ref().update(updates); } catch(e) { console.warn('DB update:', e); }
+
+    // 4. Mettre à jour UI
+    const profileEmailEl = document.getElementById('profileEmail');
+    if (profileEmailEl) profileEmailEl.textContent = newEmail;
+    if (currentTeacher) currentTeacher.email = newEmail;
+
+    showCredentialMessage('updateEmailMsg', '✅ Email mis à jour avec succès dans Firebase Authentication.', 'success');
+    toast('Email changé avec succès : ' + newEmail, 'ok');
+
+    // Vider le champ
+    const emailInput = document.getElementById('accountNewEmail');
+    if (emailInput) emailInput.value = newEmail;
+
   } catch (error) {
-    console.error('Erreur updateUserEmail:', error);
-    const authErrorMessage = translateFirebaseError(error);
-    showCredentialMessage('updateEmailMsg', authErrorMessage, 'error');
-    toast(authErrorMessage, 'err');
+    console.error('updateUserEmail error:', error.code);
+
+    let msg = '';
+    switch (error.code) {
+      case 'auth/wrong-password':
+      case 'auth/invalid-login-credentials':
+      case 'auth/invalid-credential':
+        msg = 'Mot de passe actuel incorrect.'; break;
+      case 'auth/email-already-in-use':
+        msg = 'Cet email est déjà utilisé par un autre compte.'; break;
+      case 'auth/invalid-email':
+        msg = 'Format email invalide.'; break;
+      case 'auth/requires-recent-login':
+        msg = 'Session expirée. Déconnectez-vous et reconnectez-vous, puis réessayez.'; break;
+      case 'auth/too-many-requests':
+        msg = 'Trop de tentatives. Réessayez dans quelques minutes.'; break;
+      case 'auth/network-request-failed':
+        msg = 'Erreur réseau. Vérifiez votre connexion.'; break;
+      case 'auth/operation-not-allowed':
+        msg = 'Opération non autorisée. Activez Email/Password dans Firebase Console → Authentication → Sign-in providers.'; break;
+      default:
+        msg = 'Erreur : ' + (error.message || error.code);
+    }
+    showCredentialMessage('updateEmailMsg', msg, 'error');
+    toast(msg, 'err');
   } finally {
-    setCredentialButtonLoading('updateEmailBtn', false, originalHtml);
-    syncAccountCredentialInputs();
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+    validateCredentialForm();
   }
 }
 
@@ -4902,81 +4980,73 @@ async function updateUserPassword() {
 }
 
 async function updateAccountCredentials() {
-  if (!ensureOnlineForFirebase('mettre a jour les identifiants')) return;
   clearCredentialMessages();
 
   const user = auth.currentUser;
-  if (!user) {
-    toast('Aucun utilisateur connecte. Veuillez vous reconnecter.', 'err');
-    return;
-  }
+  if (!user) { toast('Aucun utilisateur connecté.', 'err'); return; }
 
-  const emailInput = document.getElementById('accountNewEmail');
-  const currentPasswordInput = document.getElementById('accountCurrentPassword');
-  const newPasswordInput = document.getElementById('accountNewPassword');
-  const confirmPasswordInput = document.getElementById('accountConfirmPassword');
+  const newEmail = (document.getElementById('accountNewEmail')?.value || '').trim();
+  const currPassword = (document.getElementById('accountCurrentPassword')?.value || '').trim();
+  const newPassword = (document.getElementById('accountNewPassword')?.value || '').trim();
+  const confirmPassword = (document.getElementById('accountConfirmPassword')?.value || '').trim();
 
-  const newEmail = (emailInput && emailInput.value || '').trim();
-  const currentPassword = (currentPasswordInput && currentPasswordInput.value || '').trim();
-  const newPassword = (newPasswordInput && newPasswordInput.value || '').trim();
-  const confirmPassword = (confirmPasswordInput && confirmPasswordInput.value || '').trim();
-
-  const currentEmail = (user.email || '').trim();
-  const wantsEmailChange = !!newEmail && newEmail.toLowerCase() !== currentEmail.toLowerCase();
-  const wantsPasswordChange = !!newPassword;
+  const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+  const currentEmail = (user.email || '').toLowerCase();
+  const wantsEmailChange = emailRegex.test(newEmail) && newEmail.toLowerCase() !== currentEmail;
+  const wantsPasswordChange = newPassword.length >= 6 && newPassword === confirmPassword;
 
   if (!wantsEmailChange && !wantsPasswordChange) {
-    toast('Aucun changement detecte.', 'warn');
+    toast('Aucun changement valide détecté.', 'warn');
+    return;
+  }
+  if (!currPassword) {
+    toast('Mot de passe actuel requis.', 'warn');
     return;
   }
 
-  if (wantsPasswordChange) {
-    if (newPassword.length < 6) {
-      toast('Le nouveau mot de passe doit contenir au moins 6 caracteres.', 'warn');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast('La confirmation du mot de passe ne correspond pas.', 'warn');
-      return;
-    }
-  }
-
-  const submitBtn = document.getElementById('updateCredsBtn');
-  const originalBtnHtml = '<i class="fas fa-key"></i> Mettre a jour les deux';
-  setCredentialButtonLoading('updateCredsBtn', true, originalBtnHtml);
+  const btn = document.getElementById('updateCredsBtn');
+  const originalHtml = '<i class="fas fa-key"></i> Mettre à jour les deux';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mise à jour...'; }
 
   try {
-    if (wantsEmailChange || wantsPasswordChange) {
-      await reAuthenticate(currentPassword);
-    }
+    // Reauthentification
+    const credential = firebase.auth.EmailAuthProvider.credential(user.email, currPassword);
+    await user.reauthenticateWithCredential(credential);
 
+    // Changer email si demandé
     if (wantsEmailChange) {
       await user.updateEmail(newEmail);
-      toast('Email mis a jour avec succes.', 'ok');
-
-      if (currentTeacher) currentTeacher.email = newEmail;
-      if (currentUser) currentUser.email = newEmail;
+      const uid = user.uid;
+      try {
+        await db.ref().update({
+          [`users/${uid}/email`]: newEmail,
+          [`teachers/${uid}/email`]: newEmail
+        });
+      } catch(e) { console.warn('DB update email:', e); }
       const profileEmailEl = document.getElementById('profileEmail');
       if (profileEmailEl) profileEmailEl.textContent = newEmail;
+      if (currentTeacher) currentTeacher.email = newEmail;
+      toast('Email mis à jour : ' + newEmail, 'ok');
     }
 
+    // Changer mot de passe si demandé
     if (wantsPasswordChange) {
       await user.updatePassword(newPassword);
-      toast('Mot de passe mis a jour avec succes.', 'ok');
-      if (newPasswordInput) newPasswordInput.value = '';
-      if (confirmPasswordInput) confirmPasswordInput.value = '';
+      document.getElementById('accountNewPassword').value = '';
+      document.getElementById('accountConfirmPassword').value = '';
+      toast('Mot de passe mis à jour.', 'ok');
     }
 
-    if (currentPasswordInput) currentPasswordInput.value = '';
-    syncAccountCredentialInputs();
+    document.getElementById('accountCurrentPassword').value = '';
+    showCredentialMessage('updateEmailMsg', '✅ Modifications enregistrées avec succès.', 'success');
+
   } catch (error) {
-    console.error('Erreur updateAccountCredentials:', error);
-    toast(translateFirebaseError(error), 'err');
+    console.error('updateAccountCredentials error:', error.code);
+    const msg = translateFirebaseError(error);
+    showCredentialMessage('updateEmailMsg', msg, 'error');
+    toast(msg, 'err');
   } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = originalBtnHtml;
-    }
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
     validateCredentialForm();
   }
 }
@@ -5205,58 +5275,52 @@ function renderAlertsDemo() {
 
 // Load notifications for the current teacher
 async function loadNotifications() {
-  try {
-    const uid = getCurrentTeacherUid();
-    if (!uid) return;
+  const uid = getCurrentTeacherUid();
+  if (!uid) return;
 
+  try {
     if (notificationsListenerRef) {
       db.ref('notifications').off('value', notificationsListenerRef);
       notificationsListenerRef = null;
     }
 
     notificationsListenerRef = (snapshot) => {
-      const data = snapshot.val();
-      const notifications = Object.entries(data || {})
-        .map(([id, val]) => ({ id, ...val }))
+      const all = snapshot.val() || {};
+      const notifications = Object.keys(all)
+        .map(id => ({ id, ...all[id] }))
         .filter(n => {
           const target = n.teacherId || n.userId || n.uid || n.recipientId || '';
           const roleTarget = (n.targetRole || '').toString().toLowerCase();
           return target === uid || roleTarget === 'teacher';
-        });
+        })
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-      const container = document.getElementById("notificationList");
-      if (!container) return;
-
-      container.innerHTML = "";
-
-      if (notifications.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h4>Aucune notification</h4><p>Toutes les tâches sont à jour</p></div>';
-      } else {
-        notifications
-          .sort((a, b) => b.createdAt - a.createdAt)
-          .forEach(n => {
-            const message = n.message || "Notification vide";
-            const div = document.createElement("div");
-            div.className = "notif-item";
+      const unread = notifications.filter(n => !n.read).length;
+      const container = document.getElementById('notificationList');
+      if (container) {
+        container.innerHTML = '';
+        if (!notifications.length) {
+          container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h4>Aucune notification</h4><p>Toutes les tâches sont à jour</p></div>';
+        } else {
+          notifications.forEach(n => {
+            const div = document.createElement('div');
+            const message = n.message || 'Notification vide';
+            div.className = 'notif-item';
             div.innerHTML = `
-              <p>${message}</p>
-              <small>${n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Date inconnue'}</small>
+              <div class="notif-title">${message}</div>
+              <small style="color:var(--txt-lt);">${new Date(n.createdAt || Date.now()).toLocaleString('fr-FR')}</small>
             `;
-            if (!n.read) div.style.borderLeft = '4px solid var(--blue)';
-            div.onclick = () => { if (!n.read) markAsRead(n.id); };
             container.appendChild(div);
           });
+        }
       }
 
-      // Update notification count
-      const unread = notifications.filter(n => !n.read).length;
-      const notifCountEl = document.getElementById("notifCount");
+      const notifCountEl = document.getElementById('notifCount');
       if (notifCountEl) {
         notifCountEl.textContent = unread;
         notifCountEl.style.display = unread > 0 ? 'flex' : 'none';
       }
 
-      // Update topbar badge
       const notifBadgeEl = document.getElementById('notifBadge');
       if (notifBadgeEl) {
         notifBadgeEl.textContent = unread;
@@ -5266,12 +5330,11 @@ async function loadNotifications() {
 
     db.ref('notifications').on('value', notificationsListenerRef);
 
-    // Keep dropdown synced if open
     const panel = document.getElementById('notificationPanel');
     if (panel && panel.classList.contains('open')) {
       loadNotificationDropdown();
     }
-  } catch(e) {
+  } catch (e) {
     console.warn('No notifications:', e);
   }
 }
@@ -7325,105 +7388,57 @@ async function loadBulletinHistory() {
 
     console.log("🔍 Loading bulletins for teacher classes:", teacherClasses, "branch:", teacherBranch);
 
-    // Load bulletins based on branch - separate logic per branch
-    if (teacherBranch === 'kimisagara') {
-      // Load from nested path for each class
-      console.log("🌟 Using NESTED path loading for kimisagara");
-      
-      // Debug: check what exists at bulletins/maternelle/kimisagara
-      const debugSnap = await db.ref('bulletins/maternelle/kimisagara').once('value');
-      console.log('🔍 kimisagara bulletins root exists:', debugSnap.exists());
-      console.log('🔍 kimisagara bulletins children:', 
-        debugSnap.exists() ? Object.keys(debugSnap.val() || {}) : 'EMPTY'
-      );
-
-      // Also check the exact path being used
-      for (const className of teacherClasses) {
-        const classKey = (className || '').toString().trim().toUpperCase();
-        const exactPath = 'bulletins/maternelle/kimisagara/' + classKey.toLowerCase();
-        const exactSnap = await db.ref(exactPath).once('value');
-        console.log('🔍 Exact path:', exactPath);
-        console.log('🔍 Exact path exists:', exactSnap.exists());
-        console.log('🔍 Exact path value:', exactSnap.val());
-      }
-
-      for (const className of teacherClasses) {
-        const classKey = (className || '').toString().trim().toUpperCase();
-        if (!classKey) continue;
-
-        const path = `bulletins/maternelle/${teacherBranch}/${classKey.toLowerCase()}`;
-        console.log(`📂 Loading from nested path: ${path}`);
-
-        try {
-          const ref = db.ref(path);
-          const snapshot = await ref.once('value');
-
-          if (snapshot.exists()) {
-            snapshot.forEach(child => {
-              const bulletin = { id: child.key, ...child.val() };
-              const normalizedBulletinBranch = normalizeBranchForMatch(bulletin.branch || bulletin.branche || bulletin.branchName || teacherBranch);
-              const normalizedTeacherBranch = normalizeBranchForMatch(teacherBranch || '');
-              const normalizedBulletinClass = (bulletin.class || bulletin.classes || bulletin.classe || '').toString().trim();
-              const classMatch = areClassesCompatible(normalizedBulletinClass, [classKey]);
-              const branchMatch = areBranchesCompatible(normalizedBulletinBranch, normalizedTeacherBranch);
-              const teacherMatch = doesBulletinBelongToTeacher(bulletin, teacher);
-
-              if (branchMatch && classMatch && teacherMatch) {
-                allBulletins.push(bulletin);
-                console.log(`✅ Loaded bulletin: ${bulletin.studentName || 'Unknown'} (${classKey})`);
-              } else {
-                console.log(`⚠️ Skipped nested bulletin - mismatch: branch=${branchMatch}, class=${classMatch}, teacher=${teacherMatch}`);
-              }
-            });
-          } else {
-            console.log(`ℹ️ No bulletins found at path: ${path}`);
+    // Helper: load one Firebase path and push matching bulletins with their exact path tagged
+    async function loadFromPath(path, classKey) {
+      try {
+        const snapshot = await db.ref(path).once('value');
+        if (!snapshot.exists()) return;
+        snapshot.forEach(child => {
+          const bulletin = { id: child.key, _fbPath: `${path}/${child.key}`, ...child.val() };
+          const normalizedBulletinBranch = normalizeBranchForMatch(bulletin.branch || bulletin.branche || bulletin.branchName || teacherBranch);
+          const normalizedTeacherBranch  = normalizeBranchForMatch(teacherBranch || '');
+          const normalizedBulletinClass  = (bulletin.class || bulletin.classes || bulletin.classe || '').toString().trim();
+          const classMatch   = classKey ? areClassesCompatible(normalizedBulletinClass, [classKey]) : true;
+          const branchMatch  = areBranchesCompatible(normalizedBulletinBranch, normalizedTeacherBranch);
+          const teacherMatch = doesBulletinBelongToTeacher(bulletin, teacher);
+          if (branchMatch && classMatch && teacherMatch) {
+            allBulletins.push(bulletin);
           }
-        } catch (error) {
-          console.error(`❌ Error loading from ${path}:`, error);
-        }
-      }
-    } else {
-      // Load from flat collection for kacyiru and gisozi
-      console.log("📋 Using FLAT collection loading for", teacherBranch);
-      for (const className of teacherClasses) {
-        const classKey = (className || '').toString().trim().toUpperCase();
-        if (!classKey) continue;
-
-        const collectionName = `bulletins_maternelle_${classKey.toLowerCase()}`;
-        console.log(`📂 Loading from flat collection: ${collectionName}`);
-
-        try {
-          const ref = db.ref(collectionName);
-          const snapshot = await ref.once('value');
-
-          if (snapshot.exists()) {
-            snapshot.forEach(child => {
-              const bulletin = { id: child.key, ...child.val() };
-              // Filter by branch and class
-              const normalizedBulletinBranch = normalizeBranchForMatch(bulletin.branch || bulletin.branche || bulletin.branchName || '');
-              const normalizedBulletinClass = (bulletin.class || bulletin.classes || bulletin.classe || '').toString().trim();
-              const normalizedTeacherBranch = normalizeBranchForMatch(teacherBranch || '');
-              const classMatch = areClassesCompatible(normalizedBulletinClass, [classKey]);
-              const branchMatch = areBranchesCompatible(normalizedBulletinBranch, normalizedTeacherBranch);
-              const teacherMatch = doesBulletinBelongToTeacher(bulletin, teacher);
-
-              if (branchMatch && classMatch && teacherMatch) {
-                allBulletins.push(bulletin);
-                console.log(`✅ Loaded bulletin: ${bulletin.studentName || 'Unknown'} (${classKey}) - branch: ${bulletin.branch}`);
-              } else {
-                console.log(`⚠️ Skipped bulletin - filter mismatch: branch=${branchMatch}, class=${classMatch}, teacher=${teacherMatch}`);
-              }
-            });
-          } else {
-            console.log(`ℹ️ No bulletins found in collection: ${collectionName}`);
-          }
-        } catch (error) {
-          console.error(`❌ Error loading from ${collectionName}:`, error);
-        }
+        });
+      } catch (e) {
+        console.warn(`⚠️ Could not load ${path}:`, e.message);
       }
     }
 
-    console.log("📄 All bulletins loaded:", allBulletins.length);
+    // Scan ALL known path patterns for each class so cross-path duplicates are detected
+    const branches = teacherBranch
+      ? [teacherBranch]
+      : ['maternelle', 'primaire', 'kacyiru', 'gisozi', 'kimisagara'];
+    const levels = ['maternelle', 'primaire'];
+
+    for (const className of teacherClasses) {
+      const classKey = (className || '').toString().trim().toUpperCase();
+      if (!classKey) continue;
+      const ck = classKey.toLowerCase();
+
+      // 1. Nested paths: bulletins/{level}/{branch}/{class}
+      for (const level of levels) {
+        const branchesToTry = teacherBranch
+          ? [teacherBranch]
+          : ['kacyiru', 'gisozi', 'kimisagara'];
+        for (const br of branchesToTry) {
+          await loadFromPath(`bulletins/${level}/${br}/${ck}`, classKey);
+        }
+      }
+
+      // 2. Flat legacy paths: bulletins_{level}_{class} and bulletins_{class}
+      for (const level of levels) {
+        await loadFromPath(`bulletins_${level}_${ck}`, classKey);
+      }
+      await loadFromPath(`bulletins_${ck}`, classKey);
+    }
+
+    console.log("📄 All bulletins loaded (all paths):", allBulletins.length);
 
     // Filtrer strictement par branche + classe + enseignant
     const normalizedTeacherBranch2 = normalizeBranchForMatch(teacherBranch);
@@ -7437,24 +7452,50 @@ async function loadBulletinHistory() {
     console.log("✅ Filtered bulletins:", filtered.length);
 
     // 3. DEDUPE + SORT BULLETINS ALPHABETICALLY
-    const uniqueByStudentTrimester = {};
+    lastDuplicateBulletins = [];
+
+    // Step A: remove exact-path duplicates (same record loaded twice from overlapping paths)
+    const seenPaths = new Set();
+    const dedupeByPath = [];
     filtered.forEach(b => {
-      const sid = (b.studentId || '').toString().trim();
-      const tri = (b.trimester || b.trimestre || '').toString().trim();
-      const cls = (b.class || b.classe || '').toString().trim().toUpperCase();
-      const key = `${sid}__${tri}__${cls}`;
-      if (!key.replace(/_/g, '')) return;
-
-      const existing = uniqueByStudentTrimester[key];
-      const currentDate = parseInt(b.publishedAt || b.updatedAt || b.createdAt || '0', 10) || 0;
-      const existingDate = existing
-        ? (parseInt(existing.publishedAt || existing.updatedAt || existing.createdAt || '0', 10) || 0)
-        : -1;
-
-      if (!existing || currentDate >= existingDate) {
-        uniqueByStudentTrimester[key] = b;
+      const pathKey = b._fbPath || `${b.id}__${b.studentId}`;
+      if (!seenPaths.has(pathKey)) {
+        seenPaths.add(pathKey);
+        dedupeByPath.push(b);
       }
     });
+
+    // Step B: group by studentId + trimester — a real duplicate = 2+ DIFFERENT records for same student+trimester
+    const groupByStudentTrimester = {};
+    dedupeByPath.forEach(b => {
+      const sid = (b.studentId || '').toString().trim();
+      const tri = (b.trimester || b.trimestre || '').toString().trim().toUpperCase();
+      if (!sid || !tri) return;
+      const key = `${sid}__${tri}`;
+      if (!groupByStudentTrimester[key]) groupByStudentTrimester[key] = [];
+      groupByStudentTrimester[key].push(b);
+    });
+
+    // Step C: for groups with >1 record → keep newest, flag others as duplicates
+    const uniqueByStudentTrimester = {};
+    Object.entries(groupByStudentTrimester).forEach(([key, group]) => {
+      if (group.length === 1) {
+        uniqueByStudentTrimester[key] = group[0];
+        return;
+      }
+      // Sort descending by date → first is newest
+      group.sort((a, z) => {
+        const da = parseInt(a.publishedAt || a.updatedAt || a.createdAt || '0', 10) || 0;
+        const dz = parseInt(z.publishedAt || z.updatedAt || z.createdAt || '0', 10) || 0;
+        return dz - da;
+      });
+      uniqueByStudentTrimester[key] = group[0]; // keep newest
+      for (let i = 1; i < group.length; i++) {
+        lastDuplicateBulletins.push(group[i]); // older ones are real duplicates
+      }
+    });
+
+    console.log(`🔍 Real duplicates detected: ${lastDuplicateBulletins.length}`, lastDuplicateBulletins.map(d => `${d.studentName}|${d.trimester||d.trimestre}|${d._fbPath}`));
 
     const bulletinsArrayAll = Object.values(uniqueByStudentTrimester)
       .sort((a, b) => (a.studentName || "").localeCompare(b.studentName || ""));
@@ -7481,6 +7522,7 @@ async function loadBulletinHistory() {
     document.getElementById('totalStudents').textContent = filteredStudents.length;
     document.getElementById('totalBulletins').textContent = bulletinsArray.length;
     updateMissingStudentsButton();
+    updateDuplicatesButton();
     
     // Create notifications for missing bulletins
     if (missingStudents.length > 0) {
@@ -7621,7 +7663,9 @@ async function loadBulletinHistory() {
   } catch (error) {
     console.error('Erreur lors du chargement de l\'historique:', error);
     lastMissingStudents = [];
+    lastDuplicateBulletins = [];
     updateMissingStudentsButton();
+    updateDuplicatesButton();
     container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h4>Erreur de chargement</h4><p>Vérifiez votre connexion</p></div>';
     toast('Erreur lors du chargement: ' + error.message, 'err');
   } finally {
@@ -7634,6 +7678,14 @@ function updateMissingStudentsButton() {
   if (!btn) return;
   const count = Array.isArray(lastMissingStudents) ? lastMissingStudents.length : 0;
   btn.innerHTML = `<i class="fas fa-user-clock"></i> Eleves manquants (${count})`;
+}
+
+function updateDuplicatesButton() {
+  const btn = document.getElementById('duplicatesBtn');
+  if (!btn) return;
+  const count = Array.isArray(lastDuplicateBulletins) ? lastDuplicateBulletins.length : 0;
+  btn.innerHTML = `<i class="fas fa-copy"></i> Doublons (${count})`;
+  btn.style.display = count > 0 ? '' : 'none';
 }
 
 function showMissingBulletinsModal() {
@@ -7721,6 +7773,158 @@ function downloadMissingStudentsCsv() {
   URL.revokeObjectURL(url);
 
   toast(`${lastMissingStudents.length} eleve(s) exporte(s)`, 'ok');
+}
+
+function showDuplicatesModal() {
+  const existingModal = document.getElementById('duplicatesModal');
+  if (existingModal) existingModal.remove();
+
+  const dups = Array.isArray(lastDuplicateBulletins) ? lastDuplicateBulletins : [];
+  const count = dups.length;
+
+  let listHtml = '';
+  if (!count) {
+    listHtml = '<div class="empty-state" style="margin:0;"><i class="fas fa-check-circle"></i><h4>Aucun doublon detecte</h4><p>Chaque eleve a au plus un bulletin par trimestre.</p></div>';
+  } else {
+    listHtml = dups.map((b, idx) => {
+      const name = b.studentName || b.nom || b.studentId || '—';
+      const cls  = b.class || b.classe || '—';
+      const tri  = b.trimester || b.trimestre || '—';
+      const date = b.publishedAt || b.updatedAt || b.createdAt || 0;
+      const dateLabel = date ? new Date(parseInt(date)).toLocaleDateString('fr-FR') : '—';
+      const sid  = (b.studentId || '').toString().trim();
+      const clsNorm = (cls || '').toString().trim();
+      const triNorm = (tri || '').toString().trim();
+      return `
+        <div style="display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--bdr);border-radius:10px;background:#fff8f0;">
+          <div style="font-weight:800;color:var(--warn,#f59e0b);">${idx + 1}</div>
+          <div>
+            <div style="font-weight:700;color:var(--txt);">${name}</div>
+            <div style="font-size:.78rem;color:var(--txt-lt);">Classe: ${cls} &bull; Trimestre: ${tri} &bull; Date: ${dateLabel}</div>
+            <div style="font-size:.72rem;color:var(--txt-lt);margin-top:2px;word-break:break-all;">${b._fbPath || ''}</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deleteDuplicateBulletin(${idx}, this)" title="Supprimer ce doublon">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const modal = document.createElement('div');
+  modal.id = 'duplicatesModal';
+  modal.className = 'modal-overlay open';
+  modal.innerHTML = `
+    <div class="modal-box" style="width:100%;max-width:780px;border-radius:16px;">
+      <div class="modal-hd">
+        <div class="modal-ttl" style="color:var(--warn,#f59e0b);"><i class="fas fa-copy"></i> Bulletins en doublon (${count})</div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-times"></i></button>
+      </div>
+      <div style="padding:12px 20px 4px;color:var(--txt-lt);font-size:.85rem;">Ces bulletins sont des anciens duplicata — une version plus recente existe deja. Vous pouvez les supprimer en toute securite.</div>
+      <div id="duplicatesListContainer" style="padding:12px 20px 20px;display:flex;flex-direction:column;gap:10px;max-height:55vh;overflow:auto;">${listHtml}</div>
+      <div style="padding:14px 20px;border-top:1px solid var(--bdr);display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fermer</button>
+        <button class="btn btn-danger" onclick="deleteAllDuplicates()" ${count ? '' : 'disabled'} id="deleteAllDupsBtn">
+          <i class="fas fa-trash"></i> Supprimer tous (${count})
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+async function deleteDuplicateBulletin(dupIdx, btnEl) {
+  const dup = lastDuplicateBulletins[dupIdx];
+  if (!dup) { toast('Doublon introuvable', 'warn'); return; }
+  if (!confirm('Supprimer ce doublon ?')) return;
+  try {
+    if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
+    if (dup._fbPath) {
+      // Direct path known — delete immediately
+      await db.ref(dup._fbPath).remove();
+    } else {
+      // Fallback: search candidate paths
+      const sid = (dup.studentId || '').toString().trim();
+      const cls = (dup.class || dup.classe || '').toString().trim();
+      const tri = (dup.trimester || dup.trimestre || '').toString().trim();
+      const student = (window.allStudents || []).find(s => s.id === sid || s._id === sid);
+      const branch = (student?.branch || student?.schoolBranch || dup.branch || 'maternelle').toLowerCase();
+      const candidatePaths = getBulletinEntryCandidatePaths(branch, cls, sid, tri);
+      const legacyPath = `bulletins_${branch}_${normalize(cls)}/${sid}_${tri}`;
+      for (const path of [...candidatePaths, legacyPath]) {
+        const snap = await db.ref(path).once('value');
+        if (snap.exists()) { await db.ref(path).remove(); break; }
+      }
+    }
+
+    // Remove from local array by index
+    lastDuplicateBulletins.splice(dupIdx, 1);
+    updateDuplicatesButton();
+
+    // Remove row from modal
+    if (btnEl) btnEl.closest('div[style]')?.remove();
+
+    // Update modal header
+    const modal = document.getElementById('duplicatesModal');
+    if (modal) {
+      const remaining = lastDuplicateBulletins.length;
+      modal.querySelector('.modal-ttl').innerHTML = `<i class="fas fa-copy"></i> Bulletins en doublon (${remaining})`;
+      const deleteAllBtn = modal.querySelector('#deleteAllDupsBtn');
+      if (deleteAllBtn) {
+        deleteAllBtn.innerHTML = `<i class="fas fa-trash"></i> Supprimer tous (${remaining})`;
+        deleteAllBtn.disabled = remaining === 0;
+      }
+      if (remaining === 0) {
+        const container = modal.querySelector('#duplicatesListContainer');
+        if (container) container.innerHTML = '<div class="empty-state" style="margin:0;"><i class="fas fa-check-circle"></i><h4>Tous les doublons ont ete supprimes</h4></div>';
+      }
+    }
+    toast('Doublon supprime', 'ok');
+  } catch (err) {
+    console.error(err);
+    toast('Erreur: ' + err.message, 'err');
+    if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-trash"></i>'; }
+  }
+}
+
+async function deleteAllDuplicates() {
+  const count = lastDuplicateBulletins.length;
+  if (!count) return;
+  if (!confirm(`Supprimer les ${count} doublon(s) ? Cette action ne peut pas etre annulee.`)) return;
+
+  const btn = document.getElementById('deleteAllDupsBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Suppression...'; }
+
+  let deleted = 0;
+  const toProcess = [...lastDuplicateBulletins];
+  for (const b of toProcess) {
+    try {
+      if (b._fbPath) {
+        await db.ref(b._fbPath).remove();
+      } else {
+        const sid = (b.studentId || '').toString().trim();
+        const cls = (b.class || b.classe || '').toString().trim();
+        const tri = (b.trimester || b.trimestre || '').toString().trim();
+        const student = (window.allStudents || []).find(s => s.id === sid || s._id === sid);
+        const branch = (student?.branch || student?.schoolBranch || b.branch || 'maternelle').toLowerCase();
+        const candidatePaths = getBulletinEntryCandidatePaths(branch, cls, sid, tri);
+        const legacyPath = `bulletins_${branch}_${normalize(cls)}/${sid}_${tri}`;
+        for (const path of [...candidatePaths, legacyPath]) {
+          const snap = await db.ref(path).once('value');
+          if (snap.exists()) { await db.ref(path).remove(); break; }
+        }
+      }
+      deleted++;
+    } catch (e) { console.warn('Delete failed for duplicate:', e); }
+  }
+
+  lastDuplicateBulletins = [];
+  updateDuplicatesButton();
+  toast(`${deleted} doublon(s) supprimes`, 'ok');
+  const modal = document.getElementById('duplicatesModal');
+  if (modal) modal.remove();
+  setTimeout(() => loadBulletinHistory(), 600);
 }
 
 // Calculate general average from bulletin notes
