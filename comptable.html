@@ -14456,8 +14456,19 @@
             };
             
             try {
-                // Enregistrer dans la collection "users" au lieu de "accountant"
-                await usersRef.child(currentUserUID).update(accountantData);
+                // Keep both generic and role-specific profile records in sync
+                await Promise.all([
+                    usersRef.child(currentUserUID).update(accountantData),
+                    db.ref('accountants/' + currentUserUID).update({
+                        name: accountantData.name,
+                        email: accountantData.email,
+                        role: accountantData.role,
+                        branch: accountantData.branch,
+                        title: accountantData.title,
+                        updatedAt: accountantData.updatedAt,
+                        updatedBy: accountantData.updatedBy
+                    })
+                ]);
                 currentUser = {
                     ...currentUser,
                     ...accountantData
@@ -14553,11 +14564,18 @@
 
                 if (wantsEmailChange) {
                     await user.updateEmail(newEmail);
-                    await usersRef.child(user.uid).update({
-                        email: newEmail,
-                        updatedAt: Date.now(),
-                        updatedBy: currentUserName || 'system'
-                    });
+                    await Promise.all([
+                        usersRef.child(user.uid).update({
+                            email: newEmail,
+                            updatedAt: Date.now(),
+                            updatedBy: currentUserName || 'system'
+                        }),
+                        db.ref('accountants/' + user.uid).update({
+                            email: newEmail,
+                            updatedAt: Date.now(),
+                            updatedBy: currentUserName || 'system'
+                        })
+                    ]);
                     if (currentUser) currentUser.email = newEmail;
                     const accountantEmailEl = document.getElementById('accountantEmail');
                     if (accountantEmailEl) accountantEmailEl.value = newEmail;

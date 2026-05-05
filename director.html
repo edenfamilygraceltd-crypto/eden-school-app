@@ -2519,22 +2519,51 @@
                     
                     <div class="col-md-4">
                         <div class="card-modern">
-                            <h6 class="fw-bold mb-3">Sécurité</h6>
+                            <h6 class="fw-bold mb-3">Profil du Compte</h6>
+                            <div class="form-group">
+                                <label class="form-label">Nom d'affichage</label>
+                                <input type="text" class="form-control-modern" id="directorProfileName" placeholder="Nom du directeur">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email actuel</label>
+                                <input type="email" class="form-control-modern" id="directorProfileEmail" readonly>
+                            </div>
+                            <div class="d-grid mb-3">
+                                <button class="btn-modern btn-primary-modern w-100" onclick="updateDirectorProfile()">
+                                    <i class="fas fa-user-edit"></i>
+                                    Mettre à jour le profil
+                                </button>
+                            </div>
+                            <hr>
+                            <h6 class="fw-bold mb-3">Sécurité du Compte</h6>
+                            <div class="form-group">
+                                <label class="form-label">Nouvel email de connexion</label>
+                                <input type="email" class="form-control-modern" id="directorNewEmail" placeholder="email@ecole.rw" autocomplete="email">
+                            </div>
                             <div class="form-group">
                                 <label class="form-label">Mot de Passe Actuel</label>
-                                <input type="password" class="form-control-modern" id="currentPassword">
+                                <div class="input-group">
+                                    <input type="password" class="form-control-modern" id="currentPassword" autocomplete="current-password">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="toggleDirectorPasswordVisibility('currentPassword', this)">Afficher</button>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Nouveau Mot de Passe</label>
-                                <input type="password" class="form-control-modern" id="newPassword">
+                                <div class="input-group">
+                                    <input type="password" class="form-control-modern" id="newPassword" autocomplete="new-password">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="toggleDirectorPasswordVisibility('newPassword', this)">Afficher</button>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Confirmer Mot de Passe</label>
-                                <input type="password" class="form-control-modern" id="confirmPassword">
+                                <div class="input-group">
+                                    <input type="password" class="form-control-modern" id="confirmPassword" autocomplete="new-password">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="toggleDirectorPasswordVisibility('confirmPassword', this)">Afficher</button>
+                                </div>
                             </div>
-                            <button class="btn-modern btn-danger-modern w-100" onclick="changePassword()">
+                            <button class="btn-modern btn-danger-modern w-100" id="updateDirectorCredsBtn" onclick="updateDirectorCredentials()">
                                 <i class="fas fa-key"></i>
-                                Changer Mot de Passe
+                                Mettre à jour Email / Mot de passe
                             </button>
                         </div>
                     </div>
@@ -3454,6 +3483,12 @@
                         currentUserData = snapshot.val();
                         document.getElementById('directorName').textContent = currentUserData.name || 'Directeur';
                         document.getElementById('userRole').textContent = currentUserData.role || 'Administrateur';
+                        const profileNameEl = document.getElementById('directorProfileName');
+                        if (profileNameEl) profileNameEl.value = currentUserData.name || '';
+                        const profileEmailEl = document.getElementById('directorProfileEmail');
+                        if (profileEmailEl) profileEmailEl.value = currentUserData.email || (auth.currentUser && auth.currentUser.email) || '';
+                        const newEmailEl = document.getElementById('directorNewEmail');
+                        if (newEmailEl) newEmailEl.value = (auth.currentUser && auth.currentUser.email) || currentUserData.email || '';
                         
                         // Initialiser la structure de la base de données
                         initializeDatabaseStructure();
@@ -5617,28 +5652,160 @@
         function saveBranchSettings() {
             showNotification('Succès', 'Paramètres de branche sauvegardés', 'success');
         }
+
+        function toggleDirectorPasswordVisibility(inputId, triggerBtn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const reveal = input.type === 'password';
+            input.type = reveal ? 'text' : 'password';
+            if (triggerBtn) triggerBtn.textContent = reveal ? 'Masquer' : 'Afficher';
+        }
+
+        async function updateDirectorProfile() {
+            const user = auth.currentUser;
+            if (!user) {
+                showNotification('Erreur', 'Aucun utilisateur connecté', 'error');
+                return;
+            }
+
+            const newName = (document.getElementById('directorProfileName')?.value || '').trim();
+            if (!newName) {
+                showNotification('Erreur', 'Le nom ne peut pas être vide', 'error');
+                return;
+            }
+
+            try {
+                const updates = {
+                    name: newName,
+                    displayName: newName,
+                    updatedAt: Date.now()
+                };
+
+                await Promise.all([
+                    database.ref('directors/' + user.uid).update(updates),
+                    database.ref('users/' + user.uid).update(updates)
+                ]);
+
+                if (currentUserData && typeof currentUserData === 'object') {
+                    currentUserData.name = newName;
+                    currentUserData.displayName = newName;
+                }
+
+                document.getElementById('directorName').textContent = newName;
+                showNotification('Succès', 'Profil directeur mis à jour', 'success');
+            } catch (error) {
+                console.error('Erreur updateDirectorProfile:', error);
+                showNotification('Erreur', error.message || 'Impossible de mettre à jour le profil', 'error');
+            }
+        }
+
+        function getDirectorFriendlyAuthError(error) {
+            const code = (error && error.code) || '';
+            switch (code) {
+                case 'auth/invalid-email':
+                    return 'Adresse email invalide.';
+                case 'auth/email-already-in-use':
+                    return 'Cet email est déjà utilisé par un autre compte.';
+                case 'auth/weak-password':
+                    return 'Le nouveau mot de passe est trop faible.';
+                case 'auth/wrong-password':
+                case 'auth/invalid-credential':
+                    return 'Mot de passe actuel incorrect.';
+                case 'auth/requires-recent-login':
+                    return 'Session expirée. Reconnectez-vous puis réessayez.';
+                default:
+                    return (error && error.message) || 'Erreur lors de la mise à jour des identifiants.';
+            }
+        }
+
+        async function updateDirectorCredentials() {
+            const user = auth.currentUser;
+            if (!user) {
+                showNotification('Erreur', 'Aucun utilisateur connecté', 'error');
+                return;
+            }
+
+            const newEmailInput = document.getElementById('directorNewEmail');
+            const currentPasswordInput = document.getElementById('currentPassword');
+            const newPasswordInput = document.getElementById('newPassword');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const updateBtn = document.getElementById('updateDirectorCredsBtn');
+
+            const newEmail = (newEmailInput?.value || '').trim();
+            const currentPassword = (currentPasswordInput?.value || '').trim();
+            const newPassword = (newPasswordInput?.value || '').trim();
+            const confirmPassword = (confirmPasswordInput?.value || '').trim();
+
+            const currentEmail = (user.email || '').trim();
+            const wantsEmailChange = !!newEmail && newEmail.toLowerCase() !== currentEmail.toLowerCase();
+            const wantsPasswordChange = !!newPassword;
+
+            if (!wantsEmailChange && !wantsPasswordChange) {
+                showNotification('Info', 'Aucun changement détecté', 'success');
+                return;
+            }
+
+            if (!currentPassword) {
+                showNotification('Erreur', 'Entrez le mot de passe actuel', 'error');
+                return;
+            }
+
+            if (wantsPasswordChange) {
+                if (newPassword.length < 6) {
+                    showNotification('Erreur', 'Le nouveau mot de passe doit contenir au moins 6 caractères', 'error');
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    showNotification('Erreur', 'La confirmation du mot de passe ne correspond pas', 'error');
+                    return;
+                }
+            }
+
+            const originalBtnHtml = updateBtn ? updateBtn.innerHTML : '';
+            if (updateBtn) {
+                updateBtn.disabled = true;
+                updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Mise à jour...';
+            }
+
+            try {
+                const credential = firebase.auth.EmailAuthProvider.credential(currentEmail || newEmail, currentPassword);
+                await user.reauthenticateWithCredential(credential);
+
+                if (wantsEmailChange) {
+                    await user.updateEmail(newEmail);
+                    await Promise.all([
+                        database.ref('directors/' + user.uid).update({ email: newEmail, updatedAt: Date.now() }),
+                        database.ref('users/' + user.uid).update({ email: newEmail, updatedAt: Date.now() })
+                    ]);
+                    if (currentUserData && typeof currentUserData === 'object') currentUserData.email = newEmail;
+                    const currentEmailEl = document.getElementById('directorProfileEmail');
+                    if (currentEmailEl) currentEmailEl.value = newEmail;
+                }
+
+                if (wantsPasswordChange) {
+                    await user.updatePassword(newPassword);
+                }
+
+                if (currentPasswordInput) currentPasswordInput.value = '';
+                if (newPasswordInput) newPasswordInput.value = '';
+                if (confirmPasswordInput) confirmPasswordInput.value = '';
+
+                showNotification('Succès', 'Identifiants mis à jour avec succès', 'success');
+            } catch (error) {
+                console.error('Erreur updateDirectorCredentials:', error);
+                showNotification('Erreur', getDirectorFriendlyAuthError(error), 'error');
+            } finally {
+                if (updateBtn) {
+                    updateBtn.disabled = false;
+                    updateBtn.innerHTML = originalBtnHtml;
+                }
+            }
+        }
         
         // Changer le mot de passe
         function changePassword() {
-            const current = document.getElementById('currentPassword').value;
-            const newPass = document.getElementById('newPassword').value;
-            const confirm = document.getElementById('confirmPassword').value;
-            
-            if (newPass !== confirm) {
-                showNotification('Erreur', 'Les mots de passe ne correspondent pas', 'error');
-                return;
-            }
-            
-            if (newPass.length < 8) {
-                showNotification('Erreur', 'Le mot de passe doit contenir au moins 8 caractères', 'error');
-                return;
-            }
-            
-            showNotification('Succès', 'Mot de passe changé avec succès', 'success');
-            
-            document.getElementById('currentPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
+            // Kept for backward compatibility with old onclick bindings.
+            updateDirectorCredentials();
         }
         
         // Afficher une notification
