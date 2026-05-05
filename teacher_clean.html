@@ -2954,6 +2954,21 @@ body {
         <div id="updateEmailMsg" style="display:none;margin:8px 0 4px;padding:8px 10px;border-radius:8px;font-size:.82rem;"></div>
         <div id="updatePasswordMsg" style="display:none;margin:4px 0 10px;padding:8px 10px;border-radius:8px;font-size:.82rem;"></div>
 
+        <hr style="border:none;border-top:1px solid var(--bdr,#e0e0e0);margin:14px 0;">
+        <div class="f-group">
+          <label class="f-label">Changer le nom d'affichage</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="f-input" style="flex:1;" type="text" id="accountNewName" placeholder="Nouveau nom complet" autocomplete="name">
+            <span id="accountNameStatus" style="font-size:1rem;line-height:1;">❌</span>
+          </div>
+        </div>
+        <div style="margin-top:6px;">
+          <button class="btn btn-green" id="updateNameBtn" onclick="updateTeacherName()" disabled>
+            <i class="fas fa-user-edit"></i> Mettre à jour le nom
+          </button>
+        </div>
+        <div id="updateNameMsg" style="display:none;margin:8px 0 4px;padding:8px 10px;border-radius:8px;font-size:.82rem;"></div>
+
         <button class="btn btn-blue" onclick="saveSettings()">Enregistrer les paramètres</button>
       </div>
 
@@ -3900,40 +3915,59 @@ auth.onAuthStateChanged(async user => {
 
 async function loadUserProfile({ uid, email }) {
   try {
-    let snap = null;
+    let teacherData = null;
+    let userData = null;
+    let teacherId = uid || null;
 
     if (uid) {
-      snap = await db.ref(`teachers/${uid}`).once('value');
+      const teacherSnap = await db.ref(`teachers/${uid}`).once('value');
+      if (teacherSnap && teacherSnap.exists()) teacherData = teacherSnap.val();
+
+      const userSnap = await db.ref(`users/${uid}`).once('value');
+      if (userSnap && userSnap.exists()) userData = userSnap.val();
     }
 
-    if (!snap || !snap.exists()) {
-      if (email) {
-        snap = await db.ref('teachers').orderByChild('email').equalTo(email).once('value');
-      }
-    }
-
-    if (snap && snap.exists()) {
-      let d;
-      let teacherId;
-
-      if (uid && snap.key === uid && snap.val()) {
-        d = snap.val();
-        teacherId = uid;
-      } else {
-        snap.forEach(child => {
-          d = child.val();
-          teacherId = child.key;
+    if (!teacherData && email) {
+      const teacherByEmailSnap = await db.ref('teachers').orderByChild('email').equalTo(email).once('value');
+      if (teacherByEmailSnap && teacherByEmailSnap.exists()) {
+        teacherByEmailSnap.forEach(child => {
+          if (!teacherData) {
+            teacherData = child.val();
+            teacherId = child.key;
+          }
         });
       }
+    }
+
+    if (!userData && email) {
+      const userByEmailSnap = await db.ref('users').orderByChild('email').equalTo(email).once('value');
+      if (userByEmailSnap && userByEmailSnap.exists()) {
+        userByEmailSnap.forEach(child => {
+          if (!userData) {
+            userData = child.val();
+            if (!teacherId) teacherId = child.key;
+          }
+        });
+      }
+    }
+
+    if (teacherData || userData) {
+      // Keep teacher record as source of truth for pedagogic assignments (classes/branch)
+      const d = {
+        ...(userData || {}),
+        ...(teacherData || {})
+      };
+      if (!teacherId) teacherId = uid || (d && (d.uid || d.id)) || null;
 
       if (d) {
-        currentTeacher = { id: teacherId, ...d };
+        currentTeacher = { id: teacherId, uid: teacherId, ...d };
 
         // Make branch/class normalized access fields
         currentTeacher.branch = d.branch || d.branchName || d.schoolBranch || '';
-        currentTeacher.class  = d.class  || d.classes || d.classe || '';
+        currentTeacher.class = d.class || d.classes || d.classe || '';
 
-        const fullName = `${d.firstName||''} ${d.lastName||''}`.trim() || d.name || email || '';
+        const resolvedEmail = d.email || email || (auth.currentUser && auth.currentUser.email) || '';
+        const fullName = `${d.firstName||''} ${d.lastName||''}`.trim() || d.name || resolvedEmail || '';
         const sbAvaEl = document.getElementById('sbAva');
         if (sbAvaEl) sbAvaEl.textContent = ini(fullName);
 
@@ -3956,7 +3990,7 @@ async function loadUserProfile({ uid, email }) {
         if (profileNameEl) {
           profileNameEl.textContent = fullName;
           const profileEmailEl = document.getElementById('profileEmail');
-          if (profileEmailEl) profileEmailEl.textContent = email;
+          if (profileEmailEl) profileEmailEl.textContent = resolvedEmail;
 
           const profileRoleEl = document.getElementById('profileRole');
           if (profileRoleEl) profileRoleEl.textContent = 'Enseignant';
@@ -4632,6 +4666,15 @@ function initAccountCredentialForm() {
     validateCredentialForm();
   });
 
+  // Name change input
+  document.getElementById('accountNewName')?.addEventListener('input', function() {
+    const val = this.value.trim();
+    const statusEl = document.getElementById('accountNameStatus');
+    if (statusEl) statusEl.textContent = val ? '✅' : '❌';
+    const nameBtn = document.getElementById('updateNameBtn');
+    if (nameBtn) nameBtn.disabled = !val;
+  });
+
   validateCredentialForm();
 }
 
@@ -4885,10 +4928,25 @@ async function updateUserEmail() {
     updates[`teachers/${uid}/email`] = newEmail;
     try { await db.ref().update(updates); } catch(e) { console.warn('DB update:', e); }
 
-    // 4. Mettre à jour UI
+    // 4. Re-synchroniser le profil complet depuis Firebase (filtre reste fonctionnel)
+    await loadUserProfile({ uid, email: newEmail });
+    if (currentTeacher) currentTeacher.email = newEmail;
+    if (currentUser && typeof currentUser === 'object') currentUser.email = newEmail;
+    try {
+      const rawSession = sessionStorage.getItem('eden_user_data');
+      if (rawSession) {
+        const parsed = JSON.parse(rawSession);
+        parsed.email = newEmail;
+        sessionStorage.setItem('eden_user_data', JSON.stringify(parsed));
+      }
+    } catch (e) {
+      console.warn('Session update email skipped:', e);
+    }
+
+    // 5. Mettre à jour UI
     const profileEmailEl = document.getElementById('profileEmail');
     if (profileEmailEl) profileEmailEl.textContent = newEmail;
-    if (currentTeacher) currentTeacher.email = newEmail;
+    syncAccountCredentialInputs();
 
     showCredentialMessage('updateEmailMsg', '✅ Email mis à jour avec succès dans Firebase Authentication.', 'success');
     toast('Email changé avec succès : ' + newEmail, 'ok');
@@ -5023,9 +5081,23 @@ async function updateAccountCredentials() {
           [`teachers/${uid}/email`]: newEmail
         });
       } catch(e) { console.warn('DB update email:', e); }
+      // Re-synchroniser le profil complet pour que le filtre reste fonctionnel
+      await loadUserProfile({ uid, email: newEmail });
+      if (currentTeacher) currentTeacher.email = newEmail;
+      if (currentUser && typeof currentUser === 'object') currentUser.email = newEmail;
+      try {
+        const rawSession = sessionStorage.getItem('eden_user_data');
+        if (rawSession) {
+          const parsed = JSON.parse(rawSession);
+          parsed.email = newEmail;
+          sessionStorage.setItem('eden_user_data', JSON.stringify(parsed));
+        }
+      } catch (e) {
+        console.warn('Session update email skipped:', e);
+      }
       const profileEmailEl = document.getElementById('profileEmail');
       if (profileEmailEl) profileEmailEl.textContent = newEmail;
-      if (currentTeacher) currentTeacher.email = newEmail;
+      syncAccountCredentialInputs();
       toast('Email mis à jour : ' + newEmail, 'ok');
     }
 
@@ -5048,6 +5120,73 @@ async function updateAccountCredentials() {
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
     validateCredentialForm();
+  }
+}
+
+async function updateTeacherName() {
+  const nameInput = document.getElementById('accountNewName');
+  const newName = (nameInput?.value || '').trim();
+  if (!newName) {
+    showCredentialMessage('updateNameMsg', 'Le nom ne peut pas être vide.', 'error');
+    return;
+  }
+
+  const user = auth.currentUser;
+  if (!user) {
+    showCredentialMessage('updateNameMsg', 'Aucun utilisateur connecté.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('updateNameBtn');
+  const originalHtml = '<i class="fas fa-user-edit"></i> Mettre à jour le nom';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mise à jour...'; }
+
+  try {
+    const uid = user.uid;
+    const updates = {};
+    updates[`users/${uid}/name`] = newName;
+    updates[`users/${uid}/displayName`] = newName;
+    updates[`teachers/${uid}/name`] = newName;
+    updates[`teachers/${uid}/displayName`] = newName;
+    await db.ref().update(updates);
+
+    // Mettre à jour les globals
+    if (currentTeacher) {
+      currentTeacher.name = newName;
+      currentTeacher.displayName = newName;
+    }
+    if (currentUser) {
+      currentUser.name = newName;
+      currentUser.displayName = newName;
+    }
+
+    // Mettre à jour l'UI
+    const profileNameEl = document.getElementById('profileName');
+    if (profileNameEl) profileNameEl.textContent = newName;
+    const sbNameEl = document.getElementById('sbName');
+    if (sbNameEl) sbNameEl.textContent = newName;
+    const sbAvaEl = document.getElementById('sbAva');
+    if (sbAvaEl) sbAvaEl.textContent = ini(newName);
+    const tbNameEl = document.getElementById('tbName');
+    if (tbNameEl) tbNameEl.textContent = newName.split(' ')[0];
+    const tbAvaEl = document.getElementById('tbAva');
+    if (tbAvaEl) tbAvaEl.textContent = ini(newName);
+    const umNameEl = document.getElementById('umName');
+    if (umNameEl) umNameEl.textContent = newName;
+
+    showCredentialMessage('updateNameMsg', '✅ Nom mis à jour avec succès.', 'success');
+    toast('Nom changé : ' + newName, 'ok');
+  } catch (error) {
+    console.error('updateTeacherName error:', error);
+    showCredentialMessage('updateNameMsg', 'Erreur : ' + (error.message || error.code), 'error');
+    toast('Erreur lors du changement de nom.', 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+    // Re-validate name button
+    const nameStatus = document.getElementById('accountNameStatus');
+    if (nameStatus) nameStatus.textContent = (document.getElementById('accountNewName')?.value||'').trim() ? '✅' : '❌';
+    const updateNameBtn = document.getElementById('updateNameBtn');
+    if (updateNameBtn) updateNameBtn.disabled = !(document.getElementById('accountNewName')?.value||'').trim();
   }
 }
 
