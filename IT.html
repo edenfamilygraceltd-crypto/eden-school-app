@@ -83,7 +83,7 @@
     </script>
     <!-- Firebase SDK -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
         import { 
             getAuth, 
@@ -92,6 +92,7 @@
             signOut, 
             onAuthStateChanged,
             deleteUser,
+            sendEmailVerification,
             setPersistence,
             browserSessionPersistence
         } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
@@ -141,6 +142,10 @@
         const rtdb = getDatabase(app);
         
         // Exposer globalement
+        window.firebaseConfig = firebaseConfig;
+        window.initializeFirebaseApp = initializeApp;
+        window.deleteFirebaseApp = deleteApp;
+        window.getAuth = getAuth;
         window.auth = auth;
         window.db = db;
         window.rtdb = rtdb;
@@ -148,9 +153,11 @@
         window.setPersistence = setPersistence;
         window.browserSessionPersistence = browserSessionPersistence;
         window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.sendEmailVerification = sendEmailVerification;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
         window.signOut = signOut;
-        window.deleteUser = deleteUser;
+        // Avoid clobbering the app-level deleteUser(userId) handler used by admin buttons.
+        window.firebaseDeleteUser = deleteUser;
         window.onAuthStateChanged = onAuthStateChanged;
         window.collection = collection;
         window.getDocs = getDocs;
@@ -1059,6 +1066,44 @@
 
         let isInitialized = false;
 
+        async function sendAccountCreationAlert(payload) {
+            try {
+                const response = await fetch('/api/account-created-alert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(result.error || result.warning || 'Alerte email non envoyée');
+                }
+
+                return result;
+            } catch (error) {
+                console.warn('Alerte création de compte non envoyée:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function createAuthUserWithVerification(email, password) {
+            const appName = `it-account-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const secondaryApp = window.initializeFirebaseApp(window.firebaseConfig, appName);
+
+            try {
+                const secondaryAuth = window.getAuth(secondaryApp);
+                const userCredential = await window.createUserWithEmailAndPassword(secondaryAuth, email, password);
+                await window.sendEmailVerification(userCredential.user);
+                return userCredential;
+            } finally {
+                try {
+                    await window.deleteFirebaseApp(secondaryApp);
+                } catch (cleanupError) {
+                    console.warn('Nettoyage app secondaire impossible:', cleanupError);
+                }
+            }
+        }
+
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
             initApp();
@@ -1488,8 +1533,9 @@
                 }
 
                 // Créer l'utilisateur dans Firebase Authentication
-                const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
+                const userCredential = await createAuthUserWithVerification(email, password);
                 const userId = userCredential.user.uid;
+                const verificationSentAt = new Date().toISOString();
 
                 // Créer le profil dans Realtime Database
                 await window.rtdbSet(window.rtdbRef(window.rtdb, `users/${userId}`), {
@@ -1499,6 +1545,8 @@
                     telephone: phone || '',
                     status: 'active',
                     authProvider: 'email',
+                    emailVerified: false,
+                    verificationEmailSentAt: verificationSentAt,
                     createdAt: new Date().toISOString(),
                     createdBy: state.currentUser?.nom || 'System',
                     lastLogin: null,
@@ -1512,6 +1560,14 @@
 
                 // Enregistrer l'activité
                 await logActivity('Création de compte', `Création du compte ${role}: ${name} (${email})`);
+                const alertResult = await sendAccountCreationAlert({
+                    name,
+                    email,
+                    role,
+                    createdBy: state.currentUser?.nom || 'System',
+                    source: 'IT Admin',
+                    verificationSent: true
+                });
                 
                 // Réinitialiser le formulaire
                 document.getElementById('createAccountForm').reset();
@@ -1526,7 +1582,10 @@
                 }
                 
                 // Afficher un message de succès
-                showToast(`✅ Compte ${role} créé avec succès pour ${name}!`, 'success', 3000);
+                const successMessage = alertResult.success
+                    ? `✅ Compte ${role} créé avec succès pour ${name}. Email de vérification envoyé.`
+                    : `✅ Compte ${role} créé avec succès pour ${name}. Email de vérification envoyé. Alerte admin non envoyée.`;
+                showToast(successMessage, alertResult.success ? 'success' : 'warning', 4500);
                 
                 // Ajouter le compte à la liste locale
                 const newAccount = {
@@ -2783,6 +2842,8 @@
                     message = 'Veuillez vous reconnecter pour supprimer ce compte';
                 } else if (error.code === 'permission-denied') {
                     message = 'Permissions insuffisantes pour supprimer cet utilisateur';
+                } else if (error.code === 'auth/network-request-failed' || String(error.message || '').includes('ERR_NETWORK_CHANGED')) {
+                    message = 'Connexion instable détectée. Vérifiez Internet puis réessayez.';
                 }
 
                 showToast('❌ ' + message, 'error');

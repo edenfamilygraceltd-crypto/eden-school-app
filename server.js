@@ -7,6 +7,7 @@ const admin = require('firebase-admin');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const nodemailer = require('nodemailer');
 const { google } = require('googleapis');
 
 // Importer les credentials Firebase
@@ -27,6 +28,73 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const DRIVE_KEY_PATH = path.join(__dirname, 'drive-key.json');
+const ACCOUNT_ALERT_EMAIL = process.env.ACCOUNT_ALERT_EMAIL || 'sergetumbwe@gmail.com';
+
+function buildMailTransport() {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const port = Number(process.env.SMTP_PORT || 587);
+
+  if (!host || !user || !pass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass }
+  });
+}
+
+async function sendAccountCreationAlertEmail(payload) {
+  const transporter = buildMailTransport();
+  if (!transporter) {
+    throw new Error('SMTP_NOT_CONFIGURED');
+  }
+
+  const roleLabel = payload.role || 'utilisateur';
+  const sourceLabel = payload.source || 'application';
+  const verificationStatus = payload.verificationSent ? 'Lien de vérification envoyé' : 'Lien de vérification non envoyé';
+  const createdAt = new Date().toLocaleString('fr-FR');
+
+  const text = [
+    'Un nouveau compte a été créé dans Eden Family School.',
+    '',
+    `Nom: ${payload.name || 'N/A'}`,
+    `Email: ${payload.email || 'N/A'}`,
+    `Rôle: ${roleLabel}`,
+    `Créé par: ${payload.createdBy || 'Système'}`,
+    `Source: ${sourceLabel}`,
+    `Vérification email: ${verificationStatus}`,
+    `Date: ${createdAt}`
+  ].join('\n');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#1f2937;">
+      <h2 style="margin:0 0 12px;">Nouveau compte créé</h2>
+      <p>Un nouveau compte a été créé dans Eden Family School.</p>
+      <table style="border-collapse:collapse;min-width:320px;">
+        <tr><td style="padding:6px 10px;border:1px solid #e5e7eb;"><strong>Nom</strong></td><td style="padding:6px 10px;border:1px solid #e5e7eb;">${payload.name || 'N/A'}</td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid #e5e7eb;"><strong>Email</strong></td><td style="padding:6px 10px;border:1px solid #e5e7eb;">${payload.email || 'N/A'}</td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid #e5e7eb;"><strong>Rôle</strong></td><td style="padding:6px 10px;border:1px solid #e5e7eb;">${roleLabel}</td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid #e5e7eb;"><strong>Créé par</strong></td><td style="padding:6px 10px;border:1px solid #e5e7eb;">${payload.createdBy || 'Système'}</td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid #e5e7eb;"><strong>Source</strong></td><td style="padding:6px 10px;border:1px solid #e5e7eb;">${sourceLabel}</td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid #e5e7eb;"><strong>Vérification email</strong></td><td style="padding:6px 10px;border:1px solid #e5e7eb;">${verificationStatus}</td></tr>
+        <tr><td style="padding:6px 10px;border:1px solid #e5e7eb;"><strong>Date</strong></td><td style="padding:6px 10px;border:1px solid #e5e7eb;">${createdAt}</td></tr>
+      </table>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to: ACCOUNT_ALERT_EMAIL,
+    subject: `[Eden] Nouveau compte créé: ${payload.email || roleLabel}`,
+    text,
+    html
+  });
+}
 
 // ── Auth Google Drive (initialisée une seule fois) ──
 const driveAuth = new google.auth.GoogleAuth({
@@ -143,6 +211,30 @@ app.get('/api/eleves/:eleveId/bulletins', async (req, res) => {
 // Exemple: route de santé
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend Node.js fonctionne.' });
+});
+
+app.post('/api/account-created-alert', async (req, res) => {
+  try {
+    const { name, email, role, createdBy, source, verificationSent } = req.body || {};
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email du nouveau compte manquant.' });
+    }
+
+    try {
+      await sendAccountCreationAlertEmail({ name, email, role, createdBy, source, verificationSent });
+      return res.json({ success: true, message: 'Alerte email envoyée.' });
+    } catch (mailError) {
+      if (mailError.message === 'SMTP_NOT_CONFIGURED') {
+        console.warn('⚠️ SMTP non configuré: alerte email non envoyée pour', email);
+        return res.status(202).json({ success: false, warning: 'SMTP non configuré. Définissez SMTP_HOST, SMTP_PORT, SMTP_USER et SMTP_PASS.' });
+      }
+      throw mailError;
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi de l\'alerte de création de compte:', error);
+    res.status(500).json({ success: false, error: error.message || 'Erreur interne serveur' });
+  }
 });
 
 // Exemple: stats simples en lisant la base (students / travailleurs)
@@ -358,6 +450,7 @@ app.listen(PORT, () => {
   console.log(`✅ Backend Node.js démarré sur le port ${PORT}`);
   console.log(`📁 Dossiers Drive configurés pour: examen, devoir, photo, video, test, travaux, vacances, presentation`);
   console.log(`🔑 Clé Drive: ${fs.existsSync(DRIVE_KEY_PATH) ? 'trouvée' : 'MANQUANTE'}`);
+  console.log(`📧 Alerte création de compte vers: ${ACCOUNT_ALERT_EMAIL}`);
 });
 
 

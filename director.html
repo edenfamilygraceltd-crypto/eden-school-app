@@ -3407,6 +3407,45 @@
         const database = firebase.database();
         auth = firebase.auth();  // Assigner à la variable globale définie en haut
         const analytics = firebase.analytics();
+
+        async function notifyAccountCreation(payload) {
+            try {
+                const response = await fetch('/api/account-created-alert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(result.error || result.warning || 'Alerte email non envoyée');
+                }
+
+                return result;
+            } catch (error) {
+                console.warn('Alerte création de compte non envoyée:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function createAccountWithEmailVerification(email, password) {
+            const appName = `director-account-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const secondaryApp = firebase.initializeApp(firebaseConfig, appName);
+
+            try {
+                const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
+                if (userCredential.user) {
+                    await userCredential.user.sendEmailVerification();
+                }
+                return userCredential;
+            } finally {
+                try {
+                    await secondaryApp.delete();
+                } catch (cleanupError) {
+                    console.warn('Nettoyage app secondaire impossible:', cleanupError);
+                }
+            }
+        }
         
         // Variables globales
         let usersData = [];
@@ -3862,9 +3901,10 @@
             }
             
             // Créer l'utilisateur dans Firebase Auth
-            auth.createUserWithEmailAndPassword(email, password)
+            createAccountWithEmailVerification(email, password)
                 .then(async (userCredential) => {
                     const uid = userCredential.user.uid;
+                    const verificationSentAt = new Date().toISOString();
                     
                     // Structure des données utilisateur
                     const userData = {
@@ -3875,6 +3915,8 @@
                         phone: phone,
                         department: department,
                         status: 'active',
+                        emailVerified: false,
+                        verificationEmailSentAt: verificationSentAt,
                         createdAt: new Date().toISOString(),
                         createdBy: currentUser.email,
                         uid: uid
@@ -3887,13 +3929,10 @@
                         // 2. Ajouter dans la collection spécifique selon le rôle
                         if (role === 'teacher') {
                             await database.ref('teachers/' + uid).set(userData);
-                            showNotification('Succès', `Enseignant ${name} créé avec succès`, 'success');
                         } else if (role === 'secretary') {
                             await database.ref('secretaries/' + uid).set(userData);
-                            showNotification('Succès', `Secrétaire ${name} créé avec succès`, 'success');
                         } else if (role === 'accountant') {
                             await database.ref('accountants/' + uid).set(userData);
-                            showNotification('Succès', `Comptable ${name} créé avec succès`, 'success');
                         }
                         
                         // 3. Ajouter une activité de journalisation
@@ -3906,6 +3945,14 @@
                         };
                         
                         await database.ref('activities').push().set(activityData);
+                        const alertResult = await notifyAccountCreation({
+                            name,
+                            email,
+                            role,
+                            createdBy: currentUser.email,
+                            source: 'Directeur',
+                            verificationSent: true
+                        });
                         
                         // 4. Fermer le modal et réinitialiser le formulaire
                         closeModal('createUserModal');
@@ -3919,6 +3966,11 @@
                         // 5. Recharger les données
                         loadAllUsers();
                         loadDashboardData();
+
+                        const successMessage = alertResult.success
+                            ? `Utilisateur ${name} créé avec succès. Email de vérification envoyé.`
+                            : `Utilisateur ${name} créé avec succès. Email de vérification envoyé, mais l'alerte admin a échoué.`;
+                        showNotification('Succès', successMessage, alertResult.success ? 'success' : 'warning');
                         
                     } catch (error) {
                         console.error('Erreur lors de l\'ajout des données utilisateur:', error);
@@ -3960,9 +4012,10 @@
             }
             
             // Créer l'utilisateur dans Firebase Auth
-            auth.createUserWithEmailAndPassword(email, password)
+            createAccountWithEmailVerification(email, password)
                 .then(async (userCredential) => {
                     const uid = userCredential.user.uid;
+                    const verificationSentAt = new Date().toISOString();
                     
                     const secretaryData = {
                         name: name,
@@ -3972,6 +4025,8 @@
                         phone: phone,
                         department: department,
                         status: 'active',
+                        emailVerified: false,
+                        verificationEmailSentAt: verificationSentAt,
                         createdAt: new Date().toISOString(),
                         createdBy: currentUser.email,
                         uid: uid
@@ -3991,8 +4046,16 @@
                         };
                         
                         await database.ref('activities').push().set(activityData);
+                        const alertResult = await notifyAccountCreation({
+                            name,
+                            email,
+                            role: 'secretary',
+                            createdBy: currentUser.email,
+                            source: 'Directeur',
+                            verificationSent: true
+                        });
                         
-                        showNotification('Succès', `Secrétaire ${name} créé avec succès`, 'success');
+                        showNotification('Succès', alertResult.success ? `Secrétaire ${name} créé avec succès. Email de vérification envoyé.` : `Secrétaire ${name} créé avec succès. Email de vérification envoyé, alerte admin non envoyée.`, alertResult.success ? 'success' : 'warning');
                         closeModal('createSecretaryModal');
                         
                         // Réinitialiser le formulaire
@@ -4042,9 +4105,10 @@
                 return;
             }
             
-            auth.createUserWithEmailAndPassword(email, password)
+            createAccountWithEmailVerification(email, password)
                 .then(async (userCredential) => {
                     const uid = userCredential.user.uid;
+                    const verificationSentAt = new Date().toISOString();
                     
                     const teacherData = {
                         name: name,
@@ -4055,6 +4119,8 @@
                         section: section,
                         class: teacherClass,
                         status: 'active',
+                        emailVerified: false,
+                        verificationEmailSentAt: verificationSentAt,
                         createdAt: new Date().toISOString(),
                         createdBy: currentUser.email,
                         uid: uid
@@ -4074,8 +4140,16 @@
                         };
                         
                         await database.ref('activities').push().set(activityData);
+                        const alertResult = await notifyAccountCreation({
+                            name,
+                            email,
+                            role: 'teacher',
+                            createdBy: currentUser.email,
+                            source: 'Directeur',
+                            verificationSent: true
+                        });
                         
-                        showNotification('Succès', `Enseignant ${name} créé avec succès`, 'success');
+                        showNotification('Succès', alertResult.success ? `Enseignant ${name} créé avec succès. Email de vérification envoyé.` : `Enseignant ${name} créé avec succès. Email de vérification envoyé, alerte admin non envoyée.`, alertResult.success ? 'success' : 'warning');
                         closeModal('createTeacherModal');
                         
                         // Réinitialiser le formulaire
@@ -4263,9 +4337,10 @@
                 return;
             }
             
-            auth.createUserWithEmailAndPassword(email, password)
+            createAccountWithEmailVerification(email, password)
                 .then(async (userCredential) => {
                     const uid = userCredential.user.uid;
+                    const verificationSentAt = new Date().toISOString();
                     
                     const accountantData = {
                         name: name,
@@ -4275,6 +4350,8 @@
                         phone: phone,
                         department: department,
                         status: 'active',
+                        emailVerified: false,
+                        verificationEmailSentAt: verificationSentAt,
                         createdAt: new Date().toISOString(),
                         createdBy: currentUser.email,
                         uid: uid
@@ -4294,8 +4371,16 @@
                         };
                         
                         await database.ref('activities').push().set(activityData);
+                        const alertResult = await notifyAccountCreation({
+                            name,
+                            email,
+                            role: 'accountant',
+                            createdBy: currentUser.email,
+                            source: 'Directeur',
+                            verificationSent: true
+                        });
                         
-                        showNotification('Succès', `Comptable ${name} créé avec succès`, 'success');
+                        showNotification('Succès', alertResult.success ? `Comptable ${name} créé avec succès. Email de vérification envoyé.` : `Comptable ${name} créé avec succès. Email de vérification envoyé, alerte admin non envoyée.`, alertResult.success ? 'success' : 'warning');
                         closeModal('createAccountantModal');
                         
                         // Réinitialiser le formulaire

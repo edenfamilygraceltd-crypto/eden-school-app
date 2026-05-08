@@ -2423,6 +2423,22 @@ function validateRobotPuzzle(type){
   return !!expected && actual===expected;
 }
 
+async function notifyAccountCreation(payload){
+  try {
+    const response=await fetch('/api/account-created-alert',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(result.error||result.warning||'Alerte email non envoyée');
+    return result;
+  } catch(error){
+    console.warn('Alerte création de compte non envoyée:',error);
+    return {success:false,error:error.message};
+  }
+}
+
 function handleLogin(event){
   event.preventDefault();
   const email=document.getElementById('parentEmail').value.trim().toLowerCase();
@@ -2462,11 +2478,13 @@ async function handleRegister(event){
     const cred=await firebase.auth().createUserWithEmailAndPassword(email,password);
     const user=cred.user;if(!user) throw new Error('Erreur');
     await user.sendEmailVerification();
-    const parentData={email,studentName,classLevel,createdAt:Date.now()};
+    const verificationSentAt=new Date().toISOString();
+    const parentData={email,studentName,classLevel,createdAt:Date.now(),emailVerified:false,verificationEmailSentAt:verificationSentAt};
     await firebase.database().ref('parents/'+user.uid).set(parentData);
+    const alertResult=await notifyAccountCreation({name:studentName,email,role:'parent',createdBy:'Auto-inscription parent',source:'Portail Parents',verificationSent:true});
     await firebase.auth().signOut();
     CONFIG.isLoggedIn=false;CONFIG.currentUser=null;
-    closeRegisterModal();showToast('Inscription réussie. Vérifiez votre email avant de vous connecter.','success');
+    closeRegisterModal();showToast(alertResult.success?'Inscription réussie. Vérifiez votre email avant de vous connecter.':'Inscription réussie. Vérifiez votre email avant de vous connecter. Alerte admin non envoyée.','success');
   } catch(err){console.error(err);showToast(err.message||'Erreur','error');}
 }
 

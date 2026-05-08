@@ -34,6 +34,44 @@ const SCHOOL_CODE = 'EDF-KA';
             return 'Directeur';
         }
 
+        function notifyAccountCreation(payload) {
+            return fetch('/api/account-created-alert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(function(response) {
+                return response.json().catch(function() { return {}; }).then(function(result) {
+                    if (!response.ok) {
+                        throw new Error(result.error || result.warning || 'Alerte email non envoyée');
+                    }
+                    return result;
+                });
+            }).catch(function(error) {
+                console.warn('Alerte création de compte non envoyée:', error);
+                return { success: false, error: error.message };
+            });
+        }
+
+        function createAccountWithEmailVerification(email, password) {
+            const appName = 'main-account-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+            const secondaryApp = firebase.initializeApp(firebaseConfig, appName);
+
+            return secondaryApp.auth().createUserWithEmailAndPassword(email, password)
+                .then(function(userCredential) {
+                    if (userCredential.user) {
+                        return userCredential.user.sendEmailVerification().then(function() {
+                            return userCredential;
+                        });
+                    }
+                    return userCredential;
+                })
+                .finally(function() {
+                    return secondaryApp.delete().catch(function(cleanupError) {
+                        console.warn('Nettoyage app secondaire impossible:', cleanupError);
+                    });
+                });
+        }
+
         // Class structure - Chargée depuis Firebase
         let classesData = {
             maternelle: [],
@@ -1184,8 +1222,9 @@ const SCHOOL_CODE = 'EDF-KA';
 
             generateUniqueCode('teachers', prefix).then(function(code) {
                 // Create Firebase auth account
-                return auth.createUserWithEmailAndPassword(email, password).then(function(userCredential) {
+                return createAccountWithEmailVerification(email, password).then(function(userCredential) {
                     const userId = userCredential.user.uid;
+                    const verificationSentAt = new Date().toISOString();
 
                     // Save teacher data
                     const teacherData = {
@@ -1198,16 +1237,27 @@ const SCHOOL_CODE = 'EDF-KA';
                         code: code,
                         schoolCode: SCHOOL_CODE,
                         role: 'teacher',
+                        emailVerified: false,
+                        verificationEmailSentAt: verificationSentAt,
                         createdAt: new Date().toISOString(),
                         createdBy: getDirectorName()
                     };
 
                     const rtdbRef = database.ref('teachers/' + userId);
                     return rtdbRef.set(teacherData).then(function() {
-                        return firestore.collection('teachers').doc(userId).set(teacherData);
+                        return firestore.collection('teachers').doc(userId).set(teacherData).then(function() {
+                            return notifyAccountCreation({
+                                name: name,
+                                email: email,
+                                role: 'teacher',
+                                createdBy: getDirectorName(),
+                                source: 'Main Director Portal',
+                                verificationSent: true
+                            });
+                        });
                     });
                 });
-            }).then(function() {
+            }).then(function(alertResult) {
                 document.getElementById('accountSuccessAlert').classList.remove('hidden');
                 setTimeout(function() {
                     document.getElementById('accountSuccessAlert').classList.add('hidden');
@@ -1224,6 +1274,9 @@ const SCHOOL_CODE = 'EDF-KA';
 
                 // Add activity
                 addActivity(`Compte enseignant créé: ${name}`);
+                if (!alertResult || alertResult.success === false) {
+                    alert('⚠️ Compte créé et email de vérification envoyé, mais l\'alerte admin n\'a pas été envoyée.');
+                }
                 
                 loadTeachersList();
             }).catch(function(error) {
@@ -1290,8 +1343,9 @@ const SCHOOL_CODE = 'EDF-KA';
 
             generateUniqueCode('secretaries', prefix).then(function(code) {
                 // Create Firebase auth account
-                return auth.createUserWithEmailAndPassword(email, password).then(function(userCredential) {
+                return createAccountWithEmailVerification(email, password).then(function(userCredential) {
                     const userId = userCredential.user.uid;
+                    const verificationSentAt = new Date().toISOString();
 
                     // Save secretary data
                     const secretaryData = {
@@ -1304,6 +1358,8 @@ const SCHOOL_CODE = 'EDF-KA';
                         code: code,
                         schoolCode: SCHOOL_CODE,
                         userRole: 'secretary',
+                        emailVerified: false,
+                        verificationEmailSentAt: verificationSentAt,
                         createdAt: new Date().toISOString(),
                         createdBy: getDirectorName(),
                         status: 'active'
@@ -1311,10 +1367,19 @@ const SCHOOL_CODE = 'EDF-KA';
 
                     const rtdbRef = database.ref('secretaries/' + userId);
                     return rtdbRef.set(secretaryData).then(function() {
-                        return firestore.collection('secretaries').doc(userId).set(secretaryData);
+                        return firestore.collection('secretaries').doc(userId).set(secretaryData).then(function() {
+                            return notifyAccountCreation({
+                                name: name,
+                                email: email,
+                                role: role,
+                                createdBy: getDirectorName(),
+                                source: 'Main Director Portal',
+                                verificationSent: true
+                            });
+                        });
                     });
                 });
-            }).then(function() {
+            }).then(function(alertResult) {
                 document.getElementById('secretarySuccessAlert').classList.remove('hidden');
                 setTimeout(function() {
                     document.getElementById('secretarySuccessAlert').classList.add('hidden');
@@ -1330,6 +1395,9 @@ const SCHOOL_CODE = 'EDF-KA';
 
                 // Add activity
                 addActivity(`Compte secrétaire créé: ${name} (${role})`);
+                if (!alertResult || alertResult.success === false) {
+                    alert('⚠️ Compte créé et email de vérification envoyé, mais l\'alerte admin n\'a pas été envoyée.');
+                }
 
                 loadSecretariesList();
             }).catch(function(error) {
