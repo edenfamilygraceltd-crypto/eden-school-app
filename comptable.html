@@ -3389,6 +3389,7 @@
                                     <option value="secretaire">Secretary</option>
                                     <option value="chauffeure">Driver</option>
                                     <option value="tantine">Nanny</option>
+                                    <option value="gardien">Guard</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -5241,6 +5242,34 @@
                 'admin': 'Administrator'
             };
             return roleLabels[role] || 'User';
+        }
+
+        function getWorkerTypeLabel(type) {
+            const typeLabels = {
+                'enseignant': 'Teacher',
+                'staff': 'Staff',
+                'comptable': 'Accountant',
+                'directeur': 'Director',
+                'secretaire': 'Secretary',
+                'chauffeure': 'Driver',
+                'tantine': 'Nanny',
+                'gardien': 'Guard'
+            };
+            return typeLabels[type] || (type || 'Other');
+        }
+
+        function getWorkerTypeBadgeClass(type) {
+            const badgeClasses = {
+                'enseignant': 'badge bg-success',
+                'staff': 'badge bg-info',
+                'comptable': 'badge bg-primary',
+                'directeur': 'badge bg-dark',
+                'secretaire': 'badge bg-purple',
+                'chauffeure': 'badge bg-warning text-dark',
+                'tantine': 'badge bg-pink',
+                'gardien': 'badge bg-secondary'
+            };
+            return badgeClasses[type] || 'badge bg-secondary';
         }
 
         // Références Firebase
@@ -7186,10 +7215,8 @@
                     const paymentText = worker.paymentMode === 'bank' ? 'Bank' :
                                       worker.paymentMode === 'momo' ? 'Mobile Money' : 'Cash';
                     
-                    const typeBadge = worker.type === 'enseignant' ? 'badge bg-success' :
-                                    worker.type === 'staff' ? 'badge bg-info' : 'badge bg-secondary';
-                    const typeText = worker.type === 'enseignant' ? 'Teacher' :
-                                   worker.type === 'staff' ? 'Staff' : 'Other';
+                    const typeBadge = getWorkerTypeBadgeClass(worker.type);
+                    const typeText = getWorkerTypeLabel(worker.type);
                     
                     const workerDebts = debts.filter(d => d.workerId === worker.id && d.status === 'pending');
                     const totalDebt = workerDebts.reduce((sum, debt) => sum + (debt.amount || 0), 0);
@@ -7348,7 +7375,7 @@
                     tr.className = 'animate-fade-in';
                     tr.innerHTML = `
                         <td>${worker ? worker.name : 'Unknown'}</td>
-                        <td>${worker ? (worker.type === 'enseignant' ? 'Teacher' : worker.type === 'staff' ? 'Staff' : 'Other') : ''}</td>
+                        <td>${worker ? getWorkerTypeLabel(worker.type) : ''}</td>
                         <td><strong class="text-danger">${formatCurrencyRWF(debt.amount)}</strong></td>
                         <td>${new Date(debt.date).toLocaleDateString('en-US')}</td>
                         <td>${debt.reason}</td>
@@ -7724,26 +7751,8 @@
                                    entry.paymentMode === 'momo' ? 'Mobile Money' : 'Cash';
                 const paymentDetails = (entry.paymentDestination || '').toString().trim();
                 
-                const typeColorMap = {
-                    'enseignant': 'badge bg-success',
-                    'staff': 'badge bg-info',
-                    'comptable': 'badge bg-primary',
-                    'directeur': 'badge bg-dark',
-                    'secretaire': 'badge bg-purple' ,
-                    'chauffeure': 'badge bg-warning text-dark',
-                    'tantine': 'badge bg-pink'
-                };
-                const typeLabelMap = {
-                    'enseignant': 'Teacher',
-                    'staff': 'Staff',
-                    'comptable': 'Accountant',
-                    'directeur': 'Director',
-                    'secretaire': 'Secretary',
-                    'chauffeure': 'Driver',
-                    'tantine': 'Nanny'
-                };
-                const typeBadge = typeColorMap[entry.type] || 'badge bg-secondary';
-                const typeText = typeLabelMap[entry.type] || (entry.type || 'Other');
+                const typeBadge = getWorkerTypeBadgeClass(entry.type);
+                const typeText = getWorkerTypeLabel(entry.type);
                 
                 const tr = document.createElement('tr');
                 const actionButtons = [];
@@ -9082,7 +9091,7 @@
                 const branchLocalNo = index + 1;
                 const option = document.createElement('option');
                 option.value = worker.id;
-                option.textContent = `${branchLocalNo} - ${worker.name} (${worker.type === 'enseignant' ? 'Teacher' : worker.type === 'staff' ? 'Staff' : 'Other'})`;
+                option.textContent = `${branchLocalNo} - ${worker.name} (${getWorkerTypeLabel(worker.type)})`;
                 select.appendChild(option);
             });
         }
@@ -9098,7 +9107,7 @@
                 .sort((a, b) => parseInt(a.no || 0) - parseInt(b.no || 0));
 
             branchWorkers.forEach((w, index) => {
-                const typeLabel = w.type === 'enseignant' ? 'Teacher' : w.type === 'staff' ? 'Staff' : 'Other';
+                const typeLabel = getWorkerTypeLabel(w.type);
                 const option = document.createElement('option');
                 option.value = w.name || '';
                 option.textContent = `${index + 1}. ${w.name || ''} (${typeLabel})`;
@@ -15617,7 +15626,7 @@
                     Workers: teachers.filter(t => t.branch === firebaseBranch).map(t => ({
                         NO: t.no,
                         Name: t.name,
-                        Type: t.type === 'enseignant' ? 'Teacher' : t.type === 'staff' ? 'Staff' : 'Other',
+                        Type: getWorkerTypeLabel(t.type),
                         Phone: t.phone,
                         'Payment Mode': t.paymentMode === 'bank' ? 'Bank' : t.paymentMode === 'momo' ? 'Mobile Money' : 'Cash',
                         'Base Salary': t.salary,
