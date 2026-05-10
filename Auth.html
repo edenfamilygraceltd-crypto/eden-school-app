@@ -145,7 +145,21 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       position: relative;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .auth-logo {
+      height: 50px;
+      width: auto;
+      object-fit: contain;
+      vertical-align: middle;
+      margin: 0;
+      display: block;
     }
     
     .auth-header h1::after {
@@ -670,9 +684,9 @@
       .auth-header h1 { 
         font-size: 1.8rem; 
       }
-      .auth-header h1 img {
+      .auth-header h1 .auth-logo {
         height: 40px !important;
-        margin-right: 10px !important;
+        margin: 0 !important;
       }
       .role-badges {
         flex-direction: row;
@@ -703,13 +717,13 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
         gap: 5px;
       }
 
-      .auth-header h1 img {
+      .auth-header h1 .auth-logo {
         height: 35px !important;
-        margin-right: 0 !important;
-        margin-bottom: 5px;
+        margin: 0 0 5px 0 !important;
       }
 
       .auth-header p {
@@ -810,7 +824,7 @@
         font-size: 1.3rem;
       }
 
-      .auth-header h1 img {
+      .auth-header h1 .auth-logo {
         height: 30px !important;
       }
 
@@ -964,7 +978,7 @@
 
   <div class="auth-container">
     <div class="auth-header">
-      <h1><img src="asset/img/logo_eden.png" alt="Logo Eden Family School" style="height: 50px; width: auto; object-fit: contain; vertical-align: middle; margin-right: 15px;" onerror="this.style.display='none';"> EDEN FAMILY SCHOOL</h1>
+      <h1><img src="asset/img/logo_eden.png" alt="Logo Eden Family School" class="auth-logo" onerror="this.style.display='none';"> EDEN FAMILY SCHOOL</h1>
       <p>Portail Staff - Accès Professionnel</p>
     </div>
 

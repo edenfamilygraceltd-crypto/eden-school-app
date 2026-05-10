@@ -3524,6 +3524,7 @@ function getBulletinStorePaths(branch, className, studentId, trimester) {
 ══════════════════════════════════════ */
 let allStudents     = [];
 let filteredStudents= [];
+let bulletinStudents = [];
 let selectedStudent = null;
 let allBulletins    = [];
 let lastMissingStudents = [];
@@ -6345,17 +6346,32 @@ async function loadStudentList() {
     });
   }
 
+  // Keep the authorized bulletin scope as the search source.
+  bulletinStudents = [...filteredStudents];
+
   document.getElementById('bStuLoad').style.display = 'none';
   populateClassFilter();
   renderBulletinStudentList();
 }
 
 function filterStudentList() {
-  const q = (document.getElementById('bStuSearch')?.value||'').toLowerCase();
+  const normalize = (value) => (value || '')
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
 
-  // Filter by search text only - no class filter
-  filteredStudents = allStudents.filter(s => {
-    const name = `${s.firstName||s.prenom||''} ${s.lastName||s.nom||''}`.toLowerCase();
+  const q = normalize(document.getElementById('bStuSearch')?.value || '');
+  const source = Array.isArray(bulletinStudents) && bulletinStudents.length
+    ? bulletinStudents
+    : filteredStudents;
+
+  // Filter only inside the already authorized bulletin scope.
+  filteredStudents = source.filter(s => {
+    const composedName = `${s.firstName || s.prenom || ''} ${s.lastName || s.nom || ''}`.trim();
+    const fallbackName = (s.name || '').trim();
+    const name = normalize(composedName || fallbackName);
     return !q || name.includes(q);
   });
 

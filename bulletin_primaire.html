@@ -1780,9 +1780,17 @@ function collectScores(){
     const maxPerSubjectTrim = s.testMax + s.exMax;
     const maxPerSubjectShown = activeT ? maxPerSubjectTrim : maxPerSubjectTrim*3;
 
-    const t1={test:getV(`si-t1-test-${idx}`),ex:getV(`si-t1-ex-${idx}`)};
-    const t2={test:getV(`si-t2-test-${idx}`),ex:getV(`si-t2-ex-${idx}`)};
-    const t3={test:getV(`si-t3-test-${idx}`),ex:getV(`si-t3-ex-${idx}`)};
+    // Récupérer les valeurs avec vérification stricte
+    const t1Test = getV(`si-t1-test-${idx}`);
+    const t1Ex = getV(`si-t1-ex-${idx}`);
+    const t2Test = getV(`si-t2-test-${idx}`);
+    const t2Ex = getV(`si-t2-ex-${idx}`);
+    const t3Test = getV(`si-t3-test-${idx}`);
+    const t3Ex = getV(`si-t3-ex-${idx}`);
+
+    const t1={test:t1Test,ex:t1Ex};
+    const t2={test:t2Test,ex:t2Ex};
+    const t3={test:t3Test,ex:t3Ex};
     t1.total=t1.test+t1.ex;
     t2.total=t2.test+t2.ex;
     t3.total=t3.test+t3.ex;
@@ -1853,40 +1861,60 @@ async function saveBulletin(){
   if(!currentTrim){toast('Veuillez sélectionner un trimestre','error');return;}
 
   const scores=collectScores();
+  
+  // Vérifier qu'au moins une note a été entrée
+  const hasSomeScores = scores.rows.some(r => {
+    const activeTriumValue = currentTrim === 1 ? r.t1 : currentTrim === 2 ? r.t2 : r.t3;
+    return activeTriumValue && (activeTriumValue.test > 0 || activeTriumValue.ex > 0);
+  });
+  
+  if(!hasSomeScores) {
+    toast('⚠️ Veuillez entrer au moins une note avant de sauvegarder','warning');
+    return;
+  }
+  
   const className = normalizeClass(document.getElementById('student-class').value || '');
   if(!className){toast('Classe manquante','error');return;}
 
   const studentId = selectedStudent?._id || '';
   if(!studentId){toast('Sélectionnez un élève existant','error');return;}
 
-  const bulletinRef = db.ref(`bulletins_primaire_${className}/${studentId}`);
-  const snap = await bulletinRef.once('value');
-  const existing = snap.exists() ? snap.val() : {};
+  try {
+    const bulletinRef = db.ref(`bulletins_primaire_${className}/${studentId}`);
+    const snap = await bulletinRef.once('value');
+    const existing = snap.exists() ? snap.val() : {};
 
-  const existingRows = Array.isArray(existing.scores) ? existing.scores : [];
-  const mergedRows = SUBJECTS.map((s,idx)=>{
-    const oldRow = existingRows[idx] || {};
-    const newRow = scores.rows[idx] || {};
+    const existingRows = Array.isArray(existing.scores) ? existing.scores : [];
+    const mergedRows = SUBJECTS.map((s,idx)=>{
+      const oldRow = existingRows[idx] || {};
+      const newRow = scores.rows[idx] || {};
 
-    const row = {
-      subject: s.name,
-      maxTest: s.testMax,
-      maxEx: s.exMax,
-      maxTotal: s.testMax + s.exMax,
-      t1: oldRow.t1 ? {...oldRow.t1} : {test:0,ex:0,total:0},
-      t2: oldRow.t2 ? {...oldRow.t2} : {test:0,ex:0,total:0},
-      t3: oldRow.t3 ? {...oldRow.t3} : {test:0,ex:0,total:0}
-    };
+      const row = {
+        subject: s.name,
+        maxTest: s.testMax,
+        maxEx: s.exMax,
+        maxTotal: s.testMax + s.exMax,
+        t1: oldRow.t1 ? {...oldRow.t1} : {test:0,ex:0,total:0},
+        t2: oldRow.t2 ? {...oldRow.t2} : {test:0,ex:0,total:0},
+        t3: oldRow.t3 ? {...oldRow.t3} : {test:0,ex:0,total:0}
+      };
 
-    if(currentTrim===1&&newRow.t1)row.t1={...newRow.t1};
-    if(currentTrim===2&&newRow.t2)row.t2={...newRow.t2};
-    if(currentTrim===3&&newRow.t3)row.t3={...newRow.t3};
+      // Vérifier que newRow a les propriétés t1, t2, t3 avec des valeurs valides
+      if(currentTrim===1 && newRow.t1 && (newRow.t1.test !== null || newRow.t1.ex !== null)) {
+        row.t1={test:Number(newRow.t1.test||0),ex:Number(newRow.t1.ex||0),total:0};
+      }
+      if(currentTrim===2 && newRow.t2 && (newRow.t2.test !== null || newRow.t2.ex !== null)) {
+        row.t2={test:Number(newRow.t2.test||0),ex:Number(newRow.t2.ex||0),total:0};
+      }
+      if(currentTrim===3 && newRow.t3 && (newRow.t3.test !== null || newRow.t3.ex !== null)) {
+        row.t3={test:Number(newRow.t3.test||0),ex:Number(newRow.t3.ex||0),total:0};
+      }
 
-    ['t1','t2','t3'].forEach(k=>{
-      row[k].test=Number(row[k].test)||0;
-      row[k].ex=Number(row[k].ex)||0;
-      row[k].total=row[k].test+row[k].ex;
-    });
+      ['t1','t2','t3'].forEach(k=>{
+        row[k].test=Number(row[k].test)||0;
+        row[k].ex=Number(row[k].ex)||0;
+        row[k].total=row[k].test+row[k].ex;
+      });
 
     row.annualMax=(s.testMax+s.exMax)*3;
     row.annualTotal=row.t1.total+row.t2.total+row.t3.total;
@@ -1943,6 +1971,10 @@ async function saveBulletin(){
   updateSaveButtonMode();
   toast('✅ Bulletin enregistré dans Firebase','success');
   showModal('✅','Enregistré !','Le bulletin a été sauvegardé avec succès. Créer un autre bulletin ?',[{label:'Nouveau bulletin',cls:'btn-gold',action:resetForm},{label:'Voir palmarès',cls:'btn-success',action:()=>showPage('palmares')},{label:'Rester ici',cls:'btn-ghost',action:null}]);
+  } catch(error) {
+    console.error('Erreur lors de la sauvegarde du bulletin:', error);
+    toast('❌ Erreur lors de la sauvegarde. Vérifiez les données et réessayez.','error');
+  }
 }
 function resetForm(){
   currentStep=1;currentTrim=null;selectedStudent=null;conduiteVal='';
