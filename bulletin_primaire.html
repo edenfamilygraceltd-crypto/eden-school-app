@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<link rel="icon" type="image/png" sizes="32x32" href="/asset/img/logo_eden.png">
+    <link rel="apple-touch-icon" href="/asset/img/logo_eden.png">
+    <meta name="theme-color" content="#1e3a5f">
+    <script type="application/ld+json" id="site-organization-schema">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Eden Family School",
+      "url": "https://edensmart-c7019.web.app/",
+      "logo": "https://edensmart-c7019.web.app/asset/img/logo_eden.png",
+      "image": "https://edensmart-c7019.web.app/asset/img/logo_eden.png"
+    }
+    </script>
+
+    
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bulletin Primaire — Eden Family School</title>
@@ -2358,6 +2373,21 @@ function buildBulletinHtml(b) {
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
+<link rel="icon" type="image/png" sizes="32x32" href="/asset/img/logo_eden.png">
+    <link rel="apple-touch-icon" href="/asset/img/logo_eden.png">
+    <meta name="theme-color" content="#1e3a5f">
+    <script type="application/ld+json" id="site-organization-schema">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Eden Family School",
+      "url": "https://edensmart-c7019.web.app/",
+      "logo": "https://edensmart-c7019.web.app/asset/img/logo_eden.png",
+      "image": "https://edensmart-c7019.web.app/asset/img/logo_eden.png"
+    }
+    </script>
+
+    
 <meta charset="UTF-8">
 <title>Bulletin Scolaire</title>
 <style>
@@ -3142,7 +3172,22 @@ async function downloadZip(){
     const mockData={rows:b.scores||[],tri:[0,0,0],totalAnnual:b.annualTotal||0,annualPct:b.annualPct||0,maxGrand:b.maxGrand||3000};
     if(b.scores)b.scores.forEach(r=>{mockData.tri[0]+=r.t1?.total||0;mockData.tri[1]+=r.t2?.total||0;mockData.tri[2]+=r.t3?.total||0;});
     const inner=buildBulletinHtml({studentName:b.studentName,branch:b.branch,class:b.class,teacher:b.teacherName,date:b.bulletinDate,remarqueDelib:b.remarqueDelib,conduite:b.conduite,data:mockData,place:b.place});
-    const full=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Bulletin - ${b.studentName}</title><style>@page{size:A4 portrait;margin:0;}html,body{width:210mm;height:297mm;margin:0;padding:0;}.bul-print{width:210mm;min-height:297mm;padding:10mm;margin:auto;background:white;box-sizing:border-box;font-family:Arial,sans-serif;font-size:8pt;line-height:1;color:#000;overflow:hidden;display:flex;flex-direction:column;}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}@media print{body{margin:0;padding:0;}.bul-print{width:210mm;min-height:297mm;page-break-after:always;}}.bul-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #1e3a5f;padding-bottom:3mm;margin-bottom:3mm;}.bul-logo{width:16mm;height:16mm;object-fit:contain;}.bul-school-info{text-align:center;flex:1;padding:0 2mm;}.bul-year{font-size:10pt;font-weight:900;color:#1e3a5f;}.bul-school-name{font-size:11pt;font-weight:900;color:#1e3a5f;line-height:1;}.bul-school-name span{color:#c8a84b;}.bul-tagline{font-size:7pt;color:#c8a84b;font-style:italic;font-weight:700;}.bul-doc-title{font-size:9pt;font-weight:900;color:#1e3a5f;letter-spacing:1px;margin-top:1mm;text-decoration:underline;text-underline-offset:1px;}.bul-info-row{display:flex;gap:1.5mm;margin-bottom:1.5mm;flex-wrap:wrap;}.bul-info-box{display:flex;align-items:stretch;border:1pt solid #1e3a5f;border-radius:2pt;overflow:hidden;flex:1;min-width:65mm;}.bul-info-box.wide{flex:2;}.bul-info-lbl{background:#1e3a5f;color:#fff;font-weight:900;font-size:6.5pt;padding:1.5mm 2mm;white-space:nowrap;display:flex;align-items:center;letter-spacing:.3px;}.bul-info-val{padding:1.5mm 2mm;font-weight:700;font-size:7pt;display:flex;align-items:center;min-width:25mm;border-left:1pt solid #c8a84b;}.bul-section-title{font-size:6.5pt;font-weight:900;color:#1e3a5f;background:#e8e8e8;padding:1mm 2mm;margin:1.5mm 0 1mm 0;border-left:2pt solid #c8a84b;letter-spacing:.3px;}.bul-tbl1,.bul-grade-tbl{width:100%;border-collapse:collapse;font-size:6.5pt;margin-bottom:1.5mm;}.bul-tbl2{width:100%;border-collapse:collapse;font-size:7.5pt;margin-bottom:1.5mm;}.bul-tbl1 th,.bul-tbl1 td,.bul-tbl2 th,.bul-tbl2 td,.bul-grade-tbl th,.bul-grade-tbl td{border:0.5pt solid #c8a84b;padding:1mm 1mm;text-align:center;vertical-align:middle;}.bul-tbl1 thead tr:first-child th,.bul-tbl2 thead th,.bul-grade-tbl thead th{background:#1e3a5f!important;color:#fff!important;font-weight:900;}.bul-tbl1 thead tr:last-child th{background:#c8a84b!important;color:#1f2937!important;font-weight:900;font-size:5.5pt;}.bul-tbl1 td:first-child,.bul-tbl2 td:first-child{text-align:left;padding-left:2mm;font-weight:700;color:#1e3a5f;}.bul-tbl1 tbody tr:nth-child(even) td,.bul-tbl2 tbody tr:nth-child(even) td{background:#fdf8ed;}.bul-tbl1 .grand-row td,.bul-tbl2 .grand-row td{background:#1e3a5f!important;color:#fff!important;font-weight:900;}.bul-tbl1 .pct-row td{background:#e8c97a!important;font-weight:900;color:#1f2937!important;}.bul-grade-wrap{border:1pt solid #1e3a5f;border-radius:2pt;overflow:hidden;margin-bottom:1.5mm;}.bul-grade-row-label{background:#e8e8e8!important;font-weight:900;color:#1e3a5f!important;text-align:left!important;padding-left:1.5mm!important;}.bul-grade-d1{background:#c8a84b!important;color:#fff!important;font-weight:900;}.bul-grade-c2{background:#1d4ed8!important;color:#fff!important;font-weight:900;}.bul-grade-c3{background:#1e3a5f!important;color:#fff!important;font-weight:900;}.bul-grade-c4{background:#065f46!important;color:#fff!important;font-weight:900;}.bul-grade-c5{background:#d97706!important;color:#fff!important;font-weight:900;}.bul-grade-p6{background:#7c3aed!important;color:#fff!important;font-weight:900;}.bul-grade-p7{background:#db2777!important;color:#fff!important;font-weight:900;}.bul-grade-p8{background:#dc2626!important;color:#fff!important;font-weight:900;}.bul-grade-p9{background:#374151!important;color:#fff!important;font-weight:900;}.bul-footer-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5mm;margin-bottom:1.5mm;flex-shrink:0;}.bul-footer-box{border:1pt solid #1e3a5f;border-radius:2pt;overflow:hidden;}.bul-footer-lbl{background:#1e3a5f;color:#fff;font-size:7pt;font-weight:900;padding:1.2mm 1.5mm;letter-spacing:.2px;}.bul-footer-val{padding:1.2mm 1.5mm;font-size:7.5pt;font-weight:700;min-height:8mm;}.bul-decision-row{display:flex;gap:1.5mm;margin-bottom:1.5mm;flex-wrap:wrap;}.bul-decision-box{flex:1;border:1pt solid #c8a84b;border-radius:2pt;padding:1mm 1.5mm;text-align:center;min-width:30mm;}.bul-decision-lbl{background:#1e3a5f;color:#fff;font-size:6.5pt;font-weight:900;padding:1mm 1.5mm;}.bul-decision-val{padding:1mm 1.5mm;font-size:7pt;font-weight:900;color:#1e3a5f;min-height:8mm;}.bul-sig-row{display:flex;gap:2mm;margin-bottom:1mm;}.bul-sig-box{flex:1;border:1pt solid #c8a84b;border-radius:2pt;padding:1.5mm 1.5mm 6mm 1.5mm;font-size:5.5pt;font-weight:700;color:#1e3a5f;}.bul-watermark{text-align:center;font-size:5pt;color:#999;font-style:italic;margin-top:1.5mm;border-top:0.5pt solid #e8c97a;padding-top:1mm;}</style></head><body>${inner}</body></html>`;
+    const full=`<!DOCTYPE html><html><head>
+<link rel="icon" type="image/png" sizes="32x32" href="/asset/img/logo_eden.png">
+    <link rel="apple-touch-icon" href="/asset/img/logo_eden.png">
+    <meta name="theme-color" content="#1e3a5f">
+    <script type="application/ld+json" id="site-organization-schema">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Eden Family School",
+      "url": "https://edensmart-c7019.web.app/",
+      "logo": "https://edensmart-c7019.web.app/asset/img/logo_eden.png",
+      "image": "https://edensmart-c7019.web.app/asset/img/logo_eden.png"
+    }
+    </script>
+
+    <meta charset="UTF-8"><title>Bulletin - ${b.studentName}</title><style>@page{size:A4 portrait;margin:0;}html,body{width:210mm;height:297mm;margin:0;padding:0;}.bul-print{width:210mm;min-height:297mm;padding:10mm;margin:auto;background:white;box-sizing:border-box;font-family:Arial,sans-serif;font-size:8pt;line-height:1;color:#000;overflow:hidden;display:flex;flex-direction:column;}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}@media print{body{margin:0;padding:0;}.bul-print{width:210mm;min-height:297mm;page-break-after:always;}}.bul-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #1e3a5f;padding-bottom:3mm;margin-bottom:3mm;}.bul-logo{width:16mm;height:16mm;object-fit:contain;}.bul-school-info{text-align:center;flex:1;padding:0 2mm;}.bul-year{font-size:10pt;font-weight:900;color:#1e3a5f;}.bul-school-name{font-size:11pt;font-weight:900;color:#1e3a5f;line-height:1;}.bul-school-name span{color:#c8a84b;}.bul-tagline{font-size:7pt;color:#c8a84b;font-style:italic;font-weight:700;}.bul-doc-title{font-size:9pt;font-weight:900;color:#1e3a5f;letter-spacing:1px;margin-top:1mm;text-decoration:underline;text-underline-offset:1px;}.bul-info-row{display:flex;gap:1.5mm;margin-bottom:1.5mm;flex-wrap:wrap;}.bul-info-box{display:flex;align-items:stretch;border:1pt solid #1e3a5f;border-radius:2pt;overflow:hidden;flex:1;min-width:65mm;}.bul-info-box.wide{flex:2;}.bul-info-lbl{background:#1e3a5f;color:#fff;font-weight:900;font-size:6.5pt;padding:1.5mm 2mm;white-space:nowrap;display:flex;align-items:center;letter-spacing:.3px;}.bul-info-val{padding:1.5mm 2mm;font-weight:700;font-size:7pt;display:flex;align-items:center;min-width:25mm;border-left:1pt solid #c8a84b;}.bul-section-title{font-size:6.5pt;font-weight:900;color:#1e3a5f;background:#e8e8e8;padding:1mm 2mm;margin:1.5mm 0 1mm 0;border-left:2pt solid #c8a84b;letter-spacing:.3px;}.bul-tbl1,.bul-grade-tbl{width:100%;border-collapse:collapse;font-size:6.5pt;margin-bottom:1.5mm;}.bul-tbl2{width:100%;border-collapse:collapse;font-size:7.5pt;margin-bottom:1.5mm;}.bul-tbl1 th,.bul-tbl1 td,.bul-tbl2 th,.bul-tbl2 td,.bul-grade-tbl th,.bul-grade-tbl td{border:0.5pt solid #c8a84b;padding:1mm 1mm;text-align:center;vertical-align:middle;}.bul-tbl1 thead tr:first-child th,.bul-tbl2 thead th,.bul-grade-tbl thead th{background:#1e3a5f!important;color:#fff!important;font-weight:900;}.bul-tbl1 thead tr:last-child th{background:#c8a84b!important;color:#1f2937!important;font-weight:900;font-size:5.5pt;}.bul-tbl1 td:first-child,.bul-tbl2 td:first-child{text-align:left;padding-left:2mm;font-weight:700;color:#1e3a5f;}.bul-tbl1 tbody tr:nth-child(even) td,.bul-tbl2 tbody tr:nth-child(even) td{background:#fdf8ed;}.bul-tbl1 .grand-row td,.bul-tbl2 .grand-row td{background:#1e3a5f!important;color:#fff!important;font-weight:900;}.bul-tbl1 .pct-row td{background:#e8c97a!important;font-weight:900;color:#1f2937!important;}.bul-grade-wrap{border:1pt solid #1e3a5f;border-radius:2pt;overflow:hidden;margin-bottom:1.5mm;}.bul-grade-row-label{background:#e8e8e8!important;font-weight:900;color:#1e3a5f!important;text-align:left!important;padding-left:1.5mm!important;}.bul-grade-d1{background:#c8a84b!important;color:#fff!important;font-weight:900;}.bul-grade-c2{background:#1d4ed8!important;color:#fff!important;font-weight:900;}.bul-grade-c3{background:#1e3a5f!important;color:#fff!important;font-weight:900;}.bul-grade-c4{background:#065f46!important;color:#fff!important;font-weight:900;}.bul-grade-c5{background:#d97706!important;color:#fff!important;font-weight:900;}.bul-grade-p6{background:#7c3aed!important;color:#fff!important;font-weight:900;}.bul-grade-p7{background:#db2777!important;color:#fff!important;font-weight:900;}.bul-grade-p8{background:#dc2626!important;color:#fff!important;font-weight:900;}.bul-grade-p9{background:#374151!important;color:#fff!important;font-weight:900;}.bul-footer-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5mm;margin-bottom:1.5mm;flex-shrink:0;}.bul-footer-box{border:1pt solid #1e3a5f;border-radius:2pt;overflow:hidden;}.bul-footer-lbl{background:#1e3a5f;color:#fff;font-size:7pt;font-weight:900;padding:1.2mm 1.5mm;letter-spacing:.2px;}.bul-footer-val{padding:1.2mm 1.5mm;font-size:7.5pt;font-weight:700;min-height:8mm;}.bul-decision-row{display:flex;gap:1.5mm;margin-bottom:1.5mm;flex-wrap:wrap;}.bul-decision-box{flex:1;border:1pt solid #c8a84b;border-radius:2pt;padding:1mm 1.5mm;text-align:center;min-width:30mm;}.bul-decision-lbl{background:#1e3a5f;color:#fff;font-size:6.5pt;font-weight:900;padding:1mm 1.5mm;}.bul-decision-val{padding:1mm 1.5mm;font-size:7pt;font-weight:900;color:#1e3a5f;min-height:8mm;}.bul-sig-row{display:flex;gap:2mm;margin-bottom:1mm;}.bul-sig-box{flex:1;border:1pt solid #c8a84b;border-radius:2pt;padding:1.5mm 1.5mm 6mm 1.5mm;font-size:5.5pt;font-weight:700;color:#1e3a5f;}.bul-watermark{text-align:center;font-size:5pt;color:#999;font-style:italic;margin-top:1.5mm;border-top:0.5pt solid #e8c97a;padding-top:1mm;}</style></head><body>${inner}</body></html>`;
     folder.file(`${String(i+1).padStart(2,'0')}_${(b.studentName||'eleve').replace(/[^a-z0-9]/gi,'_')}.html`,full);
   });
   const blob=await zip.generateAsync({type:'blob'});
@@ -3185,3 +3230,5 @@ boot();
 </script>
 </body>
 </html>
+
+
