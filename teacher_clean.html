@@ -10710,7 +10710,7 @@ function displayTeachers(teachersList = filteredTeachers) {
     const branch = teacher.branch || 'N/A';
 
     return `
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;align-items:center;padding:10px;border-bottom:1px solid var(--bdr);">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;align-items:center;padding:10px;border-bottom:1px solid var(--bdr);">
         <div>
           <div style="font-weight:700;font-size:.9rem;">${fullName}</div>
           <div style="font-size:.75rem;color:var(--txt-lt);">${teacher.email || '—'}</div>
@@ -10718,9 +10718,6 @@ function displayTeachers(teachersList = filteredTeachers) {
         <div style="font-size:.85rem;">${branch}</div>
         <div style="font-size:.85rem;"><span class="bdg bdg-inf">${classes}</span></div>
         <div style="font-size:.75rem;color:var(--txt-lt);">UID: ${teacher.uid.substring(0, 8)}...</div>
-        <button class="btn btn-blue btn-sm" onclick="openAssignClassModal('${teacher.uid}', '${fullName}')">
-          <i class="fas fa-edit"></i> Assigner
-        </button>
       </div>
     `;
   }).join('');
@@ -10735,113 +10732,6 @@ function displayTeachers(teachersList = filteredTeachers) {
   })));
 
   return html;
-}
-
-/**
- * Open modal to assign class to teacher
- * Uses the Firebase UID to update users/{uid}/classes
- */
-function openAssignClassModal(uid, teacherName) {
-  console.log(`📝 Opening class assignment for: ${teacherName} (${uid})`);
-
-  // Create modal content
-  const availableClasses = [
-    'N1A', 'N1B', 'N1C',
-    'N2A', 'N2B', 'N2C',
-    'N3A', 'N3B', 'N3C',
-    'P1A', 'P2A', 'P3A', 'P4A', 'P5A', 'P6A'
-  ];
-
-  const modalHtml = `
-    <div class="modal-overlay open" id="assignClassModal">
-      <div class="modal-box">
-        <div class="modal-hd">
-          <div class="modal-ttl">Assigner une classe</div>
-          <button class="modal-close" onclick="closeModal('assignClassModal')"><i class="fas fa-times"></i></button>
-        </div>
-        <div style="padding:14px;">
-          <div style="font-size:.85rem;font-weight:700;margin-bottom:8px;">Enseignant</div>
-          <div style="padding:10px;background:var(--blue-bg);border-radius:var(--rs);margin-bottom:14px;font-size:.9rem;font-weight:700;">${teacherName}</div>
-
-          <div style="font-size:.85rem;font-weight:700;margin-bottom:8px;">UID Firebase</div>
-          <div style="padding:10px;background:var(--bg);border-radius:var(--rs);margin-bottom:14px;font-size:.75rem;color:var(--txt-lt);word-break:break-all;font-family:monospace;">${uid}</div>
-
-          <label class="f-label">Sélectionner la(les) classe(s)</label>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
-            ${availableClasses.map(cls => `
-              <label style="display:flex;align-items:center;gap:6px;padding:8px;background:var(--bg);border-radius:var(--rs);cursor:pointer;font-size:.85rem;">
-                <input type="checkbox" value="${cls}" class="assignClassCheckbox" style="cursor:pointer;">
-                ${cls}
-              </label>
-            `).join('')}
-          </div>
-
-          <div style="display:flex;gap:10px;">
-            <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('assignClassModal')">Annuler</button>
-            <button class="btn btn-blue" style="flex:1;" onclick="saveTeacherClassAssignment('${uid}', '${teacherName}')">
-              <i class="fas fa-save"></i> Sauvegarder
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Insert modal
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-}
-
-/**
- * Save teacher class assignment to Firebase
- * Updates: users/{uid}/classes
- * Uses Firebase update() function with proper UID preservation
- */
-async function saveTeacherClassAssignment(uid, teacherName) {
-  try {
-    console.log(`\n💾 Saving class assignment for: ${teacherName} (${uid})`);
-
-    // Get selected classes
-    const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheckbox:checked'))
-      .map(cb => cb.value);
-
-    if (selectedClasses.length === 0) {
-      toast('Sélectionnez au moins une classe', 'warn');
-      return;
-    }
-
-    console.log(`   Selected classes: [${selectedClasses.join(', ')}]`);
-
-    // Update Firebase using the update() function
-    // ⭐ IMPORTANT: Using UID directly, not creating new IDs
-    const updatePath = `users/${uid}`;
-    const updates = {
-      classes: selectedClasses
-    };
-
-    console.log(`   📍 Update path: ${updatePath}`);
-    console.log(`   📝 Update data:`, updates);
-
-    // Use Firebase update() function to preserve UID
-    await db.ref(updatePath).update(updates);
-
-    console.log(`✅ Class assignment saved successfully`);
-    console.log(`   UID preserved: ${uid}`);
-    console.log(`   Classes: [${selectedClasses.join(', ')}]`);
-
-    // Close modal
-    const modal = document.getElementById('assignClassModal');
-    if (modal) modal.remove();
-
-    // Show success message
-    toast(`Classes assignées à ${teacherName}`, 'ok');
-
-    // Refresh teacher list
-    await fetchTeachers();
-
-  } catch (err) {
-    console.error('❌ Error saving class assignment:', err);
-    toast('Erreur lors de l\'assignation des classes', 'err');
-  }
 }
 
 /* ══════════════════════════════════════
