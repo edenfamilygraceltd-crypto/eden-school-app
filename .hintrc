@@ -21,6 +21,7 @@
     ],
     "axe/name-role-value": "off",
     "disown-opener": "off",
-    "no-inline-styles": "off"
+    "no-inline-styles": "off",
+    "apple-touch-icons": "off"
   }
 }
