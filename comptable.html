@@ -10673,6 +10673,68 @@
             });
         }
 
+        function getRegistrationBranchLevel(branchValue) {
+            if (branchValue === 'gisozi_maternelle') return 'Maternelle';
+            if (branchValue === 'gisozi_primaire') return 'Primaire';
+            return null;
+        }
+
+        function matchesRegistrationBranchLevel(className, branchValue) {
+            const selectedLevel = getRegistrationBranchLevel(branchValue);
+            if (!selectedLevel) return true;
+
+            const normalizedClass = (className || '').toString().trim().toUpperCase();
+            if (selectedLevel === 'Maternelle') return normalizedClass.startsWith('N');
+            if (selectedLevel === 'Primaire') return normalizedClass.startsWith('P');
+            return true;
+        }
+
+        async function getRegistrationClassesForBranch(branchValue) {
+            const normalizedBranch = getFirebaseBranchForWorkers(branchValue);
+            const branchCandidates = [...new Set([normalizedBranch, branchValue].filter(Boolean))];
+            const selectedLevel = getRegistrationBranchLevel(branchValue);
+
+            for (const branchKey of branchCandidates) {
+                const classNames = new Set();
+                try {
+                    const classesSnap = await db.ref(`branches/${branchKey}/classes`).once('value');
+                    if (!classesSnap.exists()) continue;
+
+                    classesSnap.forEach(child => {
+                        const val = child.val();
+                        const isActive = (typeof val === 'object') ? val.active !== false : true;
+                        if (!isActive) return;
+
+                        const className = (typeof val === 'object' ? (val.name || child.key) : child.key || '').toString().trim();
+                        if (!className) return;
+                        if (!matchesRegistrationBranchLevel(className, branchValue)) return;
+
+                        if (selectedLevel) {
+                            const classLevel = (typeof val === 'object' ? (val.level || val.degre || '') : '').toString().trim().toLowerCase();
+                            const inferredLevel = className.toUpperCase().startsWith('N') ? 'nursery' : className.toUpperCase().startsWith('P') ? 'primary' : '';
+                            const levelToCheck = classLevel || inferredLevel;
+                            if (selectedLevel === 'Maternelle' && !['maternelle', 'nursery'].includes(levelToCheck)) return;
+                            if (selectedLevel === 'Primaire' && !['primaire', 'primary'].includes(levelToCheck)) return;
+                        }
+
+                        classNames.add(className);
+                    });
+
+                    if (classNames.size > 0) {
+                        return [...classNames].sort((a, b) => a.localeCompare(b, 'fr'));
+                    }
+                } catch (error) {
+                    console.error('Error loading registration classes for branch:', branchKey, error);
+                }
+            }
+
+            return [...new Set(
+                getStudentsForCurrentBranch(branchValue)
+                    .map(student => (student.classes || student.class || student.classe || '').toString().trim())
+                    .filter(className => className && matchesRegistrationBranchLevel(className, branchValue))
+            )].sort((a, b) => a.localeCompare(b, 'fr'));
+        }
+
         async function populateRegistrationClassesByBranch(branchValue) {
             const select = document.getElementById('regRequestedClass');
             if (!select) return;
@@ -10682,30 +10744,13 @@
 
             if (!branchValue) {
                 select.innerHTML = '<option value="">Sélectionner d\'abord une branche</option>';
+                select.disabled = false;
                 return;
             }
 
             try {
-                const classesSnap = await db.ref(`branches/${branchValue}/classes`).once('value');
-                let classNames = [];
+                const classNames = await getRegistrationClassesForBranch(branchValue);
 
-                if (classesSnap.exists()) {
-                    classesSnap.forEach(child => {
-                        const val = child.val();
-                        const name = typeof val === 'object' ? (val.name || child.key) : child.key;
-                        classNames.push(name);
-                    });
-                } else {
-                    const studentsSnap = await db.ref(`branches/${branchValue}/students`).once('value');
-                    const classSet = new Set();
-                    studentsSnap.forEach(child => {
-                        const cls = (child.val().classes || child.val().class || '').trim();
-                        if (cls) classSet.add(cls);
-                    });
-                    classNames = [...classSet];
-                }
-
-                classNames.sort();
                 if (classNames.length === 0) {
                     select.innerHTML = '<option value="">Aucune classe trouvée</option>';
                     select.disabled = false;
