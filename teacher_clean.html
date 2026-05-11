@@ -2159,6 +2159,62 @@ body {
     font-size: 22px;
     opacity: 0.3;
  }
+
+/* ===== V2: Chat / Activities / Cotation ===== */
+.chat-shell { display:grid; grid-template-columns:320px minmax(0,1fr); gap:0; border:1px solid var(--bdr); border-radius:12px; overflow:hidden; min-height:62vh; background:#fff; }
+.chat-left { background:#f8fafc; border-right:1px solid var(--bdr); display:flex; flex-direction:column; min-width:0; }
+.chat-right { display:flex; flex-direction:column; min-width:0; position:relative; }
+.chat-list { overflow:auto; }
+.chat-item { padding:12px; border-bottom:1px solid var(--bdr); display:grid; grid-template-columns:42px minmax(0,1fr) auto; gap:10px; cursor:pointer; }
+.chat-item.active { background:var(--blue-bg); }
+.chat-item:hover { background:#eef5ff; }
+.chat-item-name { font-size:.86rem; font-weight:800; color:var(--txt); }
+.chat-item-last { font-size:.74rem; color:var(--txt-lt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-item-time { font-size:.68rem; color:var(--txt-lt); }
+.chat-unread { background:var(--blue); color:#fff; border-radius:999px; min-width:18px; height:18px; padding:0 5px; font-size:.62rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
+.chat-toolbar { padding:10px 12px; border-bottom:1px solid var(--bdr); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.chat-thread { flex:1; overflow:auto; padding:14px; background:linear-gradient(180deg,#fbfdff,#f6f9fd); }
+.chat-bubble { max-width:min(78%,560px); border-radius:18px; padding:10px 12px; margin-bottom:8px; box-shadow:0 1px 6px rgba(0,0,0,.04); }
+.chat-bubble.in { background:#eef1f5; color:#1f2937; margin-right:auto; border-top-left-radius:8px; }
+.chat-bubble.out { background:var(--blue); color:#fff; margin-left:auto; border-top-right-radius:8px; }
+.chat-meta { font-size:.65rem; opacity:.82; margin-top:4px; display:flex; gap:6px; align-items:center; }
+.chat-input-bar { border-top:1px solid var(--bdr); padding:10px; display:flex; gap:8px; align-items:flex-end; background:#fff; }
+.chat-input-bar textarea { min-height:44px; max-height:140px; resize:vertical; }
+.chat-empty { min-height:280px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--txt-lt); gap:8px; }
+.compose-fab { position:absolute; right:14px; bottom:84px; width:52px; height:52px; border-radius:50%; border:none; background:var(--blue); color:#fff; box-shadow:0 10px 24px rgba(26,92,168,.35); font-size:1.35rem; cursor:pointer; z-index:3; }
+.typing-indicator { display:inline-flex; gap:4px; align-items:center; }
+.typing-indicator span { width:6px; height:6px; border-radius:50%; background:#94a3b8; animation:typingDot 1s infinite ease-in-out; }
+.typing-indicator span:nth-child(2) { animation-delay:.15s; }
+.typing-indicator span:nth-child(3) { animation-delay:.3s; }
+@keyframes typingDot { 0%,80%,100% { transform:translateY(0); opacity:.4; } 40% { transform:translateY(-4px); opacity:1; } }
+
+.kanban-wrap { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.kan-col { background:#f8fafc; border:1px solid var(--bdr); border-radius:12px; min-height:220px; }
+.kan-col-hd { padding:10px 12px; border-bottom:1px solid var(--bdr); font-weight:800; font-size:.82rem; color:var(--blue-dk); }
+.kan-col-body { padding:10px; display:flex; flex-direction:column; gap:8px; }
+.act-card { background:#fff; border:1px solid var(--bdr); border-left:4px solid var(--blue); border-radius:10px; padding:10px; }
+.act-title { font-size:.84rem; font-weight:800; color:var(--txt); }
+.act-desc { font-size:.74rem; color:var(--txt-lt); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.filter-chips { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 12px; }
+.chip { padding:6px 10px; border:1px solid var(--bdr); border-radius:999px; background:#fff; font-size:.72rem; font-weight:700; cursor:pointer; }
+.chip.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+
+.cotation-grid { width:100%; border-collapse:collapse; min-width:980px; }
+.cotation-grid th, .cotation-grid td { border:1px solid var(--bdr); padding:6px; font-size:.78rem; text-align:center; }
+.cotation-grid th { background:var(--blue-dk); color:#fff; position:sticky; top:0; z-index:1; }
+.score-input { width:64px; min-height:34px; border:2px solid var(--bdr); border-radius:8px; text-align:center; font-weight:800; }
+.score-good { border-color:#16a34a; }
+.score-mid { border-color:#2563eb; }
+.score-low { border-color:#d97706; }
+.score-bad { border-color:#dc2626; }
+
+@media (max-width:768px) {
+  .chat-shell { grid-template-columns:1fr; }
+  .chat-shell.show-thread .chat-left { display:none; }
+  .chat-shell:not(.show-thread) .chat-right { display:none; }
+  .chat-toolbar .chat-back { display:inline-flex !important; }
+  .kanban-wrap { grid-template-columns:1fr; }
+}
 </style>
 </head>
 <body>
@@ -3720,6 +3776,15 @@ let messageTeacherRecipients = []; // Teacher recipients used by messaging modal
 let notificationsListenerRef = null;
 let shownMessageRequestPopups = new Set();
 let isPublishingBulletin = false;
+let currentTerm = '1';
+let academicYear = '2025-2026';
+let termsConfig = [];
+let conversationsCache = [];
+let activeConversationId = '';
+let conversationListenerMap = {};
+let activitiesCache = [];
+let activityFilterType = 'all';
+let cotationState = { month: '', subject: '', type: 'TJ', dateColumns: [], entries: {} };
 
 const BULLETIN = {
   notes:{}, conduite:{}, application:null,
@@ -7917,7 +7982,7 @@ function renderCondRanking() {
 
 // Load bulletin history for teacher
 async function loadBulletinHistory() {
-  const trimesterFilter = (document.getElementById('historyClassSelect')?.value || 'all').toString().trim();
+  const trimesterFilter = (document.getElementById('historyClassSelect')?.value || currentTerm || 'all').toString().trim();
   const container = document.getElementById('bulletinHistoryList');
   
   try {
@@ -8035,37 +8100,33 @@ async function loadBulletinHistory() {
       }
     });
 
-    // Step B: group by studentId + trimester — a real duplicate = 2+ DIFFERENT records for same student+trimester
+    // Step B: group by normalized studentId + normalized trimester key
     const groupByStudentTrimester = {};
     dedupeByPath.forEach(b => {
       const sid = (b.studentId || '').toString().trim();
-      const tri = (b.trimester || b.trimestre || '').toString().trim().toUpperCase();
-      if (!sid || !tri) return;
-      const key = `${sid}__${tri}`;
+      const triNorm = normalizeTrimesterFilter(b.trimester || b.trimestre || '');
+      if (!sid || !triNorm || triNorm === 'ALL') return;
+      const key = `${sid}__${triNorm}`;
       if (!groupByStudentTrimester[key]) groupByStudentTrimester[key] = [];
       groupByStudentTrimester[key].push(b);
     });
 
-    // Step C: for groups with >1 record → keep newest, flag others as duplicates
+    // Step C: keep newest per key, all others become duplicates
     const uniqueByStudentTrimester = {};
     Object.entries(groupByStudentTrimester).forEach(([key, group]) => {
-      if (group.length === 1) {
-        uniqueByStudentTrimester[key] = group[0];
-        return;
-      }
-      // Sort descending by date → first is newest
       group.sort((a, z) => {
         const da = parseInt(a.publishedAt || a.updatedAt || a.createdAt || '0', 10) || 0;
         const dz = parseInt(z.publishedAt || z.updatedAt || z.createdAt || '0', 10) || 0;
         return dz - da;
       });
-      uniqueByStudentTrimester[key] = group[0]; // keep newest
-      for (let i = 1; i < group.length; i++) {
-        lastDuplicateBulletins.push(group[i]); // older ones are real duplicates
+      uniqueByStudentTrimester[key] = group[0];
+      if (group.length > 1) {
+        for (let i = 1; i < group.length; i++) {
+          lastDuplicateBulletins.push(group[i]);
+          console.log(`Duplicate found: ${key} -> ${group[i]._fbPath || group[i].id || 'unknown-path'}`);
+        }
       }
     });
-
-    console.log(`🔍 Real duplicates detected: ${lastDuplicateBulletins.length}`, lastDuplicateBulletins.map(d => `${d.studentName}|${d.trimester||d.trimestre}|${d._fbPath}`));
 
     const bulletinsArrayAll = Object.values(uniqueByStudentTrimester)
       .sort((a, b) => (a.studentName || "").localeCompare(b.studentName || ""));
@@ -8359,21 +8420,23 @@ function showDuplicatesModal() {
     listHtml = dups.map((b, idx) => {
       const name = b.studentName || b.nom || b.studentId || '—';
       const cls  = b.class || b.classe || '—';
-      const tri  = b.trimester || b.trimestre || '—';
+      const tri  = normalizeTrimesterFilter(b.trimester || b.trimestre || '—');
       const date = b.publishedAt || b.updatedAt || b.createdAt || 0;
       const dateLabel = date ? new Date(parseInt(date)).toLocaleDateString('fr-FR') : '—';
       const sid  = (b.studentId || '').toString().trim();
       const clsNorm = (cls || '').toString().trim();
       const triNorm = (tri || '').toString().trim();
+      const canDelete = !!(b._fbPath || (sid && clsNorm && triNorm));
       return `
         <div style="display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--bdr);border-radius:10px;background:#fff8f0;">
           <div style="font-weight:800;color:var(--warn,#f59e0b);">${idx + 1}</div>
           <div>
             <div style="font-weight:700;color:var(--txt);">${name}</div>
             <div style="font-size:.78rem;color:var(--txt-lt);">Classe: ${cls} &bull; Trimestre: ${tri} &bull; Date: ${dateLabel}</div>
+            <div style="font-size:.72rem;color:var(--txt-lt);margin-top:2px;">Cle: ${sid || '—'}__${triNorm || '—'}</div>
             <div style="font-size:.72rem;color:var(--txt-lt);margin-top:2px;word-break:break-all;">${b._fbPath || ''}</div>
           </div>
-          <button class="btn btn-danger btn-sm" onclick="deleteDuplicateBulletin(${idx}, this)" title="Supprimer ce doublon">
+          <button class="btn btn-danger btn-sm" onclick="deleteDuplicateBulletin(${idx}, this)" title="Supprimer ce doublon" ${canDelete ? '' : 'disabled style="opacity:.55;cursor:not-allowed;"'}>
             <i class="fas fa-trash"></i>
           </button>
         </div>
@@ -11151,9 +11214,1689 @@ function displayTeachers(teachersList = filteredTeachers) {
 }
 
 /* ══════════════════════════════════════
+   V2 OVERRIDES (TERMS / CHAT / ATT / ACT / PERF / DASH / COTATION)
+══════════════════════════════════════ */
+function getCurrentTeacherBranchNormalized() {
+  return normalizeBranchForMatch(currentTeacher?.branch || currentTeacher?.branche || currentTeacher?.schoolBranch || currentTeacher?.branchName || '');
+}
+
+function getCurrentTeacherClassesList() {
+  if (!currentTeacher) return [];
+  if (Array.isArray(currentTeacher.classes)) return currentTeacher.classes.filter(Boolean).map(v => `${v}`.trim());
+  if (currentTeacher.classes) return [`${currentTeacher.classes}`.trim()];
+  if (currentTeacher.class) return [`${currentTeacher.class}`.trim()];
+  if (currentTeacher.classe) return [`${currentTeacher.classe}`.trim()];
+  return [];
+}
+
+async function loadTermConfiguration() {
+  try {
+    const snap = await db.ref('config/terms').once('value');
+    if (snap.exists()) {
+      const d = snap.val() || {};
+      currentTerm = `${d.currentTerm || '1'}`;
+      academicYear = d.academicYear || '2025-2026';
+      termsConfig = Array.isArray(d.terms) ? d.terms : [];
+      return;
+    }
+  } catch (e) {
+    console.warn('loadTermConfiguration fallback:', e?.message || e);
+  }
+  currentTerm = '1';
+  academicYear = '2025-2026';
+  termsConfig = [];
+}
+
+function getCurrentTermConfigObj() {
+  return (termsConfig || []).find(t => `${t.id}` === `${currentTerm}`) || null;
+}
+
+function getCurrentTermName() {
+  const t = getCurrentTermConfigObj();
+  if (t?.name) return t.name;
+  if (`${currentTerm}`.toUpperCase() === 'BN') return 'Bulletin Annuel';
+  return `Trimestre ${currentTerm}`;
+}
+
+function getTermStatusBadge(termObj) {
+  if (!termObj?.startDate || !termObj?.endDate) return { label: 'En cours', cls: 'bdg-inf' };
+  const now = Date.now();
+  const start = new Date(termObj.startDate).getTime();
+  const end = new Date(termObj.endDate).getTime();
+  if (now < start) return { label: 'A venir', cls: 'bdg-inf' };
+  if (now > end) return { label: 'Termine', cls: 'bdg-warn' };
+  return { label: 'En cours', cls: 'bdg-ok' };
+}
+
+function applyTermConfigInUI() {
+  const bTri = document.getElementById('bTrimestre');
+  if (bTri && currentTerm) bTri.value = currentTerm;
+
+  const historySel = document.getElementById('historyClassSelect');
+  if (historySel && currentTerm) historySel.value = currentTerm;
+
+  const tbSubEl = document.getElementById('tbSub');
+  if (tbSubEl) tbSubEl.textContent = `Annee ${academicYear} — ${getCurrentTermName()}`;
+}
+
+function ensureTermConfigCard() {
+  const profilePage = document.getElementById('page-profile');
+  if (!profilePage) return;
+  let card = document.getElementById('termConfigCard');
+  if (!card) {
+    card = document.createElement('div');
+    card.id = 'termConfigCard';
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-hd"><div class="card-ttl"><i class="fas fa-calendar-alt"></i> Configuration du trimestre</div></div>
+      <div id="termConfigContent" style="font-size:.84rem;color:var(--txt);"></div>
+    `;
+    const help = profilePage.querySelector('.help-section');
+    if (help?.parentNode) help.parentNode.insertBefore(card, help);
+    else profilePage.appendChild(card);
+  }
+
+  const t = getCurrentTermConfigObj();
+  const status = getTermStatusBadge(t);
+  const start = t?.startDate || '—';
+  const end = t?.endDate || '—';
+  let remaining = '—';
+  if (t?.endDate) {
+    const diff = Math.ceil((new Date(t.endDate).getTime() - Date.now()) / 86400000);
+    remaining = diff >= 0 ? `${diff} jours` : 'Termine';
+  }
+
+  const isAdmin = ((currentUser?.role || '').toLowerCase() === 'admin');
+  const c = document.getElementById('termConfigContent');
+  if (!c) return;
+  c.innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+      <span class="bdg ${status.cls}">${status.label}</span>
+      <strong>${getCurrentTermName()}</strong>
+      <span style="color:var(--txt-lt);">• ${academicYear}</span>
+    </div>
+    <div>Debut: <strong>${start}</strong> • Fin: <strong>${end}</strong> • Restant: <strong>${remaining}</strong></div>
+    ${isAdmin ? `<div style="margin-top:10px;"><button class="btn btn-blue" onclick="updateCurrentTermPrompt()"><i class="fas fa-pen"></i> Mettre a jour le trimestre</button></div>` : ''}
+  `;
+}
+
+async function updateCurrentTermPrompt() {
+  const next = prompt('Nouveau trimestre (1,2,3,BN):', currentTerm);
+  if (!next) return;
+  const norm = normalizeTrimesterFilter(next);
+  if (!['1', '2', '3', 'BN'].includes(norm)) {
+    toast('Trimestre invalide', 'warn');
+    return;
+  }
+  await db.ref('config/terms/currentTerm').set(norm);
+  currentTerm = norm;
+  applyTermConfigInUI();
+  ensureTermConfigCard();
+  toast('Trimestre mis a jour', 'ok');
+}
+
+function formatTimeAgo(ts) {
+  const t = Number(ts || 0);
+  if (!t) return '—';
+  const d = Date.now() - t;
+  const m = Math.floor(d / 60000);
+  if (m < 1) return 'A l\'instant';
+  if (m < 60) return `Il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `Il y a ${h}h`;
+  if (h < 48) return 'Hier';
+  const j = Math.floor(h / 24);
+  return `Il y a ${j}j`;
+}
+
+function ensureModernMessagingLayout() {
+  const page = document.getElementById('page-messages');
+  if (!page || page.dataset.modernChatReady === '1') return;
+  const card = page.querySelector('.card');
+  if (!card) return;
+  card.innerHTML = `
+    <div class="chat-shell" id="chatShell">
+      <aside class="chat-left">
+        <div class="card-hd" style="margin:0;padding:10px 12px;border-bottom:1px solid var(--bdr);">
+          <div class="card-ttl"><i class="fas fa-comments"></i> Conversations</div>
+        </div>
+        <div class="chat-list" id="conversationList"></div>
+      </aside>
+      <section class="chat-right">
+        <div class="chat-toolbar" id="chatToolbar">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <button class="btn btn-ghost btn-sm chat-back" style="display:none;" onclick="showConversationListMobile()"><i class="fas fa-arrow-left"></i></button>
+            <div class="stu-ava" id="chatHeaderAvatar">E</div>
+            <div style="min-width:0;">
+              <div id="chatHeaderName" style="font-weight:800;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Aucune conversation</div>
+              <div id="chatHeaderMeta" style="font-size:.72rem;color:var(--txt-lt);">0 membre</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm"><i class="fas fa-video"></i></button>
+            <button class="btn btn-ghost btn-sm"><i class="fas fa-search"></i></button>
+          </div>
+        </div>
+        <div class="chat-thread" id="chatThread">
+          <div class="chat-empty"><i class="fas fa-envelope-open-text" style="font-size:1.6rem;"></i><h4>Commencez une conversation</h4></div>
+        </div>
+        <div class="chat-input-bar">
+          <textarea id="chatInput" class="f-input" rows="1" placeholder="Ecrire un message..."></textarea>
+          <button class="btn btn-blue" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+        <button class="compose-fab" onclick="showComposeModal()">+</button>
+      </section>
+    </div>
+  `;
+  page.dataset.modernChatReady = '1';
+}
+
+function ensureComposeConversationModal() {
+  if (document.getElementById('composeConversationModal')) return;
+  const modal = document.createElement('div');
+  modal.id = 'composeConversationModal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:640px;">
+      <div class="modal-hd">
+        <div class="modal-ttl">Nouvelle conversation</div>
+        <button class="modal-close" onclick="closeModal('composeConversationModal')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="form-tabs" style="margin-bottom:12px;">
+        <button class="form-tab active" id="composeTabDirect" onclick="switchComposeTab('direct')">Message direct</button>
+        <button class="form-tab" id="composeTabGroup" onclick="switchComposeTab('group')">Creer un groupe</button>
+      </div>
+      <div id="composeDirectPane">
+        <div class="f-group"><label class="f-label">Rechercher utilisateur</label><input class="f-input" id="directUserSearch" placeholder="Nom..." oninput="renderDirectUserCandidates()"></div>
+        <div id="directUserList" style="max-height:260px;overflow:auto;"></div>
+      </div>
+      <div id="composeGroupPane" style="display:none;">
+        <div class="f-group"><label class="f-label">Nom du groupe</label><input class="f-input" id="groupNameInput" placeholder="Equipe N3A"></div>
+        <div class="f-group"><label class="f-label">Avatar emoji</label><input class="f-input" id="groupEmojiInput" placeholder="👥" value="👥"></div>
+        <div class="f-group"><label class="f-label">Participants</label><div id="groupUserList" style="max-height:220px;overflow:auto;"></div></div>
+        <button class="btn btn-blue btn-full" onclick="createGroupConversation()"><i class="fas fa-users"></i> Creer groupe</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+let composeUsersCache = [];
+let composeGroupSelection = new Set();
+
+function switchComposeTab(tab) {
+  document.getElementById('composeTabDirect')?.classList.toggle('active', tab === 'direct');
+  document.getElementById('composeTabGroup')?.classList.toggle('active', tab === 'group');
+  const d = document.getElementById('composeDirectPane');
+  const g = document.getElementById('composeGroupPane');
+  if (d) d.style.display = tab === 'direct' ? '' : 'none';
+  if (g) g.style.display = tab === 'group' ? '' : 'none';
+}
+
+async function loadComposeUsers() {
+  const snap = await db.ref('users').once('value');
+  const list = [];
+  const myUid = getCurrentTeacherUid();
+  const myBranch = getCurrentTeacherBranchNormalized();
+  if (snap.exists()) {
+    snap.forEach(c => {
+      const u = c.val() || {};
+      const uid = c.key;
+      if (uid === myUid) return;
+      const uBranch = normalizeBranchForMatch(u.branch || u.schoolBranch || u.branchName || '');
+      if (myBranch && uBranch && uBranch !== myBranch) return;
+      list.push({ uid, name: u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || 'Utilisateur', email: u.email || '' });
+    });
+  }
+  composeUsersCache = list.sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+}
+
+function renderDirectUserCandidates() {
+  const q = (document.getElementById('directUserSearch')?.value || '').toLowerCase().trim();
+  const box = document.getElementById('directUserList');
+  if (!box) return;
+  const users = composeUsersCache.filter(u => !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+  box.innerHTML = users.map(u => `
+    <div class="chat-item" style="grid-template-columns:42px 1fr auto;" onclick="createDirectConversation('${u.uid}')">
+      <div class="stu-ava">${ini(u.name)}</div>
+      <div><div class="chat-item-name">${u.name}</div><div class="chat-item-last">${u.email || ''}</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--txt-lt);"></i>
+    </div>
+  `).join('') || '<div class="empty-state"><p>Aucun utilisateur</p></div>';
+
+  const gbox = document.getElementById('groupUserList');
+  if (gbox) {
+    gbox.innerHTML = composeUsersCache.map(u => `
+      <label style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--bdr);cursor:pointer;">
+        <input type="checkbox" value="${u.uid}" onchange="toggleGroupUser('${u.uid}', this.checked)">
+        <span class="stu-ava" style="width:28px;height:28px;font-size:.58rem;">${ini(u.name)}</span>
+        <span style="font-size:.82rem;">${u.name}</span>
+      </label>
+    `).join('');
+  }
+}
+
+function toggleGroupUser(uid, checked) {
+  if (checked) composeGroupSelection.add(uid);
+  else composeGroupSelection.delete(uid);
+}
+
+async function createDirectConversation(targetUid) {
+  const myUid = getCurrentTeacherUid();
+  if (!myUid || !targetUid) return;
+  const pair = [myUid, targetUid].sort();
+  const convId = `direct_${pair[0]}_${pair[1]}`;
+  const target = composeUsersCache.find(u => u.uid === targetUid);
+  const ref = db.ref(`conversations/${convId}`);
+  const snap = await ref.once('value');
+  if (!snap.exists()) {
+    await ref.set({
+      id: convId,
+      type: 'direct',
+      participants: pair,
+      name: target?.name || 'Conversation',
+      createdBy: myUid,
+      createdAt: Date.now(),
+      lastMessage: '',
+      lastMessageAt: Date.now()
+    });
+  }
+  closeModal('composeConversationModal');
+  await initMessages();
+  openConversation(convId);
+}
+
+async function createGroupConversation() {
+  const myUid = getCurrentTeacherUid();
+  const participants = Array.from(new Set([myUid, ...Array.from(composeGroupSelection)]));
+  const name = (document.getElementById('groupNameInput')?.value || '').trim();
+  const emoji = (document.getElementById('groupEmojiInput')?.value || '👥').trim();
+  if (!name || participants.length < 3) {
+    toast('Nom du groupe et au moins 2 participants requis', 'warn');
+    return;
+  }
+  const id = db.ref('conversations').push().key;
+  await db.ref(`conversations/${id}`).set({
+    id,
+    type: 'group',
+    participants,
+    name: `${emoji} ${name}`,
+    createdBy: myUid,
+    createdAt: Date.now(),
+    lastMessage: '',
+    lastMessageAt: Date.now()
+  });
+  closeModal('composeConversationModal');
+  composeGroupSelection = new Set();
+  await initMessages();
+  openConversation(id);
+}
+
+function showComposeModal() {
+  ensureComposeConversationModal();
+  openModal('composeConversationModal');
+  loadComposeUsers().then(renderDirectUserCandidates).catch(() => renderDirectUserCandidates());
+}
+
+function showConversationListMobile() {
+  const shell = document.getElementById('chatShell');
+  if (shell) shell.classList.remove('show-thread');
+}
+
+function showConversationThreadMobile() {
+  const shell = document.getElementById('chatShell');
+  if (shell) shell.classList.add('show-thread');
+}
+
+function formatConversationName(conv) {
+  if (conv.type === 'group') return conv.name || 'Groupe';
+  const myUid = getCurrentTeacherUid();
+  const otherUid = (conv.participants || []).find(uid => uid !== myUid);
+  if (!otherUid) return conv.name || 'Conversation';
+  const u = composeUsersCache.find(x => x.uid === otherUid);
+  return u?.name || conv.name || 'Conversation';
+}
+
+async function initMessages() {
+  ensureModernMessagingLayout();
+  const myUid = getCurrentTeacherUid();
+  if (!myUid) return;
+
+  await loadComposeUsers();
+
+  db.ref('conversations').off('value');
+  db.ref('conversations').on('value', async (snapshot) => {
+    const all = snapshot.val() || {};
+    conversationsCache = Object.keys(all)
+      .map(id => ({ id, ...all[id] }))
+      .filter(c => Array.isArray(c.participants) && c.participants.includes(myUid))
+      .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+
+    const unreadByConv = {};
+    await Promise.all(conversationsCache.map(async (c) => {
+      const msgSnap = await db.ref(`conversations/${c.id}/messages`).limitToLast(20).once('value');
+      let unread = 0;
+      if (msgSnap.exists()) {
+        msgSnap.forEach(m => {
+          const v = m.val() || {};
+          const readBy = Array.isArray(v.readBy) ? v.readBy : [];
+          if (v.senderId !== myUid && !readBy.includes(myUid)) unread++;
+        });
+      }
+      unreadByConv[c.id] = unread;
+    }));
+
+    renderMessages({ conversations: conversationsCache, unreadByConv });
+    if (activeConversationId && conversationsCache.some(c => c.id === activeConversationId)) {
+      openConversation(activeConversationId, true);
+    }
+
+    const unreadTotal = Object.values(unreadByConv).reduce((a, b) => a + b, 0);
+    const badge = document.getElementById('notifBadge');
+    if (badge) {
+      badge.textContent = unreadTotal > 9 ? '9+' : `${unreadTotal}`;
+      badge.style.display = unreadTotal ? 'flex' : 'none';
+    }
+  });
+}
+
+function renderMessages(payload) {
+  const list = document.getElementById('conversationList');
+  const thread = document.getElementById('chatThread');
+  if (!list || !thread) return;
+  const convs = payload?.conversations || [];
+  const unreadByConv = payload?.unreadByConv || {};
+
+  if (!convs.length) {
+    list.innerHTML = '<div class="chat-empty"><i class="fas fa-envelope"></i><p>Commencez une conversation</p></div>';
+    if (!activeConversationId) thread.innerHTML = '<div class="chat-empty"><i class="fas fa-envelope-open-text" style="font-size:1.6rem;"></i><h4>Commencez une conversation</h4></div>';
+    return;
+  }
+
+  list.innerHTML = convs.map(c => {
+    const active = c.id === activeConversationId ? 'active' : '';
+    const name = formatConversationName(c);
+    const unread = unreadByConv[c.id] || 0;
+    return `
+      <div class="chat-item ${active}" onclick="openConversation('${c.id}')">
+        <div class="stu-ava">${ini(name)}</div>
+        <div style="min-width:0;">
+          <div class="chat-item-name">${name}</div>
+          <div class="chat-item-last">${c.lastMessage || 'Aucun message'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <span class="chat-item-time">${formatTimeAgo(c.lastMessageAt)}</span>
+          ${unread ? `<span class="chat-unread">${unread > 99 ? '99+' : unread}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function clearConversationMessageListener(conversationId) {
+  if (!conversationId || !conversationListenerMap[conversationId]) return;
+  db.ref(`conversations/${conversationId}/messages`).off('value', conversationListenerMap[conversationId]);
+  delete conversationListenerMap[conversationId];
+}
+
+function openConversation(conversationId, silent = false) {
+  const myUid = getCurrentTeacherUid();
+  const conv = conversationsCache.find(c => c.id === conversationId);
+  if (!conv) return;
+
+  if (activeConversationId && activeConversationId !== conversationId) {
+    clearConversationMessageListener(activeConversationId);
+  }
+
+  activeConversationId = conversationId;
+  const name = formatConversationName(conv);
+  const headerName = document.getElementById('chatHeaderName');
+  const headerMeta = document.getElementById('chatHeaderMeta');
+  const headerAvatar = document.getElementById('chatHeaderAvatar');
+  if (headerName) headerName.textContent = name;
+  if (headerMeta) headerMeta.textContent = `${(conv.participants || []).length} membre(s)`;
+  if (headerAvatar) headerAvatar.textContent = ini(name);
+
+  const thread = document.getElementById('chatThread');
+  if (thread) {
+    thread.innerHTML = '<div class="chat-empty"><div class="typing-indicator"><span></span><span></span><span></span></div><p>Chargement...</p></div>';
+  }
+
+  const listener = async (snap) => {
+    const messages = [];
+    if (snap.exists()) snap.forEach(c => messages.push({ id: c.key, ...c.val() }));
+    messages.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+    if (thread) {
+      thread.innerHTML = messages.length ? messages.map(m => {
+        const out = m.senderId === myUid;
+        const bubbleCls = out ? 'out' : 'in';
+        const readBy = Array.isArray(m.readBy) ? m.readBy : [];
+        const readTxt = out ? (readBy.length > 1 ? 'Vu' : 'Envoye') : '';
+        return `
+          <div class="chat-bubble ${bubbleCls}">
+            <div style="font-size:.72rem;font-weight:800;opacity:${out ? '.86' : '.72'};">${m.senderName || 'Utilisateur'}</div>
+            <div style="font-size:.86rem;white-space:pre-wrap;">${m.content || ''}</div>
+            <div class="chat-meta">${new Date(m.createdAt || Date.now()).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${out ? ` • ${readTxt}` : ''}</div>
+          </div>
+        `;
+      }).join('') : '<div class="chat-empty"><i class="fas fa-envelope-open-text" style="font-size:1.4rem;"></i><h4>Commencez une conversation</h4></div>';
+
+      thread.scrollTo({ top: thread.scrollHeight, behavior: 'smooth' });
+    }
+
+    // Mark received messages as read for current user
+    const updates = {};
+    messages.forEach(m => {
+      if (m.senderId === myUid) return;
+      const readBy = Array.isArray(m.readBy) ? m.readBy : [];
+      if (!readBy.includes(myUid)) {
+        updates[`conversations/${conversationId}/messages/${m.id}/readBy`] = [...readBy, myUid];
+      }
+    });
+    if (Object.keys(updates).length) {
+      await db.ref().update(updates);
+    }
+  };
+
+  conversationListenerMap[conversationId] = listener;
+  db.ref(`conversations/${conversationId}/messages`).on('value', listener);
+  showConversationThreadMobile();
+
+  if (!silent) {
+    const list = document.getElementById('conversationList');
+    if (list) {
+      Array.from(list.querySelectorAll('.chat-item')).forEach(item => item.classList.remove('active'));
+    }
+  }
+}
+
+async function sendMessage() {
+  const myUid = getCurrentTeacherUid();
+  if (!activeConversationId || !myUid) {
+    toast('Selectionnez une conversation', 'warn');
+    return;
+  }
+  const input = document.getElementById('chatInput');
+  const content = (input?.value || '').trim();
+  if (!content) return;
+
+  const senderName = currentTeacher?.name || `${currentTeacher?.firstName || ''} ${currentTeacher?.lastName || ''}`.trim() || auth.currentUser?.displayName || 'Enseignant';
+  const now = Date.now();
+  const msgRef = db.ref(`conversations/${activeConversationId}/messages`).push();
+  await msgRef.set({
+    senderId: myUid,
+    senderName,
+    content,
+    type: 'text',
+    readBy: [myUid],
+    createdAt: now
+  });
+
+  await db.ref(`conversations/${activeConversationId}`).update({
+    lastMessage: content,
+    lastMessageAt: now
+  });
+
+  const conv = conversationsCache.find(c => c.id === activeConversationId);
+  const participants = (conv?.participants || []).filter(uid => uid !== myUid);
+  participants.forEach(uid => {
+    db.ref('notifications').push({
+      id: '',
+      type: 'message',
+      title: 'Nouveau message',
+      body: `${senderName}: ${content.slice(0, 60)}`,
+      from: { uid: myUid, name: senderName, avatar: ini(senderName) },
+      to: uid,
+      read: false,
+      readAt: null,
+      createdAt: now,
+      data: { conversationId: activeConversationId },
+      branch: getCurrentTeacherBranchNormalized() || null
+    });
+  });
+
+  if (input) input.value = '';
+}
+
+async function markAllRead() {
+  const myUid = getCurrentTeacherUid();
+  if (!myUid || !activeConversationId) return;
+  const snap = await db.ref(`conversations/${activeConversationId}/messages`).once('value');
+  const updates = {};
+  if (snap.exists()) {
+    snap.forEach(c => {
+      const m = c.val() || {};
+      if (m.senderId === myUid) return;
+      const readBy = Array.isArray(m.readBy) ? m.readBy : [];
+      if (!readBy.includes(myUid)) updates[`conversations/${activeConversationId}/messages/${c.key}/readBy`] = [...readBy, myUid];
+    });
+  }
+  if (Object.keys(updates).length) await db.ref().update(updates);
+}
+
+function ensureAttendanceDateNav() {
+  const box = document.querySelector('#page-attendance .sec-hd-right');
+  if (!box || document.getElementById('attPrevDay')) return;
+  const prev = document.createElement('button');
+  prev.className = 'btn btn-ghost';
+  prev.id = 'attPrevDay';
+  prev.innerHTML = '<i class="fas fa-chevron-left"></i>';
+  prev.onclick = () => shiftAttendanceDate(-1);
+  const next = document.createElement('button');
+  next.className = 'btn btn-ghost';
+  next.id = 'attNextDay';
+  next.innerHTML = '<i class="fas fa-chevron-right"></i>';
+  next.onclick = () => shiftAttendanceDate(1);
+  const dateEl = document.getElementById('attDate');
+  if (dateEl?.parentNode === box) {
+    box.insertBefore(prev, dateEl);
+    box.insertBefore(next, dateEl.nextSibling);
+  }
+}
+
+function shiftAttendanceDate(deltaDays) {
+  const dateEl = document.getElementById('attDate');
+  if (!dateEl || !dateEl.value) return;
+  const d = new Date(dateEl.value + 'T00:00:00');
+  d.setDate(d.getDate() + deltaDays);
+  dateEl.value = d.toISOString().split('T')[0];
+  loadAttendance();
+}
+
+function buildStudentDisplayName(s) {
+  return `${s.firstName || ''} ${s.lastName || ''}`.trim()
+    || s.name
+    || s.nom
+    || `${s.prenom || ''} ${s.nom || ''}`.trim()
+    || 'Eleve sans nom';
+}
+
+async function initAttendance() {
+  ensureAttendanceDateNav();
+  const dateEl = document.getElementById('attDate');
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+  await loadAttendance();
+}
+
+async function loadAttendance() {
+  const dateEl = document.getElementById('attDate');
+  const date = dateEl?.value || new Date().toISOString().split('T')[0];
+  const loadEl = document.getElementById('attLoad');
+  const container = document.getElementById('attContainer');
+  if (loadEl) loadEl.style.display = 'flex';
+  if (container) container.innerHTML = '';
+
+  if (!allStudents?.length) {
+    const snap = await db.ref('students').once('value');
+    const loaded = [];
+    if (snap.exists()) snap.forEach(c => loaded.push({ _id: c.key, ...c.val() }));
+    allStudents = await getAccessibleStudents(loaded);
+  }
+
+  const attSnap = await db.ref(`attendance/${date}`).once('value');
+  const attendanceMap = attSnap.exists() ? (attSnap.val() || {}) : {};
+
+  if (loadEl) loadEl.style.display = 'none';
+  if (!container) return;
+
+  if (!allStudents.length) {
+    container.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><h4>Aucun eleve</h4></div>';
+    return;
+  }
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+  allStudents.forEach(s => {
+    const sid = s._id || s.id;
+    const n = buildStudentDisplayName(s);
+    const cls = s.classes || s.classe || '—';
+    const saved = attendanceMap[sid] || '';
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--bdr);';
+    row.innerHTML = `
+      <div class="stu-ava" style="width:30px;height:30px;font-size:.58rem;">${ini(n)}</div>
+      <div style="min-width:0;">
+        <div style="font-size:.84rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n}</div>
+        <div style="font-size:.72rem;color:var(--txt-lt);"><span class="bdg bdg-inf">${cls}</span></div>
+      </div>
+      <div style="display:flex;gap:4px;">
+        ${['P', 'A', 'R'].map(v => `<button class="att-btn ${saved === v ? v : ''}" data-student-id="${sid}" onclick="toggleAtt(this,'${sid}','${v}')">${v}</button>`).join('')}
+      </div>
+    `;
+    wrap.appendChild(row);
+  });
+  container.appendChild(wrap);
+  updateAttCountFromDOM();
+}
+
+function toggleAtt(btn, stuId, val) {
+  const sid = stuId || btn?.dataset?.studentId;
+  if (btn && sid) btn.dataset.studentId = sid;
+  const row = btn?.closest('div[style*="grid-template-columns:34px"]') || btn?.parentElement?.parentElement;
+  if (row) {
+    row.querySelectorAll('.att-btn').forEach(b => b.classList.remove('P', 'A', 'R'));
+  }
+  btn?.classList.add(val);
+  updateAttCountFromDOM();
+}
+
+function updateAttCountFromDOM() {
+  const rows = document.querySelectorAll('#attContainer .att-btn[data-student-id]');
+  let p = 0, a = 0, r = 0;
+  rows.forEach(b => {
+    if (b.classList.contains('P')) p++;
+    if (b.classList.contains('A')) a++;
+    if (b.classList.contains('R')) r++;
+  });
+  const pEl = document.getElementById('attP');
+  const aEl = document.getElementById('attA');
+  const rEl = document.getElementById('attR');
+  if (pEl) pEl.textContent = `${p}`;
+  if (aEl) aEl.textContent = `${a}`;
+  if (rEl) rEl.textContent = `${r}`;
+}
+
+async function saveAttendance() {
+  const date = document.getElementById('attDate')?.value;
+  if (!date) return;
+  const attData = {};
+  document.querySelectorAll('#attContainer .att-btn[data-student-id]').forEach(btn => {
+    const sid = btn.dataset.studentId;
+    if (!sid) return;
+    if (btn.classList.contains('P')) attData[sid] = 'P';
+    if (btn.classList.contains('A')) attData[sid] = 'A';
+    if (btn.classList.contains('R')) attData[sid] = 'R';
+  });
+  await db.ref(`attendance/${date}`).set(attData);
+  toast('Presences sauvegardees', 'ok');
+}
+
+function ensureActivitiesLayout() {
+  const page = document.getElementById('page-activities');
+  if (!page || page.dataset.activitiesV2Ready === '1') return;
+  const card = page.querySelector('.card');
+  if (!card) return;
+  card.innerHTML = `
+    <div class="card-hd"><div class="card-ttl"><i class="fas fa-calendar-alt"></i> Activites par classe</div></div>
+    <div class="filter-chips" id="activityTypeChips"></div>
+    <div id="activityMiniCalendar" style="margin-bottom:10px;"></div>
+    <div class="loading-wrap" id="actLoad"><div class="spinner"></div><p style="font-size:.8rem;font-weight:600;">Chargement…</p></div>
+    <div class="kanban-wrap">
+      <div class="kan-col"><div class="kan-col-hd">A venir</div><div class="kan-col-body" id="actColUpcoming"></div></div>
+      <div class="kan-col"><div class="kan-col-hd">En cours</div><div class="kan-col-body" id="actColOngoing"></div></div>
+      <div class="kan-col"><div class="kan-col-hd">Termine</div><div class="kan-col-body" id="actColDone"></div></div>
+    </div>
+  `;
+  const chipData = [
+    { key: 'all', lbl: 'All' },
+    { key: 'devoir', lbl: 'Devoirs' },
+    { key: 'examen', lbl: 'Examens' },
+    { key: 'cours', lbl: 'Cours' },
+    { key: 'sortie', lbl: 'Sorties' }
+  ];
+  const chipsEl = document.getElementById('activityTypeChips');
+  if (chipsEl) {
+    chipsEl.innerHTML = chipData.map(c => `<button class="chip ${c.key === 'all' ? 'active' : ''}" data-type="${c.key}">${c.lbl}</button>`).join('');
+    chipsEl.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      activityFilterType = chip.dataset.type || 'all';
+      Array.from(chipsEl.querySelectorAll('.chip')).forEach(x => x.classList.remove('active'));
+      chip.classList.add('active');
+      renderActivities(activitiesCache);
+    });
+  }
+  page.dataset.activitiesV2Ready = '1';
+}
+
+function activityTypeMeta(type) {
+  const t = (type || 'autre').toLowerCase();
+  if (t === 'devoir') return { icon: '📝', color: '#2563eb' };
+  if (t === 'examen') return { icon: '📕', color: '#dc2626' };
+  if (t === 'sortie') return { icon: '🚌', color: '#16a34a' };
+  if (t === 'cours') return { icon: '📘', color: '#c9901a' };
+  return { icon: '📌', color: '#475569' };
+}
+
+function countdownLabel(dueDate) {
+  if (!dueDate) return 'Sans echeance';
+  const d = new Date(dueDate + 'T00:00:00').getTime();
+  const now = new Date();
+  const n = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const diff = Math.ceil((d - n) / 86400000);
+  if (diff === 0) return 'Aujourd\'hui';
+  if (diff > 0) return `Dans ${diff} jours`;
+  return 'En retard';
+}
+
+function renderMiniActivityCalendar(acts) {
+  const box = document.getElementById('activityMiniCalendar');
+  if (!box) return;
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
+  const countByDay = {};
+  acts.forEach(a => {
+    const d = a.date || a.dueDate;
+    if (!d) return;
+    const dd = new Date(d);
+    if (dd.getFullYear() === y && dd.getMonth() === m) {
+      const key = dd.getDate();
+      countByDay[key] = (countByDay[key] || 0) + 1;
+    }
+  });
+  let html = '<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;">';
+  const startPad = (first.getDay() + 6) % 7;
+  for (let i = 0; i < startPad; i++) html += '<div></div>';
+  for (let d = 1; d <= last.getDate(); d++) {
+    const dots = countByDay[d] ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);"></span>` : '';
+    html += `<div style="padding:4px;border:1px solid var(--bdr);border-radius:8px;text-align:center;font-size:.7rem;">${d}<div>${dots}</div></div>`;
+  }
+  html += '</div>';
+  box.innerHTML = html;
+}
+
+async function initActivities() {
+  ensureActivitiesLayout();
+  const loadEl = document.getElementById('actLoad');
+  if (loadEl) loadEl.style.display = 'flex';
+  const teacherBranch = getCurrentTeacherBranchNormalized();
+  const teacherClasses = getCurrentTeacherClassesList();
+  try {
+    const snap = await db.ref('classes_activities').once('value');
+    const acts = [];
+    if (snap.exists()) snap.forEach(c => acts.push({ _id: c.key, ...c.val() }));
+    activitiesCache = acts.filter(a => {
+      const branchMatch = areBranchesCompatible(normalizeBranchForMatch(a.branch || ''), teacherBranch);
+      const classMatch = areClassesCompatible(a.class || '', teacherClasses);
+      return branchMatch && classMatch;
+    }).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    renderActivities(activitiesCache);
+    renderMiniActivityCalendar(activitiesCache);
+  } catch (e) {
+    console.error('initActivities v2:', e);
+    activitiesCache = [];
+    renderActivities([]);
+  }
+  if (loadEl) loadEl.style.display = 'none';
+}
+
+function renderActivities(acts) {
+  const upcoming = document.getElementById('actColUpcoming');
+  const ongoing = document.getElementById('actColOngoing');
+  const done = document.getElementById('actColDone');
+  if (!upcoming || !ongoing || !done) return;
+  upcoming.innerHTML = '';
+  ongoing.innerHTML = '';
+  done.innerHTML = '';
+
+  const today = new Date();
+  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const filtered = (acts || []).filter(a => activityFilterType === 'all' || (a.type || '').toLowerCase() === activityFilterType);
+  if (!filtered.length) {
+    const empty = '<div class="empty-state"><i class="fas fa-calendar-times"></i><p>Aucune activite</p></div>';
+    upcoming.innerHTML = empty;
+    ongoing.innerHTML = empty;
+    done.innerHTML = empty;
+    return;
+  }
+
+  filtered.forEach(a => {
+    const meta = activityTypeMeta(a.type);
+    const dStart = a.date ? new Date(a.date + 'T00:00:00').getTime() : t;
+    const dEnd = a.dueDate ? new Date(a.dueDate + 'T00:00:00').getTime() : dStart;
+    const bucket = t < dStart ? upcoming : (t > dEnd ? done : ongoing);
+    const card = document.createElement('div');
+    card.className = 'act-card';
+    card.style.borderLeftColor = meta.color;
+    card.innerHTML = `
+      <div class="act-title">${meta.icon} ${a.title || 'Activite'}</div>
+      <div class="act-desc">${a.description || ''}</div>
+      <div style="margin-top:8px;display:flex;justify-content:space-between;gap:6px;align-items:center;">
+        <span class="bdg bdg-inf">${a.class || '—'}</span>
+        <span style="font-size:.72rem;color:var(--txt-lt);">${countdownLabel(a.dueDate || a.date)}</span>
+      </div>
+    `;
+    bucket.appendChild(card);
+  });
+}
+
+function showAddActivityModal() {
+  populateClassDropdownsFromDb();
+  const modal = document.getElementById('addActModal');
+  if (!modal) return;
+  const dateWrap = modal.querySelector('.f-group + .f-group');
+  const existing = document.getElementById('actType');
+  if (!existing) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;';
+    row.innerHTML = `
+      <div class="f-group"><label class="f-label">Type</label>
+        <select class="f-input" id="actType">
+          <option value="devoir">Devoir</option>
+          <option value="cours">Cours</option>
+          <option value="examen">Examen</option>
+          <option value="sortie">Sortie</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="f-group"><label class="f-label">Priorite</label>
+        <select class="f-input" id="actPriority">
+          <option value="medium">Moyenne</option>
+          <option value="high">Haute</option>
+          <option value="low">Basse</option>
+        </select>
+      </div>
+    `;
+    const due = document.createElement('div');
+    due.className = 'f-group';
+    due.innerHTML = '<label class="f-label">Date limite</label><input class="f-input" type="date" id="actDueDate">';
+    modal.querySelector('.modal-box')?.insertBefore(row, modal.querySelector('.modal-box')?.querySelector('div[style*="display:flex;gap:10px;margin-top:6px;"]') || null);
+    modal.querySelector('.modal-box')?.insertBefore(due, modal.querySelector('.modal-box')?.querySelector('div[style*="display:flex;gap:10px;margin-top:6px;"]') || null);
+  }
+  const cls = document.getElementById('actClass');
+  const teacherClasses = getCurrentTeacherClassesList();
+  if (cls && teacherClasses.length) cls.value = teacherClasses[0];
+  openModal('addActModal');
+}
+
+async function saveActivity() {
+  const title = (document.getElementById('actTitle')?.value || '').trim();
+  if (!title) {
+    toast('Titre requis', 'warn');
+    return;
+  }
+  const teacherId = getCurrentTeacherUid();
+  const teacherName = currentTeacher?.name || `${currentTeacher?.firstName || ''} ${currentTeacher?.lastName || ''}`.trim() || 'Enseignant';
+  const branch = getCurrentTeacherBranchNormalized() || 'kacyiru';
+  const data = {
+    title,
+    description: document.getElementById('actDesc')?.value || '',
+    date: document.getElementById('actDate')?.value || '',
+    dueDate: document.getElementById('actDueDate')?.value || '',
+    type: document.getElementById('actType')?.value || 'autre',
+    class: document.getElementById('actClass')?.value || '',
+    branch,
+    teacherId,
+    teacherName,
+    teacherBranch: branch,
+    priority: document.getElementById('actPriority')?.value || 'medium',
+    attachments: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+  await db.ref('classes_activities').push(data);
+  closeModal('addActModal');
+  toast('Activite enregistree', 'ok');
+  initActivities();
+}
+
+async function loadRealPerformanceData(trimester = 'all') {
+  const triNorm = normalizeTrimesterFilter(trimester);
+  const teacherBranch = getCurrentTeacherBranchNormalized();
+  const teacherClasses = getCurrentTeacherClassesList();
+  const paths = [];
+  teacherClasses.forEach(cls => {
+    const cands = getBulletinCandidatePaths(teacherBranch || 'maternelle', cls);
+    cands.forEach(p => paths.push(p));
+  });
+  const uniqPaths = Array.from(new Set(paths));
+  const loaded = [];
+  await Promise.all(uniqPaths.map(async p => {
+    try {
+      const snap = await db.ref(p).once('value');
+      if (snap.exists()) snap.forEach(c => loaded.push({ id: c.key, _path: `${p}/${c.key}`, ...c.val() }));
+    } catch (e) {}
+  }));
+
+  const accessible = getAccessibleBulletins(loaded).filter(b => {
+    if (triNorm === 'ALL') return true;
+    return normalizeTrimesterFilter(b.trimester || b.trimestre) === triNorm;
+  });
+
+  const subjectAverages = {};
+  const overallGradeDistribution = { E: 0, TB: 0, B: 0, Effort: 0 };
+  const conductByStudent = {};
+  const academicByStudent = {};
+
+  accessible.forEach(b => {
+    const studentId = b.studentId || b.id || b._id;
+    const studentName = b.studentName || b.name || 'Eleve';
+    const studentClass = b.class || b.classes || b.classe || '—';
+    const skills = b.skills || {};
+    Object.entries(skills).forEach(([sub, n]) => {
+      const tj = Number(n?.tj ?? 0);
+      const ex = Number(n?.ex ?? 0);
+      const avg = ((tj * 2) + ex) / 3;
+      if (!subjectAverages[sub]) subjectAverages[sub] = { sumTj: 0, sumEx: 0, count: 0, gradeDistribution: { E: 0, TB: 0, B: 0, Effort: 0 } };
+      subjectAverages[sub].sumTj += tj;
+      subjectAverages[sub].sumEx += ex;
+      subjectAverages[sub].count += 1;
+
+      const g = getGrade(avg);
+      const key = g === 'Ef' ? 'Effort' : g;
+      if (subjectAverages[sub].gradeDistribution[key] !== undefined) subjectAverages[sub].gradeDistribution[key] += 1;
+      if (overallGradeDistribution[key] !== undefined) overallGradeDistribution[key] += 1;
+
+      if (!academicByStudent[studentId]) academicByStudent[studentId] = { studentId, studentName, studentClass, scores: [], subjects: [] };
+      academicByStudent[studentId].scores.push(avg);
+      academicByStudent[studentId].subjects.push({ subject: sub, value: avg });
+    });
+
+    const conduct = b.conduct || b.conduite || {};
+    const vals = Object.values(conduct).map(v => `${v}`.toUpperCase()).filter(Boolean);
+    if (vals.length) {
+      const points = vals.map(v => v === 'E' ? 3 : v === 'TB' ? 2 : 1);
+      const avgCond = points.reduce((a, c) => a + c, 0) / points.length;
+      const badge = avgCond >= 2.5 ? 'E' : avgCond >= 1.8 ? 'TB' : 'B';
+      conductByStudent[studentId] = { studentId, studentName, studentClass, score: avgCond, badge };
+    }
+  });
+
+  Object.keys(subjectAverages).forEach(sub => {
+    const s = subjectAverages[sub];
+    s.avgTj = s.count ? Math.round(s.sumTj / s.count) : 0;
+    s.avgEx = s.count ? Math.round(s.sumEx / s.count) : 0;
+  });
+
+  return {
+    bulletins: accessible,
+    subjectAverages,
+    overallGradeDistribution,
+    conductRanking: Object.values(conductByStudent).sort((a, b) => b.score - a.score),
+    palmares: Object.values(academicByStudent)
+      .map(s => ({ ...s, overall: s.scores.length ? (s.scores.reduce((a, c) => a + c, 0) / s.scores.length) : 0 }))
+      .sort((a, b) => b.overall - a.overall)
+  };
+}
+
+function ensurePerformanceLayout() {
+  const page = document.getElementById('page-performance');
+  if (!page || page.dataset.perfV2Ready === '1') return;
+  const right = page.querySelector('.sec-hd-right');
+  if (right && !document.getElementById('perfTrimesterSel')) {
+    right.innerHTML = `
+      <select class="f-input" id="perfTrimesterSel" style="width:auto;" onchange="updatePerfCharts()">
+        <option value="1">T1</option><option value="2">T2</option><option value="3">T3</option><option value="BN">Annee</option><option value="all">Tous</option>
+      </select>
+    `;
+  }
+  const existing = document.getElementById('palmaresSection');
+  if (!existing) {
+    const sec = document.createElement('div');
+    sec.id = 'palmaresSection';
+    sec.className = 'card';
+    sec.innerHTML = `
+      <div class="card-hd"><div class="card-ttl"><i class="fas fa-medal"></i> Palmares</div><button class="btn btn-gold btn-sm" onclick="exportPalmaresPdf()"><i class="fas fa-file-pdf"></i> Export PDF</button></div>
+      <div id="palmaresList"></div>
+    `;
+    page.appendChild(sec);
+  }
+  page.dataset.perfV2Ready = '1';
+}
+
+async function updatePerfCharts() {
+  ensurePerformanceLayout();
+  const tri = document.getElementById('perfTrimesterSel')?.value || 'all';
+  const data = await loadRealPerformanceData(tri);
+
+  const labels = Object.keys(data.subjectAverages).map(s => s.length > 12 ? `${s.slice(0, 12)}…` : s);
+  const valsE = Object.values(data.subjectAverages).map(s => s.gradeDistribution.E || 0);
+  const valsTB = Object.values(data.subjectAverages).map(s => s.gradeDistribution.TB || 0);
+  const valsB = Object.values(data.subjectAverages).map(s => s.gradeDistribution.B || 0);
+  const valsEf = Object.values(data.subjectAverages).map(s => s.gradeDistribution.Effort || 0);
+
+  dchart('pBar');
+  const ctx1 = document.getElementById('perfBar');
+  if (ctx1) {
+    charts.pBar = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'E', data: valsE, backgroundColor: 'rgba(21,128,61,.75)', borderRadius: 5 },
+          { label: 'TB', data: valsTB, backgroundColor: 'rgba(26,92,168,.65)', borderRadius: 5 },
+          { label: 'B', data: valsB, backgroundColor: 'rgba(45,125,210,.5)', borderRadius: 5 },
+          { label: 'Effort', data: valsEf, backgroundColor: 'rgba(194,65,12,.6)', borderRadius: 5 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { x: { stacked: true }, y: { stacked: true } } }
+    });
+  }
+
+  dchart('pPie');
+  const ctx2 = document.getElementById('perfPie');
+  if (ctx2) {
+    charts.pPie = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['Excellent (E)', 'Tres Bien (TB)', 'Bien (B)', 'Effort'],
+        datasets: [{
+          data: [data.overallGradeDistribution.E, data.overallGradeDistribution.TB, data.overallGradeDistribution.B, data.overallGradeDistribution.Effort],
+          backgroundColor: ['#15803d', '#1a5ca8', '#2d7dd2', '#c2410c'], borderWidth: 3, borderColor: '#fff'
+        }]
+      },
+      options: { cutout: '60%' }
+    });
+  }
+
+  renderCondRanking(data);
+  renderPalmares(data);
+}
+
+function renderCondRanking(perfData) {
+  const body = document.getElementById('condRankBody');
+  if (!body) return;
+  const ranking = (perfData?.conductRanking || []).slice(0, 50);
+  body.innerHTML = ranking.map((s, i) => `
+    <tr>
+      <td><strong>${i + 1}</strong>${i === 0 ? ' 🏆' : i === 1 ? ' 🥈' : i === 2 ? ' 🥉' : ''}</td>
+      <td><div style="display:flex;align-items:center;gap:7px;"><div class="stu-ava" style="width:28px;height:28px;font-size:.6rem;">${ini(s.studentName)}</div>${s.studentName}</div></td>
+      <td><span class="bdg bdg-inf">${s.studentClass || '—'}</span></td>
+      <td><span class="bdg ${s.badge === 'E' ? 'bdg-ok' : s.badge === 'TB' ? 'bdg-inf' : 'bdg-warn'}">${s.badge}</span></td>
+    </tr>
+  `).join('') || '<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--txt-lt);">Aucune donnee de conduite</td></tr>';
+}
+
+function renderPalmares(perfData) {
+  const box = document.getElementById('palmaresList');
+  if (!box) return;
+  const top = (perfData?.palmares || []).slice(0, 10);
+  box.innerHTML = top.map((s, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+    const grade = getGrade(s.overall);
+    const badge = grade === 'E' ? 'bdg-ok' : grade === 'TB' ? 'bdg-inf' : grade === 'B' ? 'bdg-warn' : 'bdg-err';
+    const spark = (s.subjects || []).slice(0, 8).map(x => `<span style="display:inline-block;width:8px;height:${Math.max(8, Math.min(30, Math.round(x.value / 3)))}px;background:var(--blue-lt);border-radius:2px;margin-right:2px;"></span>`).join('');
+    return `
+      <div style="display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border-bottom:1px solid var(--bdr);">
+        <div style="font-weight:900;">${medal}</div>
+        <div>
+          <div style="font-weight:800;">${s.studentName} <span class="bdg bdg-inf">${s.studentClass || '—'}</span></div>
+          <div style="margin-top:4px;">${spark}</div>
+        </div>
+        <span class="bdg ${badge}">${s.overall.toFixed(1)}%</span>
+      </div>
+    `;
+  }).join('') || '<div class="empty-state"><i class="fas fa-medal"></i><h4>Aucun classement</h4></div>';
+}
+
+async function exportPalmaresPdf() {
+  const box = document.getElementById('palmaresSection');
+  if (!box || typeof html2pdf === 'undefined') {
+    toast('html2pdf indisponible', 'err');
+    return;
+  }
+  const teacherName = currentTeacher?.name || 'Enseignant';
+  const clone = box.cloneNode(true);
+  clone.id = 'palmaresPrintTemp';
+  clone.style.background = '#fff';
+  clone.style.padding = '12px';
+  clone.insertAdjacentHTML('afterbegin', `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div style="font-family:Playfair Display,serif;font-size:18px;font-weight:700;">EDEN FAMILY SCHOOL</div><div>${new Date().toLocaleDateString('fr-FR')}</div></div><div style="font-size:12px;margin-bottom:8px;">Palmares • ${getCurrentTermName()} • ${teacherName}</div>`);
+  document.body.appendChild(clone);
+  await html2pdf().set({ margin: 8, filename: `Palmares_${normalizeTrimesterFilter(document.getElementById('perfTrimesterSel')?.value || currentTerm)}.pdf`, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } }).from(clone).save();
+  clone.remove();
+}
+
+function createNotificationRecord(payload) {
+  return db.ref('notifications').push({
+    id: '',
+    read: false,
+    readAt: null,
+    createdAt: Date.now(),
+    ...payload
+  });
+}
+
+function notifTypeIcon(type) {
+  const t = (type || '').toLowerCase();
+  if (t === 'message') return '💬';
+  if (t === 'alert') return '⚠️';
+  if (t === 'bulletin') return '📄';
+  return '🔔';
+}
+
+async function loadNotifications() {
+  const uid = getCurrentTeacherUid();
+  if (!uid) return;
+  const myBranch = getCurrentTeacherBranchNormalized();
+
+  if (notificationsListenerRef) {
+    db.ref('notifications').off('value', notificationsListenerRef);
+    notificationsListenerRef = null;
+  }
+
+  notificationsListenerRef = (snapshot) => {
+    const all = snapshot.val() || {};
+    const notifications = Object.keys(all)
+      .map(id => ({ id, ...all[id] }))
+      .filter(n => {
+        const toUid = n.to || n.teacherId || '';
+        const toRole = (n.toRole || n.targetRole || '').toString().toLowerCase();
+        const b = normalizeBranchForMatch(n.branch || '');
+        const branchOk = !b || !myBranch || b === myBranch;
+        return branchOk && (toUid === uid || toRole === 'teacher' || toRole === 'all');
+      })
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    const unread = notifications.filter(n => !n.read).length;
+    const badge = document.getElementById('notifBadge');
+    if (badge) {
+      badge.textContent = unread > 9 ? '9+' : `${unread}`;
+      badge.style.display = unread ? 'flex' : 'none';
+    }
+    const notifCount = document.getElementById('notifCount');
+    if (notifCount) {
+      notifCount.textContent = unread > 9 ? '9+' : `${unread}`;
+      notifCount.style.display = unread ? 'flex' : 'none';
+    }
+
+    const list = document.getElementById('notificationList');
+    if (list) {
+      list.innerHTML = notifications.length ? notifications.map(n => `
+        <div class="notif-item" onclick="handleNotificationClick('${n.id}')" style="cursor:pointer;${!n.read ? 'border-left:4px solid var(--blue);font-weight:700;' : ''}">
+          <div class="notif-title">${notifTypeIcon(n.type)} ${n.title || 'Notification'}</div>
+          <div style="font-size:.75rem;color:var(--txt-lt);">${(n.body || n.message || '').slice(0, 60)}</div>
+          <small style="color:var(--txt-lt);">${n.type === 'message' && n.from?.name ? `De: ${n.from.name} • ` : ''}${formatTimeAgo(n.createdAt)}</small>
+        </div>
+      `).join('') : '<div class="empty-state"><i class="fas fa-check-circle"></i><h4>Aucune notification</h4></div>';
+    }
+
+    const panelList = document.getElementById('notifList');
+    if (panelList) {
+      panelList.innerHTML = notifications.slice(0, 50).map(n => `
+        <div class="notif-dropdown-item ${!n.read ? 'unread' : ''}" onclick="handleNotificationClick('${n.id}')">
+          <p>${notifTypeIcon(n.type)} ${n.title || 'Notification'}</p>
+          <small>${(n.body || n.message || '').slice(0, 60)} • ${formatTimeAgo(n.createdAt)}</small>
+        </div>
+      `).join('') || '<div class="notif-empty">Aucune notification</div>';
+    }
+  };
+
+  db.ref('notifications').orderByChild('createdAt').limitToLast(50).on('value', notificationsListenerRef);
+}
+
+async function handleNotificationClick(notificationId) {
+  if (!notificationId) return;
+  const snap = await db.ref(`notifications/${notificationId}`).once('value');
+  if (!snap.exists()) return;
+  const n = { id: notificationId, ...snap.val() };
+  if (!n.read) await markAsRead(notificationId);
+  const type = (n.type || '').toLowerCase();
+  if (type === 'message') navTo('messages');
+  else if (type === 'bulletin') navTo('history');
+  else if (type === 'alert') navTo('dashboard');
+  else navTo('dashboard');
+  closeNotifications();
+}
+
+function openNotifications() {
+  let notifPanel = document.getElementById('notificationPanel');
+  if (!notifPanel) {
+    const panel = document.createElement('div');
+    panel.id = 'notificationPanel';
+    panel.className = 'notif-dropdown';
+    panel.innerHTML = `
+      <div class="notif-header"><h4>Notifications</h4><button onclick="closeNotifications()"><i class="fas fa-times"></i></button></div>
+      <div id="notifList" class="notif-list"><div class="loading-wrap"><div class="spinner"></div><p>Chargement...</p></div></div>
+    `;
+    document.body.appendChild(panel);
+    notifPanel = panel;
+  }
+  if (notifPanel && !notifPanel.classList.contains('open')) loadNotificationDropdown();
+  notifPanel?.classList.toggle('open');
+}
+
+function loadNotificationDropdown() {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+  const source = document.getElementById('notificationList');
+  if (source && source.children.length) {
+    list.innerHTML = source.innerHTML;
+  }
+}
+
+async function markAsRead(notificationId) {
+  if (!notificationId) return;
+  await db.ref('notifications/' + notificationId).update({ read: true, readAt: Date.now() });
+}
+
+async function initDashboard() {
+  const dashLoad = document.getElementById('dashLoad');
+  const dashBody = document.getElementById('dashBody');
+  if (dashLoad) dashLoad.style.display = 'flex';
+  if (dashBody) dashBody.style.display = 'none';
+
+  try {
+    await loadTermConfiguration();
+    applyTermConfigInUI();
+    ensureTermConfigCard();
+
+    const studentsSnap = await db.ref('students').once('value');
+    const loadedStudents = [];
+    if (studentsSnap.exists()) studentsSnap.forEach(c => loadedStudents.push({ _id: c.key, id: c.key, ...c.val() }));
+    allStudents = await getAccessibleStudents(loadedStudents);
+    const stEleves = document.getElementById('stEleves');
+    if (stEleves) stEleves.textContent = `${allStudents.length}`;
+
+    const teacherBranch = getCurrentTeacherBranchNormalized();
+    const teacherClasses = getCurrentTeacherClassesList();
+    const paths = [];
+    teacherClasses.forEach(cls => getBulletinCandidatePaths(teacherBranch || 'maternelle', cls).forEach(p => paths.push(p)));
+    const uniqPaths = Array.from(new Set(paths));
+    const loadedBulletins = [];
+    await Promise.all(uniqPaths.map(async p => {
+      try {
+        const snap = await db.ref(p).once('value');
+        if (snap.exists()) snap.forEach(c => loadedBulletins.push({ id: c.key, _path: `${p}/${c.key}`, ...c.val() }));
+      } catch (e) {}
+    }));
+
+    const accessibleBulletins = getAccessibleBulletins(loadedBulletins);
+    const dedupe = {};
+    accessibleBulletins.forEach(b => {
+      const key = `${b.studentId || ''}__${normalizeTrimesterFilter(b.trimester || b.trimestre || '')}`;
+      const ts = Number(b.publishedAt || b.updatedAt || b.createdAt || 0);
+      if (!dedupe[key] || ts > Number(dedupe[key].publishedAt || dedupe[key].updatedAt || dedupe[key].createdAt || 0)) dedupe[key] = b;
+    });
+    allBulletins = Object.values(dedupe);
+    const stB = document.getElementById('stBulletins');
+    if (stB) stB.textContent = `${allBulletins.length}`;
+
+    let avgSum = 0;
+    let avgCount = 0;
+    allBulletins.forEach(b => {
+      const skills = b.skills || {};
+      const scores = Object.values(skills).map(n => {
+        const tjPct = (Number(n?.tj || 0) / 50) * 100;
+        const exPct = Number(n?.ex || 0);
+        return (tjPct + exPct) / 2;
+      }).filter(v => !isNaN(v));
+      if (scores.length) {
+        avgSum += scores.reduce((a, c) => a + c, 0) / scores.length;
+        avgCount += 1;
+      }
+    });
+    const avgClass = avgCount ? Math.round(avgSum / avgCount) : 0;
+    const stM = document.getElementById('stMoyenne');
+    if (stM) stM.textContent = `${avgClass}%`;
+
+    const convSnap = await db.ref('conversations').once('value');
+    let unreadConv = 0;
+    const uid = getCurrentTeacherUid();
+    if (convSnap.exists()) {
+      const convs = [];
+      convSnap.forEach(c => convs.push({ id: c.key, ...c.val() }));
+      const mine = convs.filter(c => Array.isArray(c.participants) && c.participants.includes(uid));
+      for (const c of mine) {
+        const mSnap = await db.ref(`conversations/${c.id}/messages`).limitToLast(1).once('value');
+        if (!mSnap.exists()) continue;
+        let last = null;
+        mSnap.forEach(x => last = x.val());
+        const readBy = Array.isArray(last?.readBy) ? last.readBy : [];
+        if (last?.senderId !== uid && !readBy.includes(uid)) unreadConv++;
+      }
+    }
+    const stMsg = document.getElementById('stMessages');
+    if (stMsg) stMsg.textContent = `${unreadConv}`;
+
+    const missing = [];
+    for (const s of allStudents) {
+      const cls = s.classes || s.classe || '';
+      const sid = s._id || s.id;
+      const found = await fetchStudentTrimesterBulletin(sid, cls, teacherBranch || '', currentTerm);
+      if (!found) {
+        const tObj = getCurrentTermConfigObj();
+        const start = tObj?.startDate ? new Date(tObj.startDate).getTime() : Date.now();
+        const daysSince = Math.max(0, Math.floor((Date.now() - start) / 86400000));
+        missing.push({ name: buildStudentDisplayName(s), cls, daysSince });
+      }
+    }
+    const alertsEl = document.getElementById('alertsList');
+    if (alertsEl) {
+      if (!missing.length) {
+        alertsEl.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle" style="color:var(--green);"></i><h4>Tous les bulletins sont a jour ✓</h4></div>';
+      } else {
+        alertsEl.innerHTML = missing.map(m => `
+          <div class="alert-card">
+            <div class="alert-title"><i class="fas fa-exclamation-triangle"></i> Bulletin manquant</div>
+            <div class="alert-detail"><strong>${m.name}</strong> • ${m.cls || '—'} • ${m.daysSince} jours depuis debut trimestre</div>
+          </div>
+        `).join('');
+
+        createNotificationRecord({
+          type: 'alert',
+          title: 'Bulletin manquant',
+          body: `${missing.length} eleve(s) sans bulletin pour T${currentTerm}`,
+          toRole: 'teacher',
+          branch: teacherBranch || null,
+          data: { count: missing.length, term: currentTerm }
+        });
+      }
+    }
+
+    await updatePerfCharts();
+    renderRecentBulletins();
+    await loadNotifications();
+  } catch (e) {
+    console.error('initDashboard v2 error:', e);
+    toast('Erreur dashboard: ' + (e.message || e), 'err');
+  }
+
+  if (dashLoad) dashLoad.style.display = 'none';
+  if (dashBody) dashBody.style.display = 'block';
+}
+
+function ensureCotationPage() {
+  const content = document.querySelector('.content');
+  if (!content || document.getElementById('page-cotation')) return;
+  const page = document.createElement('div');
+  page.className = 'page';
+  page.id = 'page-cotation';
+  page.innerHTML = `
+    <div class="sec-hd">
+      <div class="sec-hd-left"><h1>Fiche de Cotation</h1><p>Enregistrement mensuel par matiere</p></div>
+      <div class="sec-hd-right"><button class="btn btn-gold" onclick="generateCotationPDF()"><i class="fas fa-file-pdf"></i> Telecharger PDF</button></div>
+    </div>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end;">
+        <div class="f-group"><label class="f-label">Mois</label><input type="month" class="f-input" id="cotMonth" onchange="initCotationPage()"></div>
+        <div class="f-group"><label class="f-label">Matiere</label><select class="f-input" id="cotSubject" onchange="initCotationPage()"></select></div>
+        <div class="f-group"><label class="f-label">Type</label><select class="f-input" id="cotType" onchange="initCotationPage()"><option value="TJ">Travaux Journal (TJ)</option><option value="EX">Examen (EX)</option></select></div>
+        <div class="f-group"><label class="f-label">Classe</label><input class="f-input" id="cotClassDisplay" readonly></div>
+        <button class="btn btn-blue" onclick="addCotationDateColumn()"><i class="fas fa-plus"></i> Date</button>
+        <button class="btn btn-blue" onclick="saveCotationSheet()"><i class="fas fa-save"></i> Sauvegarder</button>
+      </div>
+      <div class="tbl-wrap" style="margin-top:10px;"><table class="cotation-grid" id="cotationTable"></table></div>
+      <div id="cotationStats" style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;"></div>
+    </div>
+    <div id="cotationPrintArea" style="display:none;"></div>
+  `;
+  content.appendChild(page);
+
+  const sidebarNav = document.querySelector('.sb-nav');
+  if (sidebarNav && !document.getElementById('sb-cotation')) {
+    const section = document.createElement('div');
+    section.className = 'sb-section';
+    section.textContent = 'OUTILS';
+    const btn = document.createElement('button');
+    btn.className = 'sb-btn';
+    btn.id = 'sb-cotation';
+    btn.setAttribute('onclick', "navTo('cotation')");
+    btn.innerHTML = '<i class="fas fa-chart-line"></i> Fiche de Cotation';
+    sidebarNav.appendChild(section);
+    sidebarNav.appendChild(btn);
+  }
+
+  PAGE_INFO.cotation = { ttl: 'Fiche de Cotation', sub: 'Enregistrement des performances par mois et matiere' };
+}
+
+function getCotationMaxScore() {
+  const type = document.getElementById('cotType')?.value || 'TJ';
+  return type === 'EX' ? 100 : 50;
+}
+
+function scoreClass(score, max) {
+  const pct = max ? (score / max) * 100 : 0;
+  if (pct >= 70) return 'score-good';
+  if (pct >= 60) return 'score-mid';
+  if (pct >= 50) return 'score-low';
+  return 'score-bad';
+}
+
+async function initCotationPage() {
+  ensureCotationPage();
+  const monthEl = document.getElementById('cotMonth');
+  const subjectEl = document.getElementById('cotSubject');
+  const clsEl = document.getElementById('cotClassDisplay');
+  if (!monthEl || !subjectEl) return;
+  if (!monthEl.value) monthEl.value = new Date().toISOString().slice(0, 7);
+
+  if (!subjectEl.options.length) {
+    const opts = BRANCHES.filter(b => b.id !== 'Application').map(b => `<option value="${b.id}">${b.label}</option>`).join('');
+    subjectEl.innerHTML = `${opts}<option value="all">Toutes matieres</option>`;
+  }
+
+  const classes = getCurrentTeacherClassesList();
+  if (clsEl) clsEl.value = classes[0] || '—';
+
+  cotationState.month = monthEl.value;
+  cotationState.subject = subjectEl.value;
+  cotationState.type = document.getElementById('cotType')?.value || 'TJ';
+  if (!cotationState.dateColumns.length) cotationState.dateColumns = [new Date().toISOString().slice(0, 10)];
+
+  if (!allStudents?.length) {
+    const snap = await db.ref('students').once('value');
+    const loaded = [];
+    if (snap.exists()) snap.forEach(c => loaded.push({ _id: c.key, id: c.key, ...c.val() }));
+    allStudents = await getAccessibleStudents(loaded);
+  }
+
+  await loadCotationEntries();
+  renderCotationTable();
+}
+
+function addCotationDateColumn() {
+  const value = prompt('Date (YYYY-MM-DD):', new Date().toISOString().slice(0, 10));
+  if (!value) return;
+  if (!cotationState.dateColumns.includes(value)) cotationState.dateColumns.push(value);
+  renderCotationTable();
+}
+
+function cotationPath() {
+  const className = getCurrentTeacherClassesList()[0] || 'NA';
+  const key = `${getCurrentTeacherUid()}__${cotationState.month}__${cotationState.subject}__${cotationState.type}__${normalize(className)}`;
+  return { id: key, path: `cotations/${key}` };
+}
+
+async function loadCotationEntries() {
+  const { path } = cotationPath();
+  const snap = await db.ref(path).once('value');
+  cotationState.entries = {};
+  if (snap.exists()) {
+    const d = snap.val() || {};
+    cotationState.dateColumns = Array.isArray(d.dateColumns) && d.dateColumns.length ? d.dateColumns : cotationState.dateColumns;
+    (d.entries || []).forEach(e => {
+      const k = `${e.studentId}__${e.date}`;
+      cotationState.entries[k] = Number(e.score || 0);
+    });
+  }
+}
+
+function renderCotationTable() {
+  const table = document.getElementById('cotationTable');
+  if (!table) return;
+  const maxScore = getCotationMaxScore();
+  const students = (allStudents || []).filter(s => isStudentMatch(s, currentTeacher));
+  const cols = cotationState.dateColumns.slice().sort();
+
+  let head = `<thead><tr><th>N°</th><th>Nom de l'eleve</th><th>Classe</th>${cols.map(c => `<th>${c}<br>(/${maxScore})</th>`).join('')}<th>Moyenne</th></tr></thead>`;
+  let body = '<tbody>';
+  let classAvgSum = 0;
+  let classAvgCount = 0;
+
+  students.forEach((s, i) => {
+    const sid = s._id || s.id;
+    const name = buildStudentDisplayName(s);
+    const cls = s.classes || s.classe || '—';
+    const scores = cols.map(d => Number(cotationState.entries[`${sid}__${d}`] || 0)).filter(v => v > 0);
+    const avg = scores.length ? (scores.reduce((a, c) => a + c, 0) / scores.length) : 0;
+    if (avg > 0) {
+      classAvgSum += avg;
+      classAvgCount++;
+    }
+    body += `<tr>
+      <td>${i + 1}</td>
+      <td style="text-align:left;font-weight:700;">${name}</td>
+      <td><span class="bdg bdg-inf">${cls}</span></td>
+      ${cols.map((d, colIdx) => {
+        const key = `${sid}__${d}`;
+        const val = Number(cotationState.entries[key] || '');
+        return `<td><input class="score-input ${val ? scoreClass(val, maxScore) : ''}" type="number" min="0" max="${maxScore}" value="${val || ''}" data-student-id="${sid}" data-date="${d}" data-col="${colIdx}" onblur="saveCotationInput(this)" onkeydown="onCotationInputKey(event,this)"></td>`;
+      }).join('')}
+      <td><strong>${avg ? avg.toFixed(1) : '—'}</strong></td>
+    </tr>`;
+  });
+
+  const classAvg = classAvgCount ? (classAvgSum / classAvgCount) : 0;
+  body += `<tr><td colspan="${3 + cols.length}" style="text-align:right;font-weight:800;">Classe moyenne</td><td><strong>${classAvg ? classAvg.toFixed(1) : '—'}</strong></td></tr>`;
+  body += '</tbody>';
+  table.innerHTML = head + body;
+
+  renderCotationStats(students, classAvg, maxScore);
+}
+
+function onCotationInputKey(e, input) {
+  if (e.key !== 'Tab') return;
+  const col = Number(input.dataset.col || 0);
+  const row = input.closest('tr');
+  const nextRow = row?.nextElementSibling;
+  const next = nextRow?.querySelector(`input[data-col="${col}"]`);
+  if (next) {
+    e.preventDefault();
+    next.focus();
+    next.select();
+  }
+}
+
+let cotationSaveTimer = null;
+function saveCotationInput(input) {
+  const sid = input.dataset.studentId;
+  const date = input.dataset.date;
+  const maxScore = getCotationMaxScore();
+  const score = Number(input.value || 0);
+  const key = `${sid}__${date}`;
+  if (score > 0) cotationState.entries[key] = score;
+  else delete cotationState.entries[key];
+  input.className = `score-input ${score ? scoreClass(score, maxScore) : ''}`;
+
+  if (cotationSaveTimer) clearTimeout(cotationSaveTimer);
+  cotationSaveTimer = setTimeout(() => {
+    saveCotationSheet();
+  }, 800);
+  renderCotationTable();
+}
+
+async function saveCotationSheet() {
+  const { id, path } = cotationPath();
+  const className = getCurrentTeacherClassesList()[0] || '';
+  const entries = Object.keys(cotationState.entries).map(k => {
+    const [studentId, date] = k.split('__');
+    const s = (allStudents || []).find(x => (x._id || x.id) === studentId);
+    return {
+      studentId,
+      studentName: buildStudentDisplayName(s || {}),
+      score: cotationState.entries[k],
+      maxScore: getCotationMaxScore(),
+      date,
+      createdAt: Date.now()
+    };
+  });
+  await db.ref(path).set({
+    teacherId: getCurrentTeacherUid(),
+    teacherName: currentTeacher?.name || 'Enseignant',
+    branch: getCurrentTeacherBranchNormalized(),
+    class: className,
+    month: cotationState.month,
+    subject: cotationState.subject,
+    type: cotationState.type,
+    dateColumns: cotationState.dateColumns,
+    entries,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  });
+  toast('Cotation sauvegardee', 'ok');
+}
+
+function renderCotationStats(students, classAvg, maxScore) {
+  const stats = document.getElementById('cotationStats');
+  if (!stats) return;
+  const vals = Object.entries(cotationState.entries).map(([k, v]) => {
+    const sid = k.split('__')[0];
+    const s = (allStudents || []).find(x => (x._id || x.id) === sid);
+    return { sid, name: buildStudentDisplayName(s || {}), score: Number(v || 0) };
+  }).filter(x => x.score > 0);
+  const hi = vals.sort((a, b) => b.score - a.score)[0];
+  const lo = vals.sort((a, b) => a.score - b.score)[0];
+  const pct = maxScore ? Math.round((classAvg / maxScore) * 100) : 0;
+  const grade = getGrade(pct);
+  stats.innerHTML = `
+    <div class="bdg bdg-inf">Total eleves: <strong style="margin-left:6px;">${students.length}</strong></div>
+    <div class="bdg bdg-ok">Plus haut: <strong style="margin-left:6px;">${hi ? `${hi.name} (${hi.score})` : '—'}</strong></div>
+    <div class="bdg bdg-warn">Plus bas: <strong style="margin-left:6px;">${lo ? `${lo.name} (${lo.score})` : '—'}</strong></div>
+    <div class="bdg ${grade === 'E' ? 'bdg-ok' : grade === 'TB' ? 'bdg-inf' : grade === 'B' ? 'bdg-warn' : 'bdg-err'}">Moyenne classe: <strong style="margin-left:6px;">${pct}%</strong></div>
+  `;
+}
+
+async function generateCotationPDF() {
+  const print = document.getElementById('cotationPrintArea');
+  const table = document.getElementById('cotationTable');
+  if (!print || !table || typeof html2pdf === 'undefined') {
+    toast('Export PDF indisponible', 'err');
+    return;
+  }
+  const className = getCurrentTeacherClassesList()[0] || 'Classe';
+  print.style.display = 'block';
+  print.innerHTML = `
+    <div style="font-family:Nunito,sans-serif;background:#fff;padding:12mm;">
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #0f3d72;padding-bottom:6px;margin-bottom:8px;">
+        <img src="asset/img/logo_eden.png" alt="logo" style="height:60px;">
+        <div style="text-align:center;flex:1;">
+          <div style="font-family:Playfair Display,serif;font-weight:700;font-size:18pt;">EDEN FAMILY SCHOOL</div>
+          <div style="font-style:italic;font-size:10pt;">Learning by doing</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+      <div style="text-align:center;font-weight:800;font-size:14pt;margin-bottom:8px;">Fiche de Cotation</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:9pt;margin-bottom:8px;">
+        <div><strong>Classe:</strong> ${className}</div>
+        <div><strong>Enseignant:</strong> ${currentTeacher?.name || 'Enseignant'}</div>
+        <div><strong>Matiere:</strong> ${cotationState.subject}</div>
+        <div><strong>Mois:</strong> ${cotationState.month}</div>
+        <div><strong>Annee scolaire:</strong> ${academicYear}</div>
+        <div><strong>Type:</strong> ${cotationState.type}</div>
+      </div>
+      ${table.outerHTML}
+      <div style="margin-top:8px;font-size:8pt;display:flex;justify-content:space-between;">
+        <span>Eden Family School — Kigali, Rwanda</span>
+        <span>${new Date().toLocaleDateString('fr-FR')}</span>
+      </div>
+    </div>
+  `;
+  await html2pdf().set({ margin: 0, filename: `Cotation_${normalize(cotationState.subject)}_${cotationState.month}_${normalize(className)}.pdf`, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(print).save();
+  print.style.display = 'none';
+}
+
+const _initBulletinFormOriginal = initBulletinForm;
+initBulletinForm = async function() {
+  await loadTermConfiguration();
+  applyTermConfigInUI();
+  if (typeof _initBulletinFormOriginal === 'function') {
+    await _initBulletinFormOriginal();
+  }
+  applyTermConfigInUI();
+  ensureTermConfigCard();
+};
+
+const _loadBulletinHistoryOriginal = loadBulletinHistory;
+loadBulletinHistory = async function() {
+  await loadTermConfiguration();
+  applyTermConfigInUI();
+  return _loadBulletinHistoryOriginal();
+};
+
+const _navToOriginal = navTo;
+navTo = function(pageId) {
+  _navToOriginal(pageId);
+  if (pageId === 'cotation') initCotationPage();
+};
+
+/* ══════════════════════════════════════
    INIT
 ══════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Set today's date for attendance
   const attDate = document.getElementById('attDate');
   if (attDate) attDate.value = new Date().toISOString().split('T')[0];
@@ -11186,6 +12929,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Init v2 shared modules
+  ensureCotationPage();
+  await loadTermConfiguration();
+  applyTermConfigInUI();
+  ensureTermConfigCard();
 
   // Init dashboard (will load firebase)
   initDashboard();
