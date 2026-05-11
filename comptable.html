@@ -2444,10 +2444,6 @@
                     Select a date to create or modify that day's report.
                 </div>
 
-                <!-- Expected vs Actual Today -->
-                <div class="report-summary-cards" id="dailyExpectedCard">
-                    <!-- Expected vs Actual — Today card added dynamically -->
-                </div>
                 <!-- Day summary -->
                 <div class="report-summary-cards" id="daySummary">
                     <!-- Summary cards added dynamically -->
@@ -3287,94 +3283,6 @@
                     </div>
                 </div>
 
-                <!-- Expected Income Calculator -->
-<div class="col-md-12">
-  <div class="stat-card">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="fw-bold mb-0">
-        <i class="fas fa-calculator me-2 icon-text-primary"></i>
-        Expected Income Calculator — <span id="calcBranchName">KACYIRU</span>
-      </h5>
-      <div>
-        <small class="text-muted me-3">Last updated: <span id="calcLastUpdated">—</span></small>
-        <button class="btn-modern btn-primary-modern btn-sm" onclick="recalculateExpectedIncome()">
-          <i class="fas fa-sync me-1"></i> Recalculate
-        </button>
-      </div>
-    </div>
-
-    <!-- Three columns -->
-    <div class="row g-3 mb-3">
-
-      <!-- FEES column blue -->
-      <div class="col-md-4">
-        <div class="p-3 rounded" style="background:#e8f4fd; border-left:4px solid #007bff;">
-          <h6 class="fw-bold text-primary">FEES</h6>
-          <div class="d-flex justify-content-between"><span>Total Students Fees:</span><strong id="calcTotalStudentsFees">0</strong></div>
-          <div class="d-flex justify-content-between"><span>Expected (trimester):</span><strong id="calcExpectedFees" class="text-primary">RWF 0</strong></div>
-          <div class="d-flex justify-content-between"><span>Expected (monthly):</span><strong id="calcExpectedFeesMonthly" class="text-primary">RWF 0</strong></div>
-          <div class="d-flex justify-content-between"><span>Total Actual Income:</span><strong id="calcActualFees" class="text-success">RWF 0</strong></div>
-          <div class="d-flex justify-content-between"><span>Remaining:</span><strong id="calcRemainingFees" class="text-danger">RWF 0</strong></div>
-          <div class="progress mt-2" style="height:8px;">
-            <div id="calcFeeProgress" class="progress-bar bg-primary" style="width:0%"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- COACHING column purple -->
-      <div class="col-md-4">
-        <div class="p-3 rounded" style="background:#f3e8fd; border-left:4px solid #6f42c1;">
-          <h6 class="fw-bold" style="color:#6f42c1;">COACHING</h6>
-          <div class="d-flex justify-content-between"><span>Total Students Coaching:</span><strong id="calcTotalStudentsCoaching">0</strong></div>
-          <div class="d-flex justify-content-between"><span>Expected (trimester):</span><strong id="calcExpectedCoaching" style="color:#6f42c1;">RWF 0</strong></div>
-          <div class="d-flex justify-content-between"><span>Expected (monthly):</span><strong id="calcExpectedCoachingMonthly" style="color:#6f42c1;">RWF 0</strong></div>
-          <div class="d-flex justify-content-between"><span>Total Actual Income:</span><strong id="calcActualCoaching" class="text-success">RWF 0</strong></div>
-          <div class="d-flex justify-content-between"><span>Remaining:</span><strong id="calcRemainingCoaching" class="text-danger">RWF 0</strong></div>
-          <div class="progress mt-2" style="height:8px;">
-            <div id="calcCoachingProgress" class="progress-bar" style="width:0%; background:#6f42c1;"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TRANSPORT column orange -->
-      <div class="col-md-4">
-        <div class="p-3 rounded" style="background:#fff3e0; border-left:4px solid #fd7e14;">
-          <h6 class="fw-bold" style="color:#fd7e14;">TRANSPORT</h6>
-          <div class="d-flex justify-content-between"><span>Total Students Transport:</span><strong id="calcTotalStudentsTransport">0</strong></div>
-          <div class="d-flex justify-content-between"><span>Expected (trimester):</span><strong id="calcExpectedTransport" style="color:#fd7e14;">RWF 0</strong></div>
-          <div class="d-flex justify-content-between"><span>Expected (monthly):</span><strong id="calcExpectedTransportMonthly" style="color:#fd7e14;">RWF 0</strong></div>
-          <div class="d-flex justify-content-between"><span>Total Actual Income:</span><strong id="calcActualTransport" class="text-success">RWF 0</strong></div>
-          <div class="d-flex justify-content-between"><span>Remaining:</span><strong id="calcRemainingTransport" class="text-danger">RWF 0</strong></div>
-          <div class="progress mt-2" style="height:8px;">
-            <div id="calcTransportProgress" class="progress-bar" style="width:0%; background:#fd7e14;"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Grand Total row green -->
-    <div class="p-3 rounded" style="background:#e8f5e9; border-left:4px solid #28a745;">
-      <div class="row g-2">
-        <div class="col-md-3"><strong>Total Students: <span id="calcTotalStudents">0</span></strong></div>
-        <div class="col-md-3">Total Expected Income Fees: <strong id="calcGrandExpectedFees" class="text-primary">RWF 0</strong></div>
-        <div class="col-md-3">Total Expected Income Coaching: <strong id="calcGrandExpectedCoaching" style="color:#6f42c1;">RWF 0</strong></div>
-        <div class="col-md-3">Total Expected Income Transport: <strong id="calcGrandExpectedTransport" style="color:#fd7e14;">RWF 0</strong></div>
-        <div class="col-md-3">Total Actual Income Fees: <strong id="calcGrandActualFees" class="text-success">RWF 0</strong></div>
-        <div class="col-md-3">Total Actual Income Coaching: <strong id="calcGrandActualCoaching" class="text-success">RWF 0</strong></div>
-        <div class="col-md-3">Total Actual Income Transport: <strong id="calcGrandActualTransport" class="text-success">RWF 0</strong></div>
-        <div class="col-md-3"><strong>Grand Total Expected: <span id="calcGrandExpected" class="text-primary">RWF 0</span></strong></div>
-        <div class="col-md-3"><strong>Grand Total Actual: <span id="calcGrandActual" class="text-success">RWF 0</span></strong></div>
-        <div class="col-md-3"><strong>Grand Total Remaining: <span id="calcGrandRemaining" class="text-danger">RWF 0</span></strong></div>
-        <div class="col-12">
-          <div class="progress mt-2" style="height:12px;">
-            <div id="calcOverallProgress" class="progress-bar bg-success" style="width:0%"></div>
-          </div>
-          <small class="text-muted" id="calcOverallPercent">0% collected</small>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
                     </div>
                 </div>
             </div>
@@ -16138,8 +16046,10 @@
                 async function recalculateExpectedIncome() {
                     try {
                         const branch = selectedBranch;
-                        document.getElementById('calcBranchName').textContent = getBranchName(branch);
-                        document.getElementById('calcLastUpdated').textContent = new Date().toLocaleTimeString('fr-FR');
+                        const calcBranchNameEl = document.getElementById('calcBranchName');
+                        const calcLastUpdatedEl = document.getElementById('calcLastUpdated');
+                        if (calcBranchNameEl) calcBranchNameEl.textContent = getBranchName(branch);
+                        if (calcLastUpdatedEl) calcLastUpdatedEl.textContent = new Date().toLocaleTimeString('fr-FR');
 
                         const branchStudents = getStudentsForCurrentBranch(branch);
 
@@ -16578,39 +16488,9 @@
         }
 
         function updateDailyExpectedComparison(actualIncome) {
-            const periodData = getExpectedForPeriod('daily', document.getElementById('dailyReportDate').value, selectedBranch);
-            const trimesterTotals = getTrimesterPaymentTotalsForBranch(selectedBranch);
-            const expectedTrimester = Number(window.expectedIncomeData?.totals?.grandExpected || 0);
-            const actualTrimester = Number(trimesterTotals.total || 0);
-            const remainingTrimester = expectedTrimester - actualTrimester;
-            const progressPercent = expectedTrimester > 0 ? Math.round((actualTrimester / expectedTrimester) * 100) : 0;
-            const comparisonHTML = `
-                <div class="summary-card income">
-                    <h6><i class="fas fa-bullseye me-2"></i>Expected Trimester Income</h6>
-                    <div class="summary-value">${formatCurrencyRWF(expectedTrimester)}</div>
-                    <small>Configured target for this trimester</small>
-                </div>
-                <div class="summary-card expenses">
-                    <h6><i class="fas fa-receipt me-2"></i>Actual Trimester (Payments)</h6>
-                    <div class="summary-value">${formatCurrencyRWF(actualTrimester)}</div>
-                    <small>Fees + Coaching + Transport + Registration</small>
-                </div>
-                <div class="summary-card ${remainingTrimester >= 0 ? 'income' : 'expenses'}">
-                    <h6><i class="fas fa-chart-bar me-2"></i>Remaining</h6>
-                    <div class="summary-value">${formatCurrencyRWF(remainingTrimester)}</div>
-                    <small>Expected - Actual</small>
-                </div>
-                <div class="summary-card income">
-                    <h6><i class="fas fa-tasks me-2"></i>Progress</h6>
-                    <div style="width: 100%; height: 20px; background: #e9ecef; border-radius: 4px; overflow: hidden; margin-top: 5px;">
-                        <div style="width: ${Math.min(100, Math.max(0, progressPercent))}%; height: 100%; background: #28a745; transition: width 0.3s;"></div>
-                    </div>
-                    <small>${progressPercent}% of trimester target</small>
-                </div>
-            `;
             const comparisonContainer = document.getElementById('dailyExpectedCard');
             if (comparisonContainer) {
-                comparisonContainer.innerHTML = comparisonHTML;
+                comparisonContainer.innerHTML = '';
             }
         }
 

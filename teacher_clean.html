@@ -69,6 +69,9 @@
   --tb-bg: rgba(26,92,168,.1);  --tb-cl: #1a5ca8;
   --b-bg: rgba(45,125,210,.08); --b-cl: #2d7dd2;
   --ef-bg: rgba(194,65,12,.1);  --ef-cl: #c2410c;
+  --bulletin-scale: 1;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
@@ -78,7 +81,10 @@ body {
   background:var(--bg);
   color:var(--txt);
   min-height:100vh;
+  width:100%;
+  max-width:100%;
   overflow-x:hidden;
+  padding-top:var(--safe-top);
 }
 
 /* ═══════════════════════════════════════════
@@ -652,14 +658,14 @@ body {
 ═══════════════════════════════════════════ */
 .stats-4 {
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
   gap:12px;
   margin-bottom:18px;
 }
 
 .stats-2 {
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
   gap:12px;
   margin-bottom:16px;
 }
@@ -707,6 +713,8 @@ body {
   white-space:nowrap;
   -webkit-user-select:none;
   user-select:none;
+  min-height:44px;
+  touch-action:manipulation;
 }
 
 .btn:active { transform:scale(.97); }
@@ -760,6 +768,10 @@ body {
 ═══════════════════════════════════════════ */
 .tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:var(--rs); }
 .tbl { width:100%; border-collapse:collapse; min-width:480px; }
+.tbl-wrap table,
+.card table {
+  min-width:640px;
+}
 .tbl th {
   background:var(--blue-dk);
   color:#fff;
@@ -979,10 +991,13 @@ body {
   padding:4px;
   margin-bottom:16px;
   gap:3px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
 }
 
 .form-tab {
-  flex:1;
+  flex:1 0 auto;
   padding:8px 6px;
   border:none;
   background:transparent;
@@ -998,6 +1013,7 @@ body {
   flex-direction:column;
   align-items:center;
   gap:3px;
+  min-height:44px;
 }
 .form-tab i { font-size:.9rem; }
 .form-tab.active { background:#fff; color:var(--blue); box-shadow:var(--sh); }
@@ -1027,7 +1043,7 @@ body {
   border-radius:var(--r);
   padding:24px;
   width:100%;
-  max-width:560px;
+  max-width:min(560px,calc(100vw - 24px));
   max-height:90vh;
   overflow-y:auto;
   box-shadow:var(--sh-lg);
@@ -1381,7 +1397,7 @@ body {
 /* Info grid */
 .bul-info-grid {
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
   border-bottom:2px solid var(--blue);
 }
 
@@ -1420,7 +1436,7 @@ body {
 /* Branches header */
 .bul-branches-hd {
   display:grid;
-  grid-template-columns:1.7fr 1fr 1fr 1fr;
+  grid-template-columns:minmax(140px,1.7fr) repeat(3,minmax(78px,1fr));
   background:var(--blue);
   color:#fff;
 }
@@ -1470,7 +1486,7 @@ body {
 /* Branch rows */
 .bul-branch-row {
   display:grid;
-  grid-template-columns:1.7fr 1fr 1fr 1fr;
+  grid-template-columns:minmax(140px,1.7fr) repeat(3,minmax(78px,1fr));
   border-bottom:1px solid var(--bdr);
   min-height:42px;
 }
@@ -1510,7 +1526,7 @@ body {
 /* Application row */
 .bul-app-row {
   display:grid;
-  grid-template-columns:1.7fr 1fr 1fr 1fr;
+  grid-template-columns:minmax(140px,1.7fr) repeat(3,minmax(78px,1fr));
   border-bottom:2px solid var(--blue);
   background:rgba(26,92,168,.04);
 }
@@ -1711,6 +1727,8 @@ body {
   transition:all .2s;
   gap:4px;
   position:relative;
+  min-height:44px;
+  touch-action:manipulation;
 }
 
 .bnav-btn i { font-size:1.15rem; transition:transform .2s; }
@@ -1870,7 +1888,7 @@ body {
    RESPONSIVE BREAKPOINTS
 ═══════════════════════════════════════════ */
 @media (max-width:1024px) {
-  .stats-4 { grid-template-columns:1fr 1fr; }
+  .stats-4 { grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
 }
 
 @media (max-width:768px) {
@@ -1878,21 +1896,48 @@ body {
     transform:translateX(-100%);
     width:260px;
     z-index:400;
+    transition:transform .25s ease;
   }
   .sidebar.open { transform:translateX(0); }
   .sb-overlay.open { display:block; }
 
   .main-wrap { margin-left:0; }
 
-  .topbar { padding:10px 14px; }
+  .topbar {
+    padding:10px 12px;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+  }
+  .topbar-left {
+    width:100%;
+    min-width:0;
+  }
+  .search-bar {
+    max-width:100%;
+  }
+  .topbar-right {
+    width:100%;
+    justify-content:flex-end;
+  }
   .hamburger { display:flex; }
   .topbar-page-info h2 { font-size:.85rem; }
+  .topbar-page-info p { font-size:.66rem; }
 
-  .content { padding:12px 12px 80px; }
+  .content {
+    padding:12px 12px calc(80px + var(--safe-bottom));
+    max-width:100%;
+  }
 
-  .bottom-nav { display:flex; }
+  .bottom-nav {
+    display:flex !important;
+    padding-bottom:var(--safe-bottom);
+  }
 
-  .stats-4 { grid-template-columns:1fr 1fr; }
+  .stats-4,
+  .stats-2 {
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  }
 
   .sec-hd { flex-direction:column; }
   .sec-hd-right { width:100%; }
@@ -1909,18 +1954,136 @@ body {
   .bul-cell { font-size:.68rem; }
   .bul-tri-col { font-size:.5rem; }
 
-  .gallery-grid { grid-template-columns:repeat(2,1fr); }
+  .gallery-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); }
 
   .tb-uname { display:none; }
+
+  .card,
+  .modal-box {
+    padding:14px;
+  }
+
+  .tbl-wrap {
+    width:100%;
+    overflow-x:auto;
+  }
+
+  .form-tabs {
+    flex-wrap:nowrap;
+    white-space:nowrap;
+    padding:4px;
+  }
+
+  .form-tab {
+    min-width:120px;
+  }
+
+  #printArea {
+    transform:scale(var(--bulletin-scale));
+    transform-origin:top left;
+    width:calc(100% / var(--bulletin-scale));
+  }
+
+  .bulletin {
+    min-height:auto;
+  }
+
+  .hamburger,
+  .topbar-icon-btn,
+  .modal-close,
+  .sb-btn,
+  .form-tab,
+  .bnav-btn,
+  .topbar-user-btn {
+    min-height:44px;
+  }
 }
 
 @media (max-width:480px) {
-  .stats-4 { grid-template-columns:1fr 1fr; gap:8px; }
-  .stats-2 { grid-template-columns:1fr 1fr; gap:8px; }
-  .content { padding:10px 10px 75px; }
-  .bul-branches-hd { grid-template-columns:1.2fr 1fr 1fr 1fr; }
-  .bul-branch-row  { grid-template-columns:1.2fr 1fr 1fr 1fr; }
-  .bul-app-row     { grid-template-columns:1.2fr 1fr 1fr 1fr; }
+  .content { padding:10px 10px calc(78px + var(--safe-bottom)); }
+
+  .stats-4,
+  .stats-2 {
+    grid-template-columns:minmax(0,1fr);
+    gap:8px;
+  }
+
+  .sec-hd-left h1 { font-size:1.15rem; }
+
+  .search-bar input,
+  .f-input,
+  .btn,
+  .topbar-user-btn,
+  .topbar-icon-btn,
+  .modal-close,
+  .sb-btn,
+  .bnav-btn,
+  .form-tab {
+    min-height:44px;
+  }
+
+  .form-tab {
+    min-width:108px;
+    font-size:.69rem;
+  }
+
+  .modal-overlay {
+    padding:10px;
+  }
+
+  .modal-box {
+    width:calc(100vw - 20px);
+    max-height:calc(100vh - 20px);
+    padding:12px;
+  }
+
+  .bottom-nav {
+    display:flex !important;
+    min-height:60px;
+    padding-bottom:max(8px,var(--safe-bottom));
+  }
+
+  .bnav-btn {
+    padding:8px 3px;
+    gap:3px;
+    font-size:.56rem;
+  }
+
+  .bul-branches-hd,
+  .bul-branch-row,
+  .bul-app-row {
+    grid-template-columns:minmax(120px,1.2fr) repeat(3,minmax(65px,1fr));
+  }
+
+  .bul-tri-col { font-size:.5rem; }
+
+  .tbl,
+  .tbl-wrap table,
+  .card table {
+    min-width:560px;
+  }
+
+  .row.g-3,
+  .row.g-2 {
+    --bs-gutter-x: .6rem;
+  }
+
+  /* Collapse inline hardcoded grids to responsive one-column on very small screens */
+  [style*="display:grid"][style*="grid-template-columns"] {
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr)) !important;
+  }
+
+  [style*="display:grid"][style*="grid-template-columns:1fr 60px 60px 60px 60px 55px"],
+  [style*="display:grid"][style*="grid-template-columns:1fr 70px 70px"],
+  [style*="display:grid"][style*="grid-template-columns:auto 1fr"] {
+    grid-template-columns:minmax(0,1fr) !important;
+  }
+
+  #printArea {
+    transform:scale(var(--bulletin-scale));
+    transform-origin:top left;
+    width:calc(100% / var(--bulletin-scale));
+  }
 }
 
 /* User menu dropdown */
@@ -3102,7 +3265,15 @@ body {
       <div class="modal-ttl">Nouveau message</div>
       <button class="modal-close" onclick="closeModal('composeModal')"><i class="fas fa-times"></i></button>
     </div>
-    <div class="f-group"><label class="f-label">À (parent / enseignant)</label><input class="f-input" type="text" id="msgTo" placeholder="Nom ou email…"></div>
+    <div class="f-group">
+      <label class="f-label">À (enseignant uniquement)</label>
+      <select class="f-input" id="msgToTeacher">
+        <option value="">Choisir un enseignant…</option>
+      </select>
+      <small style="display:block;margin-top:6px;color:var(--txt-lt);font-size:.72rem;">
+        Seuls les utilisateurs avec le role teacher sont affiches.
+      </small>
+    </div>
     <div class="f-group"><label class="f-label">Sujet</label><input class="f-input" type="text" id="msgSubject" placeholder="Sujet du message…"></div>
     <div class="f-group"><label class="f-label">Message</label><textarea class="f-input" id="msgBody" rows="5" placeholder="Écrivez votre message…"></textarea></div>
     <div style="display:flex;gap:10px;margin-top:6px;">
@@ -3545,7 +3716,9 @@ const debugStudentBranchData = {
 // NEW: Teacher management
 let allTeachers     = [];  // All teachers filtered from /users (role === "teacher")
 let filteredTeachers= [];  // Filtered teacher list for display
+let messageTeacherRecipients = []; // Teacher recipients used by messaging modal
 let notificationsListenerRef = null;
+let shownMessageRequestPopups = new Set();
 let isPublishingBulletin = false;
 
 const BULLETIN = {
@@ -4363,14 +4536,31 @@ function navTo(pageId) {
 /* ══════════════════════════════════════
    SIDEBAR MOBILE
 ══════════════════════════════════════ */
+function updateBulletinPreviewScale() {
+  const printArea = document.getElementById('printArea');
+  if (!printArea) return;
+  const availW = Math.max(280, window.innerWidth - 24);
+  const bulletinW = 794; // 210mm ~= 794px at 96dpi
+  const scale = Math.min(1, availW / bulletinW);
+  document.documentElement.style.setProperty('--bulletin-scale', scale.toFixed(3));
+
+  const bulletinH = 1123; // 297mm ~= 1123px
+  printArea.style.marginBottom = `${(bulletinH * scale) - bulletinH}px`;
+}
+
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sbOverlay').classList.toggle('open');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sbOverlay');
+  if (!sidebar) return;
+  sidebar.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('open');
 }
 
 function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sbOverlay').classList.remove('open');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sbOverlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
 }
 
 /* ══════════════════════════════════════
@@ -4387,7 +4577,29 @@ function closeUserMenu() {
 document.addEventListener('click', e => {
   const um = document.getElementById('userMenu');
   if (!e.target.closest('.topbar-user-btn') && !e.target.closest('.user-menu')) closeUserMenu();
+
+  const sidebar = document.getElementById('sidebar');
+  const hamburger = document.querySelector('.hamburger');
+  if (
+    sidebar &&
+    sidebar.classList.contains('open') &&
+    !sidebar.contains(e.target) &&
+    !hamburger?.contains(e.target)
+  ) {
+    closeSidebar();
+  }
 });
+
+document.addEventListener('touchstart', function(e) {
+  const userMenu = document.getElementById('userMenu');
+  const notifPanel = document.getElementById('notificationPanel');
+  if (userMenu?.classList.contains('open') && !userMenu.contains(e.target) && !e.target.closest('.topbar-user-btn')) {
+    userMenu.classList.remove('open');
+  }
+  if (notifPanel?.classList.contains('open') && !notifPanel.contains(e.target)) {
+    notifPanel.classList.remove('open');
+  }
+}, { passive: true });
 
 /* ══════════════════════════════════════
    MY CLASSES SUBMENU
@@ -5450,6 +5662,15 @@ async function loadNotifications() {
         })
         .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
+      // Real popup for new incoming message requests (shown once per request).
+      notifications
+        .filter(n => !n.read && (n.type || '').toString().toLowerCase() === 'message_request')
+        .forEach(n => {
+          if (shownMessageRequestPopups.has(n.id)) return;
+          shownMessageRequestPopups.add(n.id);
+          alert(`Nouvelle demande de message\n\n${n.message || 'Un enseignant souhaite vous contacter.'}`);
+        });
+
       const unread = notifications.filter(n => !n.read).length;
       const container = document.getElementById('notificationList');
       if (container) {
@@ -6157,10 +6378,35 @@ async function deleteActivity(id) {
 async function initMessages() {
   document.getElementById('msgLoad').style.display = 'flex';
   try {
+    const teacherUid = getCurrentTeacherUid();
+    const teacherName = ((currentTeacher?.name || `${currentTeacher?.firstName || ''} ${currentTeacher?.lastName || ''}`.trim()) || '').toLowerCase();
+
+    if (!teacherUid && !teacherName) {
+      renderMessages([]);
+      document.getElementById('msgLoad').style.display = 'none';
+      return;
+    }
+
     const snap = await db.ref('messages').limitToLast(30).once('value');
-    const msgs = [];
+    let msgs = [];
     if (snap.exists()) snap.forEach(c=>msgs.push({...c.val(),_id:c.key}));
-    renderMessages(msgs.reverse());
+
+    // Privacy filter: only keep messages linked to the logged-in teacher.
+    if (teacherUid || teacherName) {
+      msgs = msgs.filter(m => {
+        const toUid = (m.toUid || '').toString();
+        const fromUid = (m.fromUid || '').toString();
+        const toName = (m.to || '').toString().toLowerCase();
+        const fromName = (m.from || '').toString().toLowerCase();
+
+        const uidMatch = !!teacherUid && (toUid === teacherUid || fromUid === teacherUid);
+        const nameMatch = !!teacherName && (toName === teacherName || fromName === teacherName);
+        return uidMatch || nameMatch;
+      });
+    }
+
+    msgs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    renderMessages(msgs);
   } catch(e) { renderMessages([]); }
   document.getElementById('msgLoad').style.display = 'none';
 }
@@ -6170,13 +6416,17 @@ function renderMessages(msgs) {
   if (!msgs.length) { list.innerHTML='<div class="empty-state"><i class="fas fa-inbox"></i><h4>Aucun message</h4><p>Votre boîte est vide</p></div>'; return; }
   list.innerHTML = '';
   msgs.forEach(m => {
+    const isPending = (m.status || '').toString().toLowerCase() === 'pending';
     const el = document.createElement('div');
     el.style.cssText = `display:flex;align-items:flex-start;gap:12px;padding:12px;border-bottom:1px solid var(--bdr);cursor:pointer;background:${m.read?'transparent':'rgba(26,92,168,.04)'};`;
     el.innerHTML = `
       <div class="stu-ava" style="width:34px;height:34px;font-size:.65rem;">${ini(m.from||'?')}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:.86rem;font-weight:${m.read?'600':'800'};">${m.from||'—'}</div>
-        <div style="font-size:.78rem;font-weight:${m.read?'500':'700'};color:var(--txt);">${m.subject||'—'}</div>
+        <div style="font-size:.78rem;font-weight:${m.read?'500':'700'};color:var(--txt);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span>${m.subject||'—'}</span>
+          ${isPending ? '<span class="bdg bdg-warn">Demande en attente</span>' : ''}
+        </div>
         <div style="font-size:.72rem;color:var(--txt-lt);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.body||''}</div>
       </div>
       <div style="font-size:.65rem;color:var(--txt-lt);white-space:nowrap;">${new Date(m.createdAt||0).toLocaleDateString('fr-FR')}</div>
@@ -6186,26 +6436,174 @@ function renderMessages(msgs) {
   });
 }
 
-function showComposeModal() { openModal('composeModal'); }
+async function loadTeacherRecipientsForMessage() {
+  const select = document.getElementById('msgToTeacher');
+  if (!select) return [];
+
+  select.innerHTML = '<option value="">Chargement des enseignants…</option>';
+
+  try {
+    const currentUid = getCurrentTeacherUid();
+    const snap = await db.ref('users').once('value');
+    const recipients = [];
+
+    if (snap.exists()) {
+      snap.forEach(child => {
+        const uid = child.key;
+        const userData = child.val() || {};
+        const role = (userData.role || '').toString().toLowerCase().trim();
+        if (role !== 'teacher') return;
+        if (currentUid && uid === currentUid) return;
+
+        const name = userData.name
+          || `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
+          || userData.displayName
+          || userData.email
+          || 'Enseignant';
+
+        recipients.push({
+          uid,
+          name,
+          email: userData.email || ''
+        });
+      });
+    }
+
+    recipients.sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+    messageTeacherRecipients = recipients;
+
+    if (!recipients.length) {
+      select.innerHTML = '<option value="">Aucun enseignant disponible</option>';
+      return [];
+    }
+
+    select.innerHTML = '<option value="">Choisir un enseignant…</option>';
+    recipients.forEach(teacher => {
+      const option = document.createElement('option');
+      option.value = teacher.uid;
+      option.textContent = teacher.email ? `${teacher.name} (${teacher.email})` : teacher.name;
+      select.appendChild(option);
+    });
+
+    return recipients;
+  } catch (error) {
+    console.error('Erreur chargement destinataires enseignants:', error);
+    messageTeacherRecipients = [];
+    select.innerHTML = '<option value="">Erreur de chargement</option>';
+    return [];
+  }
+}
+
+function showComposeModal() {
+  openModal('composeModal');
+  loadTeacherRecipientsForMessage();
+}
 
 async function sendMessage() {
-  const to  = document.getElementById('msgTo').value.trim();
+  const toUid = document.getElementById('msgToTeacher').value;
   const sub = document.getElementById('msgSubject').value.trim();
-  if (!to||!sub) { toast('Destinataire et sujet requis', 'warn'); return; }
-  const data = { to, from:'Enseignant', subject:sub, body:document.getElementById('msgBody').value, createdAt:Date.now(), read:false };
+  const body = document.getElementById('msgBody').value;
+  if (!toUid || !sub) { toast('Destinataire enseignant et sujet requis', 'warn'); return; }
+
+  const recipient = messageTeacherRecipients.find(t => t.uid === toUid);
+  if (!recipient) {
+    toast('Destinataire invalide. Rechargez la liste.', 'warn');
+    await loadTeacherRecipientsForMessage();
+    return;
+  }
+
+  const fromUid = getCurrentTeacherUid() || auth.currentUser?.uid || '';
+  const fromName = currentTeacher?.name
+    || `${currentTeacher?.firstName || ''} ${currentTeacher?.lastName || ''}`.trim()
+    || auth.currentUser?.displayName
+    || 'Enseignant';
+
+  const confirmed = confirm(`Envoyer d'abord une demande de message a ${recipient.name} ?`);
+  if (!confirmed) return;
+
+  const now = Date.now();
+  const requestKey = `${fromUid || 'teacher'}_${toUid}`;
+
   try {
-    await db.ref('messages').push(data);
-    toast('Message envoyé !', 'ok');
+    const requestRef = db.ref(`message_requests/${requestKey}`);
+    const existingRequest = await requestRef.once('value');
+    const existingStatus = (existingRequest.val() && existingRequest.val().status) || '';
+
+    if (existingRequest.exists() && existingStatus === 'pending') {
+      toast('Une demande est deja en attente pour cet enseignant.', 'warn');
+      return;
+    }
+
+    await requestRef.set({
+      requestKey,
+      type: 'message_request',
+      fromUid,
+      fromName,
+      toUid,
+      toName: recipient.name,
+      toEmail: recipient.email || '',
+      subject: sub,
+      body,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now
+    });
+
+    await db.ref('notifications').push({
+      type: 'message_request',
+      title: 'Nouvelle demande de message',
+      message: `${fromName} souhaite vous envoyer un message: ${sub}`,
+      teacherId: toUid,
+      targetRole: 'teacher',
+      fromUid,
+      fromName,
+      createdAt: now,
+      read: false
+    });
+
+    await db.ref('messages').push({
+      type: 'message_request',
+      requestKey,
+      status: 'pending',
+      fromUid,
+      from: fromName,
+      toUid,
+      to: recipient.name,
+      subject: sub,
+      body,
+      createdAt: now,
+      read: false
+    });
+
+    toast('Demande envoyee. Le destinataire recevra une notification popup.', 'ok');
     closeModal('composeModal');
+    document.getElementById('msgToTeacher').value = '';
+    document.getElementById('msgSubject').value = '';
+    document.getElementById('msgBody').value = '';
     initMessages();
   } catch(e) { toast('Erreur envoi', 'err'); }
 }
 
 async function markAllRead() {
   try {
+    const teacherUid = getCurrentTeacherUid();
+    const teacherName = ((currentTeacher?.name || `${currentTeacher?.firstName || ''} ${currentTeacher?.lastName || ''}`.trim()) || '').toLowerCase();
     const snap = await db.ref('messages').once('value');
     const updates = {};
-    if (snap.exists()) snap.forEach(c=>{ updates[`messages/${c.key}/read`]=true; });
+    if (snap.exists()) {
+      snap.forEach(c => {
+        const m = c.val() || {};
+        const toUid = (m.toUid || '').toString();
+        const fromUid = (m.fromUid || '').toString();
+        const toName = (m.to || '').toString().toLowerCase();
+        const fromName = (m.from || '').toString().toLowerCase();
+        const uidMatch = !!teacherUid && (toUid === teacherUid || fromUid === teacherUid);
+        const nameMatch = !!teacherName && (toName === teacherName || fromName === teacherName);
+        if (uidMatch || nameMatch) {
+          updates[`messages/${c.key}/read`] = true;
+        }
+      });
+    }
     await db.ref().update(updates);
     toast('Tous les messages marqués comme lus', 'ok');
     initMessages();
@@ -7455,6 +7853,8 @@ function switchBulletinTab(tabId) {
   document.getElementById(tabId).classList.add('active');
   const tabBtn = document.querySelector(`[onclick="switchBulletinTab('${tabId}')"]`);
   if (tabBtn) tabBtn.classList.add('active');
+  if (tabBtn) tabBtn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  if (tabId === 't-apercu') setTimeout(updateBulletinPreviewScale, 100);
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -10773,6 +11173,19 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   checkResponsive();
   window.addEventListener('resize', checkResponsive);
+  window.addEventListener('resize', updateBulletinPreviewScale);
+  window.addEventListener('load', updateBulletinPreviewScale);
+  updateBulletinPreviewScale();
+
+  const formTabs = document.querySelector('.form-tabs');
+  if (formTabs) {
+    formTabs.addEventListener('click', function(e) {
+      const btn = e.target.closest('.form-tab');
+      if (btn) {
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    });
+  }
 
   // Init dashboard (will load firebase)
   initDashboard();
