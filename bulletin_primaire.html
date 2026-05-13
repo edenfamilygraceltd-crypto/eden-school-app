@@ -1858,6 +1858,15 @@ function buildSummary(){
 async function saveBulletin(){
   const name=document.getElementById('student-name-input').value.trim();
   if(!name){toast('Nom élève manquant','error');return;}
+  if(isAnnualMode){
+    const annualStudentId = selectedStudent?._id || '';
+    if(!annualStudentId){
+      toast('Sélectionnez un élève pour enregistrer le bulletin annuel','error');
+      return;
+    }
+    await saveAnnualBulletins(annualStudentId);
+    return;
+  }
   if(!currentTrim){toast('Veuillez sélectionner un trimestre','error');return;}
 
   const scores=collectScores();
@@ -2005,6 +2014,8 @@ async function saveAnnualBulletins(selectedStudentId) {
 
   const studentClass = student.classes || student.classe || student.class || '';
   const className = normalizeClass(studentClass);
+  const schoolYear = (document.getElementById('school-year')?.value || getSchoolYear()).toString();
+  const bulletinDate = document.getElementById('bul-date')?.value || new Date().toISOString().split('T')[0];
 
   if (!className) {
     toast('Classe de l\'élève non trouvée', 'error');
@@ -2041,6 +2052,10 @@ async function saveAnnualBulletins(selectedStudentId) {
       updates[`${refPath}/${studentId}/annualAverage`] = averageScore;
       updates[`${refPath}/${studentId}/annualPct`] = annualPct;
       updates[`${refPath}/${studentId}/annualPercentage`] = annualPct;
+      updates[`${refPath}/${studentId}/schoolYear`] = schoolYear;
+      updates[`${refPath}/${studentId}/bulletinDate`] = bulletinDate;
+      updates[`${refPath}/${studentId}/bulletinType`] = 'annuel';
+      updates[`${refPath}/${studentId}/trimestre`] = null;
       updates[`${refPath}/${studentId}/updatedAt`] = Date.now();
     });
 

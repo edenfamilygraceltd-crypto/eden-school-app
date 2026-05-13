@@ -2567,7 +2567,7 @@ body {
       </div>
       <div class="card">
         <div class="card-hd"><div class="card-ttl"><i class="fas fa-inbox"></i> Boîte de réception</div>
-          <button class="btn btn-ghost btn-sm" onclick="markAllRead()"><i class="fas fa-check-double"></i> Tout lire</button>
+          <button class="btn btn-ghost btn-sm" onclick="markAllInboxRead()"><i class="fas fa-check-double"></i> Tout lire</button>
         </div>
         <div class="loading-wrap" id="msgLoad"><div class="spinner"></div><p style="font-size:.8rem;font-weight:600;">Chargement…</p></div>
         <div id="msgList"><div class="empty-state"><i class="fas fa-inbox"></i><h4>Aucun message</h4><p>Votre boîte est vide</p></div></div>
@@ -3335,7 +3335,7 @@ body {
     <div class="f-group"><label class="f-label">Message</label><textarea class="f-input" id="msgBody" rows="5" placeholder="Écrivez votre message…"></textarea></div>
     <div style="display:flex;gap:10px;margin-top:6px;">
       <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('composeModal')">Annuler</button>
-      <button class="btn btn-blue" style="flex:1;" onclick="sendMessage()"><i class="fas fa-paper-plane"></i> Envoyer</button>
+      <button class="btn btn-blue" style="flex:1;" onclick="sendComposeMessage()"><i class="fas fa-paper-plane"></i> Envoyer</button>
     </div>
   </div>
 </div>
@@ -4419,12 +4419,15 @@ function isStudentMatch(student, teacher) {
   // ── 4. CLASS MATCH ───────────────────────────────────────────────────
   const classMatch = areClassesCompatible(studentClassRaw, rawTeacherClasses);
 
-  // ── 5. TEACHER-ID MATCH (optionnel, en bonus) ────────────────────────
+  // ── 5. TEACHER-ID MATCH (prioritaire si assigne explicitement) ───────
   const teacherIds = [
     auth.currentUser?.uid,
     teacher.uid,
     teacher.id,
-  ].map(v => (v || '').toString().trim()).filter(Boolean);
+    teacher.email,
+    teacher.name,
+    `${teacher.firstName || ''} ${teacher.lastName || ''}`.trim(),
+  ].map(v => (v || '').toString().trim().toLowerCase()).filter(Boolean);
 
   const studentTeacherIds = [
     student.teacherId,
@@ -4433,19 +4436,20 @@ function isStudentMatch(student, teacher) {
     student.assignedTeacherId,
     student.teacherUid,
     student.teacherUID,
-  ].map(v => (v || '').toString().trim()).filter(Boolean);
+  ].map(v => (v || '').toString().trim().toLowerCase()).filter(Boolean);
 
   const teacherIdMatch = studentTeacherIds.some(id => teacherIds.includes(id));
 
   // ── 6. LOGIQUE FINALE ────────────────────────────────────────────────
-  //  branchMatch obligatoire
-  //  classMatch obligatoire si l'enseignant a des classes configurées
-  //  teacherIdMatch est un bonus non bloquant
+  //  Si un eleve est explicitement assigne a cet enseignant, on l'affiche.
+  //  Sinon, on applique le filtre branche/classe.
   const teacherHasClasses = rawTeacherClasses.length > 0
     && rawTeacherClasses.some(c => c.trim().length > 0);
 
   let finalMatch;
-  if (!teacherHasClasses) {
+  if (teacherIdMatch) {
+    finalMatch = true;
+  } else if (!teacherHasClasses) {
     // Pas de classe configurée → filtre sur branche uniquement
     finalMatch = branchMatch;
   } else {
@@ -6565,7 +6569,7 @@ function showComposeModal() {
   loadTeacherRecipientsForMessage();
 }
 
-async function sendMessage() {
+async function sendComposeMessage() {
   const toUid = document.getElementById('msgToTeacher').value;
   const sub = document.getElementById('msgSubject').value.trim();
   const body = document.getElementById('msgBody').value;
@@ -6650,7 +6654,7 @@ async function sendMessage() {
   } catch(e) { toast('Erreur envoi', 'err'); }
 }
 
-async function markAllRead() {
+async function markAllInboxRead() {
   try {
     const teacherUid = getCurrentTeacherUid();
     const teacherName = ((currentTeacher?.name || `${currentTeacher?.firstName || ''} ${currentTeacher?.lastName || ''}`.trim()) || '').toLowerCase();
@@ -11287,6 +11291,23 @@ function getCurrentTeacherClassesList() {
 
 async function loadTermConfiguration() {
   try {
+    // Primary source: settings/termConfig (shared with admin settings page)
+    const settingsSnap = await db.ref('settings/termConfig').once('value');
+    if (settingsSnap.exists()) {
+      const cfg = settingsSnap.val() || {};
+      const configuredTerm = cfg.trimestre || cfg.trimester || cfg.currentTerm || '1';
+      currentTerm = `${configuredTerm}`;
+      academicYear = cfg.academicYear || '2025-2026';
+      termsConfig = [{
+        id: `${currentTerm}`,
+        name: cfg.termName || cfg.name || `Trimestre ${currentTerm}`,
+        startDate: cfg.startDate || null,
+        endDate: cfg.endDate || null,
+      }];
+      return;
+    }
+
+    // Fallback: legacy config/terms
     const snap = await db.ref('config/terms').once('value');
     if (snap.exists()) {
       const d = snap.val() || {};
@@ -11327,6 +11348,18 @@ function getTermStatusBadge(termObj) {
 function applyTermConfigInUI() {
   const bTri = document.getElementById('bTrimestre');
   if (bTri && currentTerm) bTri.value = currentTerm;
+
+  const bAnnee = document.getElementById('bAnnee');
+  if (bAnnee && academicYear) {
+    const hasOption = Array.from(bAnnee.options || []).some(o => o.value === academicYear);
+    if (!hasOption) {
+      const opt = document.createElement('option');
+      opt.value = academicYear;
+      opt.textContent = academicYear;
+      bAnnee.appendChild(opt);
+    }
+    bAnnee.value = academicYear;
+  }
 
   const historySel = document.getElementById('historyClassSelect');
   if (historySel && currentTerm) historySel.value = currentTerm;
@@ -11384,7 +11417,11 @@ async function updateCurrentTermPrompt() {
     toast('Trimestre invalide', 'warn');
     return;
   }
-  await db.ref('config/terms/currentTerm').set(norm);
+  await Promise.all([
+    db.ref('settings/termConfig/trimestre').set(norm),
+    db.ref('settings/termConfig/academicYear').set(academicYear || '2025-2026'),
+    db.ref('config/terms/currentTerm').set(norm),
+  ]);
   currentTerm = norm;
   applyTermConfigInUI();
   ensureTermConfigCard();
