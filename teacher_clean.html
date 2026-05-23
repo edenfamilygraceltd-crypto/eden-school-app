@@ -3545,10 +3545,21 @@
     NORMALIZE FUNCTION (FIX ALL BUGS)
   ══════════════════════════════════════ */
   function normalize(val) {
-    return (val || "")
-      .toString()
-      .toLowerCase()
-      .trim();
+    if (val === null || val === undefined) return '';
+    return String(val).trim().toLowerCase();
+  }
+
+  function normalizeBranchValue(value) {
+    return normalize(value).replace(/\s+/g, ' ');
+  }
+
+  function normalizeClass(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/\s+/g, '').toUpperCase();
+  }
+
+  function normalizeClassValue(value) {
+    return normalizeClass(value);
   }
 
   function normalizeBranchForMatch(value) {
@@ -3604,7 +3615,10 @@
   function doesBulletinBelongToTeacher(bulletin, teacher) {
     const teacherCandidates = getTeacherIdentityCandidates(teacher);
     const bulletinCandidates = getBulletinTeacherCandidates(bulletin);
-    if (!teacherCandidates.length || !bulletinCandidates.length) return false;
+    // Legacy bulletins may not carry teacher identifiers.
+    // In that case, keep them visible and rely on class/branch/student checks.
+    if (!teacherCandidates.length) return true;
+    if (!bulletinCandidates.length) return true;
     return bulletinCandidates.some(v => teacherCandidates.includes(v));
   }
 
@@ -4259,14 +4273,29 @@
           ...(userData || {}),
           ...(teacherData || {})
         };
+        console.log('🔎 loadUserProfile teacherData raw:', teacherData || null);
+        console.log('🔎 loadUserProfile userData raw:', userData || null);
         if (!teacherId) teacherId = uid || (d && (d.uid || d.id)) || null;
 
         if (d) {
-          currentTeacher = { id: teacherId, uid: teacherId, ...d };
+          const normalizedClasses = getTeacherClasses(d);
+          currentTeacher = {
+            id: teacherId,
+            uid: teacherId,
+            ...d,
+            // Defensive defaults for Firebase missing fields
+            branch: (d.branch || d.branchName || d.schoolBranch || '').toString().trim(),
+            classes: normalizedClasses,
+            class: normalizedClasses[0] || (d.class || d.classe || '').toString().trim(),
+          };
 
-          // Make branch/class normalized access fields
-          currentTeacher.branch = d.branch || d.branchName || d.schoolBranch || '';
-          currentTeacher.class = d.class || d.classes || d.classe || '';
+          console.log('✅ loadUserProfile currentTeacher normalized:', {
+            id: currentTeacher.id,
+            uid: currentTeacher.uid,
+            branch: currentTeacher.branch,
+            classes: currentTeacher.classes,
+            class: currentTeacher.class,
+          });
 
           const resolvedEmail = d.email || email || (auth.currentUser && auth.currentUser.email) || '';
           const fullName = `${d.firstName||''} ${d.lastName||''}`.trim() || d.name || resolvedEmail || '';
@@ -4299,7 +4328,7 @@
 
             const profileClassesEl = document.getElementById('profileClasses');
             if (profileClassesEl) {
-              const profileClasses = Array.isArray(currentTeacher.classes) ? currentTeacher.classes.join(', ') : (currentTeacher.classes || currentTeacher.class || '—');
+              const profileClasses = getTeacherClasses(currentTeacher).join(', ') || '—';
               profileClassesEl.textContent = `Classes assignées: ${profileClasses}`;
             }
           }
@@ -4342,19 +4371,43 @@
     }
   }
 
+  function getTeacherClasses(teacherData) {
+    console.log('🔍 getTeacherClasses input:', teacherData || null);
+
+    if (!teacherData || typeof teacherData !== 'object') {
+      console.warn('⚠️ getTeacherClasses: teacherData undefined/invalid, returning []');
+      return [];
+    }
+
+    const rawClasses = teacherData.classes;
+    let classes = [];
+
+    if (Array.isArray(rawClasses)) {
+      classes = rawClasses
+        .map(v => (v || '').toString().trim())
+        .filter(Boolean);
+    } else if (typeof rawClasses === 'string') {
+      classes = rawClasses
+        .split(',')
+        .map(v => v.toString().trim())
+        .filter(Boolean);
+      if (!classes.length && rawClasses.trim()) {
+        classes = [rawClasses.trim()];
+      }
+    } else if (teacherData.class || teacherData.classe) {
+      classes = [(teacherData.class || teacherData.classe || '').toString().trim()].filter(Boolean);
+    }
+
+    console.log('✅ getTeacherClasses result:', classes);
+    return classes;
+  }
+
   function getTeacherClassFilter() {
     if (!currentTeacher) return [];
 
     const branchName = currentTeacher.branch || currentTeacher.schoolBranch || currentTeacher.branchName || '';
-    let baseClasses = [];
-
-    if (currentTeacher.classes && Array.isArray(currentTeacher.classes)) {
-      baseClasses = currentTeacher.classes.map(c => (c || '').toString().trim()).filter(c => c);
-    } else if (currentTeacher.class) {
-      baseClasses = [(currentTeacher.class || '').toString().trim()].filter(c => c);
-    } else if (currentTeacher.classe) {
-      baseClasses = [(currentTeacher.classe || '').toString().trim()].filter(c => c);
-    }
+    const baseClasses = getTeacherClasses(currentTeacher);
+    console.log('🔎 getTeacherClassFilter baseClasses:', baseClasses);
 
     return baseClasses
       .map(c => getClassBranchKey(c, branchName))
@@ -4390,8 +4443,17 @@
           snap = await db.ref(`teachers/${uid}`).once('value');
         }
         if (snap.exists()) {
-          currentTeacher = { uid, ...snap.val() };
-          console.log('✅ currentTeacher chargé:', currentTeacher);
+          const rawTeacher = snap.val() || {};
+          const normalizedClasses = getTeacherClasses(rawTeacher);
+          currentTeacher = {
+            uid,
+            id: rawTeacher.id || uid,
+            ...rawTeacher,
+            branch: (rawTeacher.branch || rawTeacher.branchName || rawTeacher.schoolBranch || '').toString().trim(),
+            classes: normalizedClasses,
+            class: normalizedClasses[0] || (rawTeacher.class || rawTeacher.classe || '').toString().trim(),
+          };
+          console.log('✅ currentTeacher chargé (normalisé):', currentTeacher);
         } else {
           console.error(`❌ Aucun profil enseignant trouvé pour l'UID: ${uid}`);
           return [];
@@ -4406,7 +4468,30 @@
     debugStudentBranchData.uniqueBranches.clear();
     debugStudentBranchData.nonMatchSamples = [];
 
-    const result = students.filter(s => isStudentMatch(s, currentTeacher));
+    const teacherClasses = getTeacherClasses(currentTeacher);
+    const teacherClassesNormalized = teacherClasses.map(c => normalizeClass(c)).filter(Boolean);
+    const teacherBranchNormalized = normalizeBranchValue(
+      currentTeacher?.branch || currentTeacher?.branche || currentTeacher?.schoolBranch || currentTeacher?.branchName || ''
+    );
+
+    console.log('🔎 getAccessibleStudents teacherData:', currentTeacher || null);
+    console.log('🔎 getAccessibleStudents teacherBranch (normalized):', teacherBranchNormalized);
+    console.log('🔎 getAccessibleStudents teacherClasses raw:', teacherClasses);
+    console.log('🔎 getAccessibleStudents teacherClasses normalized:', teacherClassesNormalized);
+
+    if (!teacherClassesNormalized.length) {
+      console.warn('⚠️ getAccessibleStudents: teacherClasses vide/invalid -> aucun élève accessible');
+      return [];
+    }
+
+    let result = students.filter(s => isStudentMatch(s, currentTeacher, teacherClassesNormalized));
+
+    // Fallback for Firebase edge-cases where branch is missing on some student records.
+    if (!result.length) {
+      console.warn('⚠️ getAccessibleStudents: aucun résultat, fallback activé (branche manquante autorisée)');
+      result = students.filter(s => isStudentMatch(s, currentTeacher, teacherClassesNormalized, { allowMissingBranchFallback: true }));
+      console.log('🔁 Fallback result count:', result.length);
+    }
 
     console.log('🔍 Total students checked:', students.length);
     console.log('✅ Filtered students:', result.length);
@@ -4421,7 +4506,7 @@
         JSON.stringify({
           uid: currentTeacher.uid || currentTeacher.id,
           branch: currentTeacher.branch || currentTeacher.branche || currentTeacher.schoolBranch,
-          classes: currentTeacher.classes || currentTeacher.class,
+          classes: teacherClassesNormalized,
         })
       );
     }
@@ -4429,8 +4514,9 @@
     return result;
   }
 
-  function isStudentMatch(student, teacher) {
+  function isStudentMatch(student, teacher, teacherClassesOverride = null, options = {}) {
     if (!student || !teacher) return false;
+    const allowMissingBranchFallback = !!options.allowMissingBranchFallback;
 
     // ── 1. Extraire les valeurs brutes ───────────────────────────────────
     const studentBranchRaw = student.branch || student.branche
@@ -4441,30 +4527,38 @@
     const teacherBranchRaw = teacher.branch || teacher.branche
       || teacher.schoolBranch || teacher.branchName || '';
 
-    const rawTeacherClasses = Array.isArray(teacher.classes)
-      ? teacher.classes.map(c => (c || '').toString().trim()).filter(Boolean)
-      : typeof teacher.classes === 'string' && teacher.classes.trim()
-        ? [teacher.classes.trim()]
-        : teacher.class
-          ? [(teacher.class || '').toString().trim()]
-          : teacher.classe
-            ? [(teacher.classe || '').toString().trim()]
-            : [];
+    const rawTeacherClasses = Array.isArray(teacherClassesOverride)
+      ? teacherClassesOverride
+      : getTeacherClasses(teacher);
 
     // ── 2. Normaliser ────────────────────────────────────────────────────
-    const studentBranch = normalizeBranchForMatch(studentBranchRaw
+    const studentBranch = normalizeBranchValue(studentBranchRaw
       || getBranchFromClassSuffix(studentClassRaw));
-    const teacherBranch = normalizeBranchForMatch(teacherBranchRaw
+    const teacherBranch = normalizeBranchValue(teacherBranchRaw
       || getBranchFromClassSuffix(rawTeacherClasses[0] || ''));
+    const studentClassNormalized = normalizeClass(studentClassRaw);
+    const teacherClassesNormalized = rawTeacherClasses
+      .map(c => normalizeClass(c))
+      .filter(Boolean);
+    const studentClassBase = normalizeClass((studentClassRaw || '').toString().split('_')[0]);
+    const teacherClassBases = rawTeacherClasses
+      .map(c => normalizeClass((c || '').toString().split('_')[0]))
+      .filter(Boolean);
 
     // Collecter les branches uniques pour le debug
     if (studentBranchRaw) debugStudentBranchData.uniqueBranches.add(studentBranchRaw);
 
     // ── 3. BRANCH MATCH ──────────────────────────────────────────────────
-    const branchMatch = areBranchesCompatible(studentBranch, teacherBranch);
+    let branchMatch = false;
+    if (!teacherBranch || !studentBranch) {
+      branchMatch = allowMissingBranchFallback;
+    } else {
+      branchMatch = studentBranch === teacherBranch;
+    }
 
     // ── 4. CLASS MATCH ───────────────────────────────────────────────────
-    const classMatch = areClassesCompatible(studentClassRaw, rawTeacherClasses);
+    const classMatch = teacherClassesNormalized.includes(studentClassNormalized)
+      || (studentClassBase && teacherClassBases.includes(studentClassBase));
 
     // ── 5. TEACHER-ID MATCH (prioritaire si assigne explicitement) ───────
     const teacherIds = [
@@ -4490,30 +4584,55 @@
     // ── 6. LOGIQUE FINALE ────────────────────────────────────────────────
     //  Si un eleve est explicitement assigne a cet enseignant, on l'affiche.
     //  Sinon, on applique le filtre branche/classe.
-    const teacherHasClasses = rawTeacherClasses.length > 0
-      && rawTeacherClasses.some(c => c.trim().length > 0);
+    const teacherHasClasses = teacherClassesNormalized.length > 0;
+
+    const reasons = [];
+    if (!teacherHasClasses) reasons.push('teacherClasses vide');
+    if (!studentClassNormalized) reasons.push('classe élève vide');
+    if (!classMatch) reasons.push('classe non incluse dans teacherClasses');
+    if (!branchMatch) reasons.push('branche non compatible (normalisée)');
+    if (studentTeacherIds.length > 0 && !teacherIdMatch) reasons.push('teacherId explicite différent');
 
     let finalMatch;
-    if (teacherIdMatch) {
-      finalMatch = true;
-    } else if (!teacherHasClasses) {
-      // Pas de classe configurée → filtre sur branche uniquement
-      finalMatch = branchMatch;
-    } else {
-      // Classe configurée → branche ET classe obligatoires
-      finalMatch = branchMatch && classMatch;
-    }
+    // Requirement: only students whose class is included in teacherClasses.
+    // If a student is explicitly assigned to another teacher, reject.
+    finalMatch = teacherHasClasses && classMatch && branchMatch && (teacherIdMatch || studentTeacherIds.length === 0);
+
+    console.log('👨‍🏫 Student match debug:', {
+      studentName: student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim() || '—',
+      teacherBranchRaw,
+      teacherBranchNormalized: teacherBranch,
+      teacherClassesRaw: rawTeacherClasses,
+      teacherClassesNormalized,
+      studentBranchRaw,
+      studentBranchNormalized: studentBranch,
+      studentClassRaw,
+      studentClassNormalized,
+      studentClassBase,
+      classMatch,
+      matchClass: classMatch,
+      branchMatch,
+      matchBranch: branchMatch,
+      teacherIdMatch,
+      finalMatch,
+      allowMissingBranchFallback,
+      reason: finalMatch ? 'match' : reasons.join(' | ')
+    });
 
     // Debug (premiers non-matches)
     if (!finalMatch && debugStudentBranchData.nonMatchSamples.length < 5) {
       debugStudentBranchData.nonMatchSamples.push({
         studentName: student.name || '—',
+        studentBranchRaw,
         studentBranch,
+        teacherBranchRaw,
         teacherBranch,
         studentClass: studentClassRaw,
-        teacherClasses: rawTeacherClasses,
+        studentClassNormalized,
+        teacherClasses: teacherClassesNormalized,
         branchMatch,
         classMatch,
+        reason: reasons.join(' | ')
       });
     }
 
@@ -4522,18 +4641,19 @@
 
   function getAccessibleBulletins(bulletins) {
     if (!currentTeacher) return [];
+    if (!Array.isArray(bulletins)) bulletins = [];
 
     // Extract teacher properties
     const loggedInTeacherId = currentTeacher.uid || currentTeacher.id || '';
     const teacherBranch = normalizeBranchForMatch(currentTeacher.branch || currentTeacher.branche || currentTeacher.schoolBranch || currentTeacher.branchName || '');
 
-    const rawTeacherClasses = Array.isArray(currentTeacher.classes)
-      ? currentTeacher.classes.map(c => (c || '').toString().trim()).filter(c => c)
-      : currentTeacher.class
-        ? [(currentTeacher.class || '').toString().trim()]
-        : currentTeacher.classe
-          ? [(currentTeacher.classe || '').toString().trim()]
-          : [];
+    const rawTeacherClasses = getTeacherClasses(currentTeacher);
+
+    if (!rawTeacherClasses.length) {
+      console.warn('⚠️ getAccessibleBulletins: teacherClasses vide/invalid -> aucun bulletin accessible');
+      console.log('📄 Bulletins total:', bulletins.length, 'Filtered:', 0);
+      return [];
+    }
 
     const teacherClassBases = rawTeacherClasses
       .map(c => (c || '').toString().trim().split('_')[0].toUpperCase())
@@ -4575,12 +4695,23 @@
         classMatch,
         branchMatch,
         teacherMatch,
-        finalMatch
+        finalMatch,
+        reason: finalMatch ? 'match' : [
+          !classMatch ? 'classe non incluse dans teacherClasses' : '',
+          !branchMatch ? 'branche non compatible' : '',
+          !teacherMatch ? 'enseignant non correspondant' : ''
+        ].filter(Boolean).join(' | ')
       });
 
       return finalMatch;
     });
 
+    console.log('📄 Bulletin debug summary:', {
+      totalBulletins: bulletins.length,
+      teacherClasses: rawTeacherClasses,
+      teacherBranch,
+      filteredBulletins: filtered.length
+    });
     console.log(`📄 Bulletins filtered: ${filtered.length} / ${bulletins.length}`);
     return filtered;
   }
@@ -6824,9 +6955,7 @@
         
         const teacherUid = currentTeacher.uid || currentTeacher.id || '';
         const teacherBranch = (currentTeacher.branch || currentTeacher.schoolBranch || '').toString().trim().toLowerCase();
-        const teacherClasses = Array.isArray(currentTeacher.classes) 
-          ? currentTeacher.classes.map(c => (c || '').toString().trim())
-          : [(currentTeacher.classes || '').toString().trim()];
+        const teacherClasses = getTeacherClasses(currentTeacher);
         
         // Rule 1: Check if student.teacherId matches teacher.uid
         if (studentTeacherId && studentTeacherId !== teacherUid) return false;
@@ -8241,14 +8370,45 @@
         .sort((a, b) => (a.studentName || "").localeCompare(b.studentName || ""));
 
       const normalizedTrimesterFilter = normalizeTrimesterFilter(trimesterFilter);
-      const bulletinsArray = normalizedTrimesterFilter === 'ALL'
-        ? bulletinsArrayAll
-        : bulletinsArrayAll.filter(b => matchesTrimesterFilter(b, normalizedTrimesterFilter));
+      let bulletinsArray = [];
+
+      if (normalizedTrimesterFilter === 'ALL') {
+        const byStudent = {};
+        bulletinsArrayAll.forEach(b => {
+          const sid = (b.studentId || '').toString().trim();
+          const tri = normalizeTrimesterFilter(b.trimester || b.trimestre || '');
+          if (!sid || !['1', '2', '3'].includes(tri)) return;
+
+          if (!byStudent[sid]) byStudent[sid] = {};
+          const current = byStudent[sid][tri];
+          if (!current || parseBulletinTimestamp(b) > parseBulletinTimestamp(current)) {
+            byStudent[sid][tri] = b;
+          }
+        });
+
+        bulletinsArray = Object.entries(byStudent)
+          .map(([sid, triMap]) => {
+            const representative = pickRepresentativeBulletin(triMap);
+            if (!representative) return null;
+            const mergedTrimesters = Object.keys(triMap).sort((a, b) => Number(a) - Number(b));
+            return {
+              ...representative,
+              studentId: sid,
+              _allStudentBulletins: triMap,
+              _virtualTrimester: mergedTrimesters.join('+') || 'ALL',
+              _mergedTrimesters: mergedTrimesters,
+              _mergedTrimestersLabel: mergedTrimesters.map(t => `T${t}`).join('+')
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+      } else {
+        bulletinsArray = bulletinsArrayAll.filter(b => matchesTrimesterFilter(b, normalizedTrimesterFilter));
+      }
       
       // 4. CHECK MISSING BULLETINS AND CREATE NOTIFICATIONS
-      const studentIds = filteredStudents.map(s => s.id);
-      const bulletinIds = bulletinsArray.map(b => b.studentId);
-      const missingStudents = filteredStudents.filter(s => !bulletinIds.includes(s.id));
+      const bulletinIds = new Set(bulletinsArray.map(b => (b.studentId || '').toString().trim()).filter(Boolean));
+      const missingStudents = filteredStudents.filter(s => !bulletinIds.has((s.id || '').toString().trim()));
       lastMissingStudents = missingStudents.map(s => ({
         id: s.id || s._id || '',
         name: s.name || `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.nom || 'Eleve inconnu',
@@ -8292,7 +8452,9 @@
           const student = filteredStudents.find(s => s.id === bulletin.studentId);
           const studentName = bulletin.studentName || (student ? (student.name || student.nom) : 'Élève inconnu');
           const studentClass = bulletin.class || (student ? (student.classes || student.classe) : 'Classe inconnue');
-          const trimestre = bulletin.trimester || bulletin.trimestre || 'N/A';
+          const trimestre = bulletin._mergedTrimestersLabel || bulletin.trimester || bulletin.trimestre || 'N/A';
+          const actionTrimester = bulletin._virtualTrimester || bulletin.trimester || bulletin.trimestre || 'N/A';
+          const editableTrimester = bulletin.trimester || bulletin.trimestre || 'N/A';
           const isAnnualBulletin = `${trimestre}`.toUpperCase() === 'BN';
           const annee = bulletin.annee || new Date().getFullYear();
           const pubDate = bulletin.publishedAt ? new Date(bulletin.publishedAt).toLocaleDateString('fr-FR') : 'N/A';
@@ -8383,13 +8545,13 @@
                 ${appreciationHtml}
               </div>
               <div class="bulletin-card-actions">
-                <button class="btn btn-green btn-sm" onclick="showDownloadTypeModal('${bulletin.studentId}', '${normalize(bulletin.class || bulletin.classe)}', '${trimestre}')">
+                <button class="btn btn-green btn-sm" onclick="showDownloadTypeModal('${bulletin.studentId}', '${normalize(bulletin.class || bulletin.classe)}', '${actionTrimester}')">
                   <i class="fas fa-download"></i> Télécharger
                 </button>
-                <button class="btn btn-purple btn-sm" onclick="openEditBulletinModal('${bulletin.studentId}', '${normalize(bulletin.class || bulletin.classe)}', '${trimestre}')">
+                <button class="btn btn-purple btn-sm" onclick="openEditBulletinModal('${bulletin.studentId}', '${normalize(bulletin.class || bulletin.classe)}', '${editableTrimester}')">
                   <i class="fas fa-edit"></i> Modifier
                 </button>
-                <button class="btn btn-danger btn-sm" onclick="deleteBulletin('${bulletin.studentId}', '${normalize(bulletin.class || bulletin.classe)}', '${trimestre}')">
+                <button class="btn btn-danger btn-sm" onclick="deleteBulletin('${bulletin.studentId}', '${normalize(bulletin.class || bulletin.classe)}', '${editableTrimester}')">
                   <i class="fas fa-trash"></i> Supprimer
                 </button>
               </div>
@@ -8730,6 +8892,30 @@
       // Find student to get branch
       const student = allStudents.find(s => s.id === studentId || s._id === studentId);
       const studentBranch = (student?.branch || student?.schoolBranch || 'maternelle').toLowerCase();
+
+      const trimRaw = (trimester || '').toString().trim().toUpperCase();
+      const isMergedTrimester = trimRaw === 'ALL' || /^\d\+\d(\+\d)?$/.test(trimRaw);
+
+      if (isMergedTrimester) {
+        const bundle = await fetchStudentTrimesterBundle(studentId, className, studentBranch, trimester);
+        if (!bundle) {
+          toast('Bulletin non trouvé', 'err');
+          return;
+        }
+
+        const studentSnapshot = await db.ref('students/' + studentId).once('value');
+        const studentData = studentSnapshot.exists() ? { id: studentId, ...studentSnapshot.val() } : (student || null);
+        const printArea = document.getElementById('printArea');
+        if (!printArea) {
+          toast('Zone d\'impression introuvable', 'err');
+          return;
+        }
+
+        printArea.innerHTML = generateA4BulletinHTML(bundle.representative, studentData, bundle.allStudentBulletins);
+        setTimeout(() => window.print(), 500);
+        toast('Impression lancée...', 'ok');
+        return;
+      }
       
       const candidatePaths = getBulletinEntryCandidatePaths(studentBranch, className, studentId, trimester);
       const legacyRefPath = `bulletins_${studentBranch}_${normalize(className)}/${studentId}_${trimester}`;
@@ -8789,6 +8975,34 @@
       const student = allStudents.find(s => s.id === studentId || s._id === studentId);
       const studentBranch = (student?.branch || student?.schoolBranch || 'maternelle').toLowerCase();
 
+      const trimRaw = (trimester || '').toString().trim().toUpperCase();
+      const isMergedTrimester = trimRaw === 'ALL' || /^\d\+\d(\+\d)?$/.test(trimRaw);
+
+      if (isMergedTrimester) {
+        const bundle = await fetchStudentTrimesterBundle(studentId, className, studentBranch, trimester);
+        if (!bundle) {
+          toast('Bulletin non trouvé', 'err');
+          return;
+        }
+
+        const studentSnapshot = await db.ref('students/' + studentId).once('value');
+        const studentData = studentSnapshot.exists() ? { id: studentId, ...studentSnapshot.val() } : (student || null);
+
+        const printArea = document.getElementById('printArea');
+        const previewContent = document.getElementById('previewContent');
+        if (!printArea || !previewContent) {
+          toast('Zone de prévisualisation introuvable', 'err');
+          return;
+        }
+
+        printArea.innerHTML = generateA4BulletinHTML(bundle.representative, studentData, bundle.allStudentBulletins);
+        previewContent.innerHTML = printArea.innerHTML;
+
+        const previewArea = document.getElementById('previewArea');
+        if (previewArea) previewArea.style.display = 'block';
+        return;
+      }
+
       const candidatePaths = getBulletinEntryCandidatePaths(studentBranch, className, studentId, trimester);
       const legacyRefPath = `bulletins_${studentBranch}_${normalize(className)}/${studentId}_${trimester}`;
 
@@ -8813,7 +9027,7 @@
 
       const bulletin = bulletinSnapshot.val();
       
-      if (bulletin.status !== 'published') {
+      if (!isPublishedOrLegacyBulletin(bulletin)) {
         toast('Bulletin non publié', 'err');
         return;
       }
@@ -9189,6 +9403,66 @@
       }
       window.lastDownloadBulletinKey = renderKey;
 
+      const studentFallback = allStudents.find(s => s.id === studentId || s._id === studentId);
+      const studentBranch = (studentFallback?.branch || studentFallback?.schoolBranch || currentTeacher?.branch || currentTeacher?.schoolBranch || 'maternelle').toString().toLowerCase();
+      const trimRaw = (trimester || '').toString().trim().toUpperCase();
+      const isMergedTrimester = trimRaw === 'ALL' || /^\d\+\d(\+\d)?$/.test(trimRaw);
+
+      if (isMergedTrimester) {
+        const bundle = await fetchStudentTrimesterBundle(studentId, className, studentBranch, trimester);
+        if (!bundle) {
+          toast('Bulletin non trouvé - Vérifiez que le bulletin est publié', 'error');
+          return;
+        }
+
+        const studentSnapshot = await db.ref('students/' + studentId).once('value');
+        const student = studentSnapshot.exists() ? { id: studentId, ...studentSnapshot.val() } : studentFallback;
+
+        const printArea = document.getElementById('printArea');
+        if (!printArea) {
+          toast('Erreur: zone d\'export introuvable', 'error');
+          return;
+        }
+
+        if (!isReusePreview) {
+          if (type === 'academic') {
+            printArea.innerHTML = generateA4BulletinHTML(bundle.representative, student, bundle.allStudentBulletins);
+          } else {
+            await loadBulletinConduite(bundle.representative, student);
+          }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        const studentNameRaw = (bundle.representative.studentName || bundle.representative.name || student?.name || 'eleve').trim();
+        const safeName = studentNameRaw.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toUpperCase();
+        const filename = `Bulletin_${safeName}_${trimester || 'export'}.pdf`;
+
+        const options = {
+          margin: [0, 0, 0, 0],
+          filename: filename,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            allowTaint: true
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'avoid-all'], before: '.page-break' }
+        };
+
+        if (typeof html2pdf !== 'undefined') {
+          html2pdf().set(options).from(printArea).save();
+        } else {
+          toast('Erreur: html2pdf n\'est pas disponible', 'error');
+          return;
+        }
+
+        toast('Téléchargement du PDF lancé', 'ok');
+        return;
+      }
+
       // Try new hierarchical path first, then legacy fields
       const classKey = normalizeClassKey(className);
       const newPaths = [
@@ -9229,7 +9503,7 @@
 
       const bulletin = bulletinSnapshot.val();
 
-      if (bulletin.status !== 'published') {
+      if (!isPublishedOrLegacyBulletin(bulletin)) {
         toast('Le bulletin n\'est pas publié. Statut: ' + (bulletin.status || 'inconnu'), 'error');
         console.warn('Bulletin status:', bulletin.status);
         return;
@@ -9341,6 +9615,90 @@
     return raw;
   }
 
+  function isPublishedOrLegacyBulletin(data) {
+    if (!data) return false;
+    const status = (data.status || '').toString().trim().toLowerCase();
+    return !status || status === 'published';
+  }
+
+  function parseBulletinTimestamp(data) {
+    const raw = parseInt(data?.publishedAt || data?.updatedAt || data?.createdAt || '0', 10);
+    return Number.isFinite(raw) ? raw : 0;
+  }
+
+  function getEffectiveTrimesterList(trimesterSelection) {
+    const raw = (trimesterSelection || '').toString().trim().toUpperCase();
+    if (!raw || raw === 'ALL') return ['1', '2', '3'];
+    if (/^\d\+\d(\+\d)?$/.test(raw)) return raw.split('+').filter(Boolean);
+    if (raw === 'T1+T2') return ['1', '2'];
+
+    const normalized = normalizeTrimesterFilter(raw);
+    if (normalized === 'ALL') return ['1', '2', '3'];
+    return [normalized];
+  }
+
+  function pickRepresentativeBulletin(trimesterMap) {
+    const preferredOrder = ['2', '1', '3'];
+    for (const tri of preferredOrder) {
+      if (trimesterMap[tri]) return trimesterMap[tri];
+    }
+    const values = Object.values(trimesterMap || {});
+    if (!values.length) return null;
+    values.sort((a, b) => parseBulletinTimestamp(b) - parseBulletinTimestamp(a));
+    return values[0] || null;
+  }
+
+  async function fetchStudentTrimesterBundle(studentId, className, branchName, trimesterSelection = 'ALL') {
+    const trimesters = getEffectiveTrimesterList(trimesterSelection)
+      .map(t => normalizeTrimesterFilter(t))
+      .filter(t => ['1', '2', '3', 'BN'].includes(t));
+
+    const uniqueTri = Array.from(new Set(trimesters));
+    if (!studentId || !className || !uniqueTri.length) return null;
+
+    const allStudentBulletins = {};
+
+    for (const tri of uniqueTri) {
+      const candidatePaths = getBulletinEntryCandidatePaths(branchName, className, studentId, tri);
+      const legacyPath = `bulletins_${normalizeBranchForMatch(branchName) || 'maternelle'}_${normalize(className)}/${studentId}_${tri}`;
+      const fallbackPath = `bulletins_${normalize(className)}/${studentId}_${tri}`;
+      const paths = Array.from(new Set([...candidatePaths, legacyPath, fallbackPath]));
+
+      for (const path of paths) {
+        const snap = await db.ref(path).once('value');
+        if (!snap.exists()) continue;
+
+        const data = snap.val();
+        if (!isPublishedOrLegacyBulletin(data)) continue;
+
+        allStudentBulletins[tri] = {
+          id: snap.key,
+          ...data,
+          studentId: data.studentId || studentId,
+          class: data.class || data.classe || className,
+          branch: data.branch || data.branchName || branchName,
+          _sourcePath: path,
+          _resolvedTrimester: tri
+        };
+        break;
+      }
+    }
+
+    const representative = pickRepresentativeBulletin(allStudentBulletins);
+    if (!representative) return null;
+
+    const mergedTrimesters = Object.keys(allStudentBulletins)
+      .filter(t => ['1', '2', '3'].includes(t))
+      .sort((a, b) => Number(a) - Number(b));
+
+    return {
+      representative,
+      allStudentBulletins,
+      mergedTrimesters,
+      mergedLabel: mergedTrimesters.length ? mergedTrimesters.map(t => `T${t}`).join('+') : 'T?'
+    };
+  }
+
   function matchesTrimesterFilter(bulletin, normalizedFilter) {
     if (!normalizedFilter || normalizedFilter === 'ALL') return true;
     const tri = normalizeTrimesterFilter(bulletin?.trimester || bulletin?.trimestre || '');
@@ -9376,7 +9734,7 @@
         if (!snap.exists()) continue;
 
         const data = snap.val();
-        if (!data || data.status !== 'published') continue;
+        if (!isPublishedOrLegacyBulletin(data)) continue;
 
         return {
           id: snap.key,
@@ -9420,9 +9778,24 @@
       // No class filter anymore, this selector is trimester-based
       const filteredStudents = students;
 
-      // 2. FETCH LATEST PUBLISHED BULLETIN BY ACCESSIBLE STUDENT (for selected trimester)
+      // 2. FETCH BULLETINS BY STUDENT
+      // For ALL: merge trimesters (T1+T2[+T3]) into one rendered bulletin per student.
       const bulletinResults = await Promise.all(
-        filteredStudents.map(student => getLatestPublishedBulletinForStudent(student, teacherBranch, normalizedTrimesterFilter === 'ALL' ? 'all' : normalizedTrimesterFilter))
+        filteredStudents.map(async (student) => {
+          if (normalizedTrimesterFilter === 'ALL') {
+            const className = getStudentClassRaw(student);
+            const bundle = await fetchStudentTrimesterBundle(student.id || student._id, className, teacherBranch, 'ALL');
+            if (!bundle) return null;
+            return {
+              ...bundle.representative,
+              _allStudentBulletins: bundle.allStudentBulletins,
+              _virtualTrimester: bundle.mergedTrimesters.join('+') || 'ALL',
+              _mergedTrimestersLabel: bundle.mergedLabel
+            };
+          }
+
+          return getLatestPublishedBulletinForStudent(student, teacherBranch, normalizedTrimesterFilter);
+        })
       );
       const uniqueBulletins = bulletinResults.filter(Boolean);
       const missingStudents = filteredStudents.filter((_, idx) => !bulletinResults[idx]);
@@ -9470,16 +9843,14 @@
 
         try {
           const fullBulletin = { ...bulletin };
+          const allStudentBulletins = fullBulletin._allStudentBulletins || {};
           console.log('✅ Loaded full bulletin with skills:', fullBulletin.skills ? Object.keys(fullBulletin.skills).length + ' subjects' : 'No skills');
 
           fullBulletin.skills = convertSkillPointsToGrades(fullBulletin.skills);
 
           const studentName = (fullBulletin.studentName || student.name || 'eleve_inconnu').trim();
-          const safeFileName = studentName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toUpperCase();
-          const studentCode = getStudentInitials(studentName);
-          const studentZipFolderName = `${studentCode}_${safeFileName}`;
 
-          const fullHtml = generateA4BulletinHTML(fullBulletin, student);
+          const fullHtml = generateA4BulletinHTML(fullBulletin, student, allStudentBulletins);
           const parser = new DOMParser();
           const doc = parser.parseFromString(fullHtml, 'text/html');
           const acadElem = doc.getElementById('bulAcad');
@@ -11330,12 +11701,7 @@
   }
 
   function getCurrentTeacherClassesList() {
-    if (!currentTeacher) return [];
-    if (Array.isArray(currentTeacher.classes)) return currentTeacher.classes.filter(Boolean).map(v => `${v}`.trim());
-    if (currentTeacher.classes) return [`${currentTeacher.classes}`.trim()];
-    if (currentTeacher.class) return [`${currentTeacher.class}`.trim()];
-    if (currentTeacher.classe) return [`${currentTeacher.classe}`.trim()];
-    return [];
+    return getTeacherClasses(currentTeacher);
   }
 
   async function loadTermConfiguration() {
