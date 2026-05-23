@@ -3485,8 +3485,8 @@
             <div class="modal-content registration-modern-modal">
                 <div class="modal-header registration-modern-header">
                     <div>
-                        <h5 class="modal-title mb-1">FORMULAIRE D'INSCRIPTION SCOLAIRE</h5>
-                        <small class="registration-subtitle">Design moderne, mêmes fonctions</small>
+                        <h5 class="modal-title mb-1" id="registrationModalTitle">FORMULAIRE D'INSCRIPTION SCOLAIRE</h5>
+                        <small class="registration-subtitle" id="registrationModalSubtitle">Design moderne, mêmes fonctions</small>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -3652,7 +3652,7 @@
                 </div>
                 <div class="modal-footer d-flex flex-wrap gap-2 justify-content-end registration-modern-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn-modern btn-primary-modern" onclick="saveRegistrationAndGenerateID()">
+                    <button type="button" class="btn-modern btn-primary-modern" id="registrationSaveBtn" onclick="saveRegistrationAndGenerateID()">
                         <i class="fas fa-user-check me-2"></i>Register & Generate ID
                     </button>
                     <button type="button" class="btn-modern btn-outline-secondary" id="downloadAdmissionLetterBtn" style="display:none;" onclick="downloadAdmissionLetter(null)">
@@ -10042,6 +10042,17 @@
         function showStudentModal() {
             document.getElementById('registrationForm').reset();
             currentStudentId = null;
+            currentRegisteredStudentId = null;
+            currentRegisteredStudentData = null;
+
+            const titleEl = document.getElementById('registrationModalTitle');
+            const subtitleEl = document.getElementById('registrationModalSubtitle');
+            const saveBtn = document.getElementById('registrationSaveBtn');
+            if (titleEl) titleEl.textContent = "FORMULAIRE D'INSCRIPTION SCOLAIRE";
+            if (subtitleEl) subtitleEl.textContent = 'Design moderne, mêmes fonctions';
+            if (saveBtn) {
+                saveBtn.innerHTML = '<i class="fas fa-user-check me-2"></i>Register & Generate ID';
+            }
 
             document.getElementById('regChildFullName').value = '';
             document.getElementById('regChildBirthDate').value = '';
@@ -10074,6 +10085,101 @@
             
             const modal = new bootstrap.Modal(document.getElementById('registrationFormModal'));
             modal.show();
+        }
+
+        function resolveRegistrationBranchValue(student) {
+            const normalized = normalizeStudentBranch(student?.branch || student?.branche || selectedBranch);
+            if (normalized === 'kacyiru' || normalized === 'kimisagara') return normalized;
+            if (normalized === 'gisozi' || normalized === 'gisozi_maternelle' || normalized === 'gisozi_primaire') return 'gisozi_maternelle';
+            return 'kacyiru';
+        }
+
+        async function openStudentEditModal(student) {
+            showStudentModal();
+
+            const titleEl = document.getElementById('registrationModalTitle');
+            const subtitleEl = document.getElementById('registrationModalSubtitle');
+            const saveBtn = document.getElementById('registrationSaveBtn');
+            if (titleEl) titleEl.textContent = 'MODIFIER ÉLÈVE';
+            if (subtitleEl) subtitleEl.textContent = 'Mise à jour rapide avec le formulaire d\'inscription';
+            if (saveBtn) {
+                saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Mettre à jour l\'élève';
+            }
+
+            currentStudentId = student.id;
+            currentRegisteredStudentId = student.id;
+            currentRegisteredStudentData = student;
+
+            const fullName = student.name || student.fullName || '';
+            const studentClass = (student.class || student.classes || student.classe || '').toString().trim();
+
+            document.getElementById('regChildFullName').value = fullName;
+            document.getElementById('regChildBirthDate').value = student.birthDate || '';
+
+            const genderRaw = (student.gender || student.sexe || '').toString().toLowerCase();
+            const genderValue = genderRaw.includes('f') ? 'fille' : 'garcon';
+            const genderRadio = document.querySelector(`input[name="regChildGender"][value="${genderValue}"]`);
+            if (genderRadio) genderRadio.checked = true;
+
+            document.getElementById('regPreviousSchool').value = student.previousSchool || student.ecoleProvenance || '';
+
+            const branchValue = resolveRegistrationBranchValue(student);
+            const branchRadio = document.querySelector(`input[name="regBranch"][value="${branchValue}"]`);
+            if (branchRadio) branchRadio.checked = true;
+            await populateRegistrationClassesByBranch(branchValue);
+            if (typeof applyBranchFeeRules === 'function') {
+                applyBranchFeeRules(branchValue, '1');
+            }
+
+            const classSelect = document.getElementById('regRequestedClass');
+            if (studentClass) {
+                if (!Array.from(classSelect.options).some(option => option.value === studentClass)) {
+                    const option = document.createElement('option');
+                    option.value = studentClass;
+                    option.textContent = `${studentClass} (actuelle)`;
+                    classSelect.appendChild(option);
+                }
+                classSelect.value = studentClass;
+                document.getElementById('regAssignedClass').value = studentClass;
+            }
+
+            const transportMonthlyFee = Number(student.transportMonthlyFee || 0);
+            const transportEnabled = !!student.transportEnrolled || transportMonthlyFee > 0;
+            document.getElementById('regTransportBus').checked = transportEnabled;
+            toggleRegTransportBus();
+            if (transportEnabled && transportMonthlyFee > 0) {
+                const feeSelect = document.getElementById('regTransportBusFee');
+                const feeText = String(transportMonthlyFee);
+                if (Array.from(feeSelect.options).some(option => option.value === feeText)) {
+                    feeSelect.value = feeText;
+                } else {
+                    feeSelect.value = 'other';
+                    toggleRegTransportCustomFee();
+                    document.getElementById('regTransportCustomFee').value = transportMonthlyFee;
+                }
+            }
+
+            document.getElementById('regParentName').value = student.parent || student.parentName || '';
+            document.getElementById('regParentPhone').value = student.parentPhone || '';
+            document.getElementById('regParentID').value = student.parentID || '';
+            document.getElementById('regSpouseName').value = student.spouseName || student.conjoint || '';
+            document.getElementById('regSpousePhone').value = student.spousePhone || '';
+            document.getElementById('regSpouseID').value = student.spouseID || '';
+            document.getElementById('regAddress').value = student.address || '';
+            document.getElementById('regFeeAmount').value = Number(student.inscriptionFeeAmount || 0);
+            document.getElementById('regPaymentMode').value = 'cash';
+            document.getElementById('regTransactionRef').value = '';
+            document.getElementById('regNotes').value = student.notes || '';
+
+            const admissionBtn = document.getElementById('downloadAdmissionLetterBtn');
+            const registrationBtn = document.getElementById('downloadRegistrationFormBtn');
+            const deleteBtn = document.getElementById('deleteRegisteredStudentBtn');
+            admissionBtn.style.display = 'inline-flex';
+            registrationBtn.style.display = 'inline-flex';
+            deleteBtn.style.display = 'inline-flex';
+            admissionBtn.onclick = () => downloadAdmissionLetter(student.id);
+            registrationBtn.onclick = () => downloadRegistrationForm(student.id);
+            deleteBtn.onclick = () => deleteCurrentRegisteredStudent();
         }
 
         function showRegistrationModal() {
@@ -10158,15 +10264,24 @@
             const feeAmount = Number(document.getElementById('regFeeAmount').value || 0);
             const paymentMode = document.getElementById('regPaymentMode').value;
             const transactionRef = document.getElementById('regTransactionRef').value.trim();
+            const studentClass = assignedClass || requestedClass;
+            const isEditMode = !!currentStudentId;
+            const existingStudent = isEditMode ? students.find(s => s.id === currentStudentId) : null;
 
-            if (!fullName || !birthDate || !gender || !branch || !parentName || !parentPhone || feeAmount <= 0) {
-                showToast('Please fill in all required fields before registering.', 'error');
+            if (!fullName || !birthDate || !gender || !branch || !parentName || !parentPhone || !studentClass) {
+                showToast('Please fill in all required fields.', 'error');
                 form.reportValidity();
                 return;
             }
 
-            const generatedUID = generateStudentUID(branch, assignedClass || requestedClass, fullName);
-            const studentClass = assignedClass || requestedClass;
+            if (!isEditMode && feeAmount <= 0) {
+                showToast('Registration fee is required for new registrations.', 'error');
+                return;
+            }
+
+            const generatedUID = isEditMode
+                ? ((existingStudent && existingStudent.reference) || generateStudentUID(branch, studentClass, fullName))
+                : generateStudentUID(branch, studentClass, fullName);
             const studentLevel = getLevelFromClassName(studentClass, branch);
             const academicYear = (currentTermConfig && currentTermConfig.academicYear) ? currentTermConfig.academicYear : '';
 
@@ -10193,12 +10308,39 @@
                 coachingEnrolled: false,
                 coachingMonthlyFee: 0,
                 status: 'active',
-                timestamp: Date.now(),
-                createdBy: currentUserName,
-                academicYear
+                timestamp: (existingStudent && existingStudent.timestamp) || Date.now(),
+                createdBy: (existingStudent && existingStudent.createdBy) || currentUserName,
+                updatedAt: Date.now(),
+                academicYear: academicYear || (existingStudent && existingStudent.academicYear) || ''
             };
 
             try {
+                if (isEditMode) {
+                    await studentsRef.child(currentStudentId).update(studentData);
+                    currentRegisteredStudentId = currentStudentId;
+                    currentRegisteredStudentData = { ...(existingStudent || {}), ...studentData };
+
+                    showToast('Student updated successfully!', 'success');
+
+                    const admissionBtn = document.getElementById('downloadAdmissionLetterBtn');
+                    const registrationBtn = document.getElementById('downloadRegistrationFormBtn');
+                    const deleteBtn = document.getElementById('deleteRegisteredStudentBtn');
+                    admissionBtn.style.display = 'inline-flex';
+                    registrationBtn.style.display = 'inline-flex';
+                    deleteBtn.style.display = 'inline-flex';
+                    admissionBtn.onclick = () => downloadAdmissionLetter(currentStudentId);
+                    registrationBtn.onclick = () => downloadRegistrationForm(currentStudentId);
+                    deleteBtn.onclick = () => deleteCurrentRegisteredStudent();
+
+                    if (typeof recalculateExpectedIncome === 'function') {
+                        recalculateExpectedIncome();
+                    }
+                    if (typeof applyStudentFilters === 'function') {
+                        applyStudentFilters();
+                    }
+                    return;
+                }
+
                 const newStudentRef = await studentsRef.push(studentData);
                 const newStudentKey = newStudentRef.key;
                 currentRegisteredStudentId = newStudentKey;
@@ -10895,76 +11037,15 @@
         // Edit student
         function editStudent(studentId) {
             const student = students.find(s => s.id === studentId);
-            if (!student) return;
-
-            const legacyModal = document.getElementById('studentModal');
-            const legacyReferenceInput = document.getElementById('studentReference');
-
-            // Legacy modal path (if old elements still exist)
-            if (legacyModal && legacyReferenceInput) {
-                currentStudentId = studentId;
-
-                const setValueIfExists = (id, value) => {
-                    const element = document.getElementById(id);
-                    if (!element) return;
-                    element.value = value;
-                };
-                const setCheckedIfExists = (id, checked) => {
-                    const element = document.getElementById(id);
-                    if (!element) return;
-                    element.checked = !!checked;
-                };
-
-                setValueIfExists('studentReference', student.reference || '');
-                setValueIfExists('studentFullName', student.name || student.fullName || '');
-                setValueIfExists('studentBirthDate', student.birthDate || '');
-                setValueIfExists('studentClass', student.class || student.classes || '');
-                setValueIfExists('studentParent', student.parent || '');
-                setValueIfExists('studentParentPhone', student.parentPhone || '');
-                setValueIfExists('studentBranch', student.branch || selectedBranch);
-                setCheckedIfExists('studentInscriptionFee', !!student.inscriptionFee);
-                setValueIfExists('studentInscriptionFeeAmount', student.inscriptionFeeAmount || 0);
-                setCheckedIfExists('studentCoachingEnrolled', !!student.coachingEnrolled);
-                setValueIfExists('studentCoachingMonthlyFee', student.coachingMonthlyFee || 0);
-                setCheckedIfExists('studentTransportEnrolled', !!student.transportEnrolled);
-                setValueIfExists('studentTransportMonthlyFee', student.transportMonthlyFee || 0);
-
-                if (typeof toggleInscriptionFeeAmount === 'function') toggleInscriptionFeeAmount();
-                if (typeof toggleCoachingMonthlyFee === 'function') toggleCoachingMonthlyFee();
-                if (typeof toggleTransportMonthlyFee === 'function') toggleTransportMonthlyFee();
-
-                const modal = new bootstrap.Modal(legacyModal);
-                modal.show();
+            if (!student) {
+                showToast('Student not found', 'error');
                 return;
             }
 
-            // Safe fallback without legacy modal: update using prompts
-            const nextName = prompt('Student full name:', student.name || student.fullName || '');
-            if (nextName === null) return;
-            const nextClass = prompt('Class:', student.class || student.classes || '');
-            if (nextClass === null) return;
-            const nextParent = prompt('Parent name:', student.parent || '');
-            if (nextParent === null) return;
-            const nextPhone = prompt('Parent phone:', student.parentPhone || '');
-            if (nextPhone === null) return;
-
-            const payload = {
-                name: (nextName || '').trim(),
-                fullName: (nextName || '').trim(),
-                class: (nextClass || '').trim(),
-                classes: (nextClass || '').trim(),
-                parent: (nextParent || '').trim(),
-                parentPhone: (nextPhone || '').trim(),
-                updatedAt: Date.now(),
-                timestamp: Date.now()
-            };
-
-            studentsRef.child(studentId).update(payload)
-                .then(() => showToast('Student updated successfully!', 'success'))
-                .catch(error => {
-                    console.error('Error updating student:', error);
-                    showToast('Error updating student', 'error');
-                });
+            openStudentEditModal(student).catch(error => {
+                console.error('Error opening edit modal:', error);
+                showToast('Unable to open student edit popup.', 'error');
+            });
         }
 
         // Save student
