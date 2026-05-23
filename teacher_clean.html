@@ -2281,7 +2281,6 @@
       <button class="sb-btn" onclick="navTo('performance')"><i class="fas fa-chart-line"></i> Performance</button>
       <button class="sb-btn" onclick="navTo('history')"><i class="fas fa-download"></i> Télécharger</button>
       <button class="sb-btn" onclick="navTo('cotation')"><i class="fas fa-pen-ruler"></i> Fiche de Cotation</button>
-      <button class="sb-btn" onclick="openFichePreparation()"><i class="fas fa-book-open"></i> Fiche de Préparation <span class="sb-badge" style="background:var(--orange);color:#fff;font-size:.55rem;padding:1px 5px;border-radius:999px;margin-left:4px;">BIENTÔT</span></button>
     </nav>
 
     <div class="sb-footer">
@@ -2332,7 +2331,7 @@
         <div class="um-role" id="umRole">Enseignant</div>
       </div>
       <div class="um-item" onclick="navTo('profile'); closeUserMenu();"><i class="fas fa-user-circle"></i> Mon profil</div>
-      <div class="um-item" onclick="openSettings()"><i class="fas fa-cog"></i> Paramètres</div>
+      <div class="um-item" onclick="navTo('settings'); closeUserMenu();"><i class="fas fa-cog"></i> Paramètres du compte</div>
       <div class="um-item" onclick="openHelp()"><i class="fas fa-question-circle"></i> Aide & Support</div>
       <div class="um-item danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</div>
     </div>
@@ -3145,8 +3144,21 @@
           <p id="profileClasses" style="opacity:.8;font-size:.85rem;">Classes assignées: —</p>
         </div>
 
+        <div class="card" style="padding:16px;">
+          <p style="color:var(--txt-lt);font-size:.85rem;"><i class="fas fa-arrow-right" style="color:var(--blue);margin-right:6px;"></i>Pour modifier votre email, mot de passe ou nom, accédez à <strong><a href="#" onclick="navTo('settings');return false;" style="color:var(--blue);">Paramètres du compte</a></strong>.</p>
+        </div>
+      </div><!-- end page-profile -->
+
+      <!-- ═══════════════════════════════════
+          SETTINGS PAGE
+      ═══════════════════════════════════ -->
+      <div class="page" id="page-settings">
+        <div class="sec-hd">
+          <div class="sec-hd-left"><h1>Paramètres du compte</h1><p>Sécurité, notifications et préférences</p></div>
+        </div>
+
         <div class="card">
-          <div class="card-hd"><div class="card-ttl"><i class="fas fa-cog"></i> Paramètres du compte</div></div>
+          <div class="card-hd"><div class="card-ttl"><i class="fas fa-bell"></i> Notifications & Langue</div></div>
           <div class="f-group">
             <label class="f-label">Notification par email</label>
             <select class="f-input" id="notifSettings">
@@ -3162,7 +3174,11 @@
               <option value="en">English</option>
             </select>
           </div>
-          <hr style="border:none;border-top:1px solid var(--bdr);margin:14px 0;">
+          <button class="btn btn-blue" onclick="saveSettings()">Enregistrer les paramètres</button>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><div class="card-ttl"><i class="fas fa-key"></i> Sécurité du compte</div></div>
           <div class="f-group">
             <label class="f-label">Nouvel email de connexion</label>
             <div style="display:flex;gap:8px;align-items:center;">
@@ -3200,7 +3216,6 @@
               <span id="accountConfirmPasswordStatus" title="Correspondance" style="font-size:1rem;line-height:1;">❌</span>
             </div>
           </div>
-
           <div class="f-group" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
             <button class="btn btn-green" id="updateEmailBtn" onclick="updateUserEmail()" disabled>
               <i class="fas fa-envelope"></i> Mettre a jour email
@@ -3212,10 +3227,8 @@
               <i class="fas fa-key"></i> Mettre a jour les deux
             </button>
           </div>
-
           <div id="updateEmailMsg" style="display:none;margin:8px 0 4px;padding:8px 10px;border-radius:8px;font-size:.82rem;"></div>
           <div id="updatePasswordMsg" style="display:none;margin:4px 0 10px;padding:8px 10px;border-radius:8px;font-size:.82rem;"></div>
-
           <hr style="border:none;border-top:1px solid var(--bdr,#e0e0e0);margin:14px 0;">
           <div class="f-group">
             <label class="f-label">Changer le nom d'affichage</label>
@@ -3230,8 +3243,6 @@
             </button>
           </div>
           <div id="updateNameMsg" style="display:none;margin:8px 0 4px;padding:8px 10px;border-radius:8px;font-size:.82rem;"></div>
-
-          <button class="btn btn-blue" onclick="saveSettings()">Enregistrer les paramètres</button>
         </div>
 
         <div class="card help-section">
@@ -4600,6 +4611,7 @@
     performance: { ttl:'Performance',             sub:'Statistiques par matière et classe' },
     history:     { ttl:'Historique bulletins',    sub:'Bulletins générés et sauvegardés' },
     profile:     { ttl:'Mon profil',              sub:'Informations personnelles' },
+    settings:    { ttl:'Paramètres du compte',    sub:'Sécurité, notifications et préférences' },
   };
 
   function navTo(pageId) {
@@ -4633,6 +4645,7 @@
     if (pageId==='bulletins')   initBulletinForm();
     if (pageId==='performance') updatePerfCharts();
     if (pageId==='history')     loadBulletinHistory();
+    if (pageId==='settings')     syncAccountCredentialInputs();
 
     closeUserMenu();
     closeSidebar();
@@ -4963,7 +4976,7 @@
   }
 
   function openSettings() {
-    navTo('profile');
+    navTo('settings');
   }
 
   function syncAccountCredentialInputs() {
@@ -5013,8 +5026,8 @@
   }
 
   function openHelp() {
-    navTo('profile');
-    const helpSection = document.querySelector('#page-profile .help-section');
+    navTo('settings');
+    const helpSection = document.querySelector('#page-settings .help-section');
     if (helpSection) {
       setTimeout(() => helpSection.scrollIntoView({ behavior: 'smooth' }), 100);
     }
@@ -11397,16 +11410,13 @@
       bAnnee.value = academicYear;
     }
 
-    const historySel = document.getElementById('historyClassSelect');
-    if (historySel && currentTerm) historySel.value = currentTerm;
-
     const tbSubEl = document.getElementById('tbSub');
     if (tbSubEl) tbSubEl.textContent = `Annee ${academicYear} — ${getCurrentTermName()}`;
   }
 
   function ensureTermConfigCard() {
-    const profilePage = document.getElementById('page-profile');
-    if (!profilePage) return;
+    const settingsPage = document.getElementById('page-settings') || document.getElementById('page-profile');
+    if (!settingsPage) return;
     let card = document.getElementById('termConfigCard');
     if (!card) {
       card = document.createElement('div');
@@ -11416,9 +11426,9 @@
         <div class="card-hd"><div class="card-ttl"><i class="fas fa-calendar-alt"></i> Configuration du trimestre</div></div>
         <div id="termConfigContent" style="font-size:.84rem;color:var(--txt);"></div>
       `;
-      const help = profilePage.querySelector('.help-section');
+      const help = settingsPage.querySelector('.help-section');
       if (help?.parentNode) help.parentNode.insertBefore(card, help);
-      else profilePage.appendChild(card);
+      else settingsPage.appendChild(card);
     }
 
     const t = getCurrentTermConfigObj();
@@ -12858,6 +12868,34 @@
         </div>
       </div>
       <div id="cotPeriodBadge" class="cot-period-badge" style="display:none;margin:0 0 8px 2px;"><i class="fas fa-calendar-alt"></i> <span id="cotPeriodBadgeText"></span></div>
+
+      <!-- Saisie Rapide : sélection élève + point résolu -->
+      <div class="card" style="padding:12px 14px;margin-bottom:8px;border-left:4px solid #0f3d72;">
+        <div style="font-weight:800;font-size:.82rem;color:#0f3d72;margin-bottom:8px;letter-spacing:.03em;"><i class="fas fa-user-edit"></i> Saisie Rapide — Élève</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+          <div class="f-group" style="min-width:220px;flex:2">
+            <label class="f-label">Sélectionner l'élève</label>
+            <select class="f-input" id="cotQuickStudent" onchange="onCotQuickStudentChange()">
+              <option value="">— Choisir un élève —</option>
+            </select>
+          </div>
+          <div class="f-group" style="min-width:120px;">
+            <label class="f-label">Sous-branche</label>
+            <select class="f-input" id="cotQuickSubBranch">
+              <option value="">— Choisir —</option>
+            </select>
+          </div>
+          <div class="f-group" style="min-width:90px;">
+            <label class="f-label">Points obtenus</label>
+            <input type="number" class="f-input" id="cotQuickScore" min="0" placeholder="ex: 8" style="width:90px;">
+          </div>
+          <div>
+            <button class="btn btn-blue" onclick="applyCotQuickScore()" style="margin-top:18px;"><i class="fas fa-check"></i> Appliquer</button>
+          </div>
+          <div id="cotQuickFeedback" style="margin-top:18px;font-size:.8rem;font-weight:700;display:none;"></div>
+        </div>
+      </div>
+
       <div class="card" style="padding:10px;">
         <div class="tbl-wrap"><table class="cotation-grid" id="cotationTable" style="min-width:600px;"></table></div>
       </div>
@@ -12950,6 +12988,82 @@
     loadAndRenderCotationTable();
   }
 
+  function populateCotQuickSelects() {
+    const studentSel = document.getElementById('cotQuickStudent');
+    const subSel = document.getElementById('cotQuickSubBranch');
+    if (!studentSel || !subSel) return;
+
+    // Populate students
+    const students = (allStudents || []).filter(s => isStudentMatch(s, currentTeacher));
+    const prevStu = studentSel.value;
+    studentSel.innerHTML = '<option value="">— Choisir un élève —</option>' +
+      students.map(s => {
+        const sid = s._id || s.id;
+        const name = buildStudentDisplayName(s);
+        return `<option value="${sid}"${sid === prevStu ? ' selected' : ''}>${name}</option>`;
+      }).join('');
+
+    // Populate sub-branches from selected subject
+    const subject = cotationState.subject;
+    const subj = subject && subject !== 'all' ? COTATION_SUBJECTS[subject] : null;
+    const prevSub = subSel.value;
+    if (subj) {
+      const typeMax = getCotationTypeMax();
+      const exCfg = cotationState.exerciseConfig[subject] || {};
+      subSel.innerHTML = subj.subBranches.map(sb => {
+        const mx = exCfg[normalizeSubjectKey(sb)] || 10;
+        return `<option value="${normalizeSubjectKey(sb)}" data-max="${mx}" data-label="${sb}"${normalizeSubjectKey(sb) === prevSub ? ' selected' : ''}>${sb} (/${mx})</option>`;
+      }).join('');
+    } else {
+      subSel.innerHTML = '<option value="">— Choisir une matière d\'abord —</option>';
+    }
+  }
+
+  function onCotQuickStudentChange() {
+    // highlight the row in the table
+    const sid = document.getElementById('cotQuickStudent')?.value;
+    document.querySelectorAll('#cotationTable tbody tr').forEach(tr => {
+      const inp = tr.querySelector('input[data-student-id]');
+      tr.style.background = (inp && inp.dataset.studentId === sid) ? '#eff6ff' : '';
+    });
+  }
+
+  function applyCotQuickScore() {
+    const sid = document.getElementById('cotQuickStudent')?.value;
+    const subKey = document.getElementById('cotQuickSubBranch')?.value;
+    const scoreVal = document.getElementById('cotQuickScore')?.value;
+    const fb = document.getElementById('cotQuickFeedback');
+
+    if (!sid || !subKey || scoreVal === '') {
+      if (fb) { fb.textContent = '⚠️ Veuillez sélectionner un élève, une sous-branche et saisir un point.'; fb.style.color = '#b45309'; fb.style.display = 'block'; }
+      return;
+    }
+
+    const opt = document.querySelector(`#cotQuickSubBranch option[value="${subKey}"]`);
+    const mx = opt ? Number(opt.dataset.max || 10) : 10;
+    let score = parseFloat(scoreVal);
+    if (isNaN(score) || score < 0) score = 0;
+    if (score > mx) score = mx;
+
+    // Find the matching input in the table and update it
+    const input = document.querySelector(`#cotationTable input[data-student-id="${sid}"][data-sub="${subKey}"]`);
+    if (input) {
+      input.value = score;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      document.getElementById('cotQuickScore').value = '';
+      if (fb) {
+        const subLabel = opt?.dataset.label || subKey;
+        const studentName = document.querySelector(`#cotQuickStudent option[value="${sid}"]`)?.textContent || sid;
+        fb.textContent = `✓ ${studentName} — ${subLabel}: ${score}/${mx} appliqué`;
+        fb.style.color = '#15803d';
+        fb.style.display = 'block';
+        setTimeout(() => { fb.style.display = 'none'; }, 3000);
+      }
+    } else {
+      if (fb) { fb.textContent = '⚠️ Élève ou colonne introuvable dans le tableau affiché.'; fb.style.color = '#b91c1c'; fb.style.display = 'block'; }
+    }
+  }
+
   async function loadAndRenderCotationTable() {
     const { subject, month, type, className } = cotationState;
     const data = await loadCotationData(subject, month, type, className);
@@ -12962,6 +13076,7 @@
     } else {
       renderCotationSubjectTable(subject, students, data);
     }
+    populateCotQuickSelects();
   }
 
   function renderCotationSubjectTable(subject, students, existingData) {

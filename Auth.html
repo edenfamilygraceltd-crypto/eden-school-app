@@ -143,12 +143,14 @@
       margin-bottom: 0.35rem;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
       position: relative;
-      display: inline-flex;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
+      gap: 10px;
       width: 100%;
       text-align: center;
     }
@@ -685,7 +687,7 @@
       }
       .auth-header h1 .auth-logo {
         height: 40px !important;
-        margin: 0 !important;
+        margin: 0 0 4px 0 !important;
       }
       .role-badges {
         flex-direction: row;
@@ -977,7 +979,7 @@
 
   <div class="auth-container">
     <div class="auth-header">
-      <h1><img src="asset/img/logo_eden.png" alt="Logo Eden Family School" class="auth-logo" onerror="this.style.display='none';"> EDEN FAMILY SCHOOL</h1>
+      <h1><img src="asset/img/logo_eden.png" alt="Logo Eden Family School" class="auth-logo" onerror="this.style.display='none';"><span>EDEN FAMILY SCHOOL</span></h1>
       <p>Portail Staff - Accès Professionnel</p>
     </div>
 
