@@ -1228,6 +1228,7 @@
     box-sizing:border-box;
     display:flex;
     flex-direction:column;
+    flex:1;
     padding:10mm;
     background: #FFF8DC;
     font-family: "Nunito", sans-serif;
@@ -1483,6 +1484,11 @@
   }
   .bul-tri-col:last-child { border-right:none; }
 
+  #bulSubjectsBody {
+    flex:1 1 auto;
+    overflow:hidden;
+  }
+
   /* Branch rows */
   .bul-branch-row {
     display:grid;
@@ -1611,8 +1617,9 @@
 
   .bul-comment-body {
     padding:8px 12px;
-    min-height:48px;
-    max-height:60px;
+    flex:1 1 auto;
+    min-height:80px;
+    max-height:none;
     font-size:.75rem;
     color:var(--txt);
     font-style:italic;
@@ -1627,6 +1634,7 @@
     grid-template-columns:1fr 1fr 1fr;
     border-top:1px solid var(--bdr);
     border-bottom:1px solid var(--bdr);
+    margin-top:auto !important;
   }
 
   .bul-sigs-cond {
@@ -1646,6 +1654,7 @@
   .bul-legal {
     padding:7px 12px;
     background:var(--bg);
+    margin-top:auto;
   }
   .bul-legal p {
     font-size:.6rem;
@@ -1825,6 +1834,7 @@
 
       display: flex !important;
       flex-direction: column !important;
+      justify-content: space-between !important;
     }
 
     /* Premier bulletin : pas de saut avant */
@@ -7512,6 +7522,65 @@
     const bulCommentaireEl = document.getElementById('bulCommentaire');
     if (bulCommentaireEl) bulCommentaireEl.textContent = BULLETIN.commentaire||' ';
 
+    // Build multi-trimester preview data:
+    // - Current trimester uses local draft (BULLETIN.notes)
+    // - Previous trimesters are loaded from Firebase when available
+    const previewBulletinsByTri = {};
+    const currentTri = (tri || '').toString().toUpperCase();
+    const studentIdForPreview = selectedStudent._id || selectedStudent.id;
+    const classForPreview = (selectedStudent.classes || selectedStudent.classe || cls || '').toString().trim();
+    const branchForPreview = (
+      currentTeacher?.branch
+      || currentTeacher?.schoolBranch
+      || selectedStudent.branch
+      || selectedStudent.schoolBranch
+      || 'maternelle'
+    ).toString().trim().toLowerCase();
+
+    const shouldLoadTri = (targetTri) => {
+      if (currentTri === 'BN') return ['1', '2', '3'].includes(targetTri);
+      if (currentTri === '2') return targetTri === '1';
+      if (currentTri === '3') return targetTri === '1' || targetTri === '2';
+      return false;
+    };
+
+    if (studentIdForPreview && classForPreview) {
+      for (const targetTri of ['1', '2', '3']) {
+        if (!shouldLoadTri(targetTri)) continue;
+        try {
+          const found = await fetchStudentTrimesterBulletin(studentIdForPreview, classForPreview, branchForPreview, targetTri);
+          if (found && found.data) {
+            previewBulletinsByTri[targetTri] = found.data;
+            console.log(`✅ Trimestre ${targetTri} chargé pour aperçu depuis:`, found.path);
+          } else {
+            console.log(`ℹ️ Aucun bulletin trouvé pour T${targetTri} (aperçu multi-trimestres)`);
+          }
+        } catch (e) {
+          console.warn(`⚠️ Impossible de charger T${targetTri} pour l'aperçu:`, e?.message || e);
+        }
+      }
+    }
+
+    // Always use local draft for the active trimester in preview
+    if (['1', '2', '3'].includes(currentTri)) {
+      previewBulletinsByTri[currentTri] = {
+        ...(previewBulletinsByTri[currentTri] || {}),
+        skills: BULLETIN.notes || {},
+        applicationGrade: calculateApplicationGrade(BULLETIN.notes || {})
+      };
+    }
+
+    const getTriSkills = (targetTri) => {
+      const triData = previewBulletinsByTri[targetTri] || {};
+      return migrateBulletinData(triData.skills || {});
+    };
+
+    const toKindergartenGrade = (rawValue) => {
+      const code = normalizeGradeCode(rawValue);
+      if (code) return code;
+      return numToGrade(rawValue);
+    };
+
     // Subjects
     const tbody = document.getElementById('bulSubjectsBody');
     if (!tbody) {
@@ -7524,29 +7593,33 @@
     BRANCHES.forEach(b => {
       // Skip Application - it's now automatic
       if (b.id === 'Application') return;
-      const nData = BULLETIN.notes[b.id]||{};
-      const tjG = numToGrade(nData.tj);
-      const exG = numToGrade(nData.ex);
 
       const row = document.createElement('div');
       row.className = 'bul-branch-row';
 
-      const makeCell = (g, activeTri, myTri) => {
-        const show = activeTri===myTri && g;
-        const skillText = show ? gradeToKindergartenSkill(g) : '';
-        return `<div class="bul-cell"><span class="${show?gradeBulletinClass(g):'bul-nd'}">${skillText}</span></div>`;
+      const makeTriPair = (myTri) => {
+        const triSkills = getTriSkills(myTri);
+        const nData = triSkills[b.id] || {};
+        const tjG = toKindergartenGrade(nData.tj);
+        const exG = toKindergartenGrade(nData.ex !== undefined ? nData.ex : nData.exam);
+        const tjText = tjG ? gradeToKindergartenSkill(tjG) : '';
+        const exText = exG ? gradeToKindergartenSkill(exG) : '';
+        return `
+          <div class="bul-cell"><span class="${tjG ? gradeBulletinClass(tjG) : 'bul-nd'}">${tjText}</span></div>
+          <div class="bul-cell"><span class="${exG ? gradeBulletinClass(exG) : 'bul-nd'}">${exText}</span></div>
+        `;
       };
 
       row.innerHTML = `
         <div class="bul-branch-name">${b.label}</div>
         <div class="bul-branch-tri">
-          ${makeCell(tjG,tri,'1')}${makeCell(exG,tri,'1')}
+          ${makeTriPair('1')}
         </div>
         <div class="bul-branch-tri">
-          ${makeCell(tjG,tri,'2')}${makeCell(exG,tri,'2')}
+          ${makeTriPair('2')}
         </div>
         <div class="bul-branch-tri">
-          ${makeCell(tjG,tri,'3')}${makeCell(exG,tri,'3')}
+          ${makeTriPair('3')}
         </div>
       `;
       tbody.appendChild(row);
@@ -7558,35 +7631,35 @@
       totalRow.className = 'bul-branch-row';
       totalRow.style.fontWeight = 'bold';
       totalRow.style.backgroundColor = 'rgba(26,92,168,.05)';
-      
-      let tjTotal = 0, tjCount = 0, exTotal = 0, exCount = 0;
-      BRANCHES.forEach(b => {
-        if (b.id === 'Application') return;
-        const nData = BULLETIN.notes[b.id] || {};
-        const tj = parseFloat(nData.tj) || 0;
-        const ex = parseFloat(nData.ex) || 0;
-        if (tj > 0) { tjTotal += tj; tjCount++; }
-        if (ex > 0) { exTotal += ex; exCount++; }
-      });
-      
-      const tiTotalGrade = tjCount > 0 ? numToGrade(tjTotal / tjCount) : '—';
-      const exTotalGrade = exCount > 0 ? numToGrade(exTotal / exCount) : '—';
-      const tjTotalClass = gradeBulletinClass(tiTotalGrade);
-      const exTotalClass = gradeBulletinClass(exTotalGrade);
-      
+
       const makeAverageTri = (targetTri) => {
-        if (tri === targetTri) {
+        const triSkills = getTriSkills(targetTri);
+        let tjTotal = 0, tjCount = 0, exTotal = 0, exCount = 0;
+
+        BRANCHES.forEach(b => {
+          if (b.id === 'Application') return;
+          const nData = triSkills[b.id] || {};
+          const tj = parseFloat(nData.tj);
+          const ex = parseFloat(nData.ex !== undefined ? nData.ex : nData.exam);
+          if (!isNaN(tj)) { tjTotal += tj; tjCount++; }
+          if (!isNaN(ex)) { exTotal += ex; exCount++; }
+        });
+
+        if (!tjCount && !exCount) {
           return `
             <div class="bul-branch-tri">
-              <div class="bul-cell"><span class="${tjTotalClass}">${tiTotalGrade}</span></div>
-              <div class="bul-cell"><span class="${exTotalClass}">${exTotalGrade}</span></div>
+              <div class="bul-cell">—</div>
+              <div class="bul-cell">—</div>
             </div>
           `;
         }
+
+        const tjGrade = tjCount > 0 ? numToGrade(tjTotal / tjCount) : null;
+        const exGrade = exCount > 0 ? numToGrade(exTotal / exCount) : null;
         return `
           <div class="bul-branch-tri">
-            <div class="bul-cell">—</div>
-            <div class="bul-cell">—</div>
+            <div class="bul-cell"><span class="${tjGrade ? gradeBulletinClass(tjGrade) : 'bul-nd'}">${tjGrade || '—'}</span></div>
+            <div class="bul-cell"><span class="${exGrade ? gradeBulletinClass(exGrade) : 'bul-nd'}">${exGrade || '—'}</span></div>
           </div>
         `;
       };
@@ -7600,17 +7673,27 @@
       tbody.appendChild(totalRow);
     }
 
-    // Application générale - Calculate automatically from TJ/EX averages
-    const appGrade = normalizeGradeCode(calculateApplicationGrade(BULLETIN.notes));
-    const appLabel = gradeToKindergartenSkill(appGrade) || '—';
-    const appCls = gradeBulletinClass(appGrade);
-    const setApp = (id,show) => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = show ? `<span class="${appCls}">${appLabel}</span>` : '';
+    // Application générale - show by trimester when data exists
+    const getAppGradeForTri = (targetTri) => {
+      const triData = previewBulletinsByTri[targetTri] || {};
+      const direct = normalizeGradeCode(triData.applicationGrade);
+      if (direct) return direct;
+      const triSkills = getTriSkills(targetTri);
+      if (!triSkills || !Object.keys(triSkills).length) return null;
+      return normalizeGradeCode(calculateApplicationGrade(triSkills));
     };
-    setApp('appT1note',tri==='1');
-    setApp('appT2note',tri==='2');
-    setApp('appT3note',tri==='3');
+
+    const setApp = (id, targetTri) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const appGrade = getAppGradeForTri(targetTri);
+      const appLabel = appGrade ? (gradeToKindergartenSkill(appGrade) || appGrade) : '—';
+      const appCls = appGrade ? gradeBulletinClass(appGrade) : 'bul-nd';
+      el.innerHTML = `<span class="${appCls}">${appLabel}</span>`;
+    };
+    setApp('appT1note', '1');
+    setApp('appT2note', '2');
+    setApp('appT3note', '3');
 
     // Conduite
     const condBody = document.getElementById('bulCondBody');
@@ -9449,7 +9532,7 @@
             allowTaint: true
           },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'avoid-all'], before: '.page-break' }
+          pagebreak: { mode: ['avoid-all'] }
         };
 
         if (typeof html2pdf !== 'undefined') {
@@ -9552,7 +9635,7 @@
           allowTaint: true
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'avoid-all'], before: '.page-break' }
+        pagebreak: { mode: ['avoid-all'] }
       };
 
       if (typeof html2pdf !== 'undefined') {
