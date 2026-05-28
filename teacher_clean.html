@@ -4442,8 +4442,8 @@
     if (!currentTeacher) {
       const uid = auth.currentUser?.uid;
       if (!uid) {
-        console.error('❌ Aucun UID Firebase disponible');
-        return [];
+        console.warn('⚠️ Aucun UID Firebase disponible — utilisation des élèves bruts sans filtrage enseignant');
+        return students;
       }
       try {
         // Chercher d'abord dans /users (new structure)
@@ -4567,8 +4567,8 @@
     }
 
     // ── 4. CLASS MATCH ───────────────────────────────────────────────────
-    const classMatch = teacherClassesNormalized.includes(studentClassNormalized)
-      || (studentClassBase && teacherClassBases.includes(studentClassBase));
+    // Use areClassesCompatible instead of simple normalization to handle branch suffixes (e.g., N1A_KA)
+    const classMatch = areClassesCompatible(studentClassRaw, rawTeacherClasses);
 
     // ── 5. TEACHER-ID MATCH (prioritaire si assigne explicitement) ───────
     const teacherIds = [
@@ -13224,6 +13224,30 @@
     return (cotationState.type === 'EX') ? 100 : 50;
   }
 
+  function getCotationSubjectTotal(subject) {
+    const typeKey = cotationState.type === 'EX' ? 'exam' : 'tj';
+    if (subject && maxScores[subject] && typeof maxScores[subject][typeKey] === 'number') {
+      return maxScores[subject][typeKey];
+    }
+    return getCotationTypeMax();
+  }
+
+  function getCotationSubBranchMax(subject, subBranch) {
+    if (!subject || !subBranch) return 0;
+    const subKey = normalizeSubjectKey(subBranch);
+    const override = cotationState.exerciseConfig?.[subject]?.[subKey];
+    if (override !== undefined && override !== null) {
+      return Number(override);
+    }
+    const total = getCotationSubjectTotal(subject);
+    const subCount = (COTATION_SUBJECTS[subject]?.subBranches?.length || 1);
+    return Number((total / subCount).toFixed(2));
+  }
+
+  function formatCotationMaxValue(value) {
+    return Number.isInteger(value) ? String(value) : String(value.toFixed(2));
+  }
+
   function getCotMonthLabel(monthStr) {
     if (!monthStr) return '—';
     const [y, m] = monthStr.split('-');
@@ -13437,13 +13461,41 @@
     loadAndRenderCotationTable();
   }
 
-  function populateCotQuickSelects() {
+  async function populateCotQuickSelects() {
     const studentSel = document.getElementById('cotQuickStudent');
     const subSel = document.getElementById('cotQuickSubBranch');
     if (!studentSel || !subSel) return;
 
-    // Populate students
-    const students = (allStudents || []).filter(s => isStudentMatch(s, currentTeacher));
+    // Populate students - use teacher filter when available, otherwise show all (demo/offline)
+    let students = [];
+    if (currentTeacher) {
+      students = (allStudents || []).filter(s => isStudentMatch(s, currentTeacher));
+    } else {
+      students = (allStudents || []);
+    }
+
+    // Si aucun élève trouvé localement, charger depuis Firebase
+    if (!students.length && db) {
+      try {
+        const snap = await db.ref('students').once('value');
+        let loaded = [];
+        if (snap.exists()) snap.forEach(c => loaded.push({ _id: c.key, id: c.key, ...c.val() }));
+        students = currentTeacher
+          ? loaded.filter(s => isStudentMatch(s, currentTeacher))
+          : loaded;
+      } catch (e) {
+        console.error('❌ Erreur chargement élèves depuis Firebase:', e);
+      }
+    }
+    
+    // Filtrer par la classe sélectionnée dans cotationState
+    if (cotationState.className) {
+      students = students.filter(s => {
+        const studentClass = s.class || s.classes || s.classe || '';
+        return areClassesCompatible(studentClass, [cotationState.className]);
+      });
+    }
+    
     const prevStu = studentSel.value;
     studentSel.innerHTML = '<option value="">— Choisir un élève —</option>' +
       students.map(s => {
@@ -13457,11 +13509,9 @@
     const subj = subject && subject !== 'all' ? COTATION_SUBJECTS[subject] : null;
     const prevSub = subSel.value;
     if (subj) {
-      const typeMax = getCotationTypeMax();
-      const exCfg = cotationState.exerciseConfig[subject] || {};
       subSel.innerHTML = subj.subBranches.map(sb => {
-        const mx = exCfg[normalizeSubjectKey(sb)] || 10;
-        return `<option value="${normalizeSubjectKey(sb)}" data-max="${mx}" data-label="${sb}"${normalizeSubjectKey(sb) === prevSub ? ' selected' : ''}>${sb} (/${mx})</option>`;
+        const mx = getCotationSubBranchMax(subject, sb);
+        return `<option value="${normalizeSubjectKey(sb)}" data-max="${mx}" data-label="${sb}"${normalizeSubjectKey(sb) === prevSub ? ' selected' : ''}>${sb} (/${formatCotationMaxValue(mx)})</option>`;
       }).join('');
     } else {
       subSel.innerHTML = '<option value="">— Choisir une matière d\'abord —</option>';
@@ -13519,13 +13569,15 @@
     if (data?.exerciseConfig) {
       cotationState.exerciseConfig = Object.assign({}, cotationState.exerciseConfig, { [subject]: data.exerciseConfig });
     }
-    const students = (allStudents || []).filter(s => isStudentMatch(s, currentTeacher));
+    const students = currentTeacher
+      ? (allStudents || []).filter(s => isStudentMatch(s, currentTeacher))
+      : (allStudents || []);
     if (subject === 'all') {
       renderAllSubjectsTable(students, data);
     } else {
       renderCotationSubjectTable(subject, students, data);
     }
-    populateCotQuickSelects();
+    await populateCotQuickSelects();
   }
 
   function renderCotationSubjectTable(subject, students, existingData) {
@@ -13534,9 +13586,8 @@
     const subj = COTATION_SUBJECTS[subject];
     if (!subj) { table.innerHTML = '<tr><td>Matière introuvable</td></tr>'; return; }
     const subBranches = subj.subBranches;
-    const typeMax = getCotationTypeMax();
-    const exCfg = cotationState.exerciseConfig[subject] || {};
-    const colMaxes = subBranches.map(sb => exCfg[normalizeSubjectKey(sb)] || 10);
+    const typeMax = getCotationSubjectTotal(subject);
+    const colMaxes = subBranches.map(sb => getCotationSubBranchMax(subject, sb));
     const usedBudget = colMaxes.reduce((a, b) => a + b, 0);
     const remaining = typeMax - usedBudget;
 
@@ -13552,7 +13603,7 @@
       <tr>
         ${subBranches.map((sb, i) => {
           const mx = colMaxes[i];
-          return `<th class="cot-subj-header" onclick="openSubBranchPopover(this,'${subject.replace(/'/g,"\\'") }','${sb.replace(/'/g,"\\'")}',${i})" title="Cliquer pour configurer" style="position:relative;font-size:.74rem;">${sb}<br><span style="font-weight:400;font-size:.62rem;">/${mx} pts</span></th>`;
+          return `<th class="cot-subj-header" onclick="openSubBranchPopover(this,'${subject.replace(/'/g,"\\'") }','${sb.replace(/'/g,"\\'")}',${i})" title="Cliquer pour configurer" style="position:relative;font-size:.74rem;">${sb}<br><span style="font-weight:400;font-size:.62rem;">/${formatCotationMaxValue(mx)} pts</span></th>`;
         }).join('')}
       </tr>
     </thead>`;
@@ -13617,10 +13668,9 @@
     r1 += `<th rowspan="2">TOTAL</th><th rowspan="2">MENTION</th></tr>`;
     let r2 = '<tr>';
     subjects.forEach(sk => {
-      const exCfg = cotationState.exerciseConfig[sk] || {};
       COTATION_SUBJECTS[sk].subBranches.forEach(sb => {
-        const mx = exCfg[normalizeSubjectKey(sb)] || 10;
-        r2 += `<th style="font-size:.64rem;background:#1a5ca8;">${sb}<br><span style="font-weight:400;">/${mx}</span></th>`;
+        const mx = getCotationSubBranchMax(sk, sb);
+        r2 += `<th style="font-size:.64rem;background:#1a5ca8;">${sb}<br><span style="font-weight:400;">/${formatCotationMaxValue(mx)}</span></th>`;
       });
     });
     r2 += '</tr>';
@@ -13634,8 +13684,7 @@
       let rowTotal = 0, rowCount = 0;
       tbody += `<tr><td>${idx + 1}</td><td style="text-align:left;font-weight:700;">${name}</td><td><span class="bdg bdg-inf">${cls}</span></td>`;
       allSubCols.forEach(({ sk, sb }, ci) => {
-        const exCfg = cotationState.exerciseConfig[sk] || {};
-        const mx = exCfg[normalizeSubjectKey(sb)] || 10;
+        const mx = getCotationSubBranchMax(sk, sb);
         const entry = existingData?.entries?.[sid]?.[normalizeSubjectKey(sb)];
         const val = entry !== undefined ? Number(entry?.score ?? entry) : '';
         if (val !== '') { rowTotal += val; rowCount++; colAvgs[ci].sum += val; colAvgs[ci].count++; }
@@ -13658,9 +13707,7 @@
     const subKey = input.dataset.sub;
     const subject = input.dataset.subject;
     const col = Number(input.dataset.col || 0);
-    const subj = COTATION_SUBJECTS[subject];
-    const exCfg = cotationState.exerciseConfig[subject] || {};
-    const mx = exCfg[subKey] || 10;
+    const mx = getCotationSubBranchMax(subject, subKey);
     let score = parseFloat(input.value);
     if (isNaN(score)) score = '';
     if (score !== '' && score > mx) { score = mx; input.value = mx; }
@@ -13706,11 +13753,12 @@
 
   function openSubBranchPopover(th, subject, subBranch, idx) {
     document.querySelectorAll('.cot-popover').forEach(p => p.remove());
-    const exCfg = cotationState.exerciseConfig[subject] || {};
     const sbKey = normalizeSubjectKey(subBranch);
-    const currentMax = exCfg[sbKey] || 10;
-    const typeMax = getCotationTypeMax();
-    const usedBudget = Object.values(exCfg).reduce((a, b) => a + b, 0);
+    const currentMax = getCotationSubBranchMax(subject, subBranch);
+    const typeMax = getCotationSubjectTotal(subject);
+    const usedBudget = (Object.keys(cotationState.exerciseConfig?.[subject] || {})
+      .map(k => Number(cotationState.exerciseConfig[subject][k] || 0))
+      .reduce((a, b) => a + b, 0));
     const remaining = typeMax - usedBudget + currentMax;
     const pop = document.createElement('div');
     pop.className = 'cot-popover';
@@ -13738,8 +13786,9 @@
   }
 
   function applySubBranchMax(subject, subBranch, sbKey) {
-    const val = parseInt(document.getElementById('cotPopMax')?.value || 10);
-    const max = Math.min(10, Math.max(1, val));
+    const val = parseInt(document.getElementById('cotPopMax')?.value || 1);
+    const typeMax = getCotationSubjectTotal(subject);
+    const max = Math.min(typeMax, Math.max(1, val));
     if (!cotationState.exerciseConfig[subject]) cotationState.exerciseConfig[subject] = {};
     cotationState.exerciseConfig[subject][sbKey] = max;
     document.querySelectorAll('.cot-popover').forEach(p => p.remove());
@@ -13825,7 +13874,7 @@
       const snap = await db.ref('students').once('value');
       const loaded = [];
       if (snap.exists()) snap.forEach(c => loaded.push({ _id: c.key, id: c.key, ...c.val() }));
-      allStudents = await getAccessibleStudents(loaded);
+      allStudents = currentTeacher ? await getAccessibleStudents(loaded) : loaded;
     }
     await loadAndRenderCotationTable();
   }
