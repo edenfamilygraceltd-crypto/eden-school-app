@@ -1405,10 +1405,7 @@ async function loadStudents(){
 }
 
 function reloadStudents(){
-  loadStudents().catch(e => {
-    console.error('Erreur lors du rechargement:', e);
-    toast('Erreur lors du rechargement des élèves', 'error');
-  });
+  window.location.reload();
 }
 
 function renderStudentsTable(){

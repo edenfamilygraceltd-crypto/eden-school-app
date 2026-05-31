@@ -1214,29 +1214,27 @@
     ════════════════════════════════════════
   ═══════════════════════════════════════════ */
   .bulletin {
-    position:relative;
-    background:#fff;
-    border-radius:12px;
-    box-shadow:0 0 15px rgba(0,0,0,.12);
-    border:6px solid #FFB6C1;
-    margin:0 auto 0;
-    width:210mm;
-    max-width:210mm;
-    height:297mm;
-    min-height:0;
-    overflow:hidden;
-    box-sizing:border-box;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-    flex:0 0 auto;
-    padding:8mm;
+    position: relative;
     background: #FFF8DC;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(0,0,0,.12);
+    border: 6px solid #FFB6C1;
+    margin: 0 auto 0;
+    width: 210mm;
+    max-width: 210mm;
+    height: auto;
+    overflow: hidden;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex: 0 0 auto;
+    padding: 6mm;
+    left: 0;
+    transform: none;
+    page-break-after: always;
     font-family: "Nunito", sans-serif;
-    left:0;
-    transform:none;
-    page-break-after:always;
-    font-size:0.95rem;
+    font-size: 0.95rem;
   }
 
   .bulletin::before {
@@ -1298,10 +1296,6 @@
     background-size:22rem;
     opacity:.08;
     pointer-events:none;
-  }
-
-  .bulletin {
-    background-color:#fff;
   }
 
   .bul-hd {
@@ -1631,14 +1625,14 @@
 
   .bul-comment-body {
     padding:8px 12px;
-    flex:1;
-    min-height:40px;
-    max-height:none;
+    flex:0 0 auto;
+    min-height:50px;
+    max-height:80px;
+    overflow:hidden;
     font-size:.72rem;
     color:var(--txt);
     font-style:italic;
     border-bottom:1px solid var(--bdr);
-    overflow:hidden;
     line-height:1.3;
   }
 
@@ -1648,11 +1642,12 @@
     grid-template-columns:1fr 1fr 1fr;
     border-top:1px solid var(--bdr);
     border-bottom:1px solid var(--bdr);
-    margin-top:auto !important;
+    margin-top:8px;
   }
 
   .bul-sigs-cond {
     border-top:1px solid var(--bdr) !important;
+    margin-top:auto;
   }
 
   .bul-sig {
@@ -1666,9 +1661,9 @@
 
   /* Legal footer */
   .bul-legal {
-    padding:7px 12px;
+    padding:4px 8px;
     background:var(--bg);
-    margin-top:auto;
+    margin-top:6px;
   }
   .bul-legal p {
     font-size:.56rem;
@@ -1690,7 +1685,7 @@
     text-transform:uppercase;
   }
 
-  .cond-tbl { width:100%; border-collapse:collapse; }
+  .cond-tbl { width:100%; display:block; max-height:256px; overflow:hidden; border-collapse:collapse; }
   .cond-tbl th { background:var(--blue); color:#fff; padding:9px 12px; font-size:.73rem; font-weight:800; text-align:left; }
   .cond-tbl th:last-child { text-align:center; }
   .cond-tbl td { padding:10px 12px; font-size:.83rem; border-bottom:1px solid var(--bdr); font-weight:600; }
@@ -1713,7 +1708,9 @@
 
   /* Conduite page container */
   .bul-cond-container {
-    padding:14px 18px;
+    padding:8px 12px;
+    overflow:hidden;
+    flex:0 0 auto;
   }
 
   .bul-cond-legend-mt {
@@ -1848,7 +1845,7 @@
 
       display: flex !important;
       flex-direction: column !important;
-      justify-content: space-between !important;
+      justify-content: flex-start !important;
     }
 
     /* Premier bulletin : pas de saut avant */
@@ -2424,7 +2421,7 @@
           <div class="card">
             <div class="card-hd">
               <div class="card-ttl"><i class="fas fa-bell"></i> Alertes Bulletins</div>
-              <button class="btn btn-ghost btn-sm" onclick="refreshAlerts()">Actualiser</button>
+              <button class="btn btn-ghost btn-sm" onclick="window.location.reload()">Actualiser</button>
             </div>
             <div id="alertsList">
               <div class="loading-wrap"><div class="spinner"></div><p>Chargement des alertes...</p></div>
@@ -2454,7 +2451,7 @@
             <p>Élèves de ma classe assignée • Gestion directe</p>
           </div>
           <div class="sec-hd-right">
-            <button class="btn btn-ghost btn-sm" onclick="initMyClass()"><i class="fas fa-sync"></i> Actualiser</button>
+            <button class="btn btn-ghost btn-sm" onclick="window.location.reload()"><i class="fas fa-sync"></i> Actualiser</button>
             <button class="btn btn-blue btn-sm" onclick="navTo('bulletins')"><i class="fas fa-plus"></i> Créer bulletin</button>
           </div>
         </div>
@@ -2665,7 +2662,7 @@
           <div class="card">
             <div class="card-hd">
               <div class="card-ttl"><i class="fas fa-search"></i> Sélectionner un élève</div>
-              <button class="btn btn-ghost btn-sm" onclick="loadStudentList()"><i class="fas fa-sync"></i> Actualiser</button>
+              <button class="btn btn-ghost btn-sm" onclick="window.location.reload()"><i class="fas fa-sync"></i> Actualiser</button>
             </div>
             <div style="position:relative;margin-bottom:10px;">
               <i class="fas fa-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--txt-lt);font-size:.85rem;"></i>
@@ -2994,7 +2991,7 @@
         <div class="sec-hd">
           <div class="sec-hd-left"><h1>Historique des Bulletins</h1><p>Bulletins publiés • Visualiser & Télécharger</p></div>
           <div class="sec-hd-right">
-            <button class="btn btn-ghost btn-sm" onclick="loadBulletinHistory()"><i class="fas fa-sync"></i> Actualiser</button>
+            <button class="btn btn-ghost btn-sm" onclick="window.location.reload()"><i class="fas fa-sync"></i> Actualiser</button>
             <button class="btn btn-ghost btn-sm" onclick="showMissingBulletinsModal()" id="missingBulletinsBtn">
               <i class="fas fa-user-clock"></i> Eleves manquants (0)
             </button>
@@ -9619,25 +9616,44 @@
         const filename = `Bulletin_${safeName}_${trimester || 'export'}.pdf`;
 
         const options = {
-          margin: [0, 0, 0, 0],
+          margin: 0,
           filename: filename,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: {
             scale: 2,
             useCORS: true,
-            logging: false,
             allowTaint: true,
+            logging: false,
+            width: 794,
+            height: 1123,
+            scrollX: 0,
+            scrollY: 0,
             windowWidth: 794,
             windowHeight: 1123
           },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', autoPaging: false },
-          pagebreak: { mode: ['avoid-all'], avoid: '.bulletin' }
+          jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'portrait',
+            compress: true
+          },
+          pagebreak: { 
+            mode: 'avoid-all',
+            before: '.page-break',
+            avoid: ['tr', 'td', '.bul-branch-row', '.bul-info-row']
+          }
         };
 
         if (typeof html2pdf !== 'undefined') {
           printArea.style.height = 'auto';
           printArea.style.minHeight = '0';
           printArea.style.overflow = 'hidden';
+          printArea.querySelectorAll('.bulletin').forEach(b => {
+            b.style.height = '297mm';
+            b.style.maxHeight = '297mm';
+            b.style.overflow = 'hidden';
+            b.style.pageBreakAfter = 'always';
+          });
           await html2pdf().set(options).from(printArea).save();
           printArea.style.height = '';
           printArea.style.minHeight = '';
@@ -10559,27 +10575,21 @@
 
         /* Bulletin container - A4 dimensions with height constraint */
         .bulletin {
-          position: relative;
-          background: #fff;
-          border-radius: 12px;
-          box-shadow: 0 0 15px rgba(0,0,0,.12);
+          background: #FFF8DC;
           border: 6px solid #FFB6C1;
-          margin: 0 auto;
+          border-radius: 12px;
           width: 210mm;
-          max-width: 210mm;
           height: 297mm;
-          overflow: hidden;
+          padding: 6mm;
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
-          padding: 8mm;
-          background: #FFF8DC;
-          font-family: "Nunito", sans-serif;
-          left: 0;
-          transform: none;
+          gap: 0;
+          overflow: hidden;
+          font-family: Nunito, sans-serif;
+          font-size: 0.82rem;
+          position: relative;
           page-break-after: always;
-          font-size: 0.95rem;
         }
 
         /* Header styles */
@@ -10828,27 +10838,47 @@
         }
 
         .bul-comment-body {
-          padding: 12px;
-          border: 2px solid #0f3d72;
+          padding: 6px 10px;
+          font-size: 0.68rem;
+          color: #333;
+          font-style: italic;
+          border: 1px solid #ddd;
           border-top: none;
-          font-size: .72rem;
-          line-height: 1.4;
-          min-height: 40px;
-          max-height: none;
+          flex: 0 0 auto;
+          min-height: 50px;
+          max-height: 80px;
           overflow: hidden;
+          line-height: 1.4;
         }
 
         /* Signatures */
         .bul-sigs {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 20px;
-          padding: 0 12px;
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          border: 1px solid #ddd;
+          margin-top: 8px;
+        }
+        .bul-sigs-cond {
+          margin-top: auto;
+          border-top: 1px solid #ddd;
         }
 
         .bul-sig {
-          flex: 1;
+          padding: 8px 6px;
           text-align: center;
+          border-right: 1px solid #ddd;
+        }
+        .bul-sig:last-child { border-right: none; }
+        .bul-sig-ttl {
+          font-size: .62rem;
+          font-weight: 700;
+          color: #666;
+          margin-bottom: 4px;
+        }
+        .bul-sig-dots {
+          font-size: .65rem;
+          color: #999;
+          letter-spacing: 2px;
         }
 
         .bul-sig-ttl {
@@ -10906,13 +10936,16 @@
 
         /* Conduct container - constrained height */
         .bul-cond-container {
-          margin-top: 20px;
-          max-height: 180mm; /* Limit height to fit A4 page */
-          overflow: hidden; /* Hide overflow content */
+          padding: 8px 12px;
+          overflow: hidden;
+          flex: 0 0 auto;
         }
 
         .cond-tbl {
           width: 100%;
+          display: block;
+          max-height: 256px;
+          overflow: hidden;
           border-collapse: collapse;
         }
 
@@ -10950,6 +10983,8 @@
         .bul-b { background: #fff3cd; color: #856404; }
         .bul-ef { background: #f8d7da; color: #721c24; }
         .bul-nd { background: #e2e3e5; color: #383d41; }
+
+        .page2 { justify-content: flex-start; gap: 0; }
 
         /* Watermark */
         .watermark {
@@ -11254,7 +11289,7 @@
       </div>
 
       <!-- PAGE 2: CONDUITE -->
-      <div class="bulletin page2" id="bulCond">
+      <div class="bulletin page2" id="bulCond" style="justify-content:flex-start;gap:0;">
         <div class="watermark"></div>
         <div class="bul-hd">
           <div class="bul-hd-left">
