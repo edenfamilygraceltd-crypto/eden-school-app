@@ -7765,6 +7765,8 @@
             
             // Construire les données du payroll
             const payrollEntries = [];
+            let nextNo = 1;
+            
             branchWorkers.forEach(worker => {
                 const debt = debtsByWorker[worker.id] || 0;
                 const netSalary = Math.max(0, (worker.salary || 0) - debt);
@@ -7792,6 +7794,58 @@
                     status: 'pending',
                     workerId: worker.id
                 });
+                nextNo = Math.max(nextNo, (parseInt(worker.no) || 0) + 1);
+            });
+            
+            // Ajouter les directeurs et comptables depuis authorityContacts
+            const branchInfo = getBranchDirectorInfo(firebaseBranch);
+            const authorityContacts = Array.isArray(branchInfo?.authorityContacts) ? branchInfo.authorityContacts : [];
+            
+            authorityContacts.forEach(contact => {
+                // Chercher si ce contact existe déjà dans les travailleurs
+                let existingWorker = workers.find(w => 
+                    w.name && w.name.trim().toLowerCase() === contact.name?.trim().toLowerCase()
+                );
+                
+                if (existingWorker && existingWorker.branch === firebaseBranch) {
+                    // Vérifier si ce travailleur n'est pas déjà dans le payroll
+                    const alreadyAdded = payrollEntries.some(e => e.workerId === existingWorker.id);
+                    if (!alreadyAdded) {
+                        // Ajouter le travailleur existant
+                        const debt = debtsByWorker[existingWorker.id] || 0;
+                        const netSalary = Math.max(0, (existingWorker.salary || 0) - debt);
+                        payrollEntries.push({
+                            no: existingWorker.no || nextNo++,
+                            name: existingWorker.name,
+                            type: contact.label || existingWorker.type,
+                            phone: existingWorker.phone,
+                            cardName: existingWorker.accountHolderName || '',
+                            paymentMode: existingWorker.paymentMode || 'bank',
+                            paymentDestination: `${existingWorker.bankName || 'Bank'} | ${existingWorker.name || ''}`,
+                            baseSalary: existingWorker.salary || 0,
+                            debts: debt,
+                            netSalary: netSalary,
+                            status: 'pending',
+                            workerId: existingWorker.id
+                        });
+                    }
+                } else if (contact.name && !existingWorker) {
+                    // Ajouter comme nouveau travailleur (directeur/comptable) sans salaire
+                    payrollEntries.push({
+                        no: nextNo++,
+                        name: contact.name,
+                        type: contact.label,
+                        phone: contact.phone || '',
+                        cardName: '',
+                        paymentMode: 'bank',
+                        paymentDestination: contact.phone || '',
+                        baseSalary: 0,
+                        debts: 0,
+                        netSalary: 0,
+                        status: 'pending',
+                        workerId: null
+                    });
+                }
             });
             
             // Stocker globalement pour accès par d'autres fonctions
@@ -7862,6 +7916,8 @@
             
             // Construire les données du payroll (Banque seulement)
             const payrollEntries = [];
+            let nextNo = 1;
+            
             bankWorkers.forEach(worker => {
                 const debt = debtsByWorker[worker.id] || 0;
                 const netSalary = Math.max(0, (worker.salary || 0) - debt);
@@ -7880,6 +7936,58 @@
                     status: 'pending',
                     workerId: worker.id
                 });
+                nextNo = Math.max(nextNo, (parseInt(worker.no) || 0) + 1);
+            });
+            
+            // Ajouter les directeurs et comptables depuis authorityContacts (banque seulement)
+            const branchInfo = getBranchDirectorInfo(firebaseBranch);
+            const authorityContacts = Array.isArray(branchInfo?.authorityContacts) ? branchInfo.authorityContacts : [];
+            
+            authorityContacts.forEach(contact => {
+                // Chercher si ce contact existe déjà dans les travailleurs
+                let existingWorker = workers.find(w => 
+                    w.name && w.name.trim().toLowerCase() === contact.name?.trim().toLowerCase()
+                );
+                
+                if (existingWorker && existingWorker.branch === firebaseBranch && existingWorker.paymentMode === 'bank') {
+                    // Vérifier si ce travailleur n'est pas déjà dans le payroll
+                    const alreadyAdded = payrollEntries.some(e => e.workerId === existingWorker.id);
+                    if (!alreadyAdded) {
+                        // Ajouter le travailleur existant
+                        const debt = debtsByWorker[existingWorker.id] || 0;
+                        const netSalary = Math.max(0, (existingWorker.salary || 0) - debt);
+                        payrollEntries.push({
+                            no: existingWorker.no || nextNo++,
+                            name: existingWorker.name,
+                            type: contact.label || existingWorker.type,
+                            phone: existingWorker.phone,
+                            cardName: existingWorker.accountHolderName || '',
+                            paymentMode: existingWorker.paymentMode,
+                            paymentDestination: `${existingWorker.bankName || 'Bank'} | ${existingWorker.name || ''}`,
+                            baseSalary: existingWorker.salary || 0,
+                            debts: debt,
+                            netSalary: netSalary,
+                            status: 'pending',
+                            workerId: existingWorker.id
+                        });
+                    }
+                } else if (contact.name && !existingWorker) {
+                    // Ajouter comme nouveau travailleur (directeur/comptable) sans salaire - banque par défaut
+                    payrollEntries.push({
+                        no: nextNo++,
+                        name: contact.name,
+                        type: contact.label,
+                        phone: contact.phone || '',
+                        cardName: '',
+                        paymentMode: 'bank',
+                        paymentDestination: contact.phone || '',
+                        baseSalary: 0,
+                        debts: 0,
+                        netSalary: 0,
+                        status: 'pending',
+                        workerId: null
+                    });
+                }
             });
             
             // Stocker globalement pour accès par d'autres fonctions
@@ -9304,6 +9412,8 @@
             if (!sel) return;
             sel.innerHTML = '<option value="">-- Choose --</option>';
             const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+            
+            // Ajouter les travailleurs réguliers
             const branchWorkers = workers
                 .filter(worker => worker.branch === firebaseBranch)
                 .sort((a, b) => parseInt(a.no || 0) - parseInt(b.no || 0));
@@ -9314,6 +9424,27 @@
                 option.value = w.name || '';
                 option.textContent = `${index + 1}. ${w.name || ''} (${typeLabel})`;
                 sel.appendChild(option);
+            });
+            
+            // Ajouter les directeurs et comptables depuis authorityContacts
+            const branchInfo = getBranchDirectorInfo(firebaseBranch);
+            const authorityContacts = Array.isArray(branchInfo?.authorityContacts) ? branchInfo.authorityContacts : [];
+            
+            let authorityStartIndex = branchWorkers.length;
+            authorityContacts.forEach((contact, idx) => {
+                if (contact.name) {
+                    // Vérifier que ce directeur n'est pas déjà dans les travailleurs
+                    const alreadyExists = branchWorkers.some(w => 
+                        w.name && w.name.trim().toLowerCase() === contact.name.trim().toLowerCase()
+                    );
+                    
+                    if (!alreadyExists) {
+                        const option = document.createElement('option');
+                        option.value = contact.name;
+                        option.textContent = `${authorityStartIndex + idx + 1}. ${contact.name} (${contact.label})`;
+                        sel.appendChild(option);
+                    }
+                }
             });
         }
 
@@ -9896,6 +10027,7 @@
                     dgPhone: '0788883842',
                     authorityContacts: [
                         { label: 'Directeur', name: 'TUMBWE Serge', phone: '0791639766' },
+                        { label: 'Comptable', useAccountantName: true, fallbackName: 'Comptable', phone: '0792570074' },
                         { label: 'DG', name: 'NYIRIMBUTO Josephe', phone: '0788883842' }
                     ],
                     address: 'Kacyiru, Kigali, Rwanda',
