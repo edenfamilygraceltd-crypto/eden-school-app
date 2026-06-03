@@ -181,8 +181,29 @@
 
         <!-- Workers List Section -->
         <section id="workers" class="section">
+            <div class="mb-4">
+                <h3 class="fw-bold mb-3">Liste des Travailleurs</h3>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold mb-2">Filtrer par Catégorie:</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-primary active" onclick="filterWorkersByType('all')" data-filter="all">
+                            <i class="fas fa-list me-1"></i> Tous
+                        </button>
+                        <button class="btn btn-outline-info" onclick="filterWorkersByType('teacher')" data-filter="teacher">
+                            <i class="fas fa-chalkboard-user me-1"></i> Enseignants
+                        </button>
+                        <button class="btn btn-outline-success" onclick="filterWorkersByType('staff')" data-filter="staff">
+                            <i class="fas fa-users-cog me-1"></i> Personnel
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="filterWorkersByType('other')" data-filter="other">
+                            <i class="fas fa-briefcase me-1"></i> Autres
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="fw-bold">Liste des Travailleurs</h3>
+                <h5 class="mb-0"><span id="filteredWorkerCount">0</span> travailleur(s)</h5>
                 <div class="d-flex gap-2">
                     <input type="text" class="form-control" placeholder="Rechercher..." id="searchWorker" style="max-width: 300px;" oninput="searchWorkers()">
                     <button class="btn btn-success" onclick="exportWorkersExcel()">
@@ -349,12 +370,28 @@
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Type</label>
+                                <label class="form-label">Catégorie</label>
                                 <select class="form-select" id="workerType">
-                                    <option value="permanent">Permanent</option>
-                                    <option value="contract">Contrat</option>
-                                    <option value="part-time">Temps Partiel</option>
+                                    <option value="teacher">Enseignant</option>
+                                    <option value="staff">Personnel</option>
+                                    <option value="other">Autres</option>
                                 </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Mode de Paiement</label>
+                                <select class="form-select" id="workerPaymentMode">
+                                    <option value="bank">Virement Bancaire</option>
+                                    <option value="momo">Mobile Money</option>
+                                    <option value="cash">Espèces</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nom du Titulaire du Compte</label>
+                                <input type="text" class="form-control" id="workerAccountName" placeholder="Nom de la carte/compte">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Banque / Opérateur</label>
+                                <input type="text" class="form-control" id="workerBankName" placeholder="Ex: BNR, Airtel Money...">
                             </div>
                         </div>
                     </form>
@@ -390,6 +427,7 @@
 
         let workers = [];
         let currentUser = null;
+        let currentFilter = 'all';
 
         // Initialize
         auth.onAuthStateChanged((user) => {
@@ -414,21 +452,48 @@
             });
         }
 
-        // Load workers table
+        // Load workers table with filtering
         function loadWorkersTable() {
             const tbody = document.getElementById('workersTable');
             tbody.innerHTML = '';
 
-            workers.forEach((worker, index) => {
+            // Filter workers based on current filter
+            let filteredWorkers = workers;
+            if (currentFilter !== 'all') {
+                filteredWorkers = workers.filter(w => w.type === currentFilter);
+            }
+
+            // Update the count display
+            document.getElementById('filteredWorkerCount').textContent = filteredWorkers.length;
+
+            if (filteredWorkers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>Aucun travailleur trouvé</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredWorkers.forEach((worker, index) => {
+                const typeLabel = worker.type === 'teacher' ? 'Enseignant' : 
+                                 worker.type === 'staff' ? 'Personnel' : 'Autres';
+                const typeBadgeColor = worker.type === 'teacher' ? 'info' : 
+                                      worker.type === 'staff' ? 'success' : 'secondary';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${index + 1}</td>
                     <td><strong>${worker.name || 'N/A'}</strong></td>
-                    <td>${worker.position || 'N/A'}</td>
+                    <td><span class="badge bg-${typeBadgeColor}">${typeLabel}</span></td>
                     <td>${worker.phone || 'N/A'}</td>
                     <td>${formatCurrency(worker.salary || 0)}</td>
                     <td><span class="badge bg-${worker.status === 'active' ? 'success' : 'danger'}">${worker.status === 'active' ? 'Actif' : 'Inactif'}</span></td>
-                    <td>${new Date(worker.hireDate).toLocaleDateString('fr-FR') || 'N/A'}</td>
+                    <td>${worker.hireDate ? new Date(worker.hireDate).toLocaleDateString('fr-FR') : 'N/A'}</td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="editWorker('${worker.id}')">Éditer</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteWorker('${worker.id}')">Supprimer</button>
@@ -444,6 +509,23 @@
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
             event.target.classList.add('active');
+        }
+
+        // Filter workers by type
+        function filterWorkersByType(type) {
+            currentFilter = type;
+            
+            // Update active button state
+            document.querySelectorAll('[data-filter]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-filter="${type}"]`).classList.add('active');
+            
+            // Reload table with filter applied
+            loadWorkersTable();
+            
+            // Clear search input when filtering
+            document.getElementById('searchWorker').value = '';
         }
 
         // Format currency
@@ -481,7 +563,10 @@
                 salary: parseFloat(document.getElementById('workerSalary').value),
                 hireDate: document.getElementById('workerHireDate').value,
                 status: document.getElementById('workerStatus').value,
-                type: document.getElementById('workerType').value
+                type: document.getElementById('workerType').value,
+                paymentMode: document.getElementById('workerPaymentMode').value,
+                accountHolderName: document.getElementById('workerAccountName').value,
+                bankName: document.getElementById('workerBankName').value
             };
 
             workersRef.push(workerData).then(() => {
