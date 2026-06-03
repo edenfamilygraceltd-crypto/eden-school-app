@@ -7831,6 +7831,7 @@
                     }
                 } else if (contact.name && !existingWorker) {
                     // Ajouter comme nouveau travailleur (directeur/comptable) sans salaire
+                    const authorityId = `authority-${(contact.label || 'authority').replace(/\s+/g, '_').toLowerCase()}-${(contact.name || '').replace(/\s+/g, '_').toLowerCase()}`;
                     payrollEntries.push({
                         no: nextNo++,
                         name: contact.name,
@@ -7843,7 +7844,7 @@
                         debts: 0,
                         netSalary: 0,
                         status: 'pending',
-                        workerId: null
+                        workerId: authorityId
                     });
                 }
             });
@@ -7973,6 +7974,7 @@
                     }
                 } else if (contact.name && !existingWorker) {
                     // Ajouter comme nouveau travailleur (directeur/comptable) sans salaire - banque par défaut
+                    const authorityId = `authority-${(contact.label || 'authority').replace(/\s+/g, '_').toLowerCase()}-${(contact.name || '').replace(/\s+/g, '_').toLowerCase()}`;
                     payrollEntries.push({
                         no: nextNo++,
                         name: contact.name,
@@ -7985,7 +7987,7 @@
                         debts: 0,
                         netSalary: 0,
                         status: 'pending',
-                        workerId: null
+                        workerId: authorityId
                     });
                 }
             });
