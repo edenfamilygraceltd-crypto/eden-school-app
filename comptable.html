@@ -7802,6 +7802,12 @@
             const authorityContacts = Array.isArray(branchInfo?.authorityContacts) ? branchInfo.authorityContacts : [];
             
             authorityContacts.forEach(contact => {
+                // Ignorer le directeur général spécifique pour le payroll
+                const ignoreAuthorityName = 'NYIRIMBUTO Josephe';
+                if (contact.name && contact.name.trim().toLowerCase() === ignoreAuthorityName.toLowerCase()) {
+                    return;
+                }
+
                 // Chercher si ce contact existe déjà dans les travailleurs
                 let existingWorker = workers.find(w => 
                     w.name && w.name.trim().toLowerCase() === contact.name?.trim().toLowerCase()
@@ -9434,6 +9440,11 @@
             
             let authorityStartIndex = branchWorkers.length;
             authorityContacts.forEach((contact, idx) => {
+                const ignoreAuthorityName = 'NYIRIMBUTO Josephe';
+                if (contact.name && contact.name.trim().toLowerCase() === ignoreAuthorityName.toLowerCase()) {
+                    return;
+                }
+
                 if (contact.name) {
                     // Vérifier que ce directeur n'est pas déjà dans les travailleurs
                     const alreadyExists = branchWorkers.some(w => 
