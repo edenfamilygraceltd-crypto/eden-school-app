@@ -3648,8 +3648,10 @@
       .toString()
       .trim()
       .toUpperCase()
-      .replace(/\s+/g, '')
-      .replace(/[^A-Z0-9_]/g, '');
+      .replace(/[\s\-]+/g, '_')
+      .replace(/[^A-Z0-9_]/g, '')
+      .replace(/__+/g, '_')
+      .replace(/^_+|_+$/g, '');
   }
 
   function normalizeBranchCode(branch) {
@@ -3699,16 +3701,17 @@
 
   function normalizeClassWithoutBranchSuffix(className) {
     const cls = normalizeClassKey(className);
-    // Remove branch suffix if present (KA/GI/KI) after underscore
-    return cls.replace(/_(KA|GI|KI)$/i, '');
+    // Remove branch suffix if present (KA/GI/KI/KACYIRU/GISOZI/KIMISAGARA)
+    return cls.replace(/_(KA|GI|KI|KACYIRU|GISOZI|KIMISAGARA)$/i, '');
   }
 
   function getBranchFromClassSuffix(className) {
     const cls = normalizeClassKey(className);
-    const suffix = cls.split('_')[1] || '';
-    if (suffix === 'KA') return 'kacyiru';
-    if (suffix === 'GI') return 'gisozi';
-    if (suffix === 'KI') return 'kimisagara';
+    const parts = cls.split('_');
+    const suffix = parts[parts.length - 1] || '';
+    if (suffix === 'KA' || suffix.includes('KACYIRU')) return 'kacyiru';
+    if (suffix === 'GI' || suffix.includes('GISOZI')) return 'gisozi';
+    if (suffix === 'KI' || suffix.includes('KIMISAGARA')) return 'kimisagara';
     return '';
   }
 
