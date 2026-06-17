@@ -4493,8 +4493,11 @@
 
     // Fallback for Firebase edge-cases where branch is missing on some student records.
     if (!result.length) {
-      console.warn('⚠️ getAccessibleStudents: aucun résultat, fallback activé (branche manquante autorisée)');
-      result = students.filter(s => isStudentMatch(s, currentTeacher, teacherClassesNormalized, { allowMissingBranchFallback: true }));
+      console.warn('⚠️ getAccessibleStudents: aucun résultat, fallback activé (classe seulement)');
+      result = students.filter(s => {
+        const cls = (s.classes || s.classe || '').toString().trim();
+        return areClassesCompatible(cls, teacherClassesNormalized);
+      });
       console.log('🔁 Fallback result count:', result.length);
     }
 
@@ -4537,9 +4540,9 @@
       : getTeacherClasses(teacher);
 
     // ── 2. Normaliser ────────────────────────────────────────────────────
-    const studentBranch = normalizeBranchValue(studentBranchRaw
+    const studentBranch = normalizeBranchForMatch(studentBranchRaw
       || getBranchFromClassSuffix(studentClassRaw));
-    const teacherBranch = normalizeBranchValue(teacherBranchRaw
+    const teacherBranch = normalizeBranchForMatch(teacherBranchRaw
       || getBranchFromClassSuffix(rawTeacherClasses[0] || ''));
     const studentClassNormalized = normalizeClass(studentClassRaw);
     const teacherClassesNormalized = rawTeacherClasses
@@ -4555,8 +4558,12 @@
 
     // ── 3. BRANCH MATCH ──────────────────────────────────────────────────
     let branchMatch = false;
-    if (!teacherBranch || !studentBranch) {
-      branchMatch = allowMissingBranchFallback;
+    if (!teacherBranch) {
+      // Teacher has no branch configured → accept all
+      branchMatch = true;
+    } else if (!studentBranchRaw) {
+      // Student has no branch field in Firebase → accept, rely on class filter
+      branchMatch = true;
     } else {
       branchMatch = studentBranch === teacherBranch;
     }
