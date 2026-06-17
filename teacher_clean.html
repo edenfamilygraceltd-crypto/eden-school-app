@@ -1258,26 +1258,6 @@
     pointer-events:none;
   }
 
-  .bulletin::before {
-    content:'🎈🧸🎨';
-    position:absolute;
-    top:12px;
-    left:12px;
-    font-size:1.5rem;
-    opacity:.45;
-    pointer-events:none;
-  }
-
-  .bulletin::after {
-    content:'🐻🌈🍎';
-    position:absolute;
-    bottom:12px;
-    right:12px;
-    font-size:1.5rem;
-    opacity:.45;
-    pointer-events:none;
-  }
-
   .page1::before {
     content: "🌟 Bulletin Maternelle 🌟";
     display: block;
@@ -1848,6 +1828,7 @@
       flex-direction: column !important;
       justify-content: flex-start !important;
       gap: 0 !important;
+    }
 
     /* Premier bulletin : pas de saut avant */
     .bulletin:first-child {
@@ -2333,7 +2314,7 @@
           <input type="text" id="globalSearch" placeholder="Rechercher un élève, une classe…" oninput="doGlobalSearch()">
         </div>
 
-        <button class="topbar-icon-btn" onclick="toggleNotifications()" title="Notifications">
+        <button class="topbar-icon-btn" onclick="openNotifications()" title="Notifications">
           <i class="fas fa-bell"></i>
           <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
         </button>
@@ -3557,7 +3538,7 @@
     "Français": { exam: 100, tj: 50 },
     "Étude du milieu": { exam: 100, tj: 50 },
     "Français langage": { exam: 100, tj: 50 },
-    "Art&  Culture": { exam: 100, tj: 50 },
+    "Art& Culture": { exam: 100, tj: 50 },
     "Activité Physique et Motrice": { exam: 100, tj: 50 },
     "Application": { exam: 100, tj: 50 }
   };
