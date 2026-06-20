@@ -7952,6 +7952,20 @@
     return annualSkills;
   }
 
+  function askIfStudentStudiedMissingTrimesters(missingTrimesters) {
+    const labels = missingTrimesters.map(tri => {
+      if (tri === '1') return '1er trimestre';
+      if (tri === '2') return '2e trimestre';
+      if (tri === '3') return '3e trimestre';
+      return tri;
+    }).join(', ');
+
+    return window.confirm(
+      `Les bulletins annuels demandent les trimestres manquants (${labels}).\nL\'élève a-t-il étudié ces trimestres ?\n\n` +
+      `OK = saisir les notes manquantes\nAnnuler = générer avec les trimestres déjà saisis`
+    );
+  }
+
   function calculateAnnualGeneralAverage(trimesterBulletins) {
     let earned = 0;
     let maxTotal = 0;
@@ -8020,13 +8034,33 @@
       );
 
       const missing = trimesters.filter((tri, idx) => !trimesterResults[idx]);
+      const available = trimesterResults
+        .map(result => result ? result.data : null)
+        .filter(Boolean);
+
       if (missing.length > 0) {
-        toast(`Impossible de générer le BN: bulletin(s) manquant(s) ${missing.join(', ')}`, 'warn');
-        return;
+        const shouldFillMissing = askIfStudentStudiedMissingTrimesters(missing);
+        if (shouldFillMissing) {
+          const firstMissing = missing[0];
+          const trimesterLabel = firstMissing === '1' ? '1er trimestre' : firstMissing === '2' ? '2e trimestre' : '3e trimestre';
+          const triEl = document.getElementById('bTrimestre');
+          if (triEl) triEl.value = firstMissing;
+          BULLETIN.trimestre = firstMissing;
+          toast(`Veuillez saisir les notes du ${trimesterLabel} manquant avant de générer le bulletin annuel`, 'info');
+          switchBulletinTab('t-notes');
+          return;
+        }
+
+        if (!available.length) {
+          toast('Aucun bulletin disponible pour générer le bulletin annuel.', 'warn');
+          return;
+        }
+
+        toast(`Génération du bulletin annuel avec les trimestres déjà saisis (${missing.length} tranche(s) manquante(s))`, 'warn');
       }
 
-      const trimesterBulletins = trimesterResults.map(result => result.data);
-      const t3 = trimesterBulletins[2] || trimesterBulletins[1] || trimesterBulletins[0];
+      const trimesterBulletins = available.length ? available : trimesterResults.map(result => result.data);
+      const t3 = trimesterBulletins[trimesterBulletins.length - 1] || {};
       const studentName = selectedStudent?.name || selectedStudent?.nom || t3?.studentName || 'Nom inconnu';
       const teacherName = (currentTeacher?.name || `${currentTeacher?.firstName || ''} ${currentTeacher?.lastName || ''}`.trim() || t3?.teacherName || 'Enseignant').trim();
       const schoolYear = (document.getElementById('bAnnee')?.value || t3?.schoolYear || t3?.annee || '2025-2026').toString();
@@ -8050,7 +8084,7 @@
         skills: annualSkills,
         applicationGrade: annualApplicationGrade,
         conduct: t3?.conduct || {},
-        appreciation: t3?.appreciation || t3?.commentaire || BULLETIN.commentaire || '',
+        appreciation: BULLETIN.commentaire || t3?.appreciation || t3?.commentaire || '',
         generalAverage,
         createdAt: new Date().toISOString(),
         status: 'draft'
@@ -10629,7 +10663,13 @@
 
     // Comment
     if (elements.bulCommentaire) {
-      elements.bulCommentaire.textContent = bulletin.appreciation || bulletin.commentaire || bulletin.comment || 'Excellent travail cette année. Continuez ainsi !';
+      // Si on affiche un bulletin annuel (BN), utiliser le commentaire du 3e trimestre si présent
+      const isAnnual = ['BN'].includes(`${bulletin.trimester || bulletin.trimestre || ''}`.toUpperCase());
+      if (isAnnual) {
+        elements.bulCommentaire.textContent = (allStudentBulletins['3'] && (allStudentBulletins['3'].appreciation || allStudentBulletins['3'].commentaire || allStudentBulletins['3'].comment)) || bulletin.appreciation || bulletin.commentaire || bulletin.comment || 'Excellent travail cette année. Continuez ainsi !';
+      } else {
+        elements.bulCommentaire.textContent = bulletin.appreciation || bulletin.commentaire || bulletin.comment || 'Excellent travail cette année. Continuez ainsi !';
+      }
     }
 
     // General average
@@ -11293,7 +11333,10 @@
       });
     }
 
-    const appreciation = bulletin.appreciation || bulletin.commentaire || 'Excellent travail cette année. Continuez ainsi !';
+    const isAnnual = `${bulletin.trimester || bulletin.trimestre || ''}`.toUpperCase() === 'BN';
+    const appreciation = isAnnual
+      ? ( (allStudentBulletins && allStudentBulletins['3'] && (allStudentBulletins['3'].appreciation || allStudentBulletins['3'].commentaire || allStudentBulletins['3'].comment)) || bulletin.appreciation || bulletin.commentaire || 'Excellent travail cette année. Continuez ainsi !' )
+      : ( bulletin.appreciation || bulletin.commentaire || 'Excellent travail cette année. Continuez ainsi !' );
 
     return `
       <!-- PAGE 1: ACADÉMIQUE -->
