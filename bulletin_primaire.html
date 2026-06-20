@@ -1966,10 +1966,15 @@ async function saveBulletin(){
     trim1Total,
     trim2Total,
     trim3Total,
-    trim1Pct,
-    trim2Pct,
-    trim3Pct,
+    // Save current trimester percentage only, preserve existing other trimester percentages
+    trim1Pct: currentTrim === 1 ? currentTrimPct : (existing.trim1Pct || null),
+    trim2Pct: currentTrim === 2 ? currentTrimPct : (existing.trim2Pct || null),
+    trim3Pct: currentTrim === 3 ? currentTrimPct : (existing.trim3Pct || null),
     scores: mergedRows,
+    // Preserve any trimester place values already stored so we don't overwrite them when saving notes
+    trim1Place: existing.trim1Place || null,
+    trim2Place: existing.trim2Place || null,
+    trim3Place: existing.trim3Place || null,
     place: existing.place || null // Conserver l'ancien rang si déjà attribué
   };
   await bulletinRef.set(payload);
@@ -2089,10 +2094,26 @@ async function saveAnnualBulletins(selectedStudentId) {
 }
 
 // ===== PRINT =====
-function previewAndPrint(){
+async function previewAndPrint(){
   const name=document.getElementById('student-name-input').value.trim();
   if(!name){toast('Nom élève manquant','error');return;}
   const data=collectScores();
+  // Try to fetch existing bulletin to get trimester places
+  let trim1Place=null, trim2Place=null, trim3Place=null;
+  try{
+    const className = normalizeClass(document.getElementById('student-class').value || '');
+    const studentId = selectedStudent?._id || '';
+    if(className && studentId){
+      const snap = await db.ref(`bulletins_primaire_${className}/${studentId}`).once('value');
+      if(snap.exists()){
+        const b = snap.val();
+        trim1Place = b.trim1Place || null;
+        trim2Place = b.trim2Place || null;
+        trim3Place = b.trim3Place || null;
+      }
+    }
+  }catch(e){console.warn('Impossible de charger les places de trimestre pour l'+'aperçu',e)}
+
   document.getElementById('print-area').innerHTML=buildBulletinHtml({
     studentName:name,
     branch:document.getElementById('student-branch').value||'—',
@@ -2101,7 +2122,8 @@ function previewAndPrint(){
     date:document.getElementById('bul-date').value||new Date().toISOString().split('T')[0],
     remarqueDelib:document.getElementById('remarque-delib').value||'',
     conduite:document.getElementById('conduite-val').value||'',
-    data
+    data,
+    trim1Place,trim2Place,trim3Place
   });
   window.print();
 }
@@ -2504,9 +2526,9 @@ ${bulletinCSS}
         <tr class="grand-row">
           <td>GRAND TOTAL</td>
           <td>500</td><td>500</td><td>1000</td>
-          <td></td><td></td><td>${d.tri[0] ? formatDecimal(d.tri[0]) : ''}</td>
-          <td></td><td></td><td>${d.tri[1] ? formatDecimal(d.tri[1]) : ''}</td>
-          <td></td><td></td><td>${d.tri[2] ? formatDecimal(d.tri[2]) : ''}</td>
+          <td></td><td>${b.trim1Place || ''}</td><td>${d.tri[0] ? formatDecimal(d.tri[0]) : ''}</td>
+          <td></td><td>${b.trim2Place || ''}</td><td>${d.tri[1] ? formatDecimal(d.tri[1]) : ''}</td>
+          <td></td><td>${b.trim3Place || ''}</td><td>${d.tri[2] ? formatDecimal(d.tri[2]) : ''}</td>
           <td>${maxGrand}</td><td>${d.totalAnnual ? formatDecimal(d.totalAnnual) : ''}</td><td>${grandPct}</td>
         </tr>
         <tr class="pct-row">
@@ -2778,7 +2800,7 @@ function printSingleFromPalmares(key){
       const b=allBulletins.find(x=>x._key===key);if(!b){toast('Bulletin introuvable','error');return;}
       const mockData={rows:b.scores||[],tri:[0,0,0],totalAnnual:b.annualTotal||0,annualPct:b.annualPct||0,maxGrand:b.maxGrand||3000};
       if(b.scores)b.scores.forEach(r=>{mockData.tri[0]+=r.t1?.total||0;mockData.tri[1]+=r.t2?.total||0;mockData.tri[2]+=r.t3?.total||0;});
-      document.getElementById('print-area').innerHTML=buildBulletinHtml({studentName:b.studentName,branch:b.branch,class:b.class,teacher:b.teacherName,date:b.bulletinDate,remarqueDelib:b.remarqueDelib,conduite:b.conduite,data:mockData,place:b.place});
+      document.getElementById('print-area').innerHTML=buildBulletinHtml({studentName:b.studentName,branch:b.branch,class:b.class,teacher:b.teacherName,date:b.bulletinDate,remarqueDelib:b.remarqueDelib,conduite:b.conduite,data:mockData,place:b.place,trim1Place:b.trim1Place,trim2Place:b.trim2Place,trim3Place:b.trim3Place});
       window.print();
     }},
     {label:'Annuler',cls:'btn-ghost',action:null}
@@ -2872,7 +2894,10 @@ async function viewBulletin(studentId){
         remarqueDelib: b.remarqueDelib || '',
         conduite: b.conduite || student.conduct || student.conduite || '',
         data: mockData,
-        place: place
+        place: place,
+        trim1Place: b.trim1Place || null,
+        trim2Place: b.trim2Place || null,
+        trim3Place: b.trim3Place || null
       });
 
       const printArea = document.getElementById('print-area');
@@ -3014,17 +3039,20 @@ function displayAnnualData(annualData, allClassStudents = []) {
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 1</div>
           <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre1.total}/1000</div>
-          <div style="font-size: 14px; color: rgba(255,255,255,.8);">${annualData.trimestre1.percentage}%</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre1.percentage}%</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre1.place || annualData.trim1Place || '—'}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 2</div>
           <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre2.total}/1000</div>
-          <div style="font-size: 14px; color: rgba(255,255,255,.8);">${annualData.trimestre2.percentage}%</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre2.percentage}%</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre2.place || annualData.trim2Place || '—'}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 3</div>
           <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre3.total}/1000</div>
-          <div style="font-size: 14px; color: rgba(255,255,255,.8);">${annualData.trimestre3.percentage}%</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre3.percentage}%</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre3.place || annualData.trim3Place || '—'}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: linear-gradient(135deg, rgba(200,168,75,.2), rgba(200,168,75,.1)); border-radius: 8px; border: 2px solid var(--gold);">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">TOTAL ANNUEL</div>
@@ -3113,6 +3141,8 @@ async function assignPlaces(){
 
   // Save to Firebase
   const updates = {};
+  // Determine selected trimester from UI
+  const selectedTrim = (document.getElementById('trimester-select') && document.getElementById('trimester-select').value) || 'annuel';
   rankedStudents.forEach(s => {
     updates[`students/${s.id}/rank`] = s.rank;
     updates[`students/${s.id}/rankLabel`] = s.rankLabel;
@@ -3125,6 +3155,16 @@ async function assignPlaces(){
     updates[`bulletins_primaire_${className}/${s.id}/placeNum`] = s.rank;
     updates[`bulletins_primaire_${className}/${s.id}/annualPct`] = s.percentage;
     updates[`bulletins_primaire_${className}/${s.id}/percentage`] = s.percentage;
+    // Save trimester-specific place without overwriting other trimesters
+    if (selectedTrim === '1' || selectedTrim === 'T1' || selectedTrim === 't1') {
+      updates[`bulletins_primaire_${className}/${s.id}/trim1Place`] = s.rankLabel;
+    } else if (selectedTrim === '2' || selectedTrim === 'T2' || selectedTrim === 't2') {
+      updates[`bulletins_primaire_${className}/${s.id}/trim2Place`] = s.rankLabel;
+    } else if (selectedTrim === '3' || selectedTrim === 'T3' || selectedTrim === 't3') {
+      updates[`bulletins_primaire_${className}/${s.id}/trim3Place`] = s.rankLabel;
+    } else if (selectedTrim === 'annuel' || selectedTrim === 'ANNUAL') {
+      updates[`bulletins_primaire_${className}/${s.id}/annualPlace`] = s.rankLabel;
+    }
   });
 
   await db.ref().update(updates);
@@ -3215,7 +3255,7 @@ async function downloadZip(){
     b.place = i+1; // Assign place
     const mockData={rows:b.scores||[],tri:[0,0,0],totalAnnual:b.annualTotal||0,annualPct:b.annualPct||0,maxGrand:b.maxGrand||3000};
     if(b.scores)b.scores.forEach(r=>{mockData.tri[0]+=r.t1?.total||0;mockData.tri[1]+=r.t2?.total||0;mockData.tri[2]+=r.t3?.total||0;});
-    const inner=buildBulletinHtml({studentName:b.studentName,branch:b.branch,class:b.class,teacher:b.teacherName,date:b.bulletinDate,remarqueDelib:b.remarqueDelib,conduite:b.conduite,data:mockData,place:b.place});
+    const inner=buildBulletinHtml({studentName:b.studentName,branch:b.branch,class:b.class,teacher:b.teacherName,date:b.bulletinDate,remarqueDelib:b.remarqueDelib,conduite:b.conduite,data:mockData,place:b.place,trim1Place:b.trim1Place,trim2Place:b.trim2Place,trim3Place:b.trim3Place});
     const full=`<!DOCTYPE html><html><head>
 <link rel="icon" type="image/png" sizes="32x32" href="/asset/img/logo_eden.png">
     <link rel="apple-touch-icon" href="/asset/img/logo_eden.png">
