@@ -1667,6 +1667,17 @@
   }
 
   .cond-tbl { width:100%; display:block; max-height:256px; overflow:hidden; border-collapse:collapse; }
+  .cond-tbl-annual {
+    table-layout: fixed;
+  }
+  .cond-tbl-annual th,
+  .cond-tbl-annual td {
+    padding:10px 8px;
+    text-align:center;
+  }
+  .cond-tbl-annual td:first-child {
+    text-align:left;
+  }
   .cond-tbl th { background:var(--blue); color:#fff; padding:9px 12px; font-size:.73rem; font-weight:800; text-align:left; }
   .cond-tbl th:last-child { text-align:center; }
   .cond-tbl td { padding:10px 12px; font-size:.83rem; border-bottom:1px solid var(--bdr); font-weight:600; }
@@ -2886,8 +2897,8 @@
             <div class="cond-title-bar">CONDUITE</div>
 
             <div class="bul-cond-container">
-              <table class="cond-tbl">
-                <thead><tr><th>Conduite de l'enfant</th><th>Note / Mention</th></tr></thead>
+              <table class="cond-tbl" id="bulCondTable">
+                <thead id="bulCondHead"><tr><th>Conduite de l'enfant</th><th>Note / Mention</th></tr></thead>
                 <tbody id="bulCondBody"></tbody>
               </table>
 
@@ -7699,15 +7710,57 @@
 
     // Conduite
     const condBody = document.getElementById('bulCondBody');
+    const condHead = document.getElementById('bulCondHead');
+    const condTable = document.getElementById('bulCondTable');
+    const isAnnualConduct = `${tri || ''}`.toUpperCase() === 'BN';
+
+    const normalizeConductValue = (raw) => {
+      if (raw === null || raw === undefined || raw === '') return '';
+      const value = raw.toString().trim().toUpperCase();
+      if (['E','TB','B','EF'].includes(value)) return value;
+      if (value === 'EFFORT' || value === 'À AMÉLIORER' || value === 'A AMELIORER') return 'EF';
+      return value;
+    };
+
+    const renderConductCell = (raw) => {
+      const grade = normalizeConductValue(raw);
+      if (!grade) return '<span class="bul-nd">—</span>';
+      const cls = grade === 'E' ? 'bul-e' : grade === 'TB' ? 'bul-tb' : grade === 'B' ? 'bul-b' : grade === 'EF' ? 'bul-ef' : 'bul-nd';
+      const label = grade === 'E' ? 'Excellents(E)' : grade === 'TB' ? 'Très Bien(TB)' : grade === 'B' ? 'Bien(B)' : grade === 'EF' ? 'Effort' : grade;
+      return `<span class="${cls}" style="font-weight:900;font-size:.88rem;">${label}</span>`;
+    };
+
+    if (condHead) {
+      condHead.innerHTML = isAnnualConduct
+        ? '<tr><th>Conduite de l\'enfant</th><th>T1</th><th>T2</th><th>T3</th></tr>'
+        : '<tr><th>Conduite de l\'enfant</th><th>Note / Mention</th></tr>';
+    }
+    if (condTable) {
+      condTable.classList.toggle('cond-tbl-annual', isAnnualConduct);
+    }
+
     if (condBody) {
       condBody.innerHTML = '';
-      CONDUITE_ITEMS.forEach((item,idx) => {
-        const val = BULLETIN.conduite['c'+idx]||'';
-        const vcls = val==='E'?'bul-e':val==='TB'?'bul-tb':val==='B'?'bul-b':'bul-nd';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${item}</td><td><span class="${vcls}" style="font-weight:900;font-size:.88rem;">${val||'—'}</span></td>`;
-        condBody.appendChild(tr);
-      });
+      if (isAnnualConduct) {
+        CONDUITE_ITEMS.forEach((item, idx) => {
+          const t1 = renderConductCell(previewBulletinsByTri['1']?.conduct?.['c'+idx] || previewBulletinsByTri['1']?.conduite?.['c'+idx]);
+          const t2 = renderConductCell(previewBulletinsByTri['2']?.conduct?.['c'+idx] || previewBulletinsByTri['2']?.conduite?.['c'+idx]);
+          const t3 = renderConductCell(previewBulletinsByTri['3']?.conduct?.['c'+idx] || previewBulletinsByTri['3']?.conduite?.['c'+idx]);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${item}</td><td class="text-center">${t1}</td><td class="text-center">${t2}</td><td class="text-center">${t3}</td>`;
+          condBody.appendChild(tr);
+        });
+      } else {
+        CONDUITE_ITEMS.forEach((item, idx) => {
+          const val = normalizeConductValue(BULLETIN.conduite['c'+idx] || BULLETIN.conduite[idx] || '');
+          const td = document.createElement('td');
+          td.innerHTML = renderConductCell(val);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${item}</td>`;
+          tr.appendChild(td);
+          condBody.appendChild(tr);
+        });
+      }
     }
 
     console.log("generateBulletin: bulletin generation completed");
@@ -10508,29 +10561,69 @@
         'Participation aux activités',
         'Esprit de partage et de collaboration'
       ];
+      const condHead = document.getElementById('bulCondHead');
+      const condTable = document.getElementById('bulCondTable');
+      const isAnnualConduct = ['BN'].includes(`${bulletin.trimester || bulletin.trimestre || ''}`.toUpperCase());
+
+      if (condHead) {
+        condHead.innerHTML = isAnnualConduct
+          ? '<tr><th>Conduite de l\'enfant</th><th>T1</th><th>T2</th><th>T3</th></tr>'
+          : '<tr><th>Conduite de l\'enfant</th><th>Note / Mention</th></tr>';
+      }
+      if (condTable) {
+        condTable.classList.toggle('cond-tbl-annual', isAnnualConduct);
+      }
+
       const normalizeConductKey = (value) => (value || '')
         .toString()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
         .replace(/[^a-z0-9]+/g, ' ')
-        .trim();
-      const conductData = (bulletin.conduct && typeof bulletin.conduct === 'object')
-        ? bulletin.conduct
-        : ((bulletin.conduite && typeof bulletin.conduite === 'object') ? bulletin.conduite : {});
+        .trim()
+        .toLowerCase();
 
-      conductItems.forEach((item, idx) => {
-        const normalizedItem = normalizeConductKey(item);
-        const matchedEntry = Object.entries(conductData).find(([key]) => {
-          const normalizedKey = normalizeConductKey(key);
-          return normalizedKey === normalizedItem
-            || normalizedKey === normalizeConductKey(`c${idx}`)
-            || normalizedKey.includes(normalizedItem)
-            || normalizedItem.includes(normalizedKey);
+      const renderConductCell = (raw) => {
+        if (raw === null || raw === undefined || raw === '') return '—';
+        const normalized = raw.toString().trim().toUpperCase();
+        if (normalized === 'E') return 'Excellents(E)';
+        if (normalized === 'TB') return 'Très Bien(TB)';
+        if (normalized === 'B') return 'Bien(B)';
+        if (normalized === 'EF' || normalized === 'EFFORT') return 'Effort';
+        return raw;
+      };
+
+      if (isAnnualConduct) {
+        const getConductSource = (tri, idx) => {
+          const b = allStudentBulletins[tri] || {};
+          const conductObj = b.conduct || b.conduite || {};
+          return conductObj[`c${idx}`] || conductObj[idx] || '';
+        };
+
+        conductItems.forEach((item, idx) => {
+          const t1 = renderConductCell(getConductSource('1', idx));
+          const t2 = renderConductCell(getConductSource('2', idx));
+          const t3 = renderConductCell(getConductSource('3', idx));
+          conductHtml += `<tr><td>${item}</td><td class="text-center">${t1}</td><td class="text-center">${t2}</td><td class="text-center">${t3}</td></tr>`;
         });
-        const safeGrade = matchedEntry && matchedEntry[1] ? matchedEntry[1] : '—';
-        conductHtml += `<tr><td>${item}</td><td class="text-center">${safeGrade}</td></tr>`;
-      });
+      } else {
+        const conductData = (bulletin.conduct && typeof bulletin.conduct === 'object')
+          ? bulletin.conduct
+          : ((bulletin.conduite && typeof bulletin.conduite === 'object') ? bulletin.conduite : {});
+
+        conductItems.forEach((item, idx) => {
+          const normalizedItem = normalizeConductKey(item);
+          const matchedEntry = Object.entries(conductData).find(([key]) => {
+            const normalizedKey = normalizeConductKey(key);
+            return normalizedKey === normalizedItem
+              || normalizedKey === normalizeConductKey(`c${idx}`)
+              || normalizedKey.includes(normalizedItem)
+              || normalizedItem.includes(normalizedKey);
+          });
+          const safeGrade = matchedEntry && matchedEntry[1] ? renderConductCell(matchedEntry[1]) : '—';
+          conductHtml += `<tr><td>${item}</td><td class="text-center">${safeGrade}</td></tr>`;
+        });
+      }
+
       elements.bulCondBody.innerHTML = conductHtml;
     }
 
@@ -10941,6 +11034,20 @@
           border-collapse: collapse;
         }
 
+        .cond-tbl-annual {
+          table-layout: fixed;
+        }
+
+        .cond-tbl-annual th,
+        .cond-tbl-annual td {
+          padding: 10px 8px;
+          text-align: center;
+        }
+
+        .cond-tbl-annual td:first-child {
+          text-align: left;
+        }
+
         .cond-tbl th {
           background: #0f3d72;
           color: #fff;
@@ -11143,39 +11250,42 @@
       "Esprit de partage et de collaboration"
     ];
 
-    // Local helper for grade label (fallback if global not defined)
-    const localGradeToLabel = (grade) => {
-      if (!grade) return '—';
-      const normalized = `${grade}`.toString().trim().toUpperCase();
-      switch (normalized) {
-        case 'E':
-        case 'EX':
-        case 'EXCELLENT':
-        case 'EXCELLENTS':
-          return 'E';
-        case 'TB':
-        case 'TRES BIEN':
-        case 'TRÈS BIEN':
-          return 'TB';
-        case 'B':
-        case 'BIEN':
-          return 'B';
-        case 'EF':
-        case 'MOYEN':
-        case 'PASSABLE':
-          return 'EF';
-        default:
-          return grade;
-      }
+    const normalizeConductValue = (raw) => {
+      if (raw === null || raw === undefined || raw === '') return '';
+      const value = raw.toString().trim().toUpperCase();
+      if (['E', 'TB', 'B', 'EF'].includes(value)) return value;
+      if (value === 'EFFORT' || value === 'À AMÉLIORER' || value === 'A AMELIORER') return 'EF';
+      return value;
     };
 
-    if (bulletin.conduct && typeof bulletin.conduct === 'object') {
+    const renderConductCell = (raw) => {
+      const grade = normalizeConductValue(raw);
+      if (!grade) return '—';
+      return grade === 'E' ? 'Excellents(E)' : grade === 'TB' ? 'Très Bien(TB)' : grade === 'B' ? 'Bien(B)' : grade === 'EF' ? 'Effort' : grade;
+    };
+
+    const getConductSource = (tri, idx) => {
+      const b = allStudentBulletins[tri] || {};
+      const conductObj = b.conduct || b.conduite || {};
+      return conductObj['c' + idx] || conductObj[idx] || '';
+    };
+
+    const annualConduct = `${trimestre}`.toUpperCase() === 'BN';
+
+    if (annualConduct) {
+      conductItems.forEach((item, idx) => {
+        const t1 = renderConductCell(getConductSource('1', idx));
+        const t2 = renderConductCell(getConductSource('2', idx));
+        const t3 = renderConductCell(getConductSource('3', idx));
+        conductHtml += `<tr><td>${item}</td><td class="text-center"><span class="${t1 === 'Excellents(E)' ? 'bul-e' : t1 === 'Très Bien(TB)' ? 'bul-tb' : t1 === 'Bien(B)' ? 'bul-b' : t1 === 'Effort' ? 'bul-ef' : 'bul-nd'}" style="font-weight:900;font-size:.95rem;">${t1}</span></td><td class="text-center"><span class="${t2 === 'Excellents(E)' ? 'bul-e' : t2 === 'Très Bien(TB)' ? 'bul-tb' : t2 === 'Bien(B)' ? 'bul-b' : t2 === 'Effort' ? 'bul-ef' : 'bul-nd'}" style="font-weight:900;font-size:.95rem;">${t2}</span></td><td class="text-center"><span class="${t3 === 'Excellents(E)' ? 'bul-e' : t3 === 'Très Bien(TB)' ? 'bul-tb' : t3 === 'Bien(B)' ? 'bul-b' : t3 === 'Effort' ? 'bul-ef' : 'bul-nd'}" style="font-weight:900;font-size:.95rem;">${t3}</span></td></tr>`;
+      });
+    } else if (bulletin.conduct && typeof bulletin.conduct === 'object') {
       conductItems.forEach((item, idx) => {
         const rawGrade = bulletin.conduct['c' + idx];
         const grade = typeof rawGrade === 'number' ? getGrade(rawGrade) : (rawGrade || '—');
-        const gradeLabel = (typeof gradeToLabel === 'function' ? gradeToLabel(grade) : localGradeToLabel(grade));
-        const classLabel = (grade === 'E' || grade === 'e' ? 'e' : grade === 'TB' ? 'tb' : grade === 'B' ? 'b' : 'nd');
-        conductHtml += `<tr><td>${item}</td><td class="text-center"><span class="bul-${classLabel}" style="font-weight:900;font-size:.95rem;">${gradeLabel}</span></td></tr>`;
+        const gradeLabel = grade === 'E' ? 'Excellents(E)' : grade === 'TB' ? 'Très Bien(TB)' : grade === 'B' ? 'Bien(B)' : grade === 'Ef' ? 'Effort(Ef)' : grade || '—';
+        const classLabel = grade === 'E' ? 'bul-e' : grade === 'TB' ? 'bul-tb' : grade === 'B' ? 'bul-b' : grade === 'Ef' ? 'bul-ef' : 'bul-nd';
+        conductHtml += `<tr><td>${item}</td><td class="text-center"><span class="${classLabel}" style="font-weight:900;font-size:.95rem;">${gradeLabel}</span></td></tr>`;
       });
     } else {
       conductItems.forEach(item => {
@@ -11299,8 +11409,8 @@
         <div class="cond-title-bar">CONDUITE</div>
 
         <div class="bul-cond-container">
-          <table class="cond-tbl">
-            <thead><tr><th>Conduite de l'enfant</th><th>Note / Mention</th></tr></thead>
+          <table class="cond-tbl${annualConduct ? ' cond-tbl-annual' : ''}">
+            <thead><tr><th>Conduite de l'enfant</th>${annualConduct ? '<th>T1</th><th>T2</th><th>T3</th>' : '<th>Note / Mention</th>'}</tr></thead>
             <tbody>
               ${conductHtml}
             </tbody>
@@ -11349,10 +11459,16 @@
     const conductSource = (bulletin.conduct && typeof bulletin.conduct === 'object')
       ? bulletin.conduct
       : ((bulletin.conduite && typeof bulletin.conduite === 'object') ? bulletin.conduite : null);
+    const annualConduct = [bulletin.trimester, bulletin.trimestre].some(t => `${t || ''}`.toUpperCase() === 'BN');
 
-    if (bulCondBody && conductSource) {
-      let conductHtml = '';
-      const conductItems = [
+    if (annualConduct) {
+      // For BN conduct export, the full bulletin rendering already populates the
+      // annual conduct table from the underlying trimester bulletins.
+      await loadBulletinData(bulletin, student);
+      return;
+    }
+
+    const conductItems = [
         'Respect des enseignants et des camarades',
         'Politesse et bonnes manières',
         'Obéissance aux consignes',
@@ -11362,7 +11478,24 @@
         'Participation aux activités',
         "Esprit de partage et de collaboration"
       ];
-      
+
+      const normalizeConductValue = (raw) => {
+        if (raw === null || raw === undefined || raw === '') return '';
+        const value = raw.toString().trim().toUpperCase();
+        if (['E','TB','B','EF'].includes(value)) return value;
+        if (value === 'EFFORT' || value === 'À AMÉLIORER' || value === 'A AMELIORER') return 'EF';
+        return value;
+      };
+
+      const renderGradeCell = (raw) => {
+        const grade = normalizeConductValue(raw);
+        if (!grade) return '<span class="bul-nd">—</span>';
+        const cls = grade === 'E' ? 'bul-e' : grade === 'TB' ? 'bul-tb' : grade === 'B' ? 'bul-b' : grade === 'EF' ? 'bul-ef' : 'bul-nd';
+        const label = grade === 'E' ? 'Excellents(E)' : grade === 'TB' ? 'Très Bien(TB)' : grade === 'B' ? 'Bien(B)' : grade === 'EF' ? 'Effort' : grade;
+        return `<span class="${cls}" style="font-weight:900;font-size:.88rem;">${label}</span>`;
+      };
+
+      let conductHtml = '';
       if (typeof conductSource === 'object' && Object.keys(conductSource).length > 0) {
         conductItems.forEach((item, idx) => {
           const rawGrade = conductSource['c'+idx];
@@ -11376,9 +11509,9 @@
           conductHtml += `<tr><td>${item}</td><td class="text-center">—</td></tr>`;
         });
       }
+
       bulCondBody.innerHTML = conductHtml;
     }
-  }
 
   // Download bulletin conduite
   async function downloadBulletinConduite(studentId, className, trimester) {
