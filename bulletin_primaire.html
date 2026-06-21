@@ -1041,22 +1041,27 @@ function showAnnualBulletin() {
       annualStudents.push({
         studentId,
         studentName,
+        place: studentBulletin.annualPlace || studentBulletin.place || null,
         trimestre1: {
           total: t1,
-          percentage: t1 > 0 ? formatDecimal((t1 / 1000) * 100) : '0.0'
+          percentage: studentBulletin.trim1Pct || formatDecimal((t1 || 0) / 1000 * 100),
+          place: studentBulletin.trim1Place || '—'
         },
         trimestre2: {
           total: t2,
-          percentage: t2 > 0 ? formatDecimal((t2 / 1000) * 100) : '0.0'
+          percentage: studentBulletin.trim2Pct || formatDecimal((t2 || 0) / 1000 * 100),
+          place: studentBulletin.trim2Place || '—'
         },
         trimestre3: {
           total: t3,
-          percentage: t3 > 0 ? formatDecimal((t3 / 1000) * 100) : '0.0'
+          percentage: studentBulletin.trim3Pct || formatDecimal((t3 || 0) / 1000 * 100),
+          place: studentBulletin.trim3Place || '—'
         },
         annuel: {
           total: totalAnnual,
-          percentage: totalAnnual > 0 ? formatDecimal((totalAnnual / 3000) * 100) : '0.0',
-          average: formatDecimal(averageAnnual)
+          percentage: studentBulletin.annualPct || studentBulletin.annualPctFinal || formatDecimal(totalAnnual / 3000 * 100),
+          place: studentBulletin.annualPlace || studentBulletin.place || '—',
+          average: formatDecimal(totalAnnual / 3)
         },
         scores: studentBulletin.scores || []
       });
@@ -2041,24 +2046,34 @@ async function saveAnnualBulletins(selectedStudentId) {
 
     // Calculer et préparer les mises à jour pour chaque élève
     Object.keys(classData).forEach(studentId => {
-      const studentBulletin = classData[studentId];
-      const t1 = studentBulletin.trim1Total || 0;
-      const t2 = studentBulletin.trim2Total || 0;
-      const t3 = studentBulletin.trim3Total || 0;
-      const totalAnnual = t1 + t2 + t3;
+      const b = classData[studentId];
+      const t1 = b.trim1Total || 0;
+      const t2 = b.trim2Total || 0;
+      const t3 = b.trim3Total || 0;
+      const annualTotal = t1 + t2 + t3;
+      const annualAverage = annualTotal / 3;
+      const annualPct = formatDecimal(annualAverage / 1000 * 100);
+      const path = `${refPath}/${studentId}`;
 
-      // Calculer le rang (sera mis à jour après tri)
-      const averageScore = totalAnnual / 3;
-      const annualPct = averageScore > 0 ? formatDecimal(averageScore / 1000 * 100) : '0.0';
-      updates[`${refPath}/${studentId}/annualTotal`] = totalAnnual;
-      updates[`${refPath}/${studentId}/annualAverage`] = averageScore;
-      updates[`${refPath}/${studentId}/annualPct`] = annualPct;
-      updates[`${refPath}/${studentId}/annualPercentage`] = annualPct;
-      updates[`${refPath}/${studentId}/schoolYear`] = schoolYear;
-      updates[`${refPath}/${studentId}/bulletinDate`] = bulletinDate;
-      updates[`${refPath}/${studentId}/bulletinType`] = 'annuel';
-      updates[`${refPath}/${studentId}/trimestre`] = null;
-      updates[`${refPath}/${studentId}/updatedAt`] = Date.now();
+      updates[`${path}/trim1Total`] = t1;
+      updates[`${path}/trim2Total`] = t2;
+      updates[`${path}/trim3Total`] = t3;
+      updates[`${path}/trim1Pct`] = b.trim1Pct || formatDecimal(t1 / 1000 * 100);
+      updates[`${path}/trim2Pct`] = b.trim2Pct || formatDecimal(t2 / 1000 * 100);
+      updates[`${path}/trim3Pct`] = b.trim3Pct || formatDecimal(t3 / 1000 * 100);
+      updates[`${path}/trim1Place`] = b.trim1Place || null;
+      updates[`${path}/trim2Place`] = b.trim2Place || null;
+      updates[`${path}/trim3Place`] = b.trim3Place || null;
+      updates[`${path}/annualTotal`] = annualTotal;
+      updates[`${path}/annualAverage`] = annualAverage;
+      updates[`${path}/annualPct`] = annualPct;
+      updates[`${path}/annualPctFinal`] = annualPct;
+      updates[`${path}/annualPlace`] = b.annualPlace || b.place || null;
+      updates[`${path}/place`] = b.annualPlace || b.place || null;
+      updates[`${path}/bulletinType`] = 'annuel';
+      updates[`${path}/schoolYear`] = schoolYear;
+      updates[`${path}/bulletinDate`] = bulletinDate;
+      updates[`${path}/updatedAt`] = Date.now();
     });
 
     // Appliquer les mises à jour
@@ -2132,6 +2147,10 @@ async function previewAndPrint(){
 function buildBulletinHtml(b) {
   const d = b.data;
   const maxGrand = d.maxGrand || (currentTrim ? TRIM_MAX_GRAND : ANNUAL_MAX_GRAND);
+  const trim1Pct = b.trim1Pct || (d.tri[0] ? formatDecimal(d.tri[0] / 1000 * 100) : '');
+  const trim2Pct = b.trim2Pct || (d.tri[1] ? formatDecimal(d.tri[1] / 1000 * 100) : '');
+  const trim3Pct = b.trim3Pct || (d.tri[2] ? formatDecimal(d.tri[2] / 1000 * 100) : '');
+  const annualPlace = b.annualPlace || b.place || '';
 
   // ── Tableau 1 rows ──
   const tbl1Rows = d.rows.map(r => `
@@ -2146,7 +2165,7 @@ function buildBulletinHtml(b) {
 
   const grandPct = d.totalAnnual ? d.annualPct+'%' : '';
 
-  // ── Tableau 2 — only the 6 main subjects (no Art/Phys) ──
+  // ── Tableau 2 — only the 6 main subjects (no Art/Phys) —
   const tbl2Rows = d.rows.filter(r => SUBJECTS_EXAM.includes(r.subject)).map(r => {
     const subMax = r.annualMax;
     const subTotal = r.annualTotal;
@@ -2526,19 +2545,26 @@ ${bulletinCSS}
         <tr class="grand-row">
           <td>GRAND TOTAL</td>
           <td>500</td><td>500</td><td>1000</td>
-          <td></td><td>${b.trim1Place || ''}</td><td>${d.tri[0] ? formatDecimal(d.tri[0]) : ''}</td>
-          <td></td><td>${b.trim2Place || ''}</td><td>${d.tri[1] ? formatDecimal(d.tri[1]) : ''}</td>
-          <td></td><td>${b.trim3Place || ''}</td><td>${d.tri[2] ? formatDecimal(d.tri[2]) : ''}</td>
-          <td>${maxGrand}</td><td>${d.totalAnnual ? formatDecimal(d.totalAnnual) : ''}</td><td>${grandPct}</td>
-        </tr>
-        <tr class="pct-row">
-          <td colspan="13" style="text-align:left;padding-left:4mm;font-weight:900;">POURCENTAGE</td>
-          <td colspan="2"></td>
+          <td colspan="2"></td><td>${d.tri[0] ? formatDecimal(d.tri[0]) : ''}</td>
+          <td colspan="2"></td><td>${d.tri[1] ? formatDecimal(d.tri[1]) : ''}</td>
+          <td colspan="2"></td><td>${d.tri[2] ? formatDecimal(d.tri[2]) : ''}</td>
+          <td>${maxGrand}</td>
+          <td>${d.totalAnnual ? formatDecimal(d.totalAnnual) : ''}</td>
           <td>${grandPct}</td>
         </tr>
         <tr class="pct-row">
-          <td colspan="13" style="text-align:left;padding-left:4mm;font-weight:900;">PLACE</td>
-          <td colspan="3">${b.place||''}</td>
+          <td colspan="4" style="text-align:left;padding-left:2mm;font-weight:900;font-size:6pt;">POURCENTAGE</td>
+          <td colspan="3" style="font-weight:900;background:#fffbe6;">${trim1Pct ? trim1Pct + '%' : '—'}</td>
+          <td colspan="3" style="font-weight:900;background:#fffbe6;">${trim2Pct ? trim2Pct + '%' : '—'}</td>
+          <td colspan="3" style="font-weight:900;background:#fffbe6;">${trim3Pct ? trim3Pct + '%' : '—'}</td>
+          <td colspan="3" style="font-weight:900;background:#e8f5e9;">${d.totalAnnual ? d.annualPct + '%' : '—'}</td>
+        </tr>
+        <tr class="pct-row">
+          <td colspan="4" style="text-align:left;padding-left:2mm;font-weight:900;font-size:6pt;">PLACE</td>
+          <td colspan="3" style="font-weight:900;background:#fffbe6;">${b.trim1Place || '—'}</td>
+          <td colspan="3" style="font-weight:900;background:#fffbe6;">${b.trim2Place || '—'}</td>
+          <td colspan="3" style="font-weight:900;background:#fffbe6;">${b.trim3Place || '—'}</td>
+          <td colspan="3" style="font-weight:900;background:#e8f5e9;">${annualPlace || '—'}</td>
         </tr>
       </tbody>
     </table>
@@ -3040,19 +3066,19 @@ function displayAnnualData(annualData, allClassStudents = []) {
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 1</div>
           <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre1.total}/1000</div>
           <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre1.percentage}%</div>
-          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre1.place || annualData.trim1Place || '—'}</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre1.place}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 2</div>
           <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre2.total}/1000</div>
           <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre2.percentage}%</div>
-          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre2.place || annualData.trim2Place || '—'}</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre2.place}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 3</div>
           <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre3.total}/1000</div>
           <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre3.percentage}%</div>
-          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre3.place || annualData.trim3Place || '—'}</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre3.place}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: linear-gradient(135deg, rgba(200,168,75,.2), rgba(200,168,75,.1)); border-radius: 8px; border: 2px solid var(--gold);">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">TOTAL ANNUEL</div>
@@ -3131,45 +3157,42 @@ async function assignPlaces(){
   if(!rankedStudents.length){toast('Aucun élève à classer','error');return;}
 
   const totalStudents = rankedStudents.length;
+  const selectedTrim = (document.getElementById('trimester-select') && document.getElementById('trimester-select').value) || 'annuel';
 
-  // Recalculate ranking
   rankedStudents.sort((a, b) => b.percentage - a.percentage);
   rankedStudents.forEach((s, index) => {
     s.rank = index + 1;
     s.rankLabel = `${s.rank}/${totalStudents}`;
   });
 
-  // Save to Firebase
   const updates = {};
-  // Determine selected trimester from UI
-  const selectedTrim = (document.getElementById('trimester-select') && document.getElementById('trimester-select').value) || 'annuel';
   rankedStudents.forEach(s => {
+    const className = normalizeClass(s.class);
+    const basePath = `bulletins_primaire_${className}/${s.id}`;
+
     updates[`students/${s.id}/rank`] = s.rank;
     updates[`students/${s.id}/rankLabel`] = s.rankLabel;
-    updates[`students/${s.id}/percentage`] = s.percentage;
-    updates[`students/${s.id}/grade`] = s.grade;
 
-    // Also update bulletins with label + numeric place + percentage
-    const className = normalizeClass(s.class);
-    updates[`bulletins_primaire_${className}/${s.id}/place`] = s.rankLabel;
-    updates[`bulletins_primaire_${className}/${s.id}/placeNum`] = s.rank;
-    updates[`bulletins_primaire_${className}/${s.id}/annualPct`] = s.percentage;
-    updates[`bulletins_primaire_${className}/${s.id}/percentage`] = s.percentage;
-    // Save trimester-specific place without overwriting other trimesters
-    if (selectedTrim === '1' || selectedTrim === 'T1' || selectedTrim === 't1') {
-      updates[`bulletins_primaire_${className}/${s.id}/trim1Place`] = s.rankLabel;
-    } else if (selectedTrim === '2' || selectedTrim === 'T2' || selectedTrim === 't2') {
-      updates[`bulletins_primaire_${className}/${s.id}/trim2Place`] = s.rankLabel;
-    } else if (selectedTrim === '3' || selectedTrim === 'T3' || selectedTrim === 't3') {
-      updates[`bulletins_primaire_${className}/${s.id}/trim3Place`] = s.rankLabel;
-    } else if (selectedTrim === 'annuel' || selectedTrim === 'ANNUAL') {
-      updates[`bulletins_primaire_${className}/${s.id}/annualPlace`] = s.rankLabel;
+    updates[`${basePath}/place`] = s.rankLabel;
+    updates[`${basePath}/placeNum`] = s.rank;
+
+    if (selectedTrim === '1') {
+      updates[`${basePath}/trim1Place`] = s.rankLabel;
+      updates[`${basePath}/trim1Pct`] = s.percentage;
+    } else if (selectedTrim === '2') {
+      updates[`${basePath}/trim2Place`] = s.rankLabel;
+      updates[`${basePath}/trim2Pct`] = s.percentage;
+    } else if (selectedTrim === '3') {
+      updates[`${basePath}/trim3Place`] = s.rankLabel;
+      updates[`${basePath}/trim3Pct`] = s.percentage;
+    } else if (selectedTrim === 'annuel') {
+      updates[`${basePath}/annualPlace`] = s.rankLabel;
+      updates[`${basePath}/annualPct`] = s.percentage;
+      updates[`${basePath}/annualPctFinal`] = s.percentage;
     }
   });
 
   await db.ref().update(updates);
-
-  // Update UI
   await loadPalmares();
   toast('✅ Rangs appliqués et sauvegardés !','success');
 }
