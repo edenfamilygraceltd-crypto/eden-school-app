@@ -848,13 +848,29 @@ table.notes-table{width:100%;border-collapse:collapse;min-width:700px;font-size:
             <option value="annuel">Bulletin Annuel</option>
           </select>
           <button class="btn btn-success" onclick="loadPalmares()">🔄 Actualiser</button>
+          <button class="btn btn-warning" onclick="showTeacherMissingNotes()">🧾 Notes manquantes</button>
           <button class="btn btn-primary" onclick="assignPlaces()">💾 Appliquer Rangs</button>
           <button class="btn btn-gold" onclick="confirmDownloadZip()">📦 Bulletins Finals</button>
         </div>
       </div>
+      <div id="teacherMissingNotesPanel" class="card mb-3" style="display:none;">
+        <div class="card-body">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3">
+            <div>
+              <strong>Analyse notes manquantes</strong>
+              <div class="small text-muted">Vérifier les bulletins de la classe sélectionnée et exporter les élèves incomplets.</div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn btn-sm btn-success" onclick="downloadTeacherMissingNotesReport()">Télécharger CSV</button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="showTeacherMissingNotes()">Actualiser</button>
+            </div>
+          </div>
+          <div id="teacherMissingNotesSummary" class="mb-2 text-muted">Aucune analyse effectuée.</div>
+          <div id="teacherMissingNotesTable" class="table-responsive"></div>
+        </div>
+      </div>
       <div id="palmares-body">
         <div class="table-wrap">
-          <table class="rank-table">
             <thead>
               <tr>
                 <th>Rang</th>
@@ -1987,6 +2003,7 @@ async function saveBulletin(){
   updateSaveButtonMode();
   toast('✅ Bulletin enregistré dans Firebase','success');
   showModal('✅','Enregistré !','Le bulletin a été sauvegardé avec succès. Créer un autre bulletin ?',[{label:'Nouveau bulletin',cls:'btn-gold',action:resetForm},{label:'Voir palmarès',cls:'btn-success',action:()=>showPage('palmares')},{label:'Rester ici',cls:'btn-ghost',action:null}]);
+  try { localStorage.setItem('edenBulletinUpdated', Date.now().toString()); } catch(e) {}
   } catch(error) {
     console.error('Erreur lors de la sauvegarde du bulletin:', error);
     toast('❌ Erreur lors de la sauvegarde. Vérifiez les données et réessayez.','error');
@@ -2101,6 +2118,7 @@ async function saveAnnualBulletins(selectedStudentId) {
 
     // Recharger les données annuelles pour mettre à jour l'affichage
     showAnnualBulletin();
+    try { localStorage.setItem('edenBulletinUpdated', Date.now().toString()); } catch(e) {}
 
   } catch (error) {
     console.error('Erreur lors de l\'enregistrement des bulletins annuels:', error);
@@ -2818,6 +2836,123 @@ async function loadPalmares(){
     </tr>`;
   });
   document.getElementById('palmaresTable').innerHTML = html;
+}
+
+function showTeacherMissingNotes() {
+  const report = getTeacherMissingNotesReport();
+  renderTeacherMissingNotesReport(report);
+}
+
+function getTeacherMissingNotesReport() {
+  const selectedClassRaw = document.getElementById('class-select')?.value || '';
+  const selectedTrim = document.getElementById('trimester-select')?.value || 'annuel';
+  const className = normalizeClass(selectedClassRaw || (currentTeacher?.classe || currentTeacher?.class || currentTeacher?.classes || ''));
+  const teacherLabel = teacherName(currentTeacher || {});
+  if (!className) {
+    showModal('⚠️', 'Classe non définie', 'Veuillez sélectionner une classe ou charger votre profil enseignant.', [{label:'OK',cls:'btn-ghost',action:null}]);
+    return [];
+  }
+
+  const studentItems = Object.values(allBulletins || []);
+  if (!studentItems.length) {
+    return [];
+  }
+
+  const requiredSubjects = ['etude du milieu', 'pre mathematique', 'premathematique', 'premathe', 'francais', 'francais langage'];
+  const report = [];
+
+  studentItems.forEach(item => {
+    const studentName = item.studentName || item.name || 'Élève inconnu';
+    const studentClass = item.class || item.classe || '';
+    const branch = item.branch || item.branche || '';
+    const missing = new Set();
+
+    if (selectedTrim === '1' || selectedTrim === '2' || selectedTrim === '3') {
+      const trimKey = selectedTrim === '1' ? 'trim1Total' : selectedTrim === '2' ? 'trim2Total' : 'trim3Total';
+      const trimTotal = item[trimKey];
+      if (trimTotal === undefined || trimTotal === null || trimTotal === '') {
+        missing.add(`Trimestre ${selectedTrim} manquant`);
+      }
+      const scores = Array.isArray(item.scores) ? item.scores : [];
+      const triField = selectedTrim === '1' ? 't1' : selectedTrim === '2' ? 't2' : 't3';
+      scores.forEach(subjectData => {
+        const subjectName = normalizeClass(subjectData.subject || subjectData.nom || subjectData.name || '');
+        if (!subjectName) return;
+        const data = subjectData[triField] || {};
+        const tjMissing = data?.tj === undefined || data?.tj === null || `${data?.tj}`.toString().trim() === '';
+        const exMissing = (data?.ex === undefined && data?.exam === undefined) || `${data?.ex ?? data?.exam}`.toString().trim() === '';
+        if (tjMissing) missing.add(`${subjectData.subject || subjectData.nom || subjectData.name || 'Matière'} TJ manquant`);
+        if (exMissing) missing.add(`${subjectData.subject || subjectData.nom || subjectData.name || 'Matière'} EX manquant`);
+      });
+    } else {
+      ['trim1Total', 'trim2Total', 'trim3Total'].forEach((trimKey, index) => {
+        const value = item[trimKey];
+        if (value === undefined || value === null || value === '') {
+          missing.add(`Trimestre ${index + 1} manquant`);
+        }
+      });
+    }
+
+    if (missing.size > 0) {
+      report.push({
+        studentName,
+        studentClass,
+        branch,
+        teacherName: teacherLabel,
+        missingItems: Array.from(missing).sort()
+      });
+    }
+  });
+
+  return report;
+}
+
+function renderTeacherMissingNotesReport(report) {
+  const panel = document.getElementById('teacherMissingNotesPanel');
+  const summary = document.getElementById('teacherMissingNotesSummary');
+  const tableContainer = document.getElementById('teacherMissingNotesTable');
+  if (!panel || !summary || !tableContainer) return;
+  panel.style.display = 'block';
+  summary.textContent = report.length
+    ? `${report.length} élève(s) avec notes manquantes détecté(s) pour la classe sélectionnée.`
+    : 'Aucun élève avec notes manquantes détecté.';
+  if (!report.length) {
+    tableContainer.innerHTML = '<div class="alert alert-info">Aucun élève avec notes manquantes trouvé.</div>';
+    return;
+  }
+
+  let html = `<table class="table table-sm table-striped align-middle mb-0"><thead><tr><th>Élève</th><th>Classe</th><th>Branche</th><th>Points manquants</th></tr></thead><tbody>`;
+  report.forEach(item => {
+    html += `<tr><td>${item.studentName}</td><td>${item.studentClass}</td><td>${item.branch || '—'}</td><td><small>${item.missingItems.join('<br>')}</small></td></tr>`;
+  });
+  html += '</tbody></table>';
+  tableContainer.innerHTML = html;
+}
+
+function downloadTeacherMissingNotesReport() {
+  const report = getTeacherMissingNotesReport();
+  if (!report.length) {
+    toast('Aucune donnée de notes manquantes à exporter.', 'warning');
+    return;
+  }
+  const headers = ['Élève', 'Classe', 'Branche', 'Enseignant', 'Points manquants'];
+  const rows = report.map(item => ({
+    'Élève': item.studentName,
+    'Classe': item.studentClass,
+    'Branche': item.branch || '',
+    'Enseignant': item.teacherName || '',
+    'Points manquants': item.missingItems.join(' ; ')
+  }));
+  const csv = [headers.join(',')].concat(rows.map(row => headers.map(header => `"${String(row[header] || '').replace(/"/g,'""')}"`).join(','))).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'notes_manquantes_enseignant.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 function printSingleFromPalmares(key){

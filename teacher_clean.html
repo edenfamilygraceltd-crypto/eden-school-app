@@ -7869,6 +7869,7 @@
       toast('Bulletin sauvegardé dans Firebase !', 'ok');
       const stBulletinsEl = document.getElementById('stBulletins');
       if (stBulletinsEl) stBulletinsEl.textContent = allBulletins.length;
+      try { localStorage.setItem('edenBulletinUpdated', Date.now().toString()); } catch(e) {}
     } catch(e) {
       if (isFirebaseNetworkError(e)) {
         toast('Échec sauvegarde: connexion Firebase indisponible.', 'err');
@@ -8117,6 +8118,7 @@
       switchBulletinTab('t-apercu');
 
       toast('✅ Bulletin annuel généré, sauvegardé puis publié avec succès', 'ok');
+      try { localStorage.setItem('edenBulletinUpdated', Date.now().toString()); } catch(e) {}
     } catch (error) {
       console.error('Erreur génération bulletin annuel:', error);
       if (isFirebaseNetworkError(error)) {
@@ -8227,6 +8229,7 @@
         BULLETIN.commentaire = '';
         console.log('📝 Bulletin form reset');
       }, 1000);
+      try { localStorage.setItem('edenBulletinUpdated', Date.now().toString()); } catch(e) {}
       
     } catch(e) { 
       console.error('❌ Publication error:', e);
