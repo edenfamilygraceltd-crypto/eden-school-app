@@ -1045,11 +1045,11 @@ function showAnnualBulletin() {
     // Traiter chaque élève de la classe
     Object.keys(classData).forEach(studentId => {
       const studentBulletin = classData[studentId];
-      const t1 = studentBulletin.trim1Total || 0;
-      const t2 = studentBulletin.trim2Total || 0;
-      const t3 = studentBulletin.trim3Total || 0;
-      const totalAnnual = t1 + t2 + t3;
-      const averageAnnual = totalAnnual / 3;
+      const t1 = roundDecimal(studentBulletin.trim1Total || 0);
+      const t2 = roundDecimal(studentBulletin.trim2Total || 0);
+      const t3 = roundDecimal(studentBulletin.trim3Total || 0);
+      const totalAnnual = roundDecimal(t1 + t2 + t3);
+      const averageAnnual = roundDecimal(totalAnnual / 3);
 
       // Trouver le nom de l'élève
       const student = allStudents.find(s => s._id === studentId);
@@ -1078,7 +1078,7 @@ function showAnnualBulletin() {
           total: totalAnnual,
           percentage: studentBulletin.annualPct || studentBulletin.annualPctFinal || formatDecimal(totalAnnual / 3000 * 100),
           place: studentBulletin.annualPlace || studentBulletin.place || '—',
-          average: formatDecimal(totalAnnual / 3)
+          average: averageAnnual
         },
         scores: studentBulletin.scores || []
       });
@@ -1160,6 +1160,9 @@ function formatDecimal(num) {
   const truncated = Math.floor(num * 10) / 10;
   // Convert to string with period as decimal separator
   return truncated.toString().replace(',', '.');
+}
+function roundDecimal(num) {
+  return Math.round((Number(num) || 0) * 10) / 10;
 }
 function grade(p){if(p>=80)return'D1';if(p>=75)return'C2';if(p>=70)return'C3';if(p>=60)return'C4';if(p>=55)return'C5';if(p>=50)return'P6';if(p>=45)return'P7';if(p>=40)return'P8';return'P9';}
 function getSchoolYear(){const y=new Date().getFullYear();return`${y-1}–${y}`;}
@@ -1941,22 +1944,22 @@ async function saveBulletin(){
       ['t1','t2','t3'].forEach(k=>{
         row[k].test=Number(row[k].test)||0;
         row[k].ex=Number(row[k].ex)||0;
-        row[k].total=row[k].test+row[k].ex;
+        row[k].total=roundDecimal(row[k].test + row[k].ex);
       });
 
     row.annualMax=(s.testMax+s.exMax)*3;
-    row.annualTotal=row.t1.total+row.t2.total+row.t3.total;
+    row.annualTotal=roundDecimal(row.t1.total + row.t2.total + row.t3.total);
     row.annualPct=row.annualMax?formatDecimal(row.annualTotal/row.annualMax*100):'0.0';
     return row;
   });
 
   // Mise à jour des totaux par trimestre en conservant les autres trimestres existants.
-  const trim1Total = mergedRows.reduce((sum,r)=>sum+(r.t1.total||0),0);
-  const trim2Total = mergedRows.reduce((sum,r)=>sum+(r.t2.total||0),0);
-  const trim3Total = mergedRows.reduce((sum,r)=>sum+(r.t3.total||0),0);
+  const trim1Total = roundDecimal(mergedRows.reduce((sum,r)=>sum+(r.t1.total||0),0));
+  const trim2Total = roundDecimal(mergedRows.reduce((sum,r)=>sum+(r.t2.total||0),0));
+  const trim3Total = roundDecimal(mergedRows.reduce((sum,r)=>sum+(r.t3.total||0),0));
 
-  const annualTotal = trim1Total + trim2Total + trim3Total;
-  const averageScore = annualTotal / 3;
+  const annualTotal = roundDecimal(trim1Total + trim2Total + trim3Total);
+  const averageScore = roundDecimal(annualTotal / 3);
   const annualPct = averageScore ? formatDecimal(averageScore / 1000 * 100) : '0.0';
   const currentTrimTotal = currentTrim===1 ? trim1Total : currentTrim===2 ? trim2Total : trim3Total;
   const currentTrimPct = formatDecimal((currentTrimTotal / TRIM_MAX_GRAND) * 100);
@@ -3200,27 +3203,27 @@ function displayAnnualData(annualData, allClassStudents = []) {
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 1</div>
-          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre1.total}/1000</div>
+          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${formatDecimal(annualData.trimestre1.total)}/1000</div>
           <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre1.percentage}%</div>
           <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre1.place}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 2</div>
-          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre2.total}/1000</div>
+          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${formatDecimal(annualData.trimestre2.total)}/1000</div>
           <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre2.percentage}%</div>
           <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre2.place}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 3</div>
-          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${annualData.trimestre3.total}/1000</div>
+          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${formatDecimal(annualData.trimestre3.total)}/1000</div>
           <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre3.percentage}%</div>
           <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre3.place}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: linear-gradient(135deg, rgba(200,168,75,.2), rgba(200,168,75,.1)); border-radius: 8px; border: 2px solid var(--gold);">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">TOTAL ANNUEL</div>
-          <div style="font-size: 24px; font-weight: bold; color: var(--gold);">${annualData.annuel.total}/3000</div>
+          <div style="font-size: 24px; font-weight: bold; color: var(--gold);">${formatDecimal(Number(annualData.annuel.total))}/3000</div>
           <div style="font-size: 16px; color: rgba(255,255,255,.9);">${annualData.annuel.percentage}%</div>
-          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top: 5px;">Moyenne: ${annualData.annuel.average}</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top: 5px;">Moyenne: ${formatDecimal(Number(annualData.annuel.average))}</div>
           <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top: 5px;">Rang: ${annualData.place || annualData.rank || 'N/A'}</div>
         </div>
       </div>
@@ -3248,7 +3251,7 @@ function displayAnnualData(annualData, allClassStudents = []) {
                 <tr style="border-bottom: 1px solid rgba(59,130,246,.2); ${student.studentId === annualData.studentId ? 'background: rgba(200,168,75,.1);' : ''}">
                   <td style="padding: 8px; text-align: center; font-weight: bold; color: ${student.studentId === annualData.studentId ? 'rgba(200,168,75,1)' : 'rgba(255,255,255,.8)'};">${student.rank}</td>
                   <td style="padding: 8px; color: ${student.studentId === annualData.studentId ? 'rgba(200,168,75,1)' : 'rgba(255,255,255,.8)'}; font-weight: ${student.studentId === annualData.studentId ? 'bold' : 'normal'};">${student.studentName}</td>
-                  <td style="padding: 8px; text-align: center; color: ${student.studentId === annualData.studentId ? 'rgba(200,168,75,1)' : 'rgba(255,255,255,.8)'};">${student.annuel.total}</td>
+                  <td style="padding: 8px; text-align: center; color: ${student.studentId === annualData.studentId ? 'rgba(200,168,75,1)' : 'rgba(255,255,255,.8)'};">${formatDecimal(Number(student.annuel.total))}</td>
                   <td style="padding: 8px; text-align: center; color: ${student.studentId === annualData.studentId ? 'rgba(200,168,75,1)' : 'rgba(255,255,255,.8)'};">${student.annuel.percentage}%</td>
                 </tr>
               `).join('')}
