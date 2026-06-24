@@ -1518,6 +1518,14 @@
     line-height:1.1;
   }
 
+  .bul-score-percent {
+    display:block;
+    font-size:.55rem;
+    color:rgba(14, 49, 83, 0.8);
+    margin-top:2px;
+    line-height:1.1;
+  }
+
   /* Application row */
   .bul-app-row {
     display:grid;
@@ -2818,6 +2826,10 @@
                 <div class="bul-info-lbl">BRANCHE</div>
                 <div class="bul-info-val" id="bulBranche">—</div>
               </div>
+              <div class="bul-info-row">
+                <div class="bul-info-lbl">MOYENNE</div>
+                <div class="bul-info-val" id="generalAverage">—</div>
+              </div>
             </div>
 
             <!-- Tableau branches × trimestres -->
@@ -4112,6 +4124,27 @@
     const numeric = parseFloat(raw);
     if (!isNaN(numeric)) return numToGrade(numeric) || '';
     return '';
+  }
+
+  function formatBulletinScoreDisplay(rawValue) {
+    if (rawValue === null || rawValue === undefined || rawValue === '') return '—';
+    const score = parseFloat(rawValue);
+    const grade = normalizeGradeCode(rawValue);
+    const gradeLabel = grade ? gradeToKindergartenSkill(grade) : '';
+
+    if (!isNaN(score)) {
+      const percent = `${score.toFixed(2)} %`;
+      if (gradeLabel) {
+        return `<span class="${gradeBulletinClass(grade)}">${gradeLabel}<br><small class="bul-score-percent">${percent}</small></span>`;
+      }
+      return `<span class="bul-nd">${percent}</span>`;
+    }
+
+    if (gradeLabel) {
+      return `<span class="${gradeBulletinClass(grade)}">${gradeLabel}</span>`;
+    }
+
+    return rawValue.toString();
   }
 
   function convertSkillPointsToGrades(skills) {
@@ -9073,50 +9106,33 @@
     if (bulletin && (bulletin.trimester === 'BN' || bulletin.trimestre === 'BN')) {
       const annualAvg = parseFloat(bulletin.generalAverage);
       if (!isNaN(annualAvg)) {
-        const avgElement = document.getElementById("generalAverage");
-        if (avgElement) avgElement.textContent = annualAvg.toFixed(2) + " %";
-        return annualAvg.toFixed(2);
+        return annualAvg.toFixed(2) + " %";
       }
     }
 
-      let total = 0;
-      let count = 0;
+    let total = 0;
+    let count = 0;
 
-      Object.keys(bulletin.skills || {}).forEach(subject => {
+    Object.keys(bulletin.skills || {}).forEach(subject => {
+      const normalizedSubject = normalize(subject);
+      const key = Object.keys(maxScores).find(k => normalize(k) === normalizedSubject);
+      if (!key) return;
 
-          const normalizedSubject = normalize(subject);
+      const note = bulletin.skills[subject];
+      const max = maxScores[key];
+      const examScore = note?.ex != null ? note.ex : note?.exam;
 
-          const key = Object.keys(maxScores).find(k => 
-              normalize(k) === normalizedSubject
-          );
-
-          if (!key) return;
-
-          const note = bulletin.skills[subject];
-          const max = maxScores[key];
-
-          const examScore = note?.ex != null ? note.ex : note?.exam;
-
-          if (note?.tj != null && examScore != null) {
-
-              const tjPercent = (note.tj / max.tj) * 100;
-            const examPercent = (examScore / max.exam) * 100;
-
-              const subjectAverage = (tjPercent + examPercent) / 2;
-
-              total += subjectAverage;
-              count++;
-          }
-      });
-
-      const avg = count > 0 ? (total / count).toFixed(2) : 0;
-
-      const avgElement = document.getElementById("generalAverage");
-      if (avgElement) {
-          avgElement.textContent = avg + " %";
+      if (note?.tj != null && examScore != null) {
+        const tjPercent = (note.tj / max.tj) * 100;
+        const examPercent = (examScore / max.exam) * 100;
+        const subjectAverage = (tjPercent + examPercent) / 2;
+        total += subjectAverage;
+        count++;
       }
+    });
 
-      return avg;
+    const avg = count > 0 ? (total / count).toFixed(2) : '0.00';
+    return avg + " %";
   }
 
   // Print bulletin from history
@@ -10514,8 +10530,7 @@
         const getTJ = (tri) => {
           const b = allStudentBulletins[tri];
           if (b && b.skills && b.skills[subject] && b.skills[subject].tj !== undefined && b.skills[subject].tj !== null) {
-            const g = normalizeGradeCode(b.skills[subject].tj);
-            return g ? `<span class="${gradeBulletinClass(g)}">${gradeToKindergartenSkill(g)}</span>` : '—';
+            return formatBulletinScoreDisplay(b.skills[subject].tj);
           }
           return '—';
         };
@@ -10523,8 +10538,7 @@
         const getEX = (tri) => {
           const b = allStudentBulletins[tri];
           if (b && b.skills && b.skills[subject] && b.skills[subject].ex !== undefined && b.skills[subject].ex !== null) {
-            const g = normalizeGradeCode(b.skills[subject].ex);
-            return g ? `<span class="${gradeBulletinClass(g)}">${gradeToKindergartenSkill(g)}</span>` : '—';
+            return formatBulletinScoreDisplay(b.skills[subject].ex);
           }
           return '—';
         };
@@ -11197,6 +11211,7 @@
     const className = bulletin.class || student?.classes || student?.classe || '—';
     const year = bulletin.annee || new Date().getFullYear();
     const trimestre = bulletin.trimester || bulletin.trimestre || '1';
+    const average = calculateGeneralAverage(bulletin);
 
     // Get all subjects
     const allSubjects = new Set();
@@ -11218,8 +11233,7 @@
       const getTJ = (tri) => {
         const b = allStudentBulletins[tri];
         if (b && b.skills && b.skills[subject] && b.skills[subject].tj !== undefined && b.skills[subject].tj !== null) {
-          const g = normalizeGradeCode(b.skills[subject].tj);
-          return g ? `<span class="${gradeBulletinClass(g)}">${gradeToKindergartenSkill(g)}</span>` : '—';
+          return formatBulletinScoreDisplay(b.skills[subject].tj);
         }
         return '—';
       };
@@ -11227,8 +11241,7 @@
       const getEX = (tri) => {
         const b = allStudentBulletins[tri];
         if (b && b.skills && b.skills[subject] && b.skills[subject].ex !== undefined && b.skills[subject].ex !== null) {
-          const g = normalizeGradeCode(b.skills[subject].ex);
-          return g ? `<span class="${gradeBulletinClass(g)}">${gradeToKindergartenSkill(g)}</span>` : '—';
+          return formatBulletinScoreDisplay(b.skills[subject].ex);
         }
         return '—';
       };
@@ -11380,6 +11393,10 @@
           <div class="bul-info-row">
             <div class="bul-info-lbl">BRANCHE</div>
             <div class="bul-info-val">${bulletin.branch || 'Maternelle'}</div>
+          </div>
+          <div class="bul-info-row">
+            <div class="bul-info-lbl">MOYENNE</div>
+            <div class="bul-info-val" id="generalAverage">—</div>
           </div>
         </div>
 

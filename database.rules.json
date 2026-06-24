@@ -107,6 +107,20 @@
         ".read": "auth != null",
         ".write": "auth != null"
       }
+    },
+    "conversations": {
+      "$conversationId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['id','participants','createdBy','createdAt'])"
+      }
+    },
+    "notifications": {
+      "$notificationId": {
+        ".read": "auth != null && (data.child('to').val() === auth.uid || data.child('teacherId').val() === auth.uid || data.child('recipientId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || data.child('targetRole').val() === 'teacher')",
+        ".write": "auth != null && newData.hasChildren(['createdAt','type'])",
+        ".indexOn": ["createdAt","teacherId","targetRole","to"]
+      }
     }
   }
 }
