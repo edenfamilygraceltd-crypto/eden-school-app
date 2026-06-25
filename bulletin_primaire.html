@@ -832,8 +832,13 @@ table.notes-table{width:100%;border-collapse:collapse;min-width:700px;font-size:
   <div id="palmares-page" style="display:none;">
     <div class="card">
       <div class="palmares-header">
-        <div style="display:flex;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:220px;">
           <div class="palmares-title">🏆 Palmarès des Élèves</div>
+        </div>
+
+        <!-- Search -->
+        <div style="flex:1;min-width:220px;margin-right:8px;">
+          <input type="text" id="palmaresSearch" placeholder="🔎 Rechercher un élève, classe ou branche..." style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(200,168,75,.2);border-radius:10px;padding:10px 14px;font-size:12px;color:#fff;font-family:'DM Sans',sans-serif;" oninput="filterPalmares()">
         </div>
 
         <!-- TRIMESTER SELECT -->
@@ -2931,6 +2936,32 @@ function renderTeacherMissingNotesReport(report) {
   });
   html += '</tbody></table>';
   tableContainer.innerHTML = html;
+}
+
+function filterPalmares() {
+  const q = (document.getElementById('palmaresSearch')?.value || '').toLowerCase().trim();
+  const tbody = document.getElementById('palmaresTable');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  let anyVisible = false;
+  rows.forEach(row => {
+    if (row.classList && row.classList.contains('no-results-row')) return;
+    const text = (row.textContent || '').toLowerCase();
+    const show = !q || text.includes(q);
+    row.style.display = show ? '' : 'none';
+    if (show) anyVisible = true;
+  });
+  const existingNo = tbody.querySelector('.no-results-row');
+  if (!anyVisible) {
+    if (!existingNo) {
+      const r = document.createElement('tr');
+      r.className = 'no-results-row';
+      r.innerHTML = '<td colspan="9"><div class="empty-state"><div class="icon">🔎</div><p>Aucun résultat pour votre recherche.</p></div></td>';
+      tbody.appendChild(r);
+    }
+  } else {
+    if (existingNo) existingNo.remove();
+  }
 }
 
 function downloadTeacherMissingNotesReport() {
