@@ -161,6 +161,11 @@ table.notes-table{width:100%;border-collapse:collapse;min-width:700px;font-size:
 .pct-bar-wrap{width:120px;height:6px;background:rgba(255,255,255,.1);border-radius:3px;display:inline-block;vertical-align:middle;overflow:hidden;}
 .pct-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--gold-light));}
 
+/* ========== RANK TIES (EX AEQUO) ========== */
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;border-radius:999px;font-weight:700;font-size:13px;gap:6px;}
+.rank-badge-tie{background:linear-gradient(135deg,rgba(200,168,75,.25),rgba(232,201,122,.15));border:1.5px solid rgba(200,168,75,.4);color:var(--gold-light);box-shadow:0 2px 8px rgba(200,168,75,.15);}
+.rank-badge-tie::before{content:'≡';font-size:14px;}
+
 /* ========== TOAST ========== */
 .toasts{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
 .toast{background:#1e2533;color:#fff;border:1px solid rgba(200,168,75,.2);padding:12px 16px;border-radius:12px;font-size:13px;animation:slideIn .3s ease;max-width:320px;}
@@ -2707,9 +2712,10 @@ function assignRankWithTies(students){
 
   students.forEach((s, index) => {
     if (index === 0 || s.percentage !== previousPercentage) {
-      currentRank += 1;
+      currentRank = index + 1;
       previousPercentage = s.percentage;
     }
+
     s.rank = currentRank;
     s.rankLabel = `${s.rank}/${totalStudents}`;
   });
@@ -2843,9 +2849,17 @@ async function loadPalmares(){
 
   // Render table
   let html = '';
-  students.forEach(s => {
+  students.forEach((s, index) => {
+    // Detect if this student shares a rank with others (tie/ex æquo)
+    const prevStudent = index > 0 ? students[index - 1] : null;
+    const nextStudent = index < students.length - 1 ? students[index + 1] : null;
+    const isTied = (prevStudent && prevStudent.rank === s.rank) || (nextStudent && nextStudent.rank === s.rank);
+    const rankDisplay = isTied 
+      ? `<span class="rank-badge rank-badge-tie">${s.rankLabel}</span>`
+      : `<span class="rank-badge">${s.rankLabel}</span>`;
+    
     html += `<tr>
-      <td>${s.rankLabel || ''}</td>
+      <td>${rankDisplay}</td>
       <td>${s.name}</td>
       <td>${s.class}</td>
       <td>${s.branch}</td>
