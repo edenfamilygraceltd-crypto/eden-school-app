@@ -2700,6 +2700,21 @@ ${bulletinCSS}
 // ===== PALMARES =====
 function gradeLabel(p){return p>=80?'D1':p>=75?'C2':p>=70?'C3':p>=60?'C4':p>=55?'C5':p>=50?'P6':p>=45?'P7':p>=40?'P8':'P9';}
 
+function assignRankWithTies(students){
+  const totalStudents = students.length;
+  let currentRank = 0;
+  let previousPercentage = null;
+
+  students.forEach((s, index) => {
+    if (index === 0 || s.percentage !== previousPercentage) {
+      currentRank += 1;
+      previousPercentage = s.percentage;
+    }
+    s.rank = currentRank;
+    s.rankLabel = `${s.rank}/${totalStudents}`;
+  });
+}
+
 async function loadPalmares(){
   const selectedClassRaw = document.getElementById('class-select').value;
   const selectedTrim = document.getElementById('trimester-select').value || 'annuel';
@@ -2795,12 +2810,8 @@ async function loadPalmares(){
   // Sort by percentage DESC
   students.sort((a, b) => b.percentage - a.percentage);
 
-  // Assign rank and label (1/N)
-  const totalStudents = students.length;
-  students.forEach((s, index) => {
-    s.rank = index + 1;
-    s.rankLabel = `${s.rank}/${totalStudents}`;
-  });
+  // Assign rank and label using dense ranking with ties
+  assignRankWithTies(students);
 
   // Store globally
   rankedStudents = students;
@@ -3330,10 +3341,7 @@ async function assignPlaces(){
   const selectedTrim = (document.getElementById('trimester-select') && document.getElementById('trimester-select').value) || 'annuel';
 
   rankedStudents.sort((a, b) => b.percentage - a.percentage);
-  rankedStudents.forEach((s, index) => {
-    s.rank = index + 1;
-    s.rankLabel = `${s.rank}/${totalStudents}`;
-  });
+  assignRankWithTies(rankedStudents);
 
   const updates = {};
   rankedStudents.forEach(s => {
