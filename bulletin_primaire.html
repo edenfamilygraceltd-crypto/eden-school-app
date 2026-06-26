@@ -2787,10 +2787,15 @@ async function loadPalmares(){
       displayTotal = trim3Total;
       computedPct = trim3Total ? formatDecimal(trim3Total / 1000 * 100) : '0.0';
     } else {
-      displayTotal = averageScore;
-      computedPct = (b.annualPct != null && b.annualPct !== '' ? formatDecimal(b.annualPct) :
-        (b.annualPercentage != null && b.annualPercentage !== '' ? formatDecimal(b.annualPercentage) :
-          (averageScore ? formatDecimal(averageScore / 1000 * 100) : '0.0')));
+      const annualAvg = (trim1Total + trim2Total + trim3Total) / 3;
+      displayTotal = annualAvg;
+      computedPct = annualAvg > 0
+        ? formatDecimal(annualAvg / 1000 * 100)
+        : (Number(b.annualPct) > 0
+            ? formatDecimal(Number(b.annualPct))
+            : (Number(b.annualPercentage) > 0
+                ? formatDecimal(Number(b.annualPercentage))
+                : '0.0'));
     }
 
     const grade = gradeLabel(Number(computedPct));
