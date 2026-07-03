@@ -1170,9 +1170,27 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script>
-    if (typeof window.FIREBASE_CONFIG !== 'undefined') {
-      try { firebase.initializeApp(window.FIREBASE_CONFIG); console.log("Firebase initialisé"); }
-      catch (error) { console.log("Erreur Firebase:", error); }
+    const appConfig = (typeof window !== 'undefined' && window.FIREBASE_CONFIG)
+      ? window.FIREBASE_CONFIG
+      : {
+          apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+          authDomain: "edensmart-app.firebaseapp.com",
+          databaseURL: "https://edensmart-app-default-rtdb.firebaseio.com",
+          projectId: "edensmart-app",
+          storageBucket: "edensmart-app.firebasestorage.app",
+          messagingSenderId: "1093120876724",
+          appId: "1:1093120876724:web:bc37448cadd18d651c77e1"
+        };
+
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(appConfig);
+        console.log("Firebase initialisé");
+      } else {
+        console.log("Firebase déjà initialisé");
+      }
+    } catch (error) {
+      console.log("Erreur Firebase:", error);
     }
   </script>
 </head>
