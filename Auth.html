@@ -34,7 +34,9 @@
       setPersistence,
       browserSessionPersistence,
       sendPasswordResetEmail,
-      fetchSignInMethodsForEmail
+      fetchSignInMethodsForEmail,
+      GoogleAuthProvider,
+      signInWithPopup
     } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
     import { getDatabase, ref as rtdbRef, get as rtdbGet } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
@@ -63,6 +65,8 @@
     window.signInWithEmailAndPassword = signInWithEmailAndPassword;
     window.sendPasswordResetEmail = sendPasswordResetEmail;
     window.fetchSignInMethodsForEmail = fetchSignInMethodsForEmail;
+    window.signInWithPopup = signInWithPopup;
+    window.GoogleAuthProvider = GoogleAuthProvider;
     window.signOut = () => signOut(window.auth);
     window.rtdbRef = rtdbRef;
     window.rtdbGet = rtdbGet;
@@ -1530,6 +1534,44 @@
         }
         
         showAlert(errorMessage, 'error');
+      }
+    }
+
+    async function googleLogin(buttonElement = null) {
+      const button = buttonElement || document.querySelector('.btn-google');
+      if (button) {
+        setAuthButtonLoading(button, true);
+      }
+
+      try {
+        const provider = new window.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        await window.setPersistence(window.auth, window.browserSessionPersistence);
+        const result = await window.signInWithPopup(window.auth, provider);
+        const user = result.user;
+
+        if (!user) {
+          throw new Error('Impossible de récupérer l\'utilisateur Google.');
+        }
+
+        const isStaff = await getUserRoleAndRedirect(user, user.email || '');
+        if (!isStaff && button) {
+          setAuthButtonLoading(button, false);
+        }
+      } catch (error) {
+        console.error('❌ Erreur de connexion Google:', error);
+        let errorMessage = 'Erreur de connexion Google. Vérifiez votre compte et réessayez.';
+        if (error.code === 'auth/popup-closed-by-user') {
+          errorMessage = 'Connexion Google annulée par l\'utilisateur.';
+        } else if (error.code === 'auth/cancelled-popup-request') {
+          errorMessage = 'Une autre fenêtre de connexion est déjà ouverte.';
+        } else if (error.code === 'auth/account-exists-with-different-credential') {
+          errorMessage = 'Cet email existe déjà avec un autre mode de connexion. Utilisez votre adresse professionnelle.';
+        }
+        showAlert(errorMessage, 'error');
+        if (button) {
+          setAuthButtonLoading(button, false);
+        }
       }
     }
 

@@ -2200,14 +2200,14 @@ function buildBulletinHtml(b) {
   // ── Tableau 2 — only the 6 main subjects (no Art/Phys) —
   const tbl2Rows = d.rows.filter(r => SUBJECTS_EXAM.includes(r.subject)).map(r => {
     const subMax = r.annualMax;
-    const subTotal = r.annualTotal;
+    const subTotal = r.annualTotal ? Math.round(Number(r.annualTotal) * 10) / 10 : 0;
     const subPct = subMax && subTotal ? formatDecimal(subTotal/subMax*100) + '%' : '';
     const g = subMax && subTotal ? grade(parseFloat(subTotal/subMax*100)) : '';
     const gradeClass = g ? 'bul-grade-'+g.toLowerCase() : '';
     return `<tr>
       <td>${r.subject}</td>
       <td>${subMax}</td>
-      <td>${subTotal||''}</td>
+      <td>${subTotal ? formatDecimal(Number(subTotal)) : ''}</td>
       <td>${subPct}</td>
       <td class="${gradeClass}">${g}</td>
       <td>${g}</td>

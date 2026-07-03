@@ -989,6 +989,36 @@
     /* Inscription */
     #inscription { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 4rem 2rem; border-radius: 20px; margin: 3rem 0; position: relative; }
     .form-inscription-container { max-width: 900px; width: 100%; background: white; border-radius: 20px; box-shadow: 0 5px 30px rgba(0,0,0,0.2); overflow: hidden; margin: 0 auto; animation: slideUp 0.6s ease; }
+
+    @keyframes navBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      20% { transform: translateY(-8px) scale(1.08); }
+      40% { transform: translateY(0) scale(1); }
+      60% { transform: translateY(-4px) scale(1.04); }
+      80% { transform: translateY(0) scale(1); }
+    }
+    @keyframes navVibrate {
+      0%,100% { transform: translateX(0); }
+      10% { transform: translateX(-2px); }
+      20% { transform: translateX(2px); }
+      30% { transform: translateX(-2px); }
+      40% { transform: translateX(2px); }
+      50% { transform: translateX(-1px); }
+      60% { transform: translateX(1px); }
+      70% { transform: translateX(-1px); }
+      80% { transform: translateX(1px); }
+      90% { transform: translateX(0); }
+    }
+    .nav-links a.nav-alert,
+    .ri .rb.nav-alert {
+      animation: navBounce 0.8s ease-in-out 3, navVibrate 0.5s linear 4;
+    }
+    .nav-links a.nav-alert {
+      color: #ffd166 !important;
+    }
+    .ri .rb.nav-alert {
+      box-shadow: 0 0 0 3px rgba(255,209,102,.6), 0 0 20px rgba(255,209,102,.5) !important;
+    }
   /* ===== nouveaux styles jeux fournis par l'utilisateur ===== */
   /* ─── LEVEL TABS ─── */
   .level-tabs{
@@ -1329,6 +1359,7 @@
       <li><a href="#accueil" class="active"><i class="fas fa-home"></i><span class="lbl"> Accueil</span></a></li>
       <li><a href="#galerie"><i class="fas fa-images"></i><span class="lbl"> Galerie</span></a></li>
       <li><a href="#academique"><i class="fas fa-graduation-cap"></i><span class="lbl"> Activités</span></a></li>
+      <li><a href="inscription.html" id="navInscriptionLink"><i class="fas fa-pen-fancy"></i><span class="lbl"> Inscription</span></a></li>
 
       <li><a href="#bibliotheque"><i class="fas fa-book"></i><span class="lbl"> Bibliothèque</span></a></li>
       <li><a href="#youtube"><i class="fab fa-youtube"></i><span class="lbl"> YouTube</span></a></li>
@@ -1340,12 +1371,13 @@
         </a>
       </li>
       <li id="parentLoginLi">
-        <button class="btn-primary" onclick="openLoginModal()" style="padding: 0.5rem 1.5rem;">
-          <i class="fas fa-user"></i><span class="lbl"> Parent Login</span>
+        <button class="btn-primary" onclick="handleGoogleSignIn()" style="padding: 0.5rem 1.5rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+          <i class="fab fa-google"></i><span class="lbl"> Se connecter avec Google</span>
         </button>
       </li>
       <li id="logoutLi" style="display: none;">
-        <button onclick="logoutFromIndex()" style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 50px; cursor: pointer; font-family: 'Poppins', sans-serif;">
+        <button onclick="logoutFromIndex()" style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 50px; cursor: pointer; font-family: 'Poppins', sans-serif; display: inline-flex; align-items: center; gap: 0.5rem;">
+          <img id="userPhotoDisplay" src="" alt="Photo" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover; display:none;">
           <i class="fas fa-sign-out-alt"></i> <span id="userNameDisplay"></span> - Déconnexion
         </button>
       </li>
@@ -1367,7 +1399,7 @@
         <p>Learning by doing - Excellence et Innovation</p>
         <div>
           <button class="carousel-btn" onclick="scrollToSection('galerie')"><i class="fas fa-images"></i> Voir la Galerie</button>
-          <button class="carousel-btn" onclick="openLoginModal()"><i class="fas fa-user"></i> Espace Parent</button>
+          <button class="carousel-btn" onclick="handleGoogleSignIn()"><i class="fab fa-google"></i> Se connecter avec Google</button>
         </div>
       </div>
     </div>
@@ -1897,6 +1929,7 @@ const ITEMS = [
   {label:'Accueil',      icon:'fas fa-home',          href:'#accueil'},
   {label:'Galerie',      icon:'fas fa-images',         href:'#galerie'},
   {label:'Activités',    icon:'fas fa-graduation-cap', href:'#academique'},
+  {label:'Inscription',  icon:'fas fa-pen-fancy',      href:'inscription.html'},
   {label:'Bibliothèque', icon:'fas fa-book',           href:'#bibliotheque'},
   {label:'YouTube',      icon:'fab fa-youtube',        href:'#youtube'},
   {label:'Jeux',         icon:'fas fa-gamepad',        href:'#jeux'},
@@ -2051,8 +2084,12 @@ riEls.forEach(el=>{
   el.addEventListener('click',e=>{
     e.preventDefault();e.stopPropagation();
     const h=el.getAttribute('href');
-    if(h&&h.startsWith('#')) document.querySelector(h)?.scrollIntoView({behavior:'smooth'});
-    closeMenu(false,true);
+    if(h && h.startsWith('#')) {
+      document.querySelector(h)?.scrollIntoView({behavior:'smooth'});
+      closeMenu(false,true);
+    } else if (h) {
+      window.location.href = h;
+    }
   });
 });
 
@@ -2350,33 +2387,71 @@ firebase.auth().onAuthStateChanged(async(user)=>{
   if(user){
     currentFirebaseUser=user;
     const snapshot=await firebase.database().ref('parents/'+user.uid).once('value');
-    const userData=snapshot.val();
+    const userData=snapshot.val() || {};
     document.getElementById('staffAccessLi').style.display='none';
     document.getElementById('parentLoginLi').style.display='none';
     document.getElementById('logoutLi').style.display='block';
     const userNameDisplay=document.getElementById('userNameDisplay');
-    if(userData&&userData.studentName) userNameDisplay.textContent=userData.studentName;
-    else userNameDisplay.textContent=user.email.split('@')[0];
-    CONFIG.isLoggedIn=true;CONFIG.currentUser=userData;
+    const userPhotoDisplay=document.getElementById('userPhotoDisplay');
+    const displayName = userData.studentName || user.displayName || user.email.split('@')[0];
+    userNameDisplay.textContent = displayName;
+    const photoUrl = user.photoURL || userData.photoURL || 'https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(displayName);
+    if(photoUrl){
+      userPhotoDisplay.src = photoUrl;
+      userPhotoDisplay.style.display = 'inline-block';
+    } else {
+      userPhotoDisplay.style.display = 'none';
+    }
+    CONFIG.isLoggedIn=true;
+    CONFIG.currentUser=userData;
   } else {
     currentFirebaseUser=null;
     document.getElementById('staffAccessLi').style.display='block';
     document.getElementById('parentLoginLi').style.display='block';
     document.getElementById('logoutLi').style.display='none';
-    CONFIG.isLoggedIn=false;CONFIG.currentUser=null;
+    CONFIG.isLoggedIn=false;
+    CONFIG.currentUser=null;
   }
 });
 
 function handleGoogleSignIn(){
-  const provider=new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithPopup(provider)
-    .then(async(result)=>{
-      const user=result.user;if(!user)return;
-      const parentRef=firebase.database().ref('parents/'+user.uid);
-      const snapshot=await parentRef.once('value');
-      if(!snapshot.exists()) await parentRef.set({email:user.email||null,displayName:user.displayName||null,createdAt:Date.now()});
-      closeLoginModal();showToast('Connexion Google réussie','success');
-    }).catch(err=>{console.error(err);showToast('Erreur connexion Google','error');});
+  if(!firebase.apps.length){
+    if (typeof window.FIREBASE_CONFIG !== 'undefined') {
+      firebase.initializeApp(window.FIREBASE_CONFIG);
+    } else {
+      showToast('Firebase non initialisé','error');
+      return;
+    }
+  }
+  if(currentFirebaseUser){
+    showToast('Vous êtes déjà connecté','success');
+    return;
+  }
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
+    .then(() => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      return firebase.auth().signInWithPopup(provider);
+    })
+    .then(async(result) => {
+      const user = result.user;
+      if(!user) return;
+      const parentRef = firebase.database().ref('parents/' + user.uid);
+      const snapshot = await parentRef.once('value');
+      if(!snapshot.exists()) {
+        await parentRef.set({
+          email: user.email || null,
+          displayName: user.displayName || null,
+          photoURL: user.photoURL || null,
+          createdAt: Date.now()
+        });
+      }
+      closeLoginModal();
+      showToast('Connexion Google réussie','success');
+    })
+    .catch(err => {
+      console.error(err);
+      showToast('Erreur connexion Google','error');
+    });
 }
 
 function isValidEmail(email){
@@ -2478,27 +2553,65 @@ function handleLogin(event){
 
 async function handleRegister(event){
   event.preventDefault();
-  const email=document.getElementById('registerEmail').value.trim().toLowerCase();
-  const password=document.getElementById('registerPassword').value;
-  const confirm=document.getElementById('registerConfirmPassword').value;
-  const studentName=document.getElementById('registerStudentName').value;
-  const classLevel=document.getElementById('registerClassLevel').value;
-  if(!email||!password||!confirm||!studentName||!classLevel){showToast('Veuillez remplir tous les champs','error');return;}
-  if(!isValidEmail(email)){showToast('Adresse email invalide','error');return;}
-  if(!validateRobotPuzzle('register')){showToast('Puzzle anti-robot incorrect. Essayez encore.','error');createRobotPuzzle('register');return;}
-  if(password!==confirm){showToast('Les mots de passe ne correspondent pas','error');return;}
+  const email = document.getElementById('registerEmail').value.trim().toLowerCase();
+  const password = document.getElementById('registerPassword').value;
+  const confirm = document.getElementById('registerConfirmPassword').value;
+  const studentName = document.getElementById('registerStudentName').value;
+  const classLevel = document.getElementById('registerClassLevel').value;
+  if(!email || !password || !confirm || !studentName || !classLevel){
+    showToast('Veuillez remplir tous les champs','error');
+    return;
+  }
+  if(!isValidEmail(email)){
+    showToast('Adresse email invalide','error');
+    return;
+  }
+  if(!validateRobotPuzzle('register')){
+    showToast('Puzzle anti-robot incorrect. Essayez encore.','error');
+    createRobotPuzzle('register');
+    return;
+  }
+  if(password !== confirm){
+    showToast('Les mots de passe ne correspondent pas','error');
+    return;
+  }
   try {
-    const cred=await firebase.auth().createUserWithEmailAndPassword(email,password);
-    const user=cred.user;if(!user) throw new Error('Erreur');
+    const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    const user = cred.user;
+    if(!user) throw new Error('Erreur');
     await user.sendEmailVerification();
-    const verificationSentAt=new Date().toISOString();
-    const parentData={email,studentName,classLevel,createdAt:Date.now(),emailVerified:false,verificationEmailSentAt:verificationSentAt};
-    await firebase.database().ref('parents/'+user.uid).set(parentData);
-    const alertResult=await notifyAccountCreation({name:studentName,email,role:'parent',createdBy:'Auto-inscription parent',source:'Portail Parents',verificationSent:true});
-    await firebase.auth().signOut();
-    CONFIG.isLoggedIn=false;CONFIG.currentUser=null;
-    closeRegisterModal();showToast(alertResult.success?'Inscription réussie. Vérifiez votre email avant de vous connecter.':'Inscription réussie. Vérifiez votre email avant de vous connecter. Alerte admin non envoyée.','success');
-  } catch(err){console.error(err);showToast(err.message||'Erreur','error');}
+    const verificationSentAt = new Date().toISOString();
+    const parentData = {
+      email,
+      studentName,
+      classLevel,
+      createdAt: Date.now(),
+      emailVerified: false,
+      verificationEmailSentAt: verificationSentAt
+    };
+    await firebase.database().ref('parents/' + user.uid).set(parentData);
+    const alertResult = await notifyAccountCreation({
+      name: studentName,
+      email,
+      role: 'parent',
+      createdBy: 'Auto-inscription parent',
+      source: 'Portail Parents',
+      verificationSent: true
+    });
+    // On ne déconnecte pas l'utilisateur
+    // await firebase.auth().signOut();
+    // CONFIG.isLoggedIn = false; // inutile car onAuthStateChanged va le mettre à true
+    closeRegisterModal();
+    showToast(
+      alertResult.success
+        ? 'Inscription réussie ! Un email de vérification vous a été envoyé. Vous êtes maintenant connecté.'
+        : 'Inscription réussie. Vérifiez votre email. Vous êtes connecté.',
+      'success'
+    );
+  } catch(err){
+    console.error(err);
+    showToast(err.message || 'Erreur', 'error');
+  }
 }
 
 function logoutFromIndex(){
@@ -2682,6 +2795,24 @@ function showToast(message,type='info'){
   document.body.appendChild(toast);
   setTimeout(()=>{toast.style.animation='slideOutRight 0.3s ease';setTimeout(()=>toast.remove(),300);},3000);
 }
+
+function handleInscriptionSuccessReturn(){
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('inscription') === 'success') {
+    showToast('Votre demande d\'inscription a bien été envoyée ! Notre équipe vous contactera bientôt.', 'success');
+
+    const navTargets = document.querySelectorAll('.nav-links a, .ri .rb');
+    navTargets.forEach(el => el.classList.add('nav-alert'));
+
+    setTimeout(() => {
+      navTargets.forEach(el => el.classList.remove('nav-alert'));
+    }, 4500);
+
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+}
+document.addEventListener('DOMContentLoaded', handleInscriptionSuccessReturn);
 
 function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
 
