@@ -73,13 +73,15 @@
        NAVBAR — 3 states
     ══════════════════════════════════════ */
     nav {
-      background: #0b63ce !important;
+      background: linear-gradient(120deg, #0b63ce 0%, #1f7ae0 55%, #3f9be8 100%) !important;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       padding: 0;
       position: fixed;
       width: 100%;
       top: 0;
       z-index: 2000;
-      box-shadow: 0 2px 20px rgba(0,0,0,.1);
+      box-shadow: 0 8px 30px rgba(11,99,206,.28);
       overflow: visible;
       transition:
         top            .5s cubic-bezier(.34,1.56,.64,1),
@@ -184,20 +186,17 @@
       transition: max-width .35s ease, opacity .3s ease;
     }
 
-    .nav-links a::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      width: 0;
-      height: 2px;
-      background: var(--white);
-      transition: var(--transition);
-      transform: translateX(-50%);
+    .nav-links a {
+      border-radius: 50px;
     }
-    .nav-links a:hover::after,
-    .nav-links a.active::after { width: 80%; }
-    .nav-links a:hover { background: rgba(255,255,255,0.14); }
+    .nav-links a:hover {
+      background: rgba(255,255,255,.16);
+      transform: translateY(-2px);
+    }
+    .nav-links a.active {
+      background: rgba(255,255,255,.22);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.32);
+    }
     nav.pill .nav-links a.active {
       background: rgba(255,255,255,.35) !important;
       border-radius: 50px;
@@ -2667,8 +2666,21 @@ function loadVoices(){voices=speechSynthesisLocal.getVoices();currentVoice=voice
 function speak(text){if(!CONFIG.audioEnabled||!speechSynthesisLocal)return;speechSynthesisLocal.cancel();const u=new SpeechSynthesisUtterance(text);u.voice=currentVoice;u.rate=0.9;speechSynthesisLocal.speak(u);}
 if(speechSynthesisLocal){loadVoices();speechSynthesisLocal.onvoiceschanged=loadVoices;}
 
-function selectLevel(level){CONFIG.selectedLevel=level;document.querySelectorAll('[id^="level-"]').forEach(el=>el.classList.remove('selected'));document.getElementById('level-'+level).classList.add('selected');updateGameDescriptions();}
-function selectDifficulty(d){CONFIG.selectedDifficulty=d;document.querySelectorAll('[id^="difficulty-"]').forEach(el=>el.classList.remove('selected'));document.getElementById('difficulty-'+d).classList.add('selected');updateGameDescriptions();}
+function selectLevel(level){
+  CONFIG.selectedLevel=level;
+  document.querySelectorAll('[id^="level-"]').forEach(el=>el.classList.remove('selected'));
+  const el = document.getElementById('level-'+level);
+  if (el) el.classList.add('selected');
+  updateGameDescriptions();
+}
+
+function selectDifficulty(d){
+  CONFIG.selectedDifficulty=d;
+  document.querySelectorAll('[id^="difficulty-"]').forEach(el=>el.classList.remove('selected'));
+  const el = document.getElementById('difficulty-'+d);
+  if (el) el.classList.add('selected');
+  updateGameDescriptions();
+}
 function updateGameDescriptions(){
     const mathDesc=document.getElementById('math-description');
     const countDesc=document.getElementById('counting-description');
@@ -3032,7 +3044,34 @@ async function submitInscriptionForm(){
   if(!nomPrenom){document.getElementById('errorTitle').textContent='Champ manquant !';document.getElementById('errorMessage').textContent='Nom de l\'enfant requis.';document.getElementById('missingFieldMessage').style.display='block';return;}
   const submitBtn=document.getElementById('submitBtn');submitBtn.disabled=true;submitBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Envoi...';
   try {
-    const formData={nomPrenom,dateNaissance:document.getElementById('dateNaissance').value,ecoleProvenance:document.getElementById('ecoleProvenance').value,codeUnique:generateInscriptionStudentCode(),dateInscription:new Date().toISOString(),timestamp:Date.now(),statut:'En attente'};
+    const sexeInput=document.querySelector('input[name="sexe"]:checked');
+    const sectionInput=document.querySelector('input[name="section"]:checked');
+    const brancheInput=document.querySelector('input[name="branche"]:checked');
+    const transportInput=document.querySelector('input[name="transport"]:checked');
+    const formData={
+      nomPrenom,
+      dateNaissance: document.getElementById('dateNaissance').value,
+      ecoleProvenance: document.getElementById('ecoleProvenance').value,
+      sexe: sexeInput ? sexeInput.value : '',
+      section: sectionInput ? sectionInput.value : '',
+      niveauMaternelle: document.getElementById('niveauMaternelle')?.value || '',
+      niveauPrimaire: document.getElementById('niveauPrimaire')?.value || '',
+      sdmsCode: document.getElementById('sdmsCode')?.value || '',
+      branche: brancheInput ? brancheInput.value : '',
+      transport: transportInput ? transportInput.value : '',
+      chefNomPrenom: document.getElementById('chefNomPrenom').value,
+      chefTelephone: document.getElementById('chefTelephone').value,
+      chefPieceIdentite: document.getElementById('chefPieceIdentite').value,
+      ville: document.getElementById('ville').value,
+      secteur: document.getElementById('secteur').value,
+      umurenge: document.getElementById('umurenge').value,
+      akagari: document.getElementById('akagari').value,
+      umudugudu: document.getElementById('umudugudu').value,
+      codeUnique: generateInscriptionStudentCode(),
+      dateInscription: new Date().toISOString(),
+      timestamp: Date.now(),
+      statut: 'En attente'
+    };
     await firebase.database().ref('inscriptions-scolaires').push(formData);
     document.getElementById('studentCode').textContent=formData.codeUnique;
     document.getElementById('successMessage').style.display='flex';

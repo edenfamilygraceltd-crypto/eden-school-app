@@ -2118,6 +2118,38 @@
                         </button>
                     </div>
                 </div>
+                <!-- Demandes d'inscription en attente -->
+                <div class="stat-card mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="fas fa-hourglass-half me-2 icon-text-primary"></i>
+                            Demandes d'Inscription en Attente
+                        </h5>
+                        <button class="btn-modern btn-student-search" onclick="loadPendingInscriptions()">
+                            <i class="fas fa-sync me-2"></i>Rafraîchir
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>NO</th>
+                                    <th>CODE</th>
+                                    <th>NOM ENFANT</th>
+                                    <th>DATE NAISSANCE</th>
+                                    <th>CHEF DE FAMILLE</th>
+                                    <th>TÉLÉPHONE</th>
+                                    <th>BRANCHE DEMANDÉE</th>
+                                    <th>DATE DEMANDE</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingInscriptionsTable">
+                                <tr><td colspan="9" class="text-center py-4 text-muted">Chargement...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 <div class="stat-card">
                     <div class="table-responsive">
                         <table class="modern-table">
@@ -3154,6 +3186,7 @@
                                         <option value="1">Trimester 1</option>
                                         <option value="2">Trimester 2</option>
                                         <option value="3">Trimester 3</option>
+                                        <option value="vacances">Vacances</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
@@ -3263,6 +3296,7 @@
                                         <option value="1">Trimester 1</option>
                                         <option value="2">Trimester 2</option>
                                         <option value="3">Trimester 3</option>
+                                        <option value="vacances">Vacances</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3 mb-3">
@@ -3663,6 +3697,60 @@
                         </button>
                         <button type="button" class="btn-modern btn-outline-danger" id="deleteRegisteredStudentBtn" style="display:none;" onclick="deleteCurrentRegisteredStudent()">
                             <i class="fas fa-trash me-2"></i>Delete Registered Student
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm Inscription Modal -->
+        <div class="modal fade" id="confirmInscriptionModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-user-check me-2"></i>Confirmer l'inscription</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="confirmInscriptionSummary" class="alert alert-secondary"></div>
+                        <form id="confirmInscriptionForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Année scolaire *</label>
+                                    <select class="form-control-modern" id="confirmAcademicYear" required>
+                                        <option value="2025-2026">2025-2026</option>
+                                        <option value="2026-2027">2026-2027</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Classe affectée *</label>
+                                    <select class="form-control-modern" id="confirmAssignedClass" required>
+                                        <option value="">Sélectionner d'abord la branche</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Montant payé (RWF) *</label>
+                                    <input type="number" class="form-control-modern" id="confirmAmountPaid" required placeholder="Montant en RWF">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Mode de paiement</label>
+                                    <select class="form-control-modern" id="confirmPaymentMode">
+                                        <option value="cash">Cash</option>
+                                        <option value="momo">Mobile Money</option>
+                                        <option value="bank">Bank</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Référence de transaction</label>
+                                    <input type="text" class="form-control-modern" id="confirmTransactionRef" placeholder="Référence">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="button" class="btn-modern btn-primary-modern" id="confirmInscriptionSaveBtn" onclick="confirmInscriptionRegistration()">
+                            <i class="fas fa-check me-2"></i>Confirmer & Générer ID
                         </button>
                     </div>
                 </div>
@@ -5244,6 +5332,9 @@
             const feesPaymentsRef = db.ref('feesPayments');
             const transportPaymentsRef = db.ref('transportPayments');
             const registrationPaymentsRef = db.ref('registrationPayments');
+            const pendingInscriptionsRef = db.ref('inscriptions-scolaires');
+            let pendingInscriptionsData = [];
+            let currentConfirmInscriptionId = null;
 
             // Variables globales
             let users = [];
@@ -6630,6 +6721,7 @@
                         loadTransportSection();
                     } else if (sectionId === 'registration') {
                         loadRegistration();
+                        loadPendingInscriptions();
                     } else if (sectionId === 'students') {
                         applyStudentFilters();
                     } else if (sectionId === 'settings') {
@@ -7256,6 +7348,230 @@
                 });
             }
 
+            function mapInscriptionBranchToInternal(branche, section) {
+                const b = (branche || '').toUpperCase();
+                if (b === 'KACYIRU' || b === 'kacyiru') return 'kacyiru';
+                if (b === 'KIMISAGARA' || b === 'kimisagara') return 'kimisagara';
+                if (b === 'GISOZI' || b === 'gisozi' || b === 'gisozi_maternelle' || b === 'gisozi_primaire') {
+                    const s = (section || '').toUpperCase();
+                    return s === 'PRIMAIRE' ? 'gisozi_primaire' : 'gisozi_maternelle';
+                }
+                return branche || 'kacyiru';
+            }
+
+            function getInscriptionBranchLabel(branche, section) {
+                const labels = { KACYIRU: 'Kacyiru', GISOZI: 'Gisozi', KIMISAGARA: 'Kimisagara' };
+                const base = labels[(branche || '').toUpperCase()] || branche || 'N/A';
+                if ((branche || '').toUpperCase() === 'GISOZI' && section) {
+                    return base + ' (' + section + ')';
+                }
+                return base;
+            }
+
+            function inscriptionMatchesSelectedBranch(insc) {
+                const internalBranch = mapInscriptionBranchToInternal(insc.branche, insc.section);
+                return internalBranch === selectedBranch;
+            }
+
+            async function loadPendingInscriptions() {
+                const tbody = document.getElementById('pendingInscriptionsTable');
+                if (!tbody) return;
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">Chargement...</td></tr>';
+                try {
+                    const snapshot = await pendingInscriptionsRef.orderByChild('statut').equalTo('En attente').once('value');
+                    pendingInscriptionsData = [];
+                    snapshot.forEach(child => {
+                        pendingInscriptionsData.push({ id: child.key, ...child.val() });
+                    });
+                    pendingInscriptionsData = pendingInscriptionsData.filter(inscriptionMatchesSelectedBranch);
+                    pendingInscriptionsData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    renderPendingInscriptions();
+                } catch (error) {
+                    console.error('Erreur chargement inscriptions en attente:', error);
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">Erreur de chargement</td></tr>';
+                }
+            }
+
+            function renderPendingInscriptions() {
+                const tbody = document.getElementById('pendingInscriptionsTable');
+                if (!tbody) return;
+                if (pendingInscriptionsData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted"><i class="fas fa-check-circle me-2"></i>Aucune demande en attente</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                pendingInscriptionsData.forEach((insc, index) => {
+                    const dateStr = insc.dateInscription ? new Date(insc.dateInscription).toLocaleDateString('fr-FR') : 'N/A';
+                    const branchLabel = getInscriptionBranchLabel(insc.branche, insc.section);
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${insc.codeUnique || 'N/A'}</strong></td>
+                        <td>${insc.nomPrenom || 'N/A'}</td>
+                        <td>${insc.dateNaissance ? new Date(insc.dateNaissance).toLocaleDateString('fr-FR') : 'N/A'}</td>
+                        <td>${insc.chefNomPrenom || 'N/A'}</td>
+                        <td>${insc.chefTelephone || 'N/A'}</td>
+                        <td><span class="badge bg-secondary">${branchLabel}</span></td>
+                        <td>${dateStr}</td>
+                        <td>
+                            <button class="btn btn-sm btn-success me-1" onclick="openConfirmInscriptionModal('${insc.id}')">
+                                <i class="fas fa-check me-1"></i>Confirmer
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="rejectPendingInscription('${insc.id}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            function openConfirmInscriptionModal(inscriptionId) {
+                const insc = pendingInscriptionsData.find(i => i.id === inscriptionId);
+                if (!insc) { showToast('Demande introuvable', 'error'); return; }
+                currentConfirmInscriptionId = inscriptionId;
+
+                document.getElementById('confirmInscriptionSummary').innerHTML = `
+                    <strong>${insc.nomPrenom}</strong> — Né(e) le ${insc.dateNaissance ? new Date(insc.dateNaissance).toLocaleDateString('fr-FR') : 'N/A'}<br>
+                    Chef de famille: ${insc.chefNomPrenom || 'N/A'} (${insc.chefTelephone || 'N/A'})<br>
+                    Branche demandée: ${getInscriptionBranchLabel(insc.branche, insc.section)} | Section: ${insc.section || 'N/A'}
+                `;
+
+                const branch = mapInscriptionBranchToInternal(insc.branche, insc.section);
+                const classSelect = document.getElementById('confirmAssignedClass');
+                classSelect.innerHTML = '<option value="">Chargement des classes...</option>';
+                getRegistrationClassesForBranch(branch).then(classes => {
+                    classSelect.innerHTML = '<option value="">Sélectionner une classe</option>';
+                    classes.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c;
+                        opt.textContent = c;
+                        classSelect.appendChild(opt);
+                    });
+                });
+
+                document.getElementById('confirmAmountPaid').value = '';
+                document.getElementById('confirmPaymentMode').value = 'cash';
+                document.getElementById('confirmTransactionRef').value = '';
+
+                const modal = new bootstrap.Modal(document.getElementById('confirmInscriptionModal'));
+                modal.show();
+            }
+
+            async function confirmInscriptionRegistration() {
+                if (!currentConfirmInscriptionId) return;
+                const insc = pendingInscriptionsData.find(i => i.id === currentConfirmInscriptionId);
+                if (!insc) { showToast('Demande introuvable', 'error'); return; }
+
+                const academicYear = document.getElementById('confirmAcademicYear').value;
+                const assignedClass = document.getElementById('confirmAssignedClass').value;
+                const amountPaid = parseFloat(document.getElementById('confirmAmountPaid').value);
+                const paymentMode = document.getElementById('confirmPaymentMode').value;
+                const transactionRef = document.getElementById('confirmTransactionRef').value.trim();
+
+                if (!assignedClass) { showToast('Veuillez sélectionner une classe', 'error'); return; }
+                if (!amountPaid || amountPaid <= 0) { showToast('Veuillez saisir le montant payé', 'error'); return; }
+
+                const saveBtn = document.getElementById('confirmInscriptionSaveBtn');
+                const originalHtml = saveBtn.innerHTML;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enregistrement...';
+
+                try {
+                    const branch = mapInscriptionBranchToInternal(insc.branche, insc.section);
+                    const generatedUID = generateStudentUID(branch, assignedClass, insc.nomPrenom);
+                    const studentLevel = getLevelFromClassName(assignedClass, branch);
+
+                    const studentData = {
+                        reference: generatedUID,
+                        name: insc.nomPrenom,
+                        birthDate: insc.dateNaissance || '',
+                        gender: insc.sexe === 'FILLE' ? 'FILLE' : 'GARCON',
+                        previousSchool: insc.ecoleProvenance || '',
+                        class: assignedClass,
+                        classes: assignedClass,
+                        branch: normalizeStudentBranch(branch),
+                        level: studentLevel,
+                        degre: studentLevel,
+                        parent: insc.chefNomPrenom || '',
+                        parentPhone: insc.chefTelephone || '',
+                        parentID: insc.chefPieceIdentite || '',
+                        address: [insc.secteur, insc.umurenge, insc.akagari, insc.umudugudu].filter(Boolean).join(', '),
+                        transportEnrolled: insc.transport === 'OUI',
+                        transportMonthlyFee: 0,
+                        status: 'active',
+                        timestamp: Date.now(),
+                        createdBy: currentUserName,
+                        academicYear: academicYear,
+                        fromInscriptionRequest: currentConfirmInscriptionId
+                    };
+
+                    const newStudentRef = await studentsRef.push(studentData);
+                    const newStudentKey = newStudentRef.key;
+
+                    const registrationPayment = {
+                        studentId: newStudentKey,
+                        studentName: studentData.name,
+                        studentClass: studentData.class,
+                        reference: `REG-${generatedUID}`,
+                        amount: amountPaid,
+                        paymentMode: paymentMode,
+                        paymentDate: new Date().toISOString().split('T')[0],
+                        transactionRef: transactionRef,
+                        receivedBy: currentUserName,
+                        branch: studentData.branch,
+                        academicYear: academicYear,
+                        timestamp: Date.now(),
+                        type: 'registration'
+                    };
+                    await registrationPaymentsRef.push(registrationPayment);
+
+                    await pendingInscriptionsRef.child(currentConfirmInscriptionId).update({
+                        statut: 'Confirmé',
+                        confirmedBy: currentUserName,
+                        confirmedAt: Date.now(),
+                        studentId: newStudentKey
+                    });
+
+                    showToast('Inscription confirmée ! ID: ' + generatedUID, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('confirmInscriptionModal')).hide();
+
+                    loadPendingInscriptions();
+                    loadRegistration();
+                    if (typeof applyStudentFilters === 'function') applyStudentFilters();
+                    if (typeof recalculateExpectedIncome === 'function') recalculateExpectedIncome();
+
+                    setTimeout(() => {
+                        if (confirm('Télécharger la lettre d\'admission maintenant ?')) {
+                            downloadAdmissionLetter(newStudentKey);
+                        }
+                    }, 400);
+
+                } catch (error) {
+                    console.error('Erreur confirmation inscription:', error);
+                    showToast('Erreur lors de la confirmation: ' + error.message, 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalHtml;
+                }
+            }
+
+            async function rejectPendingInscription(inscriptionId) {
+                if (!confirm('Rejeter cette demande d\'inscription ?')) return;
+                try {
+                    await pendingInscriptionsRef.child(inscriptionId).update({
+                        statut: 'Rejeté',
+                        rejectedBy: currentUserName,
+                        rejectedAt: Date.now()
+                    });
+                    showToast('Demande rejetée', 'info');
+                    loadPendingInscriptions();
+                } catch (error) {
+                    console.error(error);
+                    showToast('Erreur lors du rejet', 'error');
+                }
+            }
+
             function getSelectedPayrollMonthYear() {
                 const monthSelect = document.getElementById('payrollMonth');
                 const yearInput = document.getElementById('payrollYear');
@@ -7362,6 +7678,11 @@
                 // Filtrer les élèves par branche si la section étudiants est active
                 if (document.getElementById('students').classList.contains('active')) {
                     applyStudentFilters();
+                }
+
+                if (document.getElementById('registration').classList.contains('active')) {
+                    loadRegistration();
+                    loadPendingInscriptions();
                 }
                 
                 // Load opening balance reports for new branch
@@ -9946,7 +10267,7 @@
                     const student = summary.student;
                     const classLabel = student.classes || student.class || student.classe || 'N/A';
                     const termLabel = currentTermConfig
-                        ? `Trimester ${currentTermConfig.trimester || '-'} ${currentTermConfig.academicYear || ''}`.trim()
+                        ? `${formatTermPeriodLabel(currentTermConfig.trimester)} ${currentTermConfig.academicYear || ''}`.trim()
                         : 'Current term';
 
                     const summaryRows = [
@@ -15092,9 +15413,11 @@
 
             // Save term configuration
             async function saveTermConfig() {
+                const trimesterValue = document.getElementById('termTrimester').value;
                 const termData = {
                     academicYear: document.getElementById('termAcademicYear').value,
-                    trimester: document.getElementById('termTrimester').value,
+                    trimester: trimesterValue,
+                    trimestre: trimesterValue,
                     startDate: document.getElementById('termStartDate').value,
                     endDate: document.getElementById('termEndDate').value,
                     updatedAt: Date.now(),
@@ -15119,6 +15442,13 @@
             }
 
             // Load term configuration
+            function formatTermPeriodLabel(trimester) {
+                const value = String(trimester || '');
+                if (value === 'vacances') return 'Vacances';
+                if (['1', '2', '3'].includes(value)) return `T${value}`;
+                return value || '?';
+            }
+
             async function loadTermConfig() {
                 try {
                     const snapshot = await db.ref('settings/termConfig').once('value');
@@ -15162,7 +15492,7 @@
                 
                 const feeConfigData = {
                     branch: branch,
-                    trimester: parseInt(quarter),
+                    trimester: quarter === 'vacances' ? 'vacances' : parseInt(quarter, 10),
                     academicYear: year,
                     schoolFees: {
                         fees: parseInt(document.getElementById('feeFees').value) || 150000,
@@ -15392,7 +15722,7 @@
                     doc.setFont('helvetica', 'normal');
                     doc.text('Branch: ' + branchName, margin, 37);
                     doc.text('Date: ' + new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), margin, 42);
-                    doc.text('Trimester: T' + (term.trimester || '?') + ' | Academic Year: ' + (term.academicYear || '?'), margin, 47);
+                    doc.text('Trimester: ' + formatTermPeriodLabel(term.trimester) + ' | Academic Year: ' + (term.academicYear || '?'), margin, 47);
                     doc.text('Prepared by: ' + currentUserName, margin, 52);
                     doc.text('Generated: ' + new Date().toLocaleString('en-US'), pageW - margin, 52, { align: 'right' });
 
@@ -16667,7 +16997,7 @@
                 const totals = d.totals || {};
 
                 const branchLabel = getBranchName(selectedBranch);
-                const trimesterLabel = `T${term.trimester || '?'} ${term.academicYear || ''}`.trim();
+                const trimesterLabel = `${formatTermPeriodLabel(term.trimester)} ${term.academicYear || ''}`.trim();
 
                 const setTextSafe = (id, value) => {
                     const el = document.getElementById(id);
