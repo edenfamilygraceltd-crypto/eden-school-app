@@ -7385,14 +7385,27 @@
                 });
             }
 
-            function mapInscriptionBranchToInternal(branche, section) {
-                const b = (branche || '').toUpperCase();
-                if (b === 'KACYIRU' || b === 'kacyiru') return 'kacyiru';
-                if (b === 'KIMISAGARA' || b === 'kimisagara') return 'kimisagara';
-                if (b === 'GISOZI' || b === 'gisozi' || b === 'gisozi_maternelle' || b === 'gisozi_primaire') {
-                    const s = (section || '').toUpperCase();
-                    return s === 'PRIMAIRE' ? 'gisozi_primaire' : 'gisozi_maternelle';
+            function mapInscriptionBranchToInternal(branche, section, niveau) {
+                const rawBranch = (branche || '').toString().trim().toUpperCase();
+                const rawSection = (section || '').toString().trim().toUpperCase();
+                const rawNiveau = (niveau || '').toString().trim().toUpperCase();
+
+                if (rawBranch === 'KACYIRU') return 'kacyiru';
+                if (rawBranch === 'KIMISAGARA') return 'kimisagara';
+                if (rawBranch === 'GISOZI') {
+                    const resolvedSection = rawSection || (rawNiveau.startsWith('N') ? 'MATERNELLE' : rawNiveau.startsWith('P') ? 'PRIMAIRE' : '');
+                    return resolvedSection === 'PRIMAIRE' ? 'gisozi_primaire' : 'gisozi_maternelle';
                 }
+                if (rawBranch === 'GISOZI_MATERNELLE') return 'gisozi_maternelle';
+                if (rawBranch === 'GISOZI_PRIMAIRE') return 'gisozi_primaire';
+
+                if (!rawBranch) {
+                    if (rawSection === 'PRIMAIRE') return 'gisozi_primaire';
+                    if (rawSection === 'MATERNELLE') return 'gisozi_maternelle';
+                    if (rawNiveau.startsWith('N')) return 'gisozi_maternelle';
+                    if (rawNiveau.startsWith('P')) return 'gisozi_primaire';
+                }
+
                 return branche || 'kacyiru';
             }
 
@@ -7406,7 +7419,7 @@
             }
 
             function inscriptionMatchesSelectedBranch(insc) {
-                const internalBranch = mapInscriptionBranchToInternal(insc.branche, insc.section);
+                const internalBranch = mapInscriptionBranchToInternal(insc.branche || insc.branch, insc.section, insc.niveau);
                 return internalBranch === selectedBranch;
             }
 
@@ -7415,10 +7428,20 @@
                 if (!tbody) return;
                 tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">Chargement...</td></tr>';
                 try {
-                    const snapshot = await pendingInscriptionsRef.orderByChild('statut').equalTo('En attente').once('value');
+                    const snapshot = await pendingInscriptionsRef.once('value');
                     pendingInscriptionsData = [];
                     snapshot.forEach(child => {
-                        pendingInscriptionsData.push({ id: child.key, ...child.val() });
+                        const data = { id: child.key, ...child.val() };
+                        const statutValue = data.statut;
+                        const statusValue = data.status;
+                        const isConfirmed = statutValue === 'Confirmé' || statusValue === 'approuve';
+                        const isRejected = statutValue === 'Rejeté' || statusValue === 'rejete';
+                        const isPending = statutValue === 'En attente' || statusValue === 'en_attente' || (statutValue === undefined && statusValue === undefined);
+
+                        if (isConfirmed || isRejected) return;
+                        if (!isPending) return;
+
+                        pendingInscriptionsData.push(data);
                     });
                     pendingInscriptionsData = pendingInscriptionsData.filter(inscriptionMatchesSelectedBranch);
                     pendingInscriptionsData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
@@ -7565,6 +7588,7 @@
 
                     await pendingInscriptionsRef.child(currentConfirmInscriptionId).update({
                         statut: 'Confirmé',
+                        status: 'approuve',
                         confirmedBy: currentUserName,
                         confirmedAt: Date.now(),
                         studentId: newStudentKey
@@ -7598,6 +7622,7 @@
                 try {
                     await pendingInscriptionsRef.child(inscriptionId).update({
                         statut: 'Rejeté',
+                        status: 'rejete',
                         rejectedBy: currentUserName,
                         rejectedAt: Date.now()
                     });
@@ -7607,6 +7632,43 @@
                     console.error(error);
                     showToast('Erreur lors du rejet', 'error');
                 }
+            }
+
+            async function migrateInscriptionsFieldNames() {
+                const snapshot = await db.ref('inscriptions-scolaires').once('value');
+                const updates = {};
+                let migratedCount = 0;
+
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    const key = child.key;
+                    const patch = {};
+
+                    if (data.status !== undefined && data.statut === undefined) {
+                        if (data.status === 'en_attente') patch.statut = 'En attente';
+                        if (data.status === 'approuve') patch.statut = 'Confirmé';
+                        if (data.status === 'rejete') patch.statut = 'Rejeté';
+                    }
+                    if (data.chefDeFamille !== undefined && data.chefNomPrenom === undefined) {
+                        patch.chefNomPrenom = data.chefDeFamille;
+                    }
+                    if (data.reference !== undefined && data.codeUnique === undefined) {
+                        patch.codeUnique = data.reference;
+                    }
+                    if (typeof data.transport === 'boolean') {
+                        patch.transport = data.transport ? 'OUI' : 'NON';
+                    }
+
+                    if (Object.keys(patch).length > 0) {
+                        updates[`inscriptions-scolaires/${key}`] = patch;
+                        migratedCount += 1;
+                    }
+                });
+
+                if (Object.keys(updates).length > 0) {
+                    await db.ref().update(updates);
+                }
+                console.log(`migrateInscriptionsFieldNames: ${migratedCount} enregistrements migrés.`);
             }
 
             function getSelectedPayrollMonthYear() {
