@@ -145,6 +145,9 @@
       transition: var(--transition), font-size .35s, gap .35s;
       white-space: nowrap;
     }
+    .logo img { transition: transform 0.6s cubic-bezier(.34,1.56,.64,1); cursor: pointer; }
+    @keyframes logo-spin { from { transform: rotate(0deg) scale(1); } 50% { transform: scale(1.15); } to { transform: rotate(360deg) scale(1); } }
+    .logo-spin { animation: logo-spin 0.6s ease; }
     .logo:hover { transform: translateY(-2px); }
     .logo i { font-size: 1.7rem; transition: font-size .35s; }
     nav.pill .logo { font-size: 1rem; gap: 7px; }
@@ -1633,10 +1636,13 @@
   <div class="video-grid">
     <div class="video-card">
       <div class="video-thumbnail" id="videoContainer">
-        <video id="schoolVideo" width="100%" height="100%" style="object-fit: cover; background: #000;">
-          <source src="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" type="video/mp4">
+        <video id="schoolVideo" width="100%" height="100%" style="object-fit: cover; background: #000;" preload="metadata" playsinline>
+          <source id="schoolVideoSource" src="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" type="video/mp4">
         </video>
-        <div class="video-controls">
+        <div class="video-fallback" id="schoolVideoFallback" style="display:none;position:absolute;inset:0;background:#000;">
+          <iframe id="schoolVideoYoutube" width="100%" height="100%" style="border:0;" title="Présentation de l'école" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+        <div class="video-controls" id="schoolVideoControls">
           <button class="control-btn" id="rewindBtn"><i class="fas fa-backward"></i> -10s</button>
           <button class="control-btn" id="playPauseBtn"><i class="fas fa-play"></i> Lecture</button>
           <button class="control-btn" id="forwardBtn"><i class="fas fa-forward"></i> +10s</button>
@@ -1649,7 +1655,8 @@
       <div class="video-info">
         <h4>Présentation de l'école</h4>
         <p>Découvrez notre école et nos installations</p>
-        <a href="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" download class="youtube-link"><i class="fas fa-download"></i> Télécharger</a>
+        <a href="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" download class="youtube-link" id="schoolVideoDownload"><i class="fas fa-download"></i> Télécharger</a>
+        <a href="https://www.youtube.com/@edenfamilyschool" target="_blank" rel="noopener" class="youtube-link" id="schoolVideoYoutubeLink" style="display:none;"><i class="fab fa-youtube"></i> Voir sur YouTube</a>
       </div>
     </div>
     <div class="video-card">
@@ -2467,7 +2474,10 @@ function handleGoogleSignIn(){
     })
     .catch(err => {
       console.error(err);
-      showToast('Erreur connexion Google','error');
+      const msg = err && err.code === 'auth/unauthorized-domain'
+        ? 'Domaine non autorisé. Ajoutez edenfamilyschool.vercel.app dans Firebase → Authentication → Authorized domains.'
+        : 'Erreur connexion Google';
+      showToast(msg,'error');
     });
 }
 
@@ -3091,6 +3101,9 @@ contactCards.forEach((card,index)=>{setTimeout(()=>{card.classList.add('animate'
 /* ══════════════════════════════════════════════════════════
    VIDÉO CONTRÔLES
 ══════════════════════════════════════════════════════════ */
+const SCHOOL_PRESENTATION_VIDEO = 'asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4';
+const SCHOOL_PRESENTATION_YOUTUBE = 'Bwa-VT5v1sk';
+
 const video=document.getElementById('schoolVideo');
 const playPauseBtn=document.getElementById('playPauseBtn');
 const rewindBtn=document.getElementById('rewindBtn');
@@ -3098,25 +3111,46 @@ const forwardBtn=document.getElementById('forwardBtn');
 const progressBar=document.getElementById('progressBar');
 const progressFill=document.getElementById('progressFill');
 const timeDisplay=document.getElementById('timeDisplay');
+const schoolVideoControls=document.getElementById('schoolVideoControls');
+const schoolVideoFallback=document.getElementById('schoolVideoFallback');
+const schoolVideoYoutube=document.getElementById('schoolVideoYoutube');
+const schoolVideoDownload=document.getElementById('schoolVideoDownload');
+const schoolVideoYoutubeLink=document.getElementById('schoolVideoYoutubeLink');
+
+function showSchoolPresentationYoutubeFallback(){
+  if(!video||!schoolVideoFallback) return;
+  video.style.display='none';
+  if(schoolVideoControls) schoolVideoControls.style.display='none';
+  schoolVideoFallback.style.display='block';
+  if(schoolVideoYoutube && !schoolVideoYoutube.src){
+    schoolVideoYoutube.src='https://www.youtube-nocookie.com/embed/'+SCHOOL_PRESENTATION_YOUTUBE+'?rel=0';
+  }
+  if(schoolVideoDownload) schoolVideoDownload.style.display='none';
+  if(schoolVideoYoutubeLink) schoolVideoYoutubeLink.style.display='inline-flex';
+}
 
 if(video){
+  const source=document.getElementById('schoolVideoSource');
+  if(source) source.src=SCHOOL_PRESENTATION_VIDEO;
+  video.load();
   function formatTime(s){if(!isFinite(s))return'0:00';return`${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;}
-  function updatePlayPauseBtn(){playPauseBtn.innerHTML=video.paused?'<i class="fas fa-play"></i> Lecture':'<i class="fas fa-pause"></i> Pause';}
-  playPauseBtn.addEventListener('click',()=>{if(video.paused)video.play();else video.pause();updatePlayPauseBtn();});
-  rewindBtn.addEventListener('click',()=>{video.currentTime=Math.max(0,video.currentTime-10);});
-  forwardBtn.addEventListener('click',()=>{video.currentTime=Math.min(video.duration,video.currentTime+10);});
-  progressBar.addEventListener('click',(e)=>{const rect=progressBar.getBoundingClientRect();video.currentTime=((e.clientX-rect.left)/rect.width)*video.duration;});
-  video.addEventListener('timeupdate',()=>{if(video.duration){progressFill.style.width=(video.currentTime/video.duration*100)+'%';timeDisplay.textContent=formatTime(video.currentTime)+' / '+formatTime(video.duration);}});
-  video.addEventListener('loadedmetadata',()=>{video.currentTime=1;timeDisplay.textContent='0:00 / '+formatTime(video.duration);});
+  function updatePlayPauseBtn(){if(playPauseBtn) playPauseBtn.innerHTML=video.paused?'<i class="fas fa-play"></i> Lecture':'<i class="fas fa-pause"></i> Pause';}
+  if(playPauseBtn) playPauseBtn.addEventListener('click',()=>{if(video.paused)video.play();else video.pause();updatePlayPauseBtn();});
+  if(rewindBtn) rewindBtn.addEventListener('click',()=>{video.currentTime=Math.max(0,video.currentTime-10);});
+  if(forwardBtn) forwardBtn.addEventListener('click',()=>{video.currentTime=Math.min(video.duration,video.currentTime+10);});
+  if(progressBar) progressBar.addEventListener('click',(e)=>{const rect=progressBar.getBoundingClientRect();video.currentTime=((e.clientX-rect.left)/rect.width)*video.duration;});
+  video.addEventListener('timeupdate',()=>{if(video.duration&&progressFill&&timeDisplay){progressFill.style.width=(video.currentTime/video.duration*100)+'%';timeDisplay.textContent=formatTime(video.currentTime)+' / '+formatTime(video.duration);}});
+  video.addEventListener('loadedmetadata',()=>{video.currentTime=1;if(timeDisplay) timeDisplay.textContent='0:00 / '+formatTime(video.duration);});
   video.addEventListener('play',updatePlayPauseBtn);video.addEventListener('pause',updatePlayPauseBtn);
+  video.addEventListener('error',showSchoolPresentationYoutubeFallback);
 }
 
 /* ══════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════ */
 window.addEventListener('load',()=>{
-  // legacy level/difficulty initialization (may be used by some functions)
-  selectLevel('maternelle');selectDifficulty('facile');updateGameDescriptions();
+  CONFIG.selectedLevel='maternelle';
+  CONFIG.selectedDifficulty='facile';
 
   CONFIG.gameScore=parseInt(localStorage.getItem('gameScore'))||0;
   CONFIG.bestScore=parseInt(localStorage.getItem('bestScore'))||0;
@@ -3182,6 +3216,24 @@ function renderGrid(){
 }
 
 function capitalize(str){return str.charAt(0).toUpperCase()+str.slice(1);}
+
+document.getElementById('navLogo')?.addEventListener('click', function(e) {
+  e.preventDefault();
+  const img = this.querySelector('img');
+  const goHome = () => {
+    window.location.hash = 'accueil';
+    document.getElementById('accueil')?.scrollIntoView({ behavior: 'smooth' });
+  };
+  if (img) {
+    img.classList.add('logo-spin');
+    setTimeout(() => {
+      img.classList.remove('logo-spin');
+      goHome();
+    }, 600);
+  } else {
+    goHome();
+  }
+});
 </script>
 
 </body>

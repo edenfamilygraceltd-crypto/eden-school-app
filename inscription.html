@@ -43,7 +43,13 @@
     display:flex;align-items:center;justify-content:space-between;gap:1rem; flex-wrap:wrap;
   }
   .brand{display:flex;align-items:center;gap:.7rem;color:#fff;text-decoration:none;}
-  .brand img{height:38px;width:38px;border-radius:9px;background:#fff;object-fit:contain;padding:3px;}
+  .brand img{height:38px;width:38px;border-radius:9px;background:#fff;object-fit:contain;padding:3px;transition:transform 0.6s cubic-bezier(.34,1.56,.64,1);cursor:pointer;}
+  @keyframes logo-spin{from{transform:rotate(0deg) scale(1);}50%{transform:scale(1.15);}to{transform:rotate(360deg) scale(1);}}
+  .logo-spin{animation:logo-spin 0.6s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}
+  .shake{animation:shake 0.6s ease;}
+  .choice-item.branch-disabled{opacity:.45;cursor:not-allowed;background:#eef2ef;border-color:#d0ddd5;}
+  .choice-item.branch-disabled input{pointer-events:none;}
   .brand-text h1{font-family:'Poppins',sans-serif;font-size:1.02rem;font-weight:800;letter-spacing:.2px;}
   .brand-text p{font-size:.68rem;color:rgba(255,255,255,.7);letter-spacing:.4px;text-transform:uppercase;}
   .header-nav{display:flex;align-items:center;gap:.5rem; flex-wrap:wrap;}
@@ -384,6 +390,7 @@
       registration_form: "Formulaire d'inscription",
       unavailable_after_validation: "Disponible après validation",
       toast_need_login: "Veuillez vous connecter avec Google avant d'envoyer la demande.",
+      branch_primary_gisozi_only: "Pour la section PRIMAIRE, seule la branche GISOZI est disponible.",
       toast_pdf_error: "La bibliothèque PDF n'a pas pu se charger.",
       toast_need_approval: "Ce dossier doit être approuvé avant le téléchargement.",
       toast_admission_downloaded: "Lettre d'admission téléchargée !",
@@ -489,6 +496,7 @@
       registration_form: "Registration form",
       unavailable_after_validation: "Available after validation",
       toast_need_login: "Please sign in with Google before submitting your request.",
+      branch_primary_gisozi_only: "For the PRIMARY section, only the GISOZI branch is available.",
       toast_pdf_error: "The PDF library could not load.",
       toast_need_approval: "This file must be approved before downloading.",
       toast_admission_downloaded: "Admission letter downloaded!",
@@ -594,6 +602,7 @@
       registration_form: "Urupapuro rwo kwiyandikisha",
       unavailable_after_validation: "Biboneka nyuma yo kwemezwa",
       toast_need_login: "Nyamuneka injira muri Google mbere yo kohereza icyifuzo.",
+      branch_primary_gisozi_only: "Mu cyiciro cya PRIMAIRE, ishami rya GISOZI ni ryo ryo gusa riboneka.",
       toast_pdf_error: "Bibliotheque ya PDF ntiyashoboye gukora.",
       toast_need_approval: "Iyi dosiye igomba kwemezwa mbere yo gupakira.",
       toast_admission_downloaded: "Ibaruwa yo kwemerwa yapakiwe!",
@@ -804,7 +813,30 @@
       o.value = n; o.textContent = n;
       sel.appendChild(o);
     });
-    applyTranslations(); // reapply i18n to the new option
+
+    document.querySelectorAll('input[name="rBranch"]').forEach(radio => {
+      const item = radio.closest('.choice-item');
+      if (section === 'PRIMAIRE') {
+        if (radio.value !== 'gisozi') {
+          radio.disabled = true;
+          radio.checked = false;
+          item?.classList.add('branch-disabled');
+        } else {
+          radio.disabled = false;
+          radio.checked = true;
+          item?.classList.remove('branch-disabled');
+        }
+      } else if (section === 'MATERNELLE') {
+        radio.disabled = false;
+        item?.classList.remove('branch-disabled');
+      } else {
+        radio.disabled = false;
+        item?.classList.remove('branch-disabled');
+      }
+    });
+
+    applyTranslations();
+    updateContactInfo();
   }
 
   const BRANCH_CONTACTS = {
@@ -842,7 +874,24 @@
 
   document.getElementById('publicRegistrationForm').addEventListener('submit', async function(e){
     e.preventDefault();
-    if (!currentUser) { showToast(t('toast_need_login')); return; }
+    if (!currentUser) {
+      showToast(t('toast_need_login'));
+      const authGate = document.getElementById('authGate');
+      if (authGate) {
+        authGate.scrollIntoView({ behavior: 'smooth' });
+        authGate.classList.add('shake');
+        setTimeout(() => authGate.classList.remove('shake'), 600);
+      }
+      return;
+    }
+
+    const section = document.getElementById('rSection').value;
+    const branchInput = document.querySelector('input[name="rBranch"]:checked');
+    const branch = branchInput ? branchInput.value : '';
+    if (section === 'PRIMAIRE' && branch !== 'gisozi') {
+      showToast(t('branch_primary_gisozi_only'));
+      return;
+    }
 
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
@@ -850,20 +899,22 @@
 
     try {
       const genderInput = document.querySelector('input[name="rGender"]:checked');
-      const branchInput = document.querySelector('input[name="rBranch"]:checked');
       const reference = generateReference();
+      const parentName = document.getElementById('rParentName').value;
 
       const formData = {
         reference,
+        codeUnique: reference,
         nomPrenom: document.getElementById('rChildFullName').value,
         dateNaissance: document.getElementById('rChildBirthDate').value,
         sexe: genderInput ? genderInput.value : '',
         ecoleProvenance: document.getElementById('rPreviousSchool').value || '',
-        section: document.getElementById('rSection').value,
+        section,
         niveau: document.getElementById('rNiveau').value,
-        branche: branchInput ? branchInput.value : '',
-        transport: document.getElementById('rTransport').checked,
-        chefDeFamille: document.getElementById('rParentName').value,
+        branche: branch,
+        transport: document.getElementById('rTransport').checked ? 'OUI' : 'NON',
+        chefNomPrenom: parentName,
+        chefDeFamille: parentName,
         chefTelephone: document.getElementById('rParentPhone').value,
         chefPieceIdentite: document.getElementById('rParentID').value || '',
         conjointNomPrenom: document.getElementById('rSpouseName').value || '',
@@ -875,7 +926,7 @@
         akagari: document.getElementById('rAkagari').value,
         umudugudu: document.getElementById('rUmudugudu').value,
 
-        status: 'en_attente',
+        statut: 'En attente',
         approvedBy: null,
         approvedByRole: null,
         approvedAt: null,
@@ -926,11 +977,29 @@
   });
 
   // ========== My registrations ==========
-  function statusBadge(status){
-    if (status === 'approuve') {
+  function getRegistrationStatut(reg) {
+    if (reg.statut) return reg.statut;
+    if (reg.status === 'approuve') return 'Confirmé';
+    if (reg.status === 'rejete') return 'Rejeté';
+    if (reg.status === 'en_attente') return 'En attente';
+    return reg.status || 'En attente';
+  }
+
+  function isRegistrationApproved(reg) {
+    const s = getRegistrationStatut(reg);
+    return s === 'Confirmé' || reg.status === 'approuve';
+  }
+
+  function hasTransport(reg) {
+    return reg.transport === 'OUI' || reg.transport === true;
+  }
+
+  function statusBadge(reg){
+    const status = typeof reg === 'object' ? getRegistrationStatut(reg) : reg;
+    if (status === 'Confirmé' || status === 'approuve') {
       return `<span class="status-badge status-approved"><i class="fas fa-check"></i> ${t('status_approved')}</span>`;
     }
-    if (status === 'rejete') {
+    if (status === 'Rejeté' || status === 'rejete') {
       return `<span class="status-badge status-rejected"><i class="fas fa-xmark"></i> ${t('status_rejected')}</span>`;
     }
     return `<span class="status-badge status-pending"><span class="dot"></span> ${t('status_pending')}</span>`;
@@ -966,7 +1035,7 @@
       const wrap = document.createElement('div');
       wrap.className = 'stagger';
       regs.forEach(reg => {
-        const isApproved = reg.status === 'approuve';
+        const isApproved = isRegistrationApproved(reg);
         const card = document.createElement('div');
         card.className = 'reg-card';
         const branchLabel = BRANCH_LABELS[reg.branche] || reg.branche || '';
@@ -976,7 +1045,7 @@
             <h4>${reg.nomPrenom || 'Élève'}</h4>
             <p>${t('pdf_ref')} : <strong>${reg.reference || 'N/A'}</strong> · ${reg.niveau || ''} · ${branchLabel}</p>
             <div class="reg-meta">
-              ${statusBadge(reg.status)}
+              ${statusBadge(reg)}
               <span class="tag"><i class="fas fa-calendar-days"></i> ${dateStr}</span>
             </div>
           </div>
@@ -1027,7 +1096,7 @@
   function downloadAdmissionLetter(reg){
     const JsPDF = resolveJsPDF();
     if (!JsPDF) { showToast(t('toast_pdf_error')); return; }
-    if (reg.status !== 'approuve') { showToast(t('toast_need_approval')); return; }
+    if (!isRegistrationApproved(reg)) { showToast(t('toast_need_approval')); return; }
 
     const info = BRANCH_INFO[reg.branche] || BRANCH_INFO.kacyiru;
     const doc = new JsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
@@ -1060,11 +1129,11 @@
 
     y += 16;
     const details = [
-      [t('pdf_ref'), reg.reference || 'N/A'],
+      [t('pdf_ref'), reg.codeUnique || reg.reference || 'N/A'],
       [t('pdf_level'), reg.niveau || 'N/A'],
       [t('pdf_branch'), info.label],
       [t('pdf_birthdate'), reg.dateNaissance ? new Date(reg.dateNaissance).toLocaleDateString('fr-FR') : 'N/A'],
-      [t('pdf_transport'), reg.transport ? t('pdf_yes') : t('pdf_no')]
+      [t('pdf_transport'), hasTransport(reg) ? t('pdf_yes') : t('pdf_no')]
     ];
     doc.setFontSize(11);
     details.forEach(([label, value], i) => {
@@ -1095,7 +1164,7 @@
   function downloadRegistrationForm(reg){
     const JsPDF = resolveJsPDF();
     if (!JsPDF) { showToast(t('toast_pdf_error')); return; }
-    if (reg.status !== 'approuve') { showToast(t('toast_need_approval')); return; }
+    if (!isRegistrationApproved(reg)) { showToast(t('toast_need_approval')); return; }
 
     const info = BRANCH_INFO[reg.branche] || BRANCH_INFO.kacyiru;
     const doc = new JsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
@@ -1123,13 +1192,13 @@
     line(t('prev_school'), reg.ecoleProvenance);
     line(t('pdf_form_section'), `${reg.section || ''} - ${reg.niveau || ''}`);
     line(t('pdf_form_branch'), info.label);
-    line(t('pdf_form_transport'), reg.transport ? t('pdf_yes') : t('pdf_no'));
-    line(t('pdf_form_ref'), reg.reference);
+    line(t('pdf_form_transport'), hasTransport(reg) ? t('pdf_yes') : t('pdf_no'));
+    line(t('pdf_form_ref'), reg.codeUnique || reg.reference);
 
     y += 3;
     doc.setFont('helvetica','bold'); doc.setFontSize(11);
     doc.text(t('pdf_form_parent'), 20, y); y += 8; doc.setFontSize(10);
-    line(t('parent_name'), reg.chefDeFamille);
+    line(t('parent_name'), reg.chefNomPrenom || reg.chefDeFamille);
     line(t('pdf_form_phone'), reg.chefTelephone);
     line(t('pdf_form_id'), reg.chefPieceIdentite);
 
@@ -1161,10 +1230,23 @@
     showToast(t('toast_form_downloaded'));
   }
 
+  document.querySelector('.brand')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    const img = this.querySelector('img');
+    if (img) {
+      img.classList.add('logo-spin');
+      setTimeout(() => {
+        img.classList.remove('logo-spin');
+        window.location.href = 'index.html';
+      }, 600);
+    } else {
+      window.location.href = 'index.html';
+    }
+  });
+
   // Apply translations on page load
   document.addEventListener('DOMContentLoaded', () => {
     applyTranslations();
-    // Reapply after potential dynamic content
   });
 </script>
 </body>

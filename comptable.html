@@ -4141,10 +4141,10 @@
                         <button type="button" class="btn btn-outline-success" onclick="downloadStudentPaymentInfo(currentViewStudentId)">
                             <i class="fas fa-download me-2"></i>Payment Info
                         </button>
-                        <button type="button" class="btn btn-success" onclick="downloadAdmissionLetter(currentViewStudentId)">
+                        <button type="button" class="btn btn-success" onclick="openEditBeforeDownloadModal(currentViewStudentId, 'letter')">
                             <i class="fas fa-file-alt me-2"></i>Admission Letter
                         </button>
-                        <button type="button" class="btn btn-primary" onclick="downloadRegistrationForm(currentViewStudentId)">
+                        <button type="button" class="btn btn-primary" onclick="openEditBeforeDownloadModal(currentViewStudentId, 'form')">
                             <i class="fas fa-file-pdf me-2"></i>Registration Form
                         </button>
                         <button type="button" class="btn btn-primary" onclick="editStudentFromDetail()">
@@ -4152,6 +4152,43 @@
                         </button>
                         <button type="button" class="btn btn-success" onclick="addPaymentFromDetail()">
                             <i class="fas fa-money-bill-wave me-2"></i>Add Payment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Before Download Modal -->
+        <div class="modal fade" id="editBeforeDownloadModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Modifier avant téléchargement</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">Corrigez les informations ci-dessous avant de générer le document PDF.</p>
+                        <div class="mb-3">
+                            <label class="form-label" for="editBeforeDownloadName">Nom de l'enfant</label>
+                            <input type="text" class="form-control-modern" id="editBeforeDownloadName">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="editBeforeDownloadParent">Nom du chef de famille</label>
+                            <input type="text" class="form-control-modern" id="editBeforeDownloadParent">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="editBeforeDownloadParentPhone">Téléphone du chef de famille</label>
+                            <input type="tel" class="form-control-modern" id="editBeforeDownloadParentPhone">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="editBeforeDownloadClass">Classe</label>
+                            <input type="text" class="form-control-modern" id="editBeforeDownloadClass">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="button" class="btn btn-primary" id="editBeforeDownloadSaveBtn" onclick="saveEditBeforeDownload()">
+                            <i class="fas fa-save me-2"></i>Enregistrer et Télécharger
                         </button>
                     </div>
                 </div>
@@ -7336,10 +7373,10 @@
                         <td>${payment.paymentMode ? payment.paymentMode.toString().replace(/\b(momo)\b/i, 'Mobile Money') : ''}</td>
                         <td>${getBranchName(payment.branch)}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary me-1" title="Admission Letter" onclick="downloadAdmissionLetter('${payment.studentId}')">
+                            <button class="btn btn-sm btn-outline-primary me-1" title="Admission Letter" onclick="openEditBeforeDownloadModal('${payment.studentId}', 'letter')">
                                 <i class="fas fa-file-alt"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" title="Registration Form" onclick="downloadRegistrationForm('${payment.studentId}')">
+                            <button class="btn btn-sm btn-outline-danger" title="Registration Form" onclick="openEditBeforeDownloadModal('${payment.studentId}', 'form')">
                                 <i class="fas fa-file-pdf"></i>
                             </button>
                         </td>
@@ -10644,8 +10681,8 @@
                 admissionBtn.style.display = 'inline-flex';
                 registrationBtn.style.display = 'inline-flex';
                 deleteBtn.style.display = 'inline-flex';
-                admissionBtn.onclick = () => downloadAdmissionLetter(student.id);
-                registrationBtn.onclick = () => downloadRegistrationForm(student.id);
+                admissionBtn.onclick = () => openEditBeforeDownloadModal(student.id, 'letter');
+                registrationBtn.onclick = () => openEditBeforeDownloadModal(student.id, 'form');
                 deleteBtn.onclick = () => deleteCurrentRegisteredStudent();
             }
 
@@ -10795,8 +10832,8 @@
                         admissionBtn.style.display = 'inline-flex';
                         registrationBtn.style.display = 'inline-flex';
                         deleteBtn.style.display = 'inline-flex';
-                        admissionBtn.onclick = () => downloadAdmissionLetter(currentStudentId);
-                        registrationBtn.onclick = () => downloadRegistrationForm(currentStudentId);
+                        admissionBtn.onclick = () => openEditBeforeDownloadModal(currentStudentId, 'letter');
+                        registrationBtn.onclick = () => openEditBeforeDownloadModal(currentStudentId, 'form');
                         deleteBtn.onclick = () => deleteCurrentRegisteredStudent();
 
                         if (typeof recalculateExpectedIncome === 'function') {
@@ -10844,8 +10881,8 @@
                     admissionBtn.className = 'btn-modern btn-success';
                     registrationBtn.className = 'btn-modern btn-primary';
                     deleteBtn.className = 'btn-modern btn-outline-danger';
-                    admissionBtn.onclick = () => downloadAdmissionLetter(currentRegisteredStudentId);
-                    registrationBtn.onclick = () => downloadRegistrationForm(currentRegisteredStudentId);
+                    admissionBtn.onclick = () => openEditBeforeDownloadModal(currentRegisteredStudentId, 'letter');
+                    registrationBtn.onclick = () => openEditBeforeDownloadModal(currentRegisteredStudentId, 'form');
                     deleteBtn.onclick = () => deleteCurrentRegisteredStudent();
 
                     if (typeof recalculateExpectedIncome === 'function') {
@@ -10879,6 +10916,70 @@
                 document.getElementById('downloadAdmissionLetterBtn').style.display = 'none';
                 document.getElementById('downloadRegistrationFormBtn').style.display = 'none';
                 document.getElementById('deleteRegisteredStudentBtn').style.display = 'none';
+            }
+
+            let editBeforeDownloadStudentId = null;
+            let editBeforeDownloadType = null;
+
+            function openEditBeforeDownloadModal(studentId, downloadType) {
+                if (!studentId) {
+                    showToast('Aucun élève sélectionné.', 'error');
+                    return;
+                }
+                const student = students.find(s => s.id === studentId || s.reference === studentId);
+                if (!student) {
+                    showToast('Élève introuvable.', 'error');
+                    return;
+                }
+                editBeforeDownloadStudentId = student.id;
+                editBeforeDownloadType = downloadType;
+                document.getElementById('editBeforeDownloadName').value = student.name || student.fullName || '';
+                document.getElementById('editBeforeDownloadParent').value = student.parent || '';
+                document.getElementById('editBeforeDownloadParentPhone').value = student.parentPhone || '';
+                document.getElementById('editBeforeDownloadClass').value = student.class || student.classes || '';
+                const modal = new bootstrap.Modal(document.getElementById('editBeforeDownloadModal'));
+                modal.show();
+            }
+
+            async function saveEditBeforeDownload() {
+                if (!editBeforeDownloadStudentId || !editBeforeDownloadType) return;
+                const updates = {
+                    name: document.getElementById('editBeforeDownloadName').value.trim(),
+                    parent: document.getElementById('editBeforeDownloadParent').value.trim(),
+                    parentPhone: document.getElementById('editBeforeDownloadParentPhone').value.trim(),
+                    class: document.getElementById('editBeforeDownloadClass').value.trim(),
+                    classes: document.getElementById('editBeforeDownloadClass').value.trim()
+                };
+                if (!updates.name) {
+                    showToast('Le nom de l\'enfant est requis.', 'error');
+                    return;
+                }
+                if (!updates.class) {
+                    showToast('La classe est requise.', 'error');
+                    return;
+                }
+                const saveBtn = document.getElementById('editBeforeDownloadSaveBtn');
+                const originalHtml = saveBtn.innerHTML;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enregistrement...';
+                try {
+                    await studentsRef.child(editBeforeDownloadStudentId).update(updates);
+                    const idx = students.findIndex(s => s.id === editBeforeDownloadStudentId);
+                    if (idx >= 0) Object.assign(students[idx], updates);
+                    bootstrap.Modal.getInstance(document.getElementById('editBeforeDownloadModal')).hide();
+                    const sid = editBeforeDownloadStudentId;
+                    const type = editBeforeDownloadType;
+                    editBeforeDownloadStudentId = null;
+                    editBeforeDownloadType = null;
+                    if (type === 'letter') downloadAdmissionLetter(sid);
+                    else downloadRegistrationForm(sid);
+                } catch (error) {
+                    console.error('Erreur mise à jour avant téléchargement:', error);
+                    showToast('Erreur lors de la mise à jour: ' + error.message, 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalHtml;
+                }
             }
 
             function resolveJsPDF() {
