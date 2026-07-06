@@ -23,6 +23,7 @@
     <title>IT Admin - Gestion des Comptes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- Configuration des couleurs Tailwind -->
     <script>
         tailwind.config = {
@@ -628,6 +629,10 @@
                         <i class="fas fa-bug"></i>
                         Rapports
                     </button>
+                    <button data-tab="statistiques" class="tab-btn px-4 py-4 font-medium flex items-center gap-2 whitespace-nowrap text-secondary-500">
+                        <i class="fas fa-chart-pie"></i>
+                        Statistiques
+                    </button>
                 </div>
             </div>
         </div>
@@ -1061,6 +1066,102 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Onglet Statistiques -->
+            <div id="statistiquesTab" class="tab-content hidden space-y-6 fade-in">
+
+                <!-- Header avec bouton Rafraîchir -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-secondary-900">Statistiques d'utilisation</h2>
+                        <p class="text-secondary-500 text-sm mt-1">Dernière mise à jour : <span id="statsLastUpdated">—</span></p>
+                    </div>
+                    <button id="refreshStatsBtn" onclick="refreshStatistics()" class="bg-gradient-primary text-white px-5 py-3 rounded-lg font-semibold hover:opacity-90 transition flex items-center gap-2 shadow-medium hover:shadow-hard">
+                        <i class="fas fa-sync-alt"></i>
+                        Rafraîchir
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <p class="text-secondary-500 text-sm">Événements analytics</p>
+                        <p id="analyticsEventsCount" class="text-3xl font-bold text-secondary-900">0</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <p class="text-secondary-500 text-sm">Clics boutons</p>
+                        <p id="analyticsClicksCount" class="text-3xl font-bold text-secondary-900">0</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-4">
+                        <p class="text-secondary-500 text-sm">Soumissions</p>
+                        <p id="analyticsSubmitsCount" class="text-3xl font-bold text-secondary-900">0</p>
+                    </div>
+                </div>
+
+                <!-- Graphique d'utilisation dans le temps -->
+                <div class="bg-white rounded-lg shadow-soft p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-secondary-900">Utilisation dans le temps</h2>
+                        <select id="usageChartRange" onchange="renderUsageOverTimeChart()" class="border border-secondary-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500">
+                            <option value="7">7 derniers jours</option>
+                            <option value="14">14 derniers jours</option>
+                            <option value="30" selected>30 derniers jours</option>
+                        </select>
+                    </div>
+                    <canvas id="usageOverTimeChart" height="260"></canvas>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-lg shadow-soft p-6">
+                        <h2 class="text-xl font-bold text-secondary-900 mb-4">Conversions par étape</h2>
+                        <canvas id="funnelChart" height="240"></canvas>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-soft p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-secondary-900">Top boutons cliqués</h2>
+                            <div class="flex gap-1 bg-secondary-100 rounded-lg p-1">
+                                <button id="topClicksViewChart" onclick="setTopClicksView('chart')" class="px-3 py-1 rounded-md text-sm font-medium bg-white shadow-sm">
+                                    <i class="fas fa-chart-bar"></i>
+                                </button>
+                                <button id="topClicksViewTable" onclick="setTopClicksView('table')" class="px-3 py-1 rounded-md text-sm font-medium text-secondary-500">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="topClicksChartWrap">
+                            <canvas id="topClicksChart" height="240"></canvas>
+                        </div>
+                        <div id="topClicksTableWrap" class="hidden overflow-x-auto">
+                            <table class="w-full text-left text-sm text-secondary-700">
+                                <thead class="bg-secondary-50">
+                                    <tr>
+                                        <th class="px-3 py-2 uppercase">Bouton</th>
+                                        <th class="px-3 py-2 uppercase">Clics</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topClicksTable">
+                                    <tr><td colspan="2" class="px-3 py-4 text-center text-secondary-500">Chargement...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-soft p-6">
+                    <h2 class="text-xl font-bold text-secondary-900 mb-4">Conversion</h2>
+                    <p class="text-secondary-500 mb-4">Taux de conversion entre la visite du formulaire et la soumission.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="rounded-lg border border-secondary-200 p-4">
+                            <p class="text-secondary-500 text-sm">Pages vues</p>
+                            <p id="pageViewsCount" class="text-3xl font-bold text-secondary-900">0</p>
+                        </div>
+                        <div class="rounded-lg border border-secondary-200 p-4">
+                            <p class="text-secondary-500 text-sm">Inscriptions</p>
+                            <p id="formSubmitsCount" class="text-3xl font-bold text-secondary-900">0</p>
+                        </div>
+                    </div>
+                    <p class="text-secondary-500 mt-4">Taux de conversion: <strong id="conversionRate">0%</strong></p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1073,6 +1174,7 @@
             reports: [],
             accounts: [],
             allClasses: [],
+            analyticsEvents: [],
             searchTerm: '',
             filterRole: 'Tous'
         };
@@ -1326,6 +1428,8 @@
                 loadActivities();
             } else if (tabId === 'reports') {
                 loadReports();
+            } else if (tabId === 'statistiques') {
+                loadAnalytics();
             } else if (tabId === 'creerComptes') {
                 loadAccountsList();
             } else if (tabId === 'gestionMDP') {
@@ -2101,6 +2205,304 @@
             } catch (error) {
                 console.error('❌ Erreur lors du chargement des rapports:', error);
             }
+        }
+
+        async function loadAnalytics() {
+            try {
+                const snapshot = await window.rtdbGet(window.rtdbRef(window.rtdb, 'analytics/events'));
+                const analytics = [];
+                if (snapshot && snapshot.exists()) {
+                    const data = snapshot.val();
+                    state.analyticsEvents = Object.entries(data).map(([id, doc]) => ({
+                        id,
+                        ...doc
+                    })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                } else {
+                    state.analyticsEvents = [];
+                }
+
+                const eventsCount = state.analyticsEvents.length;
+                const clicks = state.analyticsEvents.filter(e => e.eventType === 'button_click').length;
+                const submits = state.analyticsEvents.filter(e => e.eventType === 'registration_submitted').length;
+                const pageViews = state.analyticsEvents.filter(e => e.eventType === 'page_view').length;
+
+                document.getElementById('analyticsEventsCount').textContent = eventsCount;
+                document.getElementById('analyticsClicksCount').textContent = clicks;
+                document.getElementById('analyticsSubmitsCount').textContent = submits;
+                document.getElementById('pageViewsCount').textContent = pageViews;
+                document.getElementById('formSubmitsCount').textContent = submits;
+
+                const conversionRate = pageViews > 0 ? Math.round((submits / pageViews) * 100) : 0;
+                document.getElementById('conversionRate').textContent = `${conversionRate}%`;
+
+                renderFunnelChart({
+                    pageViews,
+                    clicks,
+                    submits
+                });
+                renderTopClicksTable();
+                renderTopClicksChart();
+                renderUsageOverTimeChart();
+
+                const lastUpdatedEl = document.getElementById('statsLastUpdated');
+                if (lastUpdatedEl) {
+                    lastUpdatedEl.textContent = new Date().toLocaleString('fr-FR', {
+                        day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Erreur lors du chargement des analytics:', error);
+            }
+        }
+
+        function renderFunnelChart(metrics) {
+            const ctx = document.getElementById('funnelChart');
+            if (!ctx) return;
+            const labels = ['Pages vues', 'Clics', 'Inscriptions'];
+            const data = [metrics.pageViews || 0, metrics.clicks || 0, metrics.submits || 0];
+
+            if (window.funnelChartInstance) {
+                window.funnelChartInstance.data.labels = labels;
+                window.funnelChartInstance.data.datasets[0].data = data;
+                window.funnelChartInstance.update();
+                return;
+            }
+
+            window.funnelChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Conversion funnel',
+                        data,
+                        backgroundColor: ['#0ea5e9', '#f59e0b', '#22c55e'],
+                        borderRadius: 12,
+                        maxBarThickness: 48
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => `${ctx.parsed.y}` } }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    }
+                }
+            });
+        }
+
+        function renderTopClicksTable() {
+            const tableBody = document.getElementById('topClicksTable');
+            if (!tableBody) return;
+
+            const clickEvents = state.analyticsEvents.filter(e => e.eventType === 'button_click');
+            const counts = clickEvents.reduce((acc, event) => {
+                const label = event.label || 'unknown';
+                acc[label] = (acc[label] || 0) + 1;
+                return acc;
+            }, {});
+
+            const rows = Object.entries(counts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8);
+
+            if (rows.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="2" class="px-3 py-4 text-center text-secondary-500">Aucune donnée disponible</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = rows.map(([label, count]) => `
+                <tr>
+                    <td class="px-3 py-3 border-t border-secondary-200">${label}</td>
+                    <td class="px-3 py-3 border-t border-secondary-200">${count}</td>
+                </tr>
+            `).join('');
+        }
+
+        let topClicksViewMode = 'chart';
+
+        async function refreshStatistics() {
+            const btn = document.getElementById('refreshStatsBtn');
+            const icon = btn?.querySelector('i');
+            if (icon) icon.classList.add('fa-spin');
+            if (btn) btn.disabled = true;
+
+            try {
+                await loadAnalytics();
+                renderUsageOverTimeChart();
+                const lastUpdatedEl = document.getElementById('statsLastUpdated');
+                if (lastUpdatedEl) {
+                    lastUpdatedEl.textContent = new Date().toLocaleString('fr-FR', {
+                        day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+                }
+                showToast('✅ Statistiques mises à jour', 'success', 2500);
+            } catch (error) {
+                console.error('Erreur lors du rafraîchissement des statistiques:', error);
+                showToast('❌ Erreur lors du rafraîchissement', 'error');
+            } finally {
+                if (icon) icon.classList.remove('fa-spin');
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function setTopClicksView(mode) {
+            topClicksViewMode = mode;
+            const chartWrap = document.getElementById('topClicksChartWrap');
+            const tableWrap = document.getElementById('topClicksTableWrap');
+            const chartBtn = document.getElementById('topClicksViewChart');
+            const tableBtn = document.getElementById('topClicksViewTable');
+
+            if (mode === 'chart') {
+                chartWrap.classList.remove('hidden');
+                tableWrap.classList.add('hidden');
+                chartBtn.classList.add('bg-white', 'shadow-sm');
+                chartBtn.classList.remove('text-secondary-500');
+                tableBtn.classList.remove('bg-white', 'shadow-sm');
+                tableBtn.classList.add('text-secondary-500');
+                renderTopClicksChart();
+            } else {
+                chartWrap.classList.add('hidden');
+                tableWrap.classList.remove('hidden');
+                tableBtn.classList.add('bg-white', 'shadow-sm');
+                tableBtn.classList.remove('text-secondary-500');
+                chartBtn.classList.remove('bg-white', 'shadow-sm');
+                chartBtn.classList.add('text-secondary-500');
+            }
+        }
+
+        function renderTopClicksChart() {
+            const ctx = document.getElementById('topClicksChart');
+            if (!ctx) return;
+
+            const clickEvents = state.analyticsEvents.filter(e => e.eventType === 'button_click');
+            const counts = clickEvents.reduce((acc, event) => {
+                const label = event.label || 'unknown';
+                acc[label] = (acc[label] || 0) + 1;
+                return acc;
+            }, {});
+
+            const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            const labels = sorted.map(([label]) => label);
+            const data = sorted.map(([, count]) => count);
+
+            if (window.topClicksChartInstance) {
+                window.topClicksChartInstance.data.labels = labels;
+                window.topClicksChartInstance.data.datasets[0].data = data;
+                window.topClicksChartInstance.update();
+                return;
+            }
+
+            window.topClicksChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Clics',
+                        data,
+                        backgroundColor: '#0ea5e9',
+                        borderRadius: 8,
+                        maxBarThickness: 28
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { precision: 0 } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderUsageOverTimeChart() {
+            const ctx = document.getElementById('usageOverTimeChart');
+            if (!ctx) return;
+
+            const rangeDays = parseInt(document.getElementById('usageChartRange')?.value || '30', 10);
+            const now = new Date();
+            const buckets = {};
+
+            for (let i = rangeDays - 1; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                const key = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+                buckets[key] = { events: 0, clicks: 0, submits: 0 };
+            }
+
+            const cutoff = new Date(now);
+            cutoff.setDate(cutoff.getDate() - rangeDays);
+
+            state.analyticsEvents.forEach(event => {
+                const ts = event.timestamp ? new Date(event.timestamp) : null;
+                if (!ts || ts < cutoff) return;
+                const key = ts.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+                if (!buckets[key]) return;
+                buckets[key].events++;
+                if (event.eventType === 'button_click') buckets[key].clicks++;
+                if (event.eventType === 'registration_submitted') buckets[key].submits++;
+            });
+
+            const labels = Object.keys(buckets);
+            const eventsData = labels.map(k => buckets[k].events);
+            const clicksData = labels.map(k => buckets[k].clicks);
+            const submitsData = labels.map(k => buckets[k].submits);
+
+            if (window.usageChartInstance) {
+                window.usageChartInstance.data.labels = labels;
+                window.usageChartInstance.data.datasets[0].data = eventsData;
+                window.usageChartInstance.data.datasets[1].data = clicksData;
+                window.usageChartInstance.data.datasets[2].data = submitsData;
+                window.usageChartInstance.update();
+                return;
+            }
+
+            window.usageChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Événements totaux',
+                            data: eventsData,
+                            borderColor: '#0ea5e9',
+                            backgroundColor: 'rgba(14,165,233,0.1)',
+                            tension: 0.35,
+                            fill: true
+                        },
+                        {
+                            label: 'Clics',
+                            data: clicksData,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245,158,11,0.08)',
+                            tension: 0.35,
+                            fill: true
+                        },
+                        {
+                            label: 'Soumissions',
+                            data: submitsData,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34,197,94,0.08)',
+                            tension: 0.35,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    }
+                }
+            });
         }
 
         async function loadClasses() {
@@ -3001,6 +3403,9 @@
         window.deleteUser = deleteUser;
         window.updateReportStatus = updateReportStatus;
         window.copyToClipboard = copyToClipboard;
+        window.refreshStatistics = refreshStatistics;
+        window.setTopClicksView = setTopClicksView;
+        window.renderUsageOverTimeChart = renderUsageOverTimeChart;
     </script>
 </body>
 </html>

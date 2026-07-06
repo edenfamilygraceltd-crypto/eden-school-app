@@ -499,44 +499,98 @@
       border-radius: 2px;
     }
 
-    /* Gallery Grid */
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-      margin-top: 3rem;
-    }
-    .gallery-item {
+    .gallery-carousel {
       position: relative;
-      height: 300px;
-      border-radius: 15px;
+      max-width: 1100px;
+      margin: 2rem auto;
+      height: 500px;
+      border-radius: 24px;
       overflow: hidden;
-      cursor: pointer;
-      box-shadow: var(--shadow);
-      transition: var(--transition);
-      background: var(--white);
+      box-shadow: 0 30px 70px rgba(0,0,0,0.2);
     }
-    .gallery-item::before {
-      content: '';
+    .gallery-carousel-track { position: relative; width: 100%; height: 100%; }
+    .gallery-carousel-slide {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+      inset: 0;
       opacity: 0;
-      transition: var(--transition);
-      z-index: 1;
+      visibility: hidden;
+      transition: opacity 1s ease;
     }
-    .gallery-item:hover::before { opacity: 0.2; }
-    .gallery-item:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
-    .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: var(--transition); }
-    .gallery-item:hover img { transform: scale(1.1); }
-    .gallery-overlay {
+    .gallery-carousel-slide.active { opacity: 1; visibility: visible; }
+    .gallery-carousel-slide img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+    .gallery-carousel-overlay {
       position: absolute;
-      bottom: 0; left: 0; right: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 2.5rem 3rem;
       background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-      color: var(--white);
-      padding: 1.5rem;
-      z-index: 2;
+      color: white;
+    }
+    .gallery-carousel-overlay h3 { font-size: 2rem; margin-bottom: .5rem; }
+    .gallery-carousel-overlay p { font-size: 1.1rem; opacity: .92; max-width: 600px; }
+    .gc-badge {
+      display: inline-block;
+      margin-top: .8rem;
+      background: rgba(255,255,255,0.25);
+      backdrop-filter: blur(6px);
+      padding: .3rem 1rem;
+      border-radius: 50px;
+      font-size: .85rem;
+      font-weight: 600;
+    }
+    .gc-fade {
+      opacity: 0;
+      transform: translateY(18px);
+      animation: gcFadeIn .7s ease forwards;
+      animation-delay: var(--d, 0s);
+    }
+    @keyframes gcFadeIn { to { opacity: 1; transform: translateY(0); } }
+    .gallery-carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.25);
+      backdrop-filter: blur(8px);
+      border: none;
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .3s ease;
+      z-index: 3;
+    }
+    .gallery-carousel-arrow:hover { background: rgba(255,255,255,0.45); }
+    .gallery-carousel-arrow.prev { left: 1.2rem; }
+    .gallery-carousel-arrow.next { right: 1.2rem; }
+    .gallery-carousel-dots {
+      position: absolute;
+      bottom: 1.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: .5rem;
+      z-index: 3;
+    }
+    .gc-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.45);
+      cursor: pointer;
+      transition: all .3s ease;
+    }
+    .gc-dot.active { background: white; width: 26px; border-radius: 6px; }
+    @media (max-width: 768px) {
+      .gallery-carousel { height: 360px; }
+      .gallery-carousel-overlay { padding: 1.5rem; }
+      .gallery-carousel-overlay h3 { font-size: 1.4rem; }
+      .gallery-carousel-overlay p { font-size: .95rem; }
     }
 
     /* Academic Activities */
@@ -547,19 +601,20 @@
       margin-top: 3rem;
     }
     .academic-card {
-      background: var(--white);
-      border-radius: 15px;
+      background: rgba(255,255,255,0.78);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
       padding: 2rem;
-      box-shadow: var(--shadow);
-      transition: var(--transition);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.1);
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1), border-color .35s cubic-bezier(.34,1.56,.64,1);
       cursor: pointer;
       text-align: center;
-      border: 2px solid transparent;
+      border: 1px solid rgba(255,255,255,0.6);
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-    .academic-card:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(0,0,0,0.2); border-color: var(--primary-color); }
+    .academic-card:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 25px 55px rgba(0,0,0,0.16); border-color: rgba(102,126,234,0.3); }
     .academic-card i {
       font-size: 3.5rem;
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -668,15 +723,67 @@
 
     /* Games Section */
     .games-section { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 5rem 2rem; position: relative; }
-    .games-hero { text-align: center; padding: 2rem 1.5rem; animation: popIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .games-hero h1 { font-family: 'Fredoka One', cursive; font-size: clamp(2rem, 7vw, 3.5rem); background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.15; margin-bottom: 0.5rem; }
-    .games-hero p { color: #555; font-size: clamp(0.9rem, 2.5vw, 1.1rem); font-weight: 600; margin: 0; }
-    .games-header {
-      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-      color: var(--white); padding: 4rem 2rem; text-align: center;
-      margin-bottom: 3rem; border-radius: 20px;
-      position: relative; overflow: hidden;
+    .level-tabs, .score-bar { position: relative; z-index: 1; }
+    .ltab {
+      background: rgba(255,255,255,0.65);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.5);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+      padding: .55rem 1.4rem;
+      border-radius: 50px;
+      font-family: var(--font-body);
+      font-weight: 800;
+      font-size: .9rem;
+      cursor: pointer;
+      transition: all .25s;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
     }
+    .ltab.active {
+      box-shadow: 0 10px 30px rgba(102,126,234,0.45);
+      border-color: transparent;
+      color: #1e326f;
+      transform: translateY(-2px);
+    }
+    .score-bar {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      padding: .75rem 1rem;
+      flex-wrap: wrap;
+    }
+    .score-chip {
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      border-radius: 50px;
+      padding: .4rem 1.1rem;
+      font-weight: 800;
+      font-size: .85rem;
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+    }
+    .section-label {
+      text-align: center;
+      font-weight: 700;
+      color: #4a4a68;
+      font-size: 1.1rem;
+      margin: 1rem 0 .5rem;
+      text-shadow: 0 2px 8px rgba(255,255,255,0.6);
+    }
+    .game-card {
+      border: 3px solid rgba(255,255,255,0.6);
+      position: relative;
+      overflow: hidden;
+    }
+    .score-chip .icon { font-size: 1.1rem; }
+    .score-chip.stars { color: #FFD93D; }
+    .score-chip.hearts { color: var(--accent); }
+    .score-chip.games { color: #6BCB77; }
     .games-header h1 { font-size: 3.5rem; margin-bottom: 1rem; text-shadow: 3px 3px 0 rgba(255, 209, 102, 0.3); position: relative; }
     .level-selection {
       background: var(--white); border-radius: 20px; padding: 2rem;
@@ -725,15 +832,28 @@
     .play-category-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3); border-color: var(--white); }
 
     .btn-primary {
-      padding: 1rem 2rem;
+      padding: 1rem 1.8rem;
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-      color: var(--white); border: none; border-radius: 50px;
-      font-size: 1.1rem; font-weight: 600; cursor: pointer;
-      transition: var(--transition);
+      color: var(--white); border: none; border-radius: 16px;
+      font-size: 1.05rem; font-weight: 600; cursor: pointer;
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1), border-color .35s cubic-bezier(.34,1.56,.64,1);
       display: inline-flex; align-items: center; gap: 10px;
       border: 2px solid transparent;
+      box-shadow: 0 15px 35px rgba(102, 126, 234, 0.18);
     }
-    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); border-color: var(--white); }
+    .btn-primary:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 18px 45px rgba(102, 126, 234, 0.35); border-color: transparent; }
+    .futuristic-card {
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(102,126,234,0.15);
+      transition: all .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    .futuristic-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 45px rgba(102,126,234,0.28);
+    }
 
     /* Modal Styles */
     .modal {
@@ -858,24 +978,34 @@
     .footer-bottom { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); }
 
     /* Contact Cards */
-    .contact-card { background: var(--white); border-radius: 15px; padding: 2rem; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center; transition: var(--transition); cursor: pointer; opacity: 0; transform: translateY(30px); }
-    .contact-card:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
+    .contact-card {
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.1);
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.5);
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1);
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeInUp 0.6s ease forwards;
+      animation-delay: calc(var(--card-index, 0) * 0.15s);
+    }
+    .contact-card:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 25px 55px rgba(0,0,0,0.16); }
     .contact-card i { font-size: 3rem; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 1rem; }
-    .contact-card.animate { animation: fadeInUp 0.6s ease forwards; }
-    .contact-card:nth-child(1).animate { animation-delay: 0.1s; }
-    .contact-card:nth-child(2).animate { animation-delay: 0.2s; }
-    .contact-card:nth-child(3).animate { animation-delay: 0.3s; }
     .contact-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 3rem; }
 
     /* Contact modal */
     .contact-options-modal { max-width: 600px; }
     .contact-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
-    .contact-option { background: var(--light-bg); border: 2px solid var(--primary-color); border-radius: 10px; padding: 1.5rem; text-align: center; cursor: pointer; transition: var(--transition); }
-    .contact-option:hover { background: var(--primary-color); color: var(--white); }
+    .contact-option { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(102, 126, 234, 0.22); border-radius: 16px; padding: 1.5rem; text-align: center; cursor: pointer; transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1); }
+    .contact-option:hover { transform: translateY(-5px); background: var(--primary-color); color: var(--white); }
 
     /* Form */
-    #contactForm input, #contactForm select, #contactForm textarea { padding: 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; transition: var(--transition); width: 100%; margin-bottom: 1rem; }
-    #contactForm input:focus, #contactForm select:focus, #contactForm textarea:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); outline: none; }
+    #adminMessageForm input, #adminMessageForm select, #adminMessageForm textarea { padding: 1rem; border: 2px solid rgba(221,221,221,0.7); border-radius: 16px; font-family: 'Poppins', sans-serif; transition: border-color .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1); width: 100%; margin-bottom: 1rem; background: rgba(255,255,255,0.92); }
+    #adminMessageForm input:focus, #adminMessageForm select:focus, #adminMessageForm textarea:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12); outline: none; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
     /* Branches Section */
@@ -885,7 +1015,7 @@
     .branches-intro h2::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 100px; height: 4px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: 2px; }
     .branches-intro p { font-size: 1.1rem; color: #666; margin-top: 1.5rem; line-height: 1.8; }
     .branches-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2.5rem; margin: 4rem 0; }
-    .branch-card { background: var(--white); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); transition: var(--transition); position: relative; animation: slideUp 0.8s ease-out forwards; opacity: 0; transform: translateY(30px); border: 2px solid transparent; }
+    .branch-card { background: rgba(255,255,255,0.78); backdrop-filter: blur(12px); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 55px rgba(0,0,0,0.12); transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1), border-color .35s cubic-bezier(.34,1.56,.64,1); position: relative; animation: slideUp 0.8s ease-out forwards; opacity: 0; transform: translateY(30px); border: 1px solid rgba(255,255,255,0.65); }
     .branch-card:nth-child(1) { animation-delay: 0.2s; }
     .branch-card:nth-child(2) { animation-delay: 0.4s; }
     .branch-card:nth-child(3) { animation-delay: 0.6s; }
@@ -1314,6 +1444,11 @@
       <h2><i class="fas fa-file-signature"></i> FORMULAIRE D'INSCRIPTION SCOLAIRE</h2>
       <button class="modal-close" onclick="closeRegistrationModal()"><i class="fas fa-times"></i></button>
     </div>
+    <div style="text-align:center; margin-bottom:1.5rem;">
+      <a href="https://edensmart-c7019.web.app/" target="_blank" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+        <i class="fas fa-globe"></i> Visiter le site web
+      </a>
+    </div>
     <div class="modal-body">
       <form id="registrationForm">
         <section style="margin-bottom:1.5rem;">
@@ -1360,7 +1495,7 @@
       </form>
       <div style="display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:flex-end;">
         <button class="btn-primary" type="button" onclick="closeRegistrationModal()" style="background:#888;">Cancel</button>
-        <button class="btn-primary" type="button" onclick="saveRegistrationAndGenerateID()">Register & Generate ID</button>
+        <button id="saveRegistrationBtn" class="btn-primary" type="button" onclick="saveRegistrationAndGenerateID()">Register & Generate ID</button>
         <button class="btn-primary" id="downloadAdmissionLetterBtn" type="button" style="display:none;">Download Admission Letter</button>
         <button class="btn-primary" id="downloadRegistrationFormBtn" type="button" style="display:none;">Download Registration Form</button>
       </div>
@@ -1562,32 +1697,17 @@
 
 <!-- Section Galerie -->
 <section id="galerie" data-s="galerie">
-  <h2 class="section-title"><i class="fas fa-images"></i> Galerie</h2>
-  <div class="gallery-grid">
-    <div class="gallery-item" onclick="openGalleryModal(0)">
-      <img src="asset/img/kimisagara.jpg" alt="Nos Salles de Classe">
-      <div class="gallery-overlay"><h3>Eden Family school kimisagara</h3><p>École à Kimisagara</p></div>
-    </div>
-    <div class="gallery-item" onclick="openGalleryModal(1)">
-      <img src="asset/img/gisozi_graduation2.JPG" alt="Nos Élèves">
-      <div class="gallery-overlay"><h3>Nos Élèves</h3><p>Passionnés par l'apprentissage</p></div>
-    </div>
-    <div class="gallery-item" onclick="openGalleryModal(2)">
-      <img src="asset/img/sport2.jpg" alt="Activités">
-      <div class="gallery-overlay"><h3>Activités</h3><p>Sports et culture</p></div>
-    </div>
-    <div class="gallery-item" onclick="openGalleryModal(3)">
-      <img src="asset/img/club_de_dance.jpg" alt="Bibliothèque">
-      <div class="gallery-overlay"><h3>Bibliothèque</h3><p>Riche collection de livres</p></div>
-    </div>
-    <div class="gallery-item" onclick="openGalleryModal(4)">
-      <img src="asset/img/gisozi_graduation.JPG" alt="Laboratoires">
-      <div class="gallery-overlay"><h3>Laboratoires</h3><p>Sciences pratiques</p></div>
-    </div>
-    <div class="gallery-item" onclick="openGalleryModal(5)">
-      <img src="asset/img/love_eden.jpg" alt="Cour de Récréation">
-      <div class="gallery-overlay"><h3>Cour de Récréation</h3><p>Sécurisée et amusante</p></div>
-    </div>
+  <h2 class="section-title"><i class="fas fa-images"></i> Notre Galerie</h2>
+  <div class="gallery-carousel" id="galleryCarousel">
+    <div class="gallery-carousel-track" id="galleryCarouselTrack"></div>
+    <button class="gallery-carousel-arrow prev" onclick="galleryCarouselPrev()"><i class="fas fa-chevron-left"></i></button>
+    <button class="gallery-carousel-arrow next" onclick="galleryCarouselNext()"><i class="fas fa-chevron-right"></i></button>
+    <div class="gallery-carousel-dots" id="galleryCarouselDots"></div>
+  </div>
+  <div class="voir-plus-container">
+    <a href="galerie-hub.html" class="voir-plus-btn">
+      <i class="fas fa-th-large"></i> Voir plus (photos, vidéos, documents)
+    </a>
   </div>
 </section>
 
@@ -1595,10 +1715,10 @@
 <section id="academique" data-s="academique" style="display: none;">
   <h2 class="section-title">Activités Académiques</h2>
   <div class="academic-grid">
-    <a href="#" class="academic-card" onclick="showHomework()"><i class="fas fa-book"></i><h3>Devoirs</h3><p>Consultez et téléchargez les devoirs</p><span class="badge" id="devoirsCount">5 nouveaux</span></a>
-    <a href="#" class="academic-card" onclick="showExams()"><i class="fas fa-file-alt"></i><h3>Examens</h3><p>Sujets et résultats des examens</p><span class="badge">Prochain: 15/12</span></a>
-    <a href="#" class="academic-card" onclick="showVacationWork()"><i class="fas fa-umbrella-beach"></i><h3>Travaux de Vacances</h3><p>Activités et devoirs pour les vacances</p><span class="badge">Nouveau</span></a>
-    <a href="#" class="academic-card" onclick="showTests()"><i class="fas fa-clipboard-check"></i><h3>Tests & Évaluations</h3><p>Tests continus et évaluations</p><span class="badge">3 à venir</span></a>
+    <a href="#" class="academic-card" onclick="showActivityByFilter('devoirs')"><i class="fas fa-book"></i><h3>Devoirs</h3><p>Consultez et téléchargez les devoirs</p><span class="badge" id="devoirsCount">5 nouveaux</span></a>
+    <a href="#" class="academic-card" onclick="showActivityByFilter('examens')"><i class="fas fa-file-alt"></i><h3>Examens</h3><p>Sujets et résultats des examens</p><span class="badge">Prochain: 15/12</span></a>
+    <a href="#" class="academic-card" onclick="showActivityByFilter('vacances')"><i class="fas fa-umbrella-beach"></i><h3>Travaux de Vacances</h3><p>Activités et devoirs pour les vacances</p><span class="badge">Nouveau</span></a>
+    <a href="#" class="academic-card" onclick="showActivityByFilter('exercices')"><i class="fas fa-clipboard-check"></i><h3>Tests & Évaluations</h3><p>Tests continus et évaluations</p><span class="badge">3 à venir</span></a>
   </div>
 </section>
 
@@ -1738,118 +1858,25 @@
   </div>
 </section>
 
-<!-- Section Inscription -->
-<section id="inscription" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 4rem 2rem; border-radius: 20px; margin: 3rem 0; position:relative;">
-  <h2 class="section-title" style="color: white; margin-bottom: 2rem;"><i class="fas fa-pen-fancy"></i> Formulaire d'Inscription</h2>
-  <div class="form-inscription-container">
-    <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2rem; text-align: center; position: relative; overflow: hidden;">
-      <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%); animation: shimmer 3s infinite linear;"></div>
-      <h3 style="font-size: 1.8em; margin-bottom: 0.5rem; position: relative; z-index: 1;">FORMULAIRE D'INSCRIPTION SCOLAIRE</h3>
-      <p style="font-size: 1.1em; margin-bottom: 0; position: relative; z-index: 1;">EDEN FAMILY SCHOOL</p>
-    </div>
-    <form id="inscriptionForm" style="padding: 2rem;">
-      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">INFORMATION DE L'ENFANT</div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-user"></i> Nom et prénom *</label><input type="text" id="nomPrenom" name="nomPrenom" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="nomPrenomError"></div></div>
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-birthday-cake"></i> Date de naissance *</label><input type="date" id="dateNaissance" name="dateNaissance" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="dateNaissanceError"></div></div>
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-school"></i> École de provenance *</label><input type="text" id="ecoleProvenance" name="ecoleProvenance" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="ecoleProvenanceError"></div></div>
-      </div>
-      <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
-        <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-venus-mars"></i> Sexe *</label>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
-          <input type="radio" id="garcon" name="sexe" value="GARÇON" required style="display: none;"><label for="garcon" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-male"></i> GARÇON</label>
-          <input type="radio" id="fille" name="sexe" value="FILLE" required style="display: none;"><label for="fille" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-female"></i> FILLE</label>
-        </div>
-        <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="sexeError"></div>
-      </div>
-      <!-- Niveau, Branche, Transport, Chef, Adresse - abbreviated for space -->
-      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">NIVEAU SCOLAIRE</div>
-      <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
-        <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-graduation-cap"></i> Section *</label>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
-          <input type="radio" id="maternelle" name="section" value="MATERNELLE" required style="display: none;"><label for="maternelle" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-baby"></i> MATERNELLE</label>
-          <input type="radio" id="primaire" name="section" value="PRIMAIRE" required style="display: none;"><label for="primaire" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-child"></i> PRIMAIRE</label>
-        </div>
-        <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="sectionError"></div>
-      </div>
-      <div style="display: flex; flex-direction: column; display: none;" id="niveauMaternelleGroup"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-star"></i> Niveau maternelle *</label><select id="niveauMaternelle" name="niveauMaternelle" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><option value="">Sélectionnez</option><option value="N1">N1</option><option value="N2">N2</option><option value="N3">N3</option></select></div>
-      <div style="display: flex; flex-direction: column; display: none;" id="niveauPrimaireGroup"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-book"></i> Niveau primaire *</label><select id="niveauPrimaire" name="niveauPrimaire" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><option value="">Sélectionnez</option><option value="P1">P1</option><option value="P2">P2</option><option value="P3">P3</option><option value="P4">P4</option><option value="P5">P5</option></select></div>
-      <div style="display: flex; flex-direction: column; display: none;" id="sdmsGroup"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-id-card"></i> SDMS Code *</label><input type="text" id="sdmsCode" name="sdmsCode" placeholder="Code SDMS" style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"></div>
-      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">BRANCHE</div>
-      <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
-        <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-map-marker-alt"></i> Sélectionnez la branche *</label>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
-          <input type="radio" id="brancheKacyiru" name="branche" value="KACYIRU" required style="display: none;"><label for="brancheKacyiru" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-school" style="color: #9C27B0;"></i> KACYIRU</label>
-          <input type="radio" id="brancheGisozi" name="branche" value="GISOZI" required style="display: none;"><label for="brancheGisozi" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-school" style="color: #2196F3;"></i> GISOZI</label>
-          <input type="radio" id="brancheKimisagara" name="branche" value="KIMISAGARA" required style="display: none;"><label for="brancheKimisagara" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-school" style="color: #4CAF50;"></i> KIMISAGARA</label>
-        </div>
-        <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="brancheError"></div>
-      </div>
-      <div id="contactInfo" style="background: #FFF9C4; padding: 1.5rem; border-radius: 10px; margin: 2rem 0; border-left: 5px solid #FFC107; text-align: center; animation: fadeIn 0.5s ease; display: none;"><p id="contactText"></p></div>
-      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">TRANSPORT</div>
-      <div style="display: flex; flex-direction: column; margin-top: 1.5rem;">
-        <label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-bus"></i> Transport bus *</label>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
-          <input type="radio" id="transportOui" name="transport" value="OUI" required style="display: none;"><label for="transportOui" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-check-circle"></i> OUI</label>
-          <input type="radio" id="transportNon" name="transport" value="NON" required style="display: none;"><label for="transportNon" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem 1rem; background: #fff; border: 2px solid #ddd; border-radius: 8px; transition: all 0.3s ease;"><i class="fas fa-times-circle"></i> NON</label>
-        </div>
-        <div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="transportError"></div>
-      </div>
-      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">CHEF DE FAMILLE</div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-user-tie"></i> Nom et prénom *</label><input type="text" id="chefNomPrenom" name="chefNomPrenom" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="chefNomPrenomError"></div></div>
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-phone"></i> Téléphone *</label><input type="tel" id="chefTelephone" name="chefTelephone" pattern="[0-9]{10}" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="chefTelephoneError"></div></div>
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-id-card"></i> Pièce d'identité *</label><input type="text" id="chefPieceIdentite" name="chefPieceIdentite" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="chefPieceIdentiteError"></div></div>
-      </div>
-      <div style="background: #E8EAF6; padding: 1rem; margin: 1.5rem 0 1rem; border-radius: 8px; font-weight: bold; color: #333; text-align: center;">ADRESSE</div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-city"></i> Ville *</label><select id="ville" name="ville" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><option value="">Sélectionnez la ville</option><option value="Kigali">Kigali</option><option value="Butare">Butare</option><option value="Gisenyi">Gisenyi</option><option value="Ruhengeri">Ruhengeri</option></select><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="villeError"></div></div>
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-map"></i> Secteur *</label><input type="text" id="secteur" name="secteur" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="secteurError"></div></div>
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-map-signs"></i> Umurenge *</label><input type="text" id="umurenge" name="umurenge" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="umurengeError"></div></div>
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-home"></i> Akagari *</label><input type="text" id="akagari" name="akagari" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="akagariError"></div></div>
-        <div style="display: flex; flex-direction: column;"><label style="margin-bottom: 0.5rem; font-weight: 600; color: #555;"><i class="fas fa-street-view"></i> Umudugudu *</label><input type="text" id="umudugudu" name="umudugudu" required style="padding: 0.8rem 1rem; border: 2px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif;"><div style="color: #ff6b6b; font-size: 0.85em; margin-top: 0.3rem; display: none;" id="umuduguduError"></div></div>
-      </div>
-      <div style="position: relative; margin-top: 2rem; text-align: center;">
-        <button type="button" class="btn-primary" id="submitBtn" onclick="submitInscriptionForm()" style="padding: 1rem 2rem;">
-          <i class="fas fa-paper-plane"></i> Soumettre l'inscription
-        </button>
-      </div>
-    </form>
-    <div id="missingFieldMessage" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff6b6b; color: white; padding: 2rem; border-radius: 15px; z-index: 1000; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: popIn 0.5s ease; display: none;">
-      <h3 id="errorTitle">Champ obligatoire manquant !</h3>
-      <p id="errorMessage">Veuillez remplir tous les champs obligatoires.</p>
-      <button onclick="hideInscriptionErrorMessage()" style="background: white; color: #ff6b6b; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; margin-top: 1rem; font-weight: bold;">J'ai compris !</button>
-    </div>
-    <div id="successMessage" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000;">
-      <div style="background: white; padding: 3rem; border-radius: 15px; text-align: center; max-width: 500px; animation: slideUp 0.4s ease;">
-        <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #4CAF50, #45a049); color: white; font-size: 3em; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">✓</div>
-        <h3>Inscription enregistrée avec succès!</h3>
-        <p>Code unique de l'enfant: <strong id="studentCode"></strong></p>
-        <button onclick="closeInscriptionSuccessMessage()" style="background: #4CAF50; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; margin-top: 1rem; font-weight: bold;">Fermer</button>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- Section Contact -->
 <section id="contact" data-s="contact">
   <h2 class="section-title">Contactez-Nous</h2>
   <div class="contact-cards">
-    <div class="contact-card" onclick="showContactOptions('Kimisagara')">
+    <div class="contact-card" style="--card-index:0" onclick="showContactOptions('Kimisagara')">
       <i class="fas fa-school fa-3x" style="color: var(--branch-kimisagara); margin-bottom: 1rem;"></i>
       <h3>Kimisagara</h3>
       <p><i class="fas fa-map-marker-alt"></i> KG 7 Ave, Kimisagara, Kigali</p>
       <p><i class="fas fa-phone"></i> 0785892018 / 0791826950</p>
       <small>Cliquez pour les options de contact</small>
     </div>
-    <div class="contact-card" onclick="showContactOptions('Gisozi')">
+    <div class="contact-card" style="--card-index:1" onclick="showContactOptions('Gisozi')">
       <i class="fas fa-school fa-3x" style="color: var(--branch-gisozi); margin-bottom: 1rem;"></i>
       <h3>Gisozi</h3>
       <p><i class="fas fa-map-marker-alt"></i> KG 11 Ave, Gisozi, Kigali</p>
       <p><i class="fas fa-phone"></i> 0788410242 / 0796145647</p>
       <small>Cliquez pour les options de contact</small>
     </div>
-    <div class="contact-card" onclick="showContactOptions('Kacyiru')">
+    <div class="contact-card" style="--card-index:2" onclick="showContactOptions('Kacyiru')">
       <i class="fas fa-school fa-3x" style="color: var(--branch-kacyiru); margin-bottom: 1rem;"></i>
       <h3>Kacyiru</h3>
       <p><i class="fas fa-map-marker-alt"></i> KG 17 Ave, Kacyiru, Kigali</p>
@@ -1857,16 +1884,27 @@
       <small>Cliquez pour les options de contact</small>
     </div>
   </div>
-  <div style="background: white; padding: 2rem; border-radius: 15px; box-shadow: var(--shadow); margin-top: 3rem;">
-    <h3 style="text-align: center; margin-bottom: 2rem;">Formulaire de Contact</h3>
-    <form id="contactForm">
+  <div style="background:white;padding:2rem;border-radius:15px;box-shadow:var(--shadow);margin-top:3rem;">
+    <h3 style="text-align:center;margin-bottom:2rem;">Envoyer un message à l'administration</h3>
+    <form id="adminMessageForm">
       <div class="form-row">
-        <input type="text" placeholder="Votre nom" required>
-        <input type="email" placeholder="Votre email" required>
+        <input type="text" id="msgName" placeholder="Votre nom" required>
+        <input type="tel" id="msgPhone" placeholder="Votre téléphone" required>
       </div>
-      <select required style="width:100%; margin-bottom:1rem;"><option value="">Sélectionnez une branche</option><option>Kimisagara</option><option>Gisozi</option><option>Kacyiru</option></select>
-      <textarea placeholder="Votre message" rows="5" required style="width:100%; margin-bottom:1rem;"></textarea>
-      <button type="submit" class="btn-primary" style="width: 100%;"><i class="fas fa-paper-plane"></i> Envoyer le message</button>
+      <select id="msgRecipient" required style="width:100%;margin-bottom:1rem;">
+        <option value="">Destinataire</option>
+        <option value="comptable">Comptable</option>
+        <option value="directeur">Directeur / Directrice</option>
+        <option value="secretaire">Secrétaire</option>
+      </select>
+      <select id="msgBranche" required style="width:100%;margin-bottom:1rem;">
+        <option value="">Branche concernée</option>
+        <option value="Kimisagara">Kimisagara</option>
+        <option value="Gisozi">Gisozi</option>
+        <option value="Kacyiru">Kacyiru</option>
+      </select>
+      <textarea id="msgContent" placeholder="Votre message" rows="4" required style="width:100%;margin-bottom:1rem;"></textarea>
+      <button type="submit" class="btn-primary" style="width:100%;"><i class="fas fa-paper-plane"></i> Envoyer</button>
     </form>
   </div>
 </section>
@@ -2250,7 +2288,7 @@ const CONFIG = {
   galleryPerPage: 6
 };
 
-const GALLERY_IMAGES = [
+let GALLERY_IMAGES = [
   {src:'asset/img/kimisagara.jpg',largeSrc:'asset/img/kimisagara.jpg',title:'Eden Family school kimisagara',desc:'École à Kimisagara',date:'2024-10-15',category:'École'},
   {src:'asset/img/gisozi_graduation2.JPG',largeSrc:'asset/img/gisozi_graduation2.JPG',title:'Nos Élèves',desc:'Passionnés par l\'apprentissage',date:'2024-10-20',category:'Élèves'},
   {src:'asset/img/sport2.jpg',largeSrc:'asset/img/sport2.jpg',title:'Activités Sportives',desc:'Sports et activités culturelles',date:'2024-10-18',category:'Activités'},
@@ -2348,6 +2386,159 @@ function closeModal(){
   document.body.style.overflow='';
 }
 
+const PAYMENT_CONTACTS = {
+  KACYIRU: { name: "NYIRIMBUTO Joseph", role: "Comptable", phone: "0792570074" },
+  GISOZI: { name: "Sharon Kabatesi", role: "Comptable", phone: "0794116491" },
+  KIMISAGARA: { name: "NYIRIMBUTO Joseph", role: "Comptable", phone: "0785892018" }
+};
+
+function normalizeBranchKey(value) {
+  if (!value) return null;
+  value = value.toString().trim().toLowerCase();
+  if (value.includes('kacyiru')) return 'KACYIRU';
+  if (value.includes('gisozi')) return 'GISOZI';
+  if (value.includes('kimisagara')) return 'KIMISAGARA';
+  return value.toUpperCase();
+}
+
+function showPaymentPopup(branche) {
+  const branchKey = normalizeBranchKey(branche);
+  const contact = PAYMENT_CONTACTS[branchKey];
+  const branchLabel = branchKey ? branchKey.replace('_', ' ').toUpperCase() : 'Votre branche';
+  const content = contact ? `
+    <div style="text-align:center;">
+      <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#4CAF50,#45a049);
+        color:white;font-size:2.5em;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+        <i class="fas fa-money-check-alt"></i>
+      </div>
+      <h3>Paiement des frais d'inscription</h3>
+      <p>Branche : <strong>${branchLabel}</strong></p>
+      <p>Veuillez appeler <strong>${contact.name}</strong> (${contact.role}) pour effectuer votre paiement :</p>
+      <a href="tel:${contact.phone}" class="btn-primary" style="text-decoration:none;font-size:1.3rem;margin-top:1rem;display:inline-flex;justify-content:center;">
+        <i class="fas fa-phone"></i> ${contact.phone}
+      </a>
+    </div>` : `
+    <div style="text-align:center;">
+      <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#4CAF50,#45a049);
+        color:white;font-size:2.5em;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+        <i class="fas fa-money-check-alt"></i>
+      </div>
+      <h3>Paiement des frais d'inscription</h3>
+      <p>Branche : <strong>${branchLabel}</strong></p>
+      <p>Contactez l'administration pour recevoir les détails de paiement.</p>
+    </div>`;
+  openModal('<i class="fas fa-hand-holding-usd"></i> Instructions de paiement', content);
+}
+
+let galleryCarouselIndex = 0;
+let galleryCarouselTimer = null;
+
+async function loadGalleryFromFirebase() {
+  try {
+    const snapshot = await firebase.database().ref('gallery-photos').once('value');
+    const adminPhotos = snapshot.val() ? Object.values(snapshot.val()).map(photo => ({
+      src: photo.src || photo.largeSrc || 'asset/img/kimisagara.jpg',
+      largeSrc: photo.largeSrc || photo.src || 'asset/img/kimisagara.jpg',
+      title: photo.title || 'Photo',
+      desc: photo.desc || '',
+      date: photo.date || '',
+      category: photo.category || 'Admin'
+    })) : [];
+    GALLERY_IMAGES = [...GALLERY_IMAGES, ...adminPhotos];
+    renderGalleryCarousel();
+  } catch (err) {
+    console.error('Erreur chargement galerie Firebase :', err);
+  }
+}
+
+function renderGalleryCarousel() {
+  const track = document.getElementById('galleryCarouselTrack');
+  const dotsWrap = document.getElementById('galleryCarouselDots');
+  if (!track || !dotsWrap || !GALLERY_IMAGES.length) return;
+
+  track.innerHTML = GALLERY_IMAGES.map((img, i) => `
+    <div class="gallery-carousel-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
+      <img src="${img.largeSrc || img.src}" alt="${img.title}" onclick="openGalleryModal(${i})">
+      <div class="gallery-carousel-overlay">
+        <h3 class="gc-fade" style="--d:.2s">${img.title}</h3>
+        <p class="gc-fade" style="--d:.5s">${img.desc || ''}</p>
+        ${img.category ? `<span class="gc-fade gc-badge" style="--d:.8s">${img.category}</span>` : ''}
+      </div>
+    </div>`).join('');
+
+  dotsWrap.innerHTML = GALLERY_IMAGES.map((_, i) => `
+    <span class="gc-dot ${i === 0 ? 'active' : ''}" onclick="galleryCarouselGoTo(${i})"></span>`).join('');
+
+  galleryCarouselIndex = 0;
+  resetGalleryCarouselAuto();
+}
+
+function galleryCarouselGoTo(index) {
+  const slides = document.querySelectorAll('.gallery-carousel-slide');
+  const dots = document.querySelectorAll('.gc-dot');
+  if (!slides.length) return;
+
+  slides[galleryCarouselIndex]?.classList.remove('active');
+  dots[galleryCarouselIndex]?.classList.remove('active');
+  galleryCarouselIndex = (index + slides.length) % slides.length;
+  slides[galleryCarouselIndex]?.classList.add('active');
+  dots[galleryCarouselIndex]?.classList.add('active');
+
+  slides[galleryCarouselIndex]?.querySelectorAll('.gc-fade').forEach(el => {
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+  });
+}
+
+function galleryCarouselNext() { galleryCarouselGoTo(galleryCarouselIndex + 1); resetGalleryCarouselAuto(); }
+function galleryCarouselPrev() { galleryCarouselGoTo(galleryCarouselIndex - 1); resetGalleryCarouselAuto(); }
+function startGalleryCarouselAuto() { galleryCarouselTimer = setInterval(() => galleryCarouselNext(), 6000); }
+function resetGalleryCarouselAuto() { clearInterval(galleryCarouselTimer); startGalleryCarouselAuto(); }
+
+async function showActivityByFilter(type) {
+  const content = `
+    <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <select id="filterBranche" style="flex:1;padding:.8rem;border-radius:12px;border:1px solid #d7def7;">
+        <option value="">Toutes les branches</option>
+        <option>Kimisagara</option><option>Gisozi</option><option>Kacyiru</option>
+      </select>
+      <select id="filterClasse" style="flex:1;padding:.8rem;border-radius:12px;border:1px solid #d7def7;">
+        <option value="">Toutes les classes</option>
+        <option>Maternelle</option><option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option>
+      </select>
+    </div>
+    <div id="activityResults"><div class="loading"><div class="spinner"></div></div></div>`;
+  openModal('<i class="fas fa-tasks"></i> Activités académiques', content);
+  await loadActivities(type);
+  document.getElementById('filterBranche').onchange = () => loadActivities(type);
+  document.getElementById('filterClasse').onchange = () => loadActivities(type);
+}
+
+async function loadActivities(type) {
+  const branche = document.getElementById('filterBranche').value;
+  const classe = document.getElementById('filterClasse').value;
+  try {
+    const snapshot = await firebase.database().ref('activites/' + type).once('value');
+    let items = snapshot.val() ? Object.values(snapshot.val()) : [];
+    if (branche) items = items.filter(i => i.branche === branche);
+    if (classe) items = items.filter(i => i.classe === classe);
+    const resultsEl = document.getElementById('activityResults');
+    resultsEl.innerHTML = items.length ? items.map(i => `
+      <div class="homework-item">
+        <div>
+          <span class="homework-subject">${i.titre || 'Activité'}</span><br>
+          <span class="homework-date">${i.branche || 'Toutes'} - ${i.classe || 'Tous'} - ${i.date || ''}</span>
+          <p>${i.description || ''}</p>
+        </div>
+        ${i.fichierUrl ? `<a href="${i.fichierUrl}" download class="homework-download"><i class="fas fa-download"></i> Fichier</a>` : ''}
+      </div>`).join('') : '<p style="text-align:center;color:#666;">Aucune activité disponible.</p>';
+  } catch(err) {
+    console.error('Erreur chargement activités :', err);
+    document.getElementById('activityResults').innerHTML = '<p style="text-align:center;color:#666;">Impossible de charger les activités pour le moment.</p>';
+  }
+}
+
 function openLoginModal(){document.getElementById('loginModal').style.display='flex';document.body.style.overflow='hidden';createRobotPuzzle('login');}
 function closeLoginModal(){document.getElementById('loginModal').style.display='none';document.body.style.overflow='';}
 function openRegisterModal(){document.getElementById('registerModal').style.display='flex';document.body.style.overflow='hidden';createRobotPuzzle('register');}
@@ -2378,9 +2569,54 @@ function toggleRegTransportCustomFee(){
   if(fee!=='other') document.getElementById('regTransportCustomFee').value='';
 }
 
-function saveRegistrationAndGenerateID(){
-  console.log('saveRegistrationAndGenerateID called');
-  // Placeholder: implement save logic and set registrationSavedStudentId
+async function saveRegistrationAndGenerateID(){
+  const form = document.getElementById('registrationForm');
+  if(!form) return;
+  const branchInput = document.querySelector('input[name="regBranch"]:checked');
+  const data = {
+    enfantNomPrenom: document.getElementById('regChildFullName')?.value || '',
+    sexe: document.querySelector('input[name="regChildGender"]:checked')?.value || '',
+    ecoleProvenance: document.getElementById('regPreviousSchool')?.value || '',
+    dateNaissance: document.getElementById('regChildBirthDate')?.value || '',
+    classeDemandee: document.getElementById('regRequestedClass')?.value || '',
+    classeAffectee: document.getElementById('regAssignedClass')?.value || '',
+    branche: branchInput?.value || '',
+    transportBus: document.getElementById('regTransportBus')?.checked ? 'oui' : 'non',
+    transportBusFee: document.getElementById('regTransportBusFee')?.value || '',
+    transportCustomFee: document.getElementById('regTransportCustomFee')?.value || '',
+    parentNomPrenom: document.getElementById('regParentName')?.value || '',
+    parentTelephone: document.getElementById('regParentPhone')?.value || '',
+    parentPieceIdentite: document.getElementById('regParentID')?.value || '',
+    conjointNomPrenom: document.getElementById('regSpouseName')?.value || '',
+    conjointTelephone: document.getElementById('regSpousePhone')?.value || '',
+    conjointPieceIdentite: document.getElementById('regSpouseID')?.value || '',
+    adresse: document.getElementById('regAddress')?.value || '',
+    fraisInscription: document.getElementById('regFeeAmount')?.value || '',
+    modePaiement: document.getElementById('regPaymentMode')?.value || '',
+    referenceTransaction: document.getElementById('regTransactionRef')?.value || '',
+    notes: document.getElementById('regNotes')?.value || '',
+    codeUnique: generateInscriptionStudentCode(),
+    dateInscription: new Date().toISOString(),
+    timestamp: Date.now(),
+    statut: 'En attente',
+    source: 'registrationFormModal'
+  };
+
+  const submitBtn = document.getElementById('saveRegistrationBtn');
+  if(submitBtn){submitBtn.disabled=true;submitBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Enregistrement...';}
+
+  try {
+    await firebase.database().ref('inscriptions-scolaires').push(data);
+    showToast('Inscription enregistrée avec succès', 'success');
+    form.reset();
+    closeRegistrationModal();
+    setTimeout(() => showPaymentPopup(data.branche), 600);
+  } catch(error) {
+    console.error('Erreur inscription :', error);
+    showToast('Impossible d\'enregistrer l\'inscription', 'error');
+  } finally {
+    if(submitBtn){submitBtn.disabled=false;submitBtn.innerHTML='<i class="fas fa-user-plus"></i> Register & Generate ID';}
+  }
 }
 function downloadAdmissionLetter(studentId){
   console.log('downloadAdmissionLetter', studentId);
@@ -2852,7 +3088,10 @@ function handleInscriptionSuccessReturn(){
     window.history.replaceState({}, document.title, cleanUrl);
   }
 }
-document.addEventListener('DOMContentLoaded', handleInscriptionSuccessReturn);
+document.addEventListener('DOMContentLoaded', () => {
+  loadGalleryFromFirebase();
+  handleInscriptionSuccessReturn();
+});
 
 function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
 
@@ -3032,8 +3271,21 @@ function contactByWhatsApp(){showToast("Ouverture de WhatsApp...","info");}
 
 document.getElementById('contactOptionsModal').addEventListener('click',e=>{if(e.target===document.getElementById('contactOptionsModal')) closeContactOptionsModal();});
 
-const contactFormEl=document.getElementById('contactForm');
-if(contactFormEl){contactFormEl.addEventListener('submit',(e)=>{e.preventDefault();showToast("Message envoyé avec succès !","success");contactFormEl.reset();});}
+const adminMessageFormEl=document.getElementById('adminMessageForm');
+if(adminMessageFormEl){adminMessageFormEl.addEventListener('submit',async(e)=>{
+  e.preventDefault();
+  const msg={
+    name: document.getElementById('msgName').value,
+    phone: document.getElementById('msgPhone').value,
+    recipient: document.getElementById('msgRecipient').value,
+    branche: document.getElementById('msgBranche').value,
+    content: document.getElementById('msgContent').value,
+    date: Date.now()
+  };
+  await firebase.database().ref('messages-admin').push(msg);
+  showToast('Message envoyé à l\'administration !','success');
+  adminMessageFormEl.reset();
+});}
 
 /* ══════════════════════════════════════════════════════════
    FORMULAIRE INSCRIPTION
@@ -3043,7 +3295,7 @@ const BRANCHES_DATA_INSCRIPTION={KACYIRU:{name:"Kacyiru",phone:"0791639766 / 079
 document.getElementById('maternelle').addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='block';document.getElementById('niveauPrimaireGroup').style.display='none';document.getElementById('sdmsGroup').style.display='none';}});
 document.getElementById('primaire').addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='none';document.getElementById('niveauPrimaireGroup').style.display='block';document.getElementById('sdmsGroup').style.display='block';}});
 
-document.querySelectorAll('input[name="branche"]').forEach(radio=>{radio.addEventListener('change',function(){if(this.checked){const branchData=BRANCHES_DATA_INSCRIPTION[this.value];if(branchData){document.getElementById('contactText').innerHTML=`<strong>Contact ${branchData.name}:</strong><br>${branchData.phone}<br>${branchData.email}`;document.getElementById('contactInfo').style.display='block';}}});});
+document.querySelectorAll('input[name="regBranch"]').forEach(radio=>{radio.addEventListener('change',function(){if(this.checked){const branchData=BRANCHES_DATA_INSCRIPTION[this.value]||BRANCHES_DATA_INSCRIPTION[normalizeBranchKey(this.value)];if(branchData){document.getElementById('contactText').innerHTML=`<strong>Contact ${branchData.name}:</strong><br>${branchData.phone}<br>${branchData.email}`;document.getElementById('contactInfo').style.display='block';}}});});
 
 function generateInscriptionStudentCode(){const now=new Date();return `EDU-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}-${now.getTime().toString().slice(-6)}`;}
 function hideInscriptionErrorMessage(){document.getElementById('missingFieldMessage').style.display='none';}
@@ -3085,6 +3337,7 @@ async function submitInscriptionForm(){
     await firebase.database().ref('inscriptions-scolaires').push(formData);
     document.getElementById('studentCode').textContent=formData.codeUnique;
     document.getElementById('successMessage').style.display='flex';
+    setTimeout(() => showPaymentPopup(formData.branche), 600);
     document.getElementById('inscriptionForm').reset();
   } catch(error){console.error(error);alert('Erreur lors de l\'enregistrement.');}
   finally{submitBtn.innerHTML='<i class="fas fa-paper-plane"></i> Soumettre l\'inscription';submitBtn.disabled=false;}
@@ -3095,8 +3348,7 @@ document.getElementById('chefTelephone').addEventListener('input',function(){thi
 /* ══════════════════════════════════════════════════════════
    CONTACT CARDS ANIMATION
 ══════════════════════════════════════════════════════════ */
-const contactCards=document.querySelectorAll('.contact-card');
-contactCards.forEach((card,index)=>{setTimeout(()=>{card.classList.add('animate');},100*index);});
+
 
 /* ══════════════════════════════════════════════════════════
    VIDÉO CONTRÔLES

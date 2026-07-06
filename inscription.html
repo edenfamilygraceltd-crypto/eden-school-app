@@ -139,6 +139,30 @@
   .empty-state i{font-size:2.2rem;margin-bottom:.7rem;opacity:.8;}
   .skeleton{height:78px;border-radius:16px;margin-bottom:.9rem;background:linear-gradient(90deg,#e9f2ed 25%,#f6fbf8 37%,#e9f2ed 63%);background-size:400px 100%;animation:shimmer 1.4s infinite linear;}
   .required-err{color:#ef4444;font-size:.8rem;margin-top:.25rem;display:none;}
+
+  .hidden { display: none !important; }
+  .consent-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+  }
+  .consent-card {
+    width: min(100%, 520px);
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 2rem;
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.24);
+    text-align: left;
+  }
+  .consent-card h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: #164e3b; }
+  .consent-card p { color: #475569; line-height: 1.65; margin-bottom: 1.5rem; }
+  .consent-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: flex-end; }
+  .consent-actions .btn { min-width: 160px; }
 </style>
 </head>
 <body>
@@ -187,6 +211,17 @@
       <span data-i18n="auth_google_btn">Continuer avec Google</span>
     </button>
     <div class="gate-note" id="authError"></div>
+  </div>
+
+  <div id="consentModal" class="consent-modal hidden" style="display:none;">
+    <div class="consent-card">
+      <h3 data-i18n="consent_modal_title">Consentement Analytics</h3>
+      <p data-i18n="consent_modal_desc">Pour améliorer le service et analyser l'usage de ce portail, nous souhaitons collecter des événements anonymisés. Cela inclut les clics sur les boutons, les envois de formulaire et le suivi des pages. Aucune donnée sensible n'est utilisée sans votre accord.</p>
+      <div class="consent-actions">
+        <button class="btn btn-outline" onclick="saveUserConsent(currentUser?.uid, false)"><span data-i18n="consent_decline">Refuser</span></button>
+        <button class="btn btn-primary" onclick="saveUserConsent(currentUser?.uid, true)"><span data-i18n="consent_accept">Accepter</span></button>
+      </div>
+    </div>
   </div>
 
   <!-- ================= REGISTRATION VIEW ================= -->
@@ -431,7 +466,11 @@
       pdf_form_secteur: "Secteur",
       pdf_form_umurenge: "Umurenge",
       pdf_form_akagari: "Akagari",
-      pdf_form_umudugudu: "Umudugudu"
+      pdf_form_umudugudu: "Umudugudu",
+      consent_modal_title: "Consentement Analytics",
+      consent_modal_desc: "Pour améliorer le service et analyser l'usage du portail, nous souhaitons collecter des événements anonymisés. Cela inclut les clics, le suivi de page et les envois de formulaire.",
+      consent_accept: "Accepter",
+      consent_decline: "Refuser"
     },
     en: {
       header_sub: "Registration Portal",
@@ -537,7 +576,11 @@
       pdf_form_secteur: "Sector",
       pdf_form_umurenge: "Umurenge",
       pdf_form_akagari: "Akagari",
-      pdf_form_umudugudu: "Umudugudu"
+      pdf_form_umudugudu: "Umudugudu",
+      consent_modal_title: "Analytics consent",
+      consent_modal_desc: "To improve the service and analyse portal usage, we want to collect anonymised events. This includes clicks, page tracking and form submissions.",
+      consent_accept: "Accept",
+      consent_decline: "Decline"
     },
     rw: {
       header_sub: "Urubuga rwo kwiyandikisha",
@@ -643,7 +686,11 @@
       pdf_form_secteur: "Secteur",
       pdf_form_umurenge: "Umurenge",
       pdf_form_akagari: "Akagari",
-      pdf_form_umudugudu: "Umudugudu"
+      pdf_form_umudugudu: "Umudugudu",
+      consent_modal_title: "Ubwumva bwa Analytics",
+      consent_modal_desc: "Kugira ngo tunoze serivisi kandi dusuzume uko uru rubuga rukoreshejwe, dukeneye gukusanya amakuru y'ibikorwa atariyafite umuntu. Ibi birimo gukanda buto, gukurikirana urupapuro no kohereza ifishi.",
+      consent_accept: "Emera",
+      consent_decline: "Oya"
     }
   };
 
@@ -728,11 +775,133 @@
   const auth = firebase.auth();
   const db = firebase.database();
   const googleProvider = new firebase.auth.GoogleAuthProvider();
+  const ANALYTICS_PATH = 'analytics/events';
+  const CONSENT_PATH = 'users_consent';
 
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
     .catch(err => console.warn('setPersistence(SESSION) impossible:', err));
 
   let currentUser = null;
+  let analyticsConsentGranted = false;
+  let analyticsConsentLoaded = false;
+  let pendingAnalyticsEvents = [];
+
+  async function loadUserConsent(uid) {
+    analyticsConsentLoaded = false;
+    analyticsConsentGranted = false;
+    if (!uid) return;
+
+    try {
+      const snap = await db.ref(`${CONSENT_PATH}/${uid}`).once('value');
+      const consent = snap.val();
+      analyticsConsentGranted = !!(consent && consent.granted);
+      analyticsConsentLoaded = true;
+      if (!analyticsConsentGranted) {
+        showConsentModal();
+      } else {
+        flushPendingAnalyticsEvents();
+      }
+    } catch (err) {
+      console.warn('Chargement du consentement impossible:', err);
+      analyticsConsentLoaded = true;
+    }
+  }
+
+  async function saveUserConsent(uid, granted) {
+    if (!uid) return;
+    try {
+      await db.ref(`${CONSENT_PATH}/${uid}`).set({
+        granted: !!granted,
+        updatedAt: Date.now(),
+        source: 'inscription.html'
+      });
+      analyticsConsentGranted = !!granted;
+      analyticsConsentLoaded = true;
+      closeConsentModal();
+      if (granted) {
+        flushPendingAnalyticsEvents();
+        trackEvent('consent_granted', { method: 'gdpr_modal' });
+      } else {
+        trackEvent('consent_declined', { method: 'gdpr_modal' }, false);
+        pendingAnalyticsEvents = [];
+      }
+    } catch (error) {
+      console.warn('Enregistrement du consentement impossible:', error);
+    }
+  }
+
+  function flushPendingAnalyticsEvents() {
+    if (!currentUser || !analyticsConsentGranted || pendingAnalyticsEvents.length === 0) {
+      return;
+    }
+
+    const queuedEvents = pendingAnalyticsEvents.slice();
+    pendingAnalyticsEvents = [];
+    queuedEvents.forEach(evt => trackEvent(evt.eventType, evt.details, false));
+  }
+
+  function showConsentModal() {
+    const modal = document.getElementById('consentModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+
+  function closeConsentModal() {
+    const modal = document.getElementById('consentModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+
+  function trackEvent(eventName, details = {}, allowQueue = true) {
+    if (!currentUser) {
+      if (allowQueue) {
+        pendingAnalyticsEvents.push({
+          eventType: eventName,
+          details
+        });
+      }
+      return;
+    }
+
+    if (!analyticsConsentLoaded) {
+      if (allowQueue) {
+        pendingAnalyticsEvents.push({
+          eventType: eventName,
+          details
+        });
+      }
+      return;
+    }
+
+    if (!analyticsConsentGranted) {
+      return;
+    }
+
+    const payload = {
+      eventType: eventName,
+      userId: currentUser.uid,
+      userEmail: currentUser.email || '',
+      userName: currentUser.displayName || '',
+      page: window.location.pathname,
+      timestamp: Date.now(),
+      ...details
+    };
+
+    db.ref(ANALYTICS_PATH).push(payload).catch(err => {
+      console.warn('Impossible d\'enregistrer l\'événement analytics:', err);
+    });
+  }
+
+  function trackPageView(pageName) {
+    trackEvent('page_view', { pageName });
+  }
+
+  function trackClick(label, details = {}) {
+    trackEvent('button_click', { label, ...details });
+  }
+
 
   // Auth state
   auth.onAuthStateChanged(user => {
@@ -753,6 +922,9 @@
           <button class="icon-btn" title="${t('auth_google_btn')}" onclick="signOutUser()"><i class="fas fa-right-from-bracket"></i></button>
         </div>`;
       document.getElementById('submitBtn').disabled = false;
+      loadUserConsent(user.uid).then(() => {
+        trackPageView('inscription_public');
+      });
       loadMyRegistrations();
     } else {
       gate.style.display = 'block';
@@ -760,6 +932,8 @@
       document.getElementById('myregsView').classList.remove('active');
       myRegsBtn.style.display = 'none';
       userChipZone.innerHTML = '';
+      analyticsConsentGranted = false;
+      analyticsConsentLoaded = false;
     }
   });
 
@@ -770,6 +944,7 @@
       showToast('Vous êtes déjà connecté','success');
       return;
     }
+    trackClick('google_login_button');
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
       .then(() => auth.signInWithPopup(googleProvider))
       .catch(err => {
@@ -791,9 +966,11 @@
     if (name === 'registration') {
       document.getElementById('registrationView').classList.add('active');
       document.getElementById('navInscriptionBtn').classList.add('active');
+      trackClick('nav_registration_tab');
     } else {
       document.getElementById('myregsView').classList.add('active');
       document.getElementById('navMyRegsBtn').classList.add('active');
+      trackClick('nav_myregistrations_tab');
       loadMyRegistrations();
     }
   }
@@ -961,6 +1138,7 @@
         timestamp: Date.now()
       });
 
+      trackEvent('registration_submitted', { reference });
       document.getElementById('publicRegistrationForm').style.display = 'none';
       document.getElementById('successScreen').style.display = 'block';
       document.getElementById('successRef').textContent = reference;
@@ -1094,6 +1272,7 @@
   }
 
   function downloadAdmissionLetter(reg){
+    trackClick('download_admission_letter', { reference: reg.reference || reg.codeUnique || '' });
     const JsPDF = resolveJsPDF();
     if (!JsPDF) { showToast(t('toast_pdf_error')); return; }
     if (!isRegistrationApproved(reg)) { showToast(t('toast_need_approval')); return; }
@@ -1162,6 +1341,7 @@
   }
 
   function downloadRegistrationForm(reg){
+    trackClick('download_registration_form', { reference: reg.reference || reg.codeUnique || '' });
     const JsPDF = resolveJsPDF();
     if (!JsPDF) { showToast(t('toast_pdf_error')); return; }
     if (!isRegistrationApproved(reg)) { showToast(t('toast_need_approval')); return; }
