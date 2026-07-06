@@ -1147,6 +1147,24 @@
                 </div>
 
                 <div class="bg-white rounded-lg shadow-soft p-6">
+                    <h2 class="text-xl font-bold text-secondary-900 mb-4">Parents les plus actifs</h2>
+                    <p class="text-secondary-500 mb-4">Top parents par nombre de clics enregistrés sur les boutons.</p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-secondary-700">
+                            <thead class="bg-secondary-50">
+                                <tr>
+                                    <th class="px-3 py-2 uppercase">Parent</th>
+                                    <th class="px-3 py-2 uppercase">Clics</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topParentsTable">
+                                <tr><td colspan="2" class="px-3 py-4 text-center text-secondary-500">Chargement...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-soft p-6">
                     <h2 class="text-xl font-bold text-secondary-900 mb-4">Conversion</h2>
                     <p class="text-secondary-500 mb-4">Taux de conversion entre la visite du formulaire et la soumission.</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2241,6 +2259,7 @@
                     submits
                 });
                 renderTopClicksTable();
+                renderTopParentsTable();
                 renderTopClicksChart();
                 renderUsageOverTimeChart();
 
@@ -2317,6 +2336,34 @@
             tableBody.innerHTML = rows.map(([label, count]) => `
                 <tr>
                     <td class="px-3 py-3 border-t border-secondary-200">${label}</td>
+                    <td class="px-3 py-3 border-t border-secondary-200">${count}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderTopParentsTable() {
+            const tableBody = document.getElementById('topParentsTable');
+            if (!tableBody) return;
+
+            const clickEvents = state.analyticsEvents.filter(e => e.eventType === 'button_click');
+            const counts = clickEvents.reduce((acc, event) => {
+                const parent = event.userName || event.userEmail || event.userId || 'Parent inconnu';
+                acc[parent] = (acc[parent] || 0) + 1;
+                return acc;
+            }, {});
+
+            const rows = Object.entries(counts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8);
+
+            if (rows.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="2" class="px-3 py-4 text-center text-secondary-500">Aucune donnée disponible</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = rows.map(([parent, count]) => `
+                <tr>
+                    <td class="px-3 py-3 border-t border-secondary-200">${parent}</td>
                     <td class="px-3 py-3 border-t border-secondary-200">${count}</td>
                 </tr>
             `).join('');

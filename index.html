@@ -1296,6 +1296,107 @@
   .heart{font-size:1.2rem;transition:all .3s;}
   .heart.lost{filter:grayscale(1);opacity:.3;}
   
+  
+/* ============================================================ */
+/* 10 jeux de mémoire - CSS moteur (collé automatiquement)      */
+/* ============================================================ */
+/* ===== EDEN — Section Jeux : fond + cartes ===== */
+.games-section{
+  position:relative;
+  overflow:hidden;
+  background-image:
+    linear-gradient(180deg, rgba(238,242,255,.88) 0%, rgba(223,243,255,.85) 55%, rgba(227,249,233,.88) 100%),
+    url('asset/img/background-jeux.png');
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  padding-bottom:4rem;
+}
+
+.game-grid{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:1.5rem;
+  max-width:1100px;
+  margin:0 auto;
+  padding:0 1.5rem;
+}
+.game-card{
+  background:#ffffff;
+  border-radius:24px;
+  padding:1.6rem 1.1rem 1.3rem;
+  text-align:center;
+  cursor:pointer;
+  box-shadow:0 12px 30px rgba(30,42,94,.10);
+  border:3px solid transparent;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease, border-color .25s ease;
+  display:flex;flex-direction:column;align-items:center;gap:.6rem;
+}
+.game-card:hover{
+  transform:translateY(-8px) scale(1.03);
+  box-shadow:0 20px 40px rgba(30,42,94,.16);
+  border-color:var(--card-color,#8b7ef0);
+}
+.game-card .icon-box{
+  width:84px;height:84px;
+  border-radius:20px;
+  background:var(--card-bg,#eef0ff);
+  display:flex;align-items:center;justify-content:center;
+  font-size:2.6rem;
+}
+.game-card h3{ font-family:'Poppins',sans-serif; font-size:1.05rem; font-weight:700; color:#1e2a5e; margin:0; }
+.game-card p{ font-size:.8rem; color:#8b8fa3; margin:0; }
+.play-btn{
+  background:var(--card-color,#8b7ef0); color:#fff; border:none;
+  padding:.6rem 1.4rem; border-radius:50px;
+  font-family:'Poppins',sans-serif; font-weight:700; font-size:.85rem;
+  cursor:pointer; margin-top:.2rem;
+  display:flex;align-items:center;gap:.4rem;
+  transition:transform .15s ease, opacity .2s ease;
+}
+.play-btn:hover{ transform:scale(1.06); opacity:.92; }
+
+/* ===== Jeu de Paires (memory) ===== */
+.mem-status{ display:flex; justify-content:space-between; font-weight:700; color:#1e2a5e; padding:0 .5rem 1rem; }
+.mem-grid{ display:grid; gap:.6rem; justify-content:center; margin:0 0 1rem; }
+.memcard{
+  width:68px;height:68px; border-radius:12px;
+  border:3px solid var(--card-color,#8b7ef0);
+  background:#fff; font-size:1.7rem;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer; transition:transform .15s ease;
+}
+.memcard:hover{ transform:scale(1.06); }
+.memcard.matched{ opacity:.5; cursor:default; }
+
+/* ===== Jeu de Kim (mémoire visuelle) ===== */
+.kim-grid{ display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin:1rem 0; }
+.kim-item{ width:60px;height:60px; background:#f2f2ff; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.9rem; }
+.kim-item.dim{ opacity:.9; }
+.kim-options{ display:flex; flex-wrap:wrap; gap:.8rem; justify-content:center; margin-top:1rem; }
+.kim-opt{
+  font-size:1.9rem; background:#fff; border:3px solid #8b7ef0;
+  border-radius:14px; width:60px;height:60px; cursor:pointer; transition:background .15s;
+}
+.kim-opt:hover{ background:#eee9ff; }
+
+/* ===== Séquence (Simon) ===== */
+.simon-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(68px,1fr));
+  gap:.7rem; margin:1rem auto 0; max-width:420px;
+}
+.simon-btn{
+  height:68px; border:none; border-radius:14px; font-size:1.5rem;
+  cursor:pointer; opacity:.85; transition:transform .12s ease, opacity .12s ease;
+}
+.simon-btn.lit{ transform:scale(1.1); opacity:1; box-shadow:0 0 0 4px rgba(255,255,255,.85) inset; }
+.simon-btn:disabled{ cursor:default; }
+
+/* ===== Petit timer / instructions ===== */
+.mem-instruction{ text-align:center; font-weight:700; color:#1e2a5e; margin-bottom:.5rem; }
+.mem-sub{ text-align:center; color:#8b8fa3; font-size:.85rem; margin-top:1rem; }
+
   </style>
   <script src="firebase-config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -1438,66 +1539,190 @@
 </div>
 
 <!-- Registration Form Modal -->
-<div id="registrationFormModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2><i class="fas fa-file-signature"></i> FORMULAIRE D'INSCRIPTION SCOLAIRE</h2>
-      <button class="modal-close" onclick="closeRegistrationModal()"><i class="fas fa-times"></i></button>
-    </div>
-    <div style="text-align:center; margin-bottom:1.5rem;">
-      <a href="https://edensmart-c7019.web.app/" target="_blank" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
-        <i class="fas fa-globe"></i> Visiter le site web
-      </a>
-    </div>
-    <div class="modal-body">
-      <form id="registrationForm">
-        <section style="margin-bottom:1.5rem;">
-          <h3 style="margin-bottom:1rem; font-size:1.1rem; color:#0d3b66;">SECTION 1 — INFORMATION DE L'ENFANT</h3>
-          <div class="form-group"><label for="regChildFullName">Nom-prénom *</label><input type="text" id="regChildFullName" required placeholder="Nom complet de l'enfant"></div>
-          <div class="form-group" id="regChildGender"><label>Sexe *</label><div style="display:flex;gap:1rem;align-items:center;margin-top:0.5rem;"><label><input type="radio" name="regChildGender" value="garcon"> GARÇON</label><label><input type="radio" name="regChildGender" value="fille"> FILLE</label></div></div>
-          <div class="form-group"><label for="regPreviousSchool">École de provenance</label><input type="text" id="regPreviousSchool" placeholder="École précédente"></div>
-          <div class="form-group"><label for="regChildBirthDate">Date de naissance *</label><input type="date" id="regChildBirthDate" required></div>
-          <div class="form-group"><label for="regRequestedClass">Classe demandée</label><select id="regRequestedClass"><option value="">Sélectionner une classe</option></select></div>
-          <div class="form-group"><label for="regAssignedClass">Classe affectée</label><input type="text" id="regAssignedClass" placeholder="Classe affectée par l'école"></div>
-          <div class="form-group" id="regBranch"><label>Branche *</label><div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.5rem;"><label><input type="radio" name="regBranch" value="kacyiru" onchange="invokeApplyBranchFeeRules(this.value)"> KACYIRU</label><label><input type="radio" name="regBranch" value="gisozi_maternelle" onchange="invokeApplyBranchFeeRules(this.value)"> GISOZI</label><label><input type="radio" name="regBranch" value="kimisagara" onchange="invokeApplyBranchFeeRules(this.value)"> KIMISAGARA</label></div></div>
-          <div class="form-group"><label><input type="checkbox" id="regTransportBus" onchange="toggleRegTransportBus()"> Transport Bus</label></div>
-          <div class="form-group" id="regTransportFeeGroup" style="display:none;"><label for="regTransportBusFee">Frais de Transport Mensuels</label><select id="regTransportBusFee" onchange="toggleRegTransportCustomFee()"><option value="">Sélectionner</option><option value="20000">20000</option><option value="25000">25000</option><option value="30000">30000</option><option value="35000">35000</option><option value="40000">40000</option><option value="45000">45000</option><option value="50000">50000</option><option value="other">Autre</option></select></div>
-          <div class="form-group" id="regTransportCustomFeeGroup" style="display:none;"><label for="regTransportCustomFee">Montant transport personnalisé</label><input type="number" id="regTransportCustomFee" placeholder="Entrez un montant"></div>
-        </section>
+<div class="modal fade" id="registrationFormModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content registration-modern-modal">
+      <div class="modal-header registration-modern-header">
+        <div>
+          <h5 class="modal-title mb-1" id="registrationModalTitle">FORMULAIRE D'INSCRIPTION SCOLAIRE</h5>
+          <small class="registration-subtitle" id="registrationModalSubtitle">Design moderne, mêmes fonctions</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body registration-modern-body">
+        <form id="registrationForm" class="registration-modern-form">
+          <section class="registration-block">
+            <div class="registration-block-head">
+              <span class="registration-step-pill">01</span>
+              <h6 class="mb-0">Information de l'enfant</h6>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="regChildFullName">Nom-prénom *</label>
+                <input type="text" class="form-control-modern" id="regChildFullName" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label d-block">Sexe *</label>
+                <div class="registration-choice-grid">
+                  <label class="registration-choice-item"><input type="radio" name="regChildGender" value="garcon" required> GARÇON</label>
+                  <label class="registration-choice-item"><input type="radio" name="regChildGender" value="fille" required> FILLE</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="regPreviousSchool">École de provenance</label>
+                <input type="text" class="form-control-modern" id="regPreviousSchool">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="regChildBirthDate">Date de naissance *</label>
+                <input type="date" class="form-control-modern" id="regChildBirthDate" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label d-block">Branche *</label>
+                <div class="registration-choice-grid registration-choice-grid-3">
+                  <label class="registration-choice-item"><input type="radio" name="regBranch" value="kacyiru" required onchange="populateRegistrationClassesByBranch(this.value); applyBranchFeeRules(this.value, '1')"> KACYIRU</label>
+                  <label class="registration-choice-item"><input type="radio" name="regBranch" value="gisozi_maternelle" required onchange="populateRegistrationClassesByBranch(this.value); applyBranchFeeRules(this.value, '1')"> GISOZI</label>
+                  <label class="registration-choice-item"><input type="radio" name="regBranch" value="kimisagara" required onchange="populateRegistrationClassesByBranch(this.value); applyBranchFeeRules(this.value, '1')"> KIMISAGARA</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="regRequestedClass">Classe demandée (selon branche) *</label>
+                <select class="form-control-modern" id="regRequestedClass" required>
+                  <option value="">Sélectionner d'abord une branche</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="regAssignedClass">Classe affectée</label>
+                <input type="text" class="form-control-modern" id="regAssignedClass">
+              </div>
+              <div class="col-12">
+                <label class="registration-switch">
+                  <input class="form-check-input" type="checkbox" id="regTransportBus" onchange="toggleRegTransportBus()">
+                  <span>Transport Bus</span>
+                </label>
+              </div>
+            </div>
 
-        <section style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
-          <div>
-            <h3 style="margin-bottom:1rem; font-size:1.1rem; color:#0d3b66;">SECTION 2 — CHEF DE FAMILLE</h3>
-            <div class="form-group"><label for="regParentName">Nom-prénom *</label><input type="text" id="regParentName" required placeholder="Nom du chef de famille"></div>
-            <div class="form-group"><label for="regParentPhone">Numéro de Téléphone *</label><input type="tel" id="regParentPhone" required placeholder="+250 7XXXXXXXX"></div>
-            <div class="form-group"><label for="regParentID">Numéro de la pièce d'identité</label><input type="text" id="regParentID" placeholder="Numéro de pièce"></div>
+            <div class="row g-3 mt-1" id="regTransportFeeGroup" style="display:none;">
+              <div class="col-md-6">
+                <label class="form-label" for="regTransportBusFee">Frais de transport mensuel</label>
+                <select class="form-control-modern" id="regTransportBusFee" onchange="toggleRegTransportCustomFee()">
+                  <option value="">Sélectionner</option>
+                  <option value="20000">20000</option>
+                  <option value="25000">25000</option>
+                  <option value="30000">30000</option>
+                  <option value="35000">35000</option>
+                  <option value="40000">40000</option>
+                  <option value="45000">45000</option>
+                  <option value="50000">50000</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="col-md-6" id="regTransportCustomFeeGroup" style="display:none;">
+                <label class="form-label" for="regTransportCustomFee">Montant transport personnalisé</label>
+                <input type="number" class="form-control-modern" id="regTransportCustomFee">
+              </div>
+            </div>
+          </section>
+
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <section class="registration-block h-100">
+                <div class="registration-block-head">
+                  <span class="registration-step-pill">02</span>
+                  <h6 class="mb-0">Chef de famille</h6>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="regParentName">Nom-prénom *</label>
+                  <input type="text" class="form-control-modern" id="regParentName" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="regParentPhone">Numéro de Téléphone *</label>
+                  <input type="tel" class="form-control-modern" id="regParentPhone" required>
+                </div>
+                <div>
+                  <label class="form-label" for="regParentID">Numéro de la pièce d'identité</label>
+                  <input type="text" class="form-control-modern" id="regParentID">
+                </div>
+              </section>
+            </div>
+
+            <div class="col-lg-6">
+              <section class="registration-block h-100">
+                <div class="registration-block-head">
+                  <span class="registration-step-pill">03</span>
+                  <h6 class="mb-0">La conjoint(e)</h6>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="regSpouseName">Nom-prénom</label>
+                  <input type="text" class="form-control-modern" id="regSpouseName">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="regSpousePhone">Numéro de Téléphone</label>
+                  <input type="tel" class="form-control-modern" id="regSpousePhone">
+                </div>
+                <div>
+                  <label class="form-label" for="regSpouseID">Numéro de la pièce d'identité</label>
+                  <input type="text" class="form-control-modern" id="regSpouseID">
+                </div>
+              </section>
+            </div>
           </div>
-          <div>
-            <h3 style="margin-bottom:1rem; font-size:1.1rem; color:#0d3b66;">SECTION 3 — LA CONJOINT(E)</h3>
-            <div class="form-group"><label for="regSpouseName">Nom-prénom</label><input type="text" id="regSpouseName" placeholder="Nom du conjoint(e)"></div>
-            <div class="form-group"><label for="regSpousePhone">Numéro de Téléphone</label><input type="tel" id="regSpousePhone" placeholder="+250 7XXXXXXXX"></div>
-            <div class="form-group"><label for="regSpouseID">Numéro de la pièce d'identité</label><input type="text" id="regSpouseID" placeholder="Numéro de pièce"></div>
-          </div>
-        </section>
 
-        <section style="margin-bottom:1.5rem;">
-          <h3 style="margin-bottom:1rem; font-size:1.1rem; color:#0d3b66;">SECTION 4 — ADRESSE</h3>
-          <div class="form-group"><label for="regAddress">Adresse</label><input type="text" id="regAddress" placeholder="Adresse complète"></div>
-        </section>
+          <section class="registration-block mt-3">
+            <div class="registration-block-head">
+              <span class="registration-step-pill">04</span>
+              <h6 class="mb-0">Adresse</h6>
+            </div>
+            <div>
+              <label class="form-label" for="regAddress">Adresse</label>
+              <input type="text" class="form-control-modern" id="regAddress">
+            </div>
+          </section>
 
-        <section style="margin-bottom:1.5rem;">
-          <h3 style="margin-bottom:1rem; font-size:1.1rem; color:#0d3b66;">SECTION 5 — FEES PAYMENT</h3>
-          <div class="form-group"><label for="regFeeAmount">Montant des frais d'inscription *</label><input type="number" id="regFeeAmount" required placeholder="Montant en RWF"></div>
-          <div class="form-group"><label for="regPaymentMode">Mode de paiement</label><select id="regPaymentMode"><option value="cash">Cash</option><option value="momo">Mobile Money</option><option value="bank">Bank</option></select></div>
-          <div class="form-group"><label for="regTransactionRef">Référence de transaction</label><input type="text" id="regTransactionRef" placeholder="Référence de paiement"></div>
-          <div class="form-group"><label for="regNotes">Notes</label><textarea id="regNotes" rows="3" placeholder="Commentaires supplémentaires"></textarea></div>
-        </section>
-      </form>
-      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:flex-end;">
-        <button class="btn-primary" type="button" onclick="closeRegistrationModal()" style="background:#888;">Cancel</button>
-        <button id="saveRegistrationBtn" class="btn-primary" type="button" onclick="saveRegistrationAndGenerateID()">Register & Generate ID</button>
-        <button class="btn-primary" id="downloadAdmissionLetterBtn" type="button" style="display:none;">Download Admission Letter</button>
-        <button class="btn-primary" id="downloadRegistrationFormBtn" type="button" style="display:none;">Download Registration Form</button>
+          <section class="registration-block registration-fees mt-3">
+            <div class="registration-block-head">
+              <span class="registration-step-pill">05</span>
+              <h6 class="mb-0">Fees Payment</h6>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="regFeeAmount">Montant des frais d'inscription *</label>
+                <input type="number" class="form-control-modern" id="regFeeAmount" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="regPaymentMode">Mode de paiement</label>
+                <select class="form-control-modern" id="regPaymentMode">
+                  <option value="cash">Cash</option>
+                  <option value="momo">Mobile Money</option>
+                  <option value="bank">Bank</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="regTransactionRef">Référence de transaction</label>
+                <input type="text" class="form-control-modern" id="regTransactionRef">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="regNotes">Notes</label>
+                <textarea class="form-control-modern" id="regNotes" rows="3"></textarea>
+              </div>
+            </div>
+          </section>
+        </form>
+      </div>
+      <div class="modal-footer d-flex flex-wrap gap-2 justify-content-end registration-modern-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-modern btn-primary-modern" id="registrationSaveBtn" onclick="saveRegistrationAndGenerateID()">
+          <i class="fas fa-user-check me-2"></i>Register & Generate ID
+        </button>
+        <button type="button" class="btn-modern btn-outline-secondary" id="downloadAdmissionLetterBtn" style="display:none;" onclick="downloadAdmissionLetter(null)">
+          <i class="fas fa-file-alt me-2"></i>Download Admission Letter
+        </button>
+        <button type="button" class="btn-modern btn-outline-secondary" id="downloadRegistrationFormBtn" style="display:none;" onclick="downloadRegistrationForm(null)">
+          <i class="fas fa-file-pdf me-2"></i>Download Registration Form
+        </button>
+        <button type="button" class="btn-modern btn-outline-danger" id="deleteRegisteredStudentBtn" style="display:none;" onclick="deleteCurrentRegisteredStudent()">
+          <i class="fas fa-trash me-2"></i>Delete Registered Student
+        </button>
       </div>
     </div>
   </div>
@@ -1627,7 +1852,7 @@
         </div>
         <div class="branch-info">
           <div class="branch-info-item"><i class="fas fa-map-marker-alt"></i><span>KG 11 Ave, Gisozi, Kigali</span></div>
-          <div class="branch-info-item"><i class="fas fa-phone"></i><span>Directrice: 0788410242 | DOS: 0796145647 | DG: 0788883842</span></div>
+          <div class="branch-info-item"><i class="fas fa-phone"></i><span>Directrice: 0788410242 / 0794116491 | DOS: 0796145647 | DG: 0788883842</span></div>
           <div class="branch-info-item"><i class="fas fa-envelope"></i><span>gisozi@edenfamily.edu.rw</span></div>
           <div class="branch-info-item"><i class="fas fa-clock"></i><span>Lun-Ven: 7h30 - 18h00</span></div>
         </div>
@@ -3290,7 +3515,7 @@ if(adminMessageFormEl){adminMessageFormEl.addEventListener('submit',async(e)=>{
 /* ══════════════════════════════════════════════════════════
    FORMULAIRE INSCRIPTION
 ══════════════════════════════════════════════════════════ */
-const BRANCHES_DATA_INSCRIPTION={KACYIRU:{name:"Kacyiru",phone:"0791639766 / 0792570074",email:"sergetumbwe@gmail.com",address:"KG 17 Ave, Kacyiru, Kigali"},GISOZI:{name:"Gisozi",phone:"0788410242 / 0796145647",email:"gisozi@edenfamily.edu.rw",address:"KG 11 Ave, Gisozi, Kigali"},KIMISAGARA:{name:"Kimisagara",phone:"0785892018 / 0791826950",email:"kimisagara@edenfamily.edu.rw",address:"KG 7 Ave, Kimisagara, Kigali"}};
+const BRANCHES_DATA_INSCRIPTION={KACYIRU:{name:"Kacyiru",phone:"0791639766 / 0792570074",email:"sergetumbwe@gmail.com",address:"KG 17 Ave, Kacyiru, Kigali"},GISOZI:{name:"Gisozi",phone:"0788410242 / 0794116491 / 0796145647",email:"gisozi@edenfamily.edu.rw",address:"KG 11 Ave, Gisozi, Kigali"},KIMISAGARA:{name:"Kimisagara",phone:"0785892018 / 0791826950",email:"kimisagara@edenfamily.edu.rw",address:"KG 7 Ave, Kimisagara, Kigali"}};
 
 document.getElementById('maternelle').addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='block';document.getElementById('niveauPrimaireGroup').style.display='none';document.getElementById('sdmsGroup').style.display='none';}});
 document.getElementById('primaire').addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='none';document.getElementById('niveauPrimaireGroup').style.display='block';document.getElementById('sdmsGroup').style.display='block';}});
