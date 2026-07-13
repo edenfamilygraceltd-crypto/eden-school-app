@@ -1579,9 +1579,16 @@
               <div class="col-12">
                 <label class="form-label d-block">Branche *</label>
                 <div class="registration-choice-grid registration-choice-grid-3">
-                  <label class="registration-choice-item"><input type="radio" name="regBranch" value="kacyiru" required onchange="populateRegistrationClassesByBranch(this.value); applyBranchFeeRules(this.value, '1')"> KACYIRU</label>
-                  <label class="registration-choice-item"><input type="radio" name="regBranch" value="gisozi_maternelle" required onchange="populateRegistrationClassesByBranch(this.value); applyBranchFeeRules(this.value, '1')"> GISOZI</label>
-                  <label class="registration-choice-item"><input type="radio" name="regBranch" value="kimisagara" required onchange="populateRegistrationClassesByBranch(this.value); applyBranchFeeRules(this.value, '1')"> KIMISAGARA</label>
+                  <label class="registration-choice-item"><input type="radio" name="regBranch" value="kacyiru" required onchange="handleBranchSelection(this.value); applyBranchFeeRules(this.value, '1')"> KACYIRU</label>
+                  <label class="registration-choice-item"><input type="radio" name="regBranch" value="gisozi_maternelle" required onchange="handleBranchSelection(this.value); applyBranchFeeRules(this.value, '1')"> GISOZI</label>
+                  <label class="registration-choice-item"><input type="radio" name="regBranch" value="kimisagara" required onchange="handleBranchSelection(this.value); applyBranchFeeRules(this.value, '1')"> KIMISAGARA</label>
+                </div>
+              </div>
+              <div class="col-12" id="regGisoziSectionGroup" style="display:none;">
+                <label class="form-label d-block">Section Gisozi *</label>
+                <div class="registration-choice-grid registration-choice-grid-2">
+                  <label class="registration-choice-item"><input type="radio" name="regGisoziSection" value="maternelle" onchange="handleGisoziSectionChange()"> MATERNELLE</label>
+                  <label class="registration-choice-item"><input type="radio" name="regGisoziSection" value="primaire" onchange="handleGisoziSectionChange()"> PRIMAIRE</label>
                 </div>
               </div>
               <div class="col-md-6">
@@ -2792,6 +2799,74 @@ function toggleRegTransportCustomFee(){
   const customGroup=document.getElementById('regTransportCustomFeeGroup');
   customGroup.style.display=(fee==='other')?'block':'none';
   if(fee!=='other') document.getElementById('regTransportCustomFee').value='';
+}
+
+async function handleBranchSelection(branchValue){
+  const sectionGroup=document.getElementById('regGisoziSectionGroup');
+  const classSelect=document.getElementById('regRequestedClass');
+  if(!classSelect) return;
+
+  if(branchValue==='gisozi_maternelle'){
+    sectionGroup.style.display='block';
+    classSelect.innerHTML = '<option value="">Sélectionner d\'abord une section Gisozi</option>';
+    classSelect.disabled = true;
+    document.querySelectorAll('input[name="regGisoziSection"]').forEach(el=>el.checked=false);
+    return;
+  }
+
+  sectionGroup.style.display='none';
+  document.querySelectorAll('input[name="regGisoziSection"]').forEach(el=>el.checked=false);
+  await populateRegistrationClassesByBranch(branchValue);
+}
+
+async function handleGisoziSectionChange(){
+  const selectedSection=document.querySelector('input[name="regGisoziSection"]:checked');
+  if(!selectedSection) return;
+  const branchKey = selectedSection.value === 'primaire' ? 'gisozi_primaire' : 'gisozi_maternelle';
+  await populateRegistrationClassesByBranch(branchKey);
+}
+
+async function populateRegistrationClassesByBranch(branchKey){
+  const select=document.getElementById('regRequestedClass');
+  if(!select) return;
+  select.innerHTML = '<option value="">Chargement...</option>';
+  select.disabled = true;
+
+  try {
+    const snapshot = await firebase.database().ref(`branches/${branchKey}/classes`).once('value');
+    const classNames = [];
+
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const value = child.val();
+        const isActive = (typeof value === 'object') ? value.active !== false : true;
+        if (!isActive) return;
+        const className = (typeof value === 'object') ? (value.name || child.key) : child.key;
+        if (!className) return;
+        classNames.push(className.toString().trim());
+      });
+    }
+
+    if (classNames.length === 0) {
+      select.innerHTML = '<option value="">Aucune classe disponible</option>';
+      select.disabled = false;
+      return;
+    }
+
+    const uniqueClasses = [...new Set(classNames)].sort((a,b)=>a.localeCompare(b,'fr'));
+    select.innerHTML = '<option value="">Sélectionner une classe</option>';
+    uniqueClasses.forEach(cls => {
+      const option = document.createElement('option');
+      option.value = cls;
+      option.textContent = cls;
+      select.appendChild(option);
+    });
+    select.disabled = false;
+  } catch (error) {
+    console.error('Erreur chargement des classes depuis Firebase:', branchKey, error);
+    select.innerHTML = '<option value="">Erreur de chargement</option>';
+    select.disabled = false;
+  }
 }
 
 async function saveRegistrationAndGenerateID(){

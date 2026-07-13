@@ -7812,7 +7812,13 @@
             }
 
             const branchName = getBranchName(student.branch);
-            const academicYear = (currentTermConfig && currentTermConfig.academicYear) ? currentTermConfig.academicYear : '';
+            const academicYear = String(
+                student.academicYear ||
+                student.schoolYear ||
+                student.year ||
+                (currentTermConfig && currentTermConfig.academicYear) ||
+                ''
+            ).trim();
             const today = new Date();
             const formattedDate = today.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
             const birthDate = student.birthDate ? new Date(student.birthDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';

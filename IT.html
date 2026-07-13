@@ -1147,8 +1147,8 @@
                 </div>
 
                 <div class="bg-white rounded-lg shadow-soft p-6">
-                    <h2 class="text-xl font-bold text-secondary-900 mb-4">Parents les plus actifs</h2>
-                    <p class="text-secondary-500 mb-4">Top parents par nombre de clics enregistrés sur les boutons.</p>
+                    <h2 class="text-xl font-bold text-secondary-900 mb-4">Parents actifs</h2>
+                    <p class="text-secondary-500 mb-4">Tous les parents actifs ayant cliqué sur un bouton.</p>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm text-secondary-700">
                             <thead class="bg-secondary-50">
@@ -2353,8 +2353,7 @@
             }, {});
 
             const rows = Object.entries(counts)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 8);
+                .sort((a, b) => b[1] - a[1]);
 
             if (rows.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="2" class="px-3 py-4 text-center text-secondary-500">Aucune donnée disponible</td></tr>';
