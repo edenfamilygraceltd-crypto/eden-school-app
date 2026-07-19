@@ -3554,9 +3554,18 @@
                                     <div class="col-12">
                                         <label class="form-label d-block">Branche *</label>
                                         <div class="registration-choice-grid registration-choice-grid-3">
-                                            <label class="registration-choice-item"><input type="radio" name="regBranch" value="kacyiru" required onchange="populateRegistrationClassesByBranch(this.value); applyBranchFeeRules(this.value, '1')"> KACYIRU</label>
-                                            <label class="registration-choice-item"><input type="radio" name="regBranch" value="gisozi_maternelle" required onchange="populateRegistrationClassesByBranch(this.value); applyBranchFeeRules(this.value, '1')"> GISOZI</label>
-                                            <label class="registration-choice-item"><input type="radio" name="regBranch" value="kimisagara" required onchange="populateRegistrationClassesByBranch(this.value); applyBranchFeeRules(this.value, '1')"> KIMISAGARA</label>
+                                            <label class="registration-choice-item"><input type="radio" name="regBranch" value="kacyiru" required onchange="handleBranchSelection(this.value)"> KACYIRU</label>
+                                            <label class="registration-choice-item"><input type="radio" name="regBranch" value="gisozi" required onchange="handleBranchSelection(this.value)"> GISOZI</label>
+                                            <label class="registration-choice-item"><input type="radio" name="regBranch" value="kimisagara" required onchange="handleBranchSelection(this.value)"> KIMISAGARA</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12" id="regBranchSectionGroup" style="display:none;">
+                                        <label class="form-label d-block">Section *</label>
+                                        <div class="registration-choice-grid registration-choice-grid-2">
+                                            <label class="registration-choice-item reg-branch-section kacyiru-section" style="display:none;"><input type="radio" name="regBranchSection" value="kacyiru_maternelle" onchange="handleBranchSectionChange()"> MATERNELLE</label>
+                                            <label class="registration-choice-item reg-branch-section kacyiru-section" style="display:none;"><input type="radio" name="regBranchSection" value="kacyiru_creche" onchange="handleBranchSectionChange()"> CRÈCHE</label>
+                                            <label class="registration-choice-item reg-branch-section gisozi-section" style="display:none;"><input type="radio" name="regBranchSection" value="gisozi_maternelle" onchange="handleBranchSectionChange()"> MATERNELLE</label>
+                                            <label class="registration-choice-item reg-branch-section gisozi-section" style="display:none;"><input type="radio" name="regBranchSection" value="gisozi_primaire" onchange="handleBranchSectionChange()"> PRIMAIRE</label>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -5699,10 +5708,14 @@
 
             // Fonction helper pour obtenir la branche Firebase pour les travailleurs
             function getFirebaseBranchForWorkers(selected) {
-                if (selected === 'gisozi_maternelle' || selected === 'gisozi_primaire') {
+                const normalized = (selected || '').toString().trim().toLowerCase();
+                if (['gisozi_maternelle', 'gisozi_primaire'].includes(normalized)) {
                     return 'gisozi';
                 }
-                return selected;
+                if (['kacyiru_maternelle', 'kacyiru_creche'].includes(normalized)) {
+                    return 'kacyiru';
+                }
+                return normalized;
             }
 
             function getAllowedBranchesForCurrentUser() {
@@ -5753,7 +5766,12 @@
             }
 
             function normalizeStudentBranch(branchId) {
-                return (branchId === 'gisozi_maternelle' || branchId === 'gisozi_primaire') ? 'gisozi' : branchId;
+                if (!branchId) return 'kacyiru';
+                const normalized = branchId.toString().trim().toLowerCase();
+                if (['gisozi_maternelle', 'gisozi_primaire', 'kacyiru', 'kacyiru_maternelle', 'kacyiru_creche', 'kimisagara', 'gisozi'].includes(normalized)) {
+                    return normalized;
+                }
+                return normalized;
             }
 
             function getSelectedStudentLevel(branchId) {
@@ -10435,13 +10453,48 @@
                 }
             }
 
+            function resolveDocumentBranch(student) {
+                const studentBranch = String(student?.branch || student?.branche || '').trim().toLowerCase();
+                const currentBranch = String(selectedBranch || currentUser?.branch || '').trim().toLowerCase();
+                const allowedBranches = getAllowedBranchesForCurrentUser();
+
+                const validBranches = ['kacyiru', 'kacyiru_maternelle', 'kacyiru_creche', 'kimisagara', 'gisozi_maternelle', 'gisozi_primaire'];
+
+                if (studentBranch && validBranches.includes(studentBranch)) {
+                    return studentBranch;
+                }
+
+                if (studentBranch === 'gisozi') {
+                    return 'gisozi_maternelle';
+                }
+                if (studentBranch === 'kacyiru') {
+                    return 'kacyiru_maternelle';
+                }
+
+                if (currentBranch && validBranches.includes(currentBranch) && allowedBranches.includes(currentBranch)) {
+                    return currentBranch;
+                }
+
+                if (currentBranch === 'gisozi') {
+                    return 'gisozi_maternelle';
+                }
+                if (currentBranch === 'kacyiru') {
+                    return 'kacyiru_maternelle';
+                }
+
+                return studentBranch || currentBranch || 'kacyiru';
+            }
+
             // Get branch name from ID
             function getBranchName(branchId) {
                 const branchNames = {
                     kacyiru: 'EDEN FAMILY SCHOOL KACYIRU',
+                    kacyiru_maternelle: 'EDEN FAMILY SCHOOL KACYIRU - MATERNELLE',
+                    kacyiru_creche: 'EDEN FAMILY SCHOOL KACYIRU - CRÈCHE',
                     kimisagara: 'EDEN FAMILY SCHOOL KIMISAGARA',
                     gisozi_maternelle: 'EDEN FAMILY SCHOOL GISOZI NURSERY',
-                    gisozi_primaire: 'EDEN FAMILY SCHOOL GISOZI PRIMARY'
+                    gisozi_primaire: 'EDEN FAMILY SCHOOL GISOZI PRIMARY',
+                    gisozi: 'EDEN FAMILY SCHOOL GISOZI'
                 };
                 return branchNames[branchId] || branchId;
             }
@@ -10451,6 +10504,42 @@
                 const branchInfo = {
                     kacyiru: {
                         branchName: 'EDEN FAMILY SCHOOL KACYIRU',
+                        director: 'TUMBWE Serge',
+                        directorTitle: 'Directeur',
+                        directorPhone: '0791639766',
+                        accountant: 'Accountant',
+                        accountantPhone: '',
+                        dgName: 'NYIRIMBUTO Josephe',
+                        dgPhone: '0788883842',
+                        authorityContacts: [
+                            { label: 'Directeur', name: 'TUMBWE Serge', phone: '0791639766' },
+                            { label: 'Comptable', useAccountantName: true, fallbackName: 'Comptable', phone: '0792570074' },
+                            { label: 'DG', name: 'NYIRIMBUTO Josephe', phone: '0788883842' }
+                        ],
+                        address: 'Kacyiru, Kigali, Rwanda',
+                        colorRGB: [0, 100, 150],
+                        colorHex: '#006496'
+                    },
+                    kacyiru_maternelle: {
+                        branchName: 'EDEN FAMILY SCHOOL KACYIRU - MATERNELLE',
+                        director: 'TUMBWE Serge',
+                        directorTitle: 'Directeur',
+                        directorPhone: '0791639766',
+                        accountant: 'Accountant',
+                        accountantPhone: '',
+                        dgName: 'NYIRIMBUTO Josephe',
+                        dgPhone: '0788883842',
+                        authorityContacts: [
+                            { label: 'Directeur', name: 'TUMBWE Serge', phone: '0791639766' },
+                            { label: 'Comptable', useAccountantName: true, fallbackName: 'Comptable', phone: '0792570074' },
+                            { label: 'DG', name: 'NYIRIMBUTO Josephe', phone: '0788883842' }
+                        ],
+                        address: 'Kacyiru, Kigali, Rwanda',
+                        colorRGB: [0, 100, 150],
+                        colorHex: '#006496'
+                    },
+                    kacyiru_creche: {
+                        branchName: 'EDEN FAMILY SCHOOL KACYIRU - CRÈCHE',
                         director: 'TUMBWE Serge',
                         directorTitle: 'Directeur',
                         directorPhone: '0791639766',
@@ -10648,16 +10737,77 @@
                 // Initialize class dropdown - will be populated when branch is selected
                 document.getElementById('regRequestedClass').innerHTML = '<option value="">Sélectionner d\'abord une branche</option>';
                 document.getElementById('regRequestedClass').disabled = true;
+                const sectionGroup = document.getElementById('regBranchSectionGroup');
+                if (sectionGroup) sectionGroup.style.display = 'none';
+                document.querySelectorAll('input[name="regBranchSection"]').forEach(el => el.checked = false);
                 
                 const modal = new bootstrap.Modal(document.getElementById('registrationFormModal'));
                 modal.show();
             }
 
             function resolveRegistrationBranchValue(student) {
-                const normalized = normalizeStudentBranch(student?.branch || student?.branche || selectedBranch);
-                if (normalized === 'kacyiru' || normalized === 'kimisagara') return normalized;
-                if (normalized === 'gisozi' || normalized === 'gisozi_maternelle' || normalized === 'gisozi_primaire') return 'gisozi_maternelle';
+                const branch = String(student?.branch || student?.branche || selectedBranch || '').trim().toLowerCase();
+                if (branch.startsWith('kacyiru')) return 'kacyiru';
+                if (branch.startsWith('gisozi')) return 'gisozi';
+                if (branch === 'kimisagara') return 'kimisagara';
                 return 'kacyiru';
+            }
+
+            function getRegistrationSectionForBranch(branchValue) {
+                if (!branchValue) return '';
+                const normalized = branchValue.toString().trim().toLowerCase();
+                if (['gisozi_maternelle', 'gisozi_primaire', 'kacyiru_maternelle', 'kacyiru_creche'].includes(normalized)) {
+                    return normalized;
+                }
+                if (normalized === 'gisozi') return 'gisozi_maternelle';
+                if (normalized === 'kacyiru') return 'kacyiru_maternelle';
+                return '';
+            }
+
+            async function handleBranchSelection(branchValue) {
+                const sectionGroup = document.getElementById('regBranchSectionGroup');
+                const classSelect = document.getElementById('regRequestedClass');
+                if (!classSelect) return;
+
+                // Hide all section labels and uncheck radios, then show only branch-specific sections
+                document.querySelectorAll('.reg-branch-section').forEach(label => {
+                    try { label.style.display = 'none'; } catch (e) {}
+                    const inp = label.querySelector('input[name="regBranchSection"]');
+                    if (inp) inp.checked = false;
+                });
+
+                if (branchValue === 'gisozi' || branchValue === 'kacyiru') {
+                    if (sectionGroup) sectionGroup.style.display = 'block';
+
+                    if (branchValue === 'gisozi') {
+                        // show only gisozi sections (maternelle + primaire)
+                        document.querySelectorAll('.gisozi-section').forEach(el => el.style.display = '');
+                    }
+                    if (branchValue === 'kacyiru') {
+                        // show only kacyiru sections (maternelle + creche)
+                        document.querySelectorAll('.kacyiru-section').forEach(el => el.style.display = '');
+                    }
+
+                    classSelect.innerHTML = '<option value="">Sélectionner d\'abord une section</option>';
+                    classSelect.disabled = true;
+                    return;
+                }
+
+                if (sectionGroup) sectionGroup.style.display = 'none';
+                await populateRegistrationClassesByBranch(branchValue);
+                if (typeof applyBranchFeeRules === 'function') {
+                    applyBranchFeeRules(branchValue, '1');
+                }
+            }
+
+            async function handleBranchSectionChange() {
+                const selectedSection = document.querySelector('input[name="regBranchSection"]:checked');
+                if (!selectedSection) return;
+                const branchKey = selectedSection.value;
+                await populateRegistrationClassesByBranch(branchKey);
+                if (typeof applyBranchFeeRules === 'function') {
+                    applyBranchFeeRules(branchKey, '1');
+                }
             }
 
             async function openStudentEditModal(student) {
@@ -10692,9 +10842,35 @@
                 const branchValue = resolveRegistrationBranchValue(student);
                 const branchRadio = document.querySelector(`input[name="regBranch"][value="${branchValue}"]`);
                 if (branchRadio) branchRadio.checked = true;
-                await populateRegistrationClassesByBranch(branchValue);
-                if (typeof applyBranchFeeRules === 'function') {
-                    applyBranchFeeRules(branchValue, '1');
+
+                const sectionGroup = document.getElementById('regBranchSectionGroup');
+                const sectionValue = getRegistrationSectionForBranch(student?.branch || student?.branche || branchValue);
+                if (sectionGroup) {
+                    sectionGroup.style.display = (branchValue === 'gisozi' || branchValue === 'kacyiru') ? 'block' : 'none';
+                    document.querySelectorAll('input[name="regBranchSection"]').forEach(el => {
+                        el.checked = false;
+                        el.style.display = 'none';
+                    });
+
+                    if (branchValue === 'gisozi') {
+                        document.querySelectorAll('.gisozi-section').forEach(el => el.style.display = '');
+                    } else if (branchValue === 'kacyiru') {
+                        document.querySelectorAll('.kacyiru-section').forEach(el => el.style.display = '');
+                    }
+                }
+
+                if (sectionValue) {
+                    const sectionRadio = document.querySelector(`input[name="regBranchSection"][value="${sectionValue}"]`);
+                    if (sectionRadio) sectionRadio.checked = true;
+                    await populateRegistrationClassesByBranch(sectionValue);
+                    if (typeof applyBranchFeeRules === 'function') {
+                        applyBranchFeeRules(sectionValue, '1');
+                    }
+                } else {
+                    await populateRegistrationClassesByBranch(branchValue);
+                    if (typeof applyBranchFeeRules === 'function') {
+                        applyBranchFeeRules(branchValue, '1');
+                    }
                 }
 
                 const classSelect = document.getElementById('regRequestedClass');
@@ -10812,7 +10988,23 @@
                 const requestedClass = document.getElementById('regRequestedClass').value;
                 const assignedClass = document.getElementById('regAssignedClass').value.trim();
                 const branchInput = document.querySelector('input[name="regBranch"]:checked');
-                const branch = branchInput ? branchInput.value : '';
+                const sectionInput = document.querySelector('input[name="regBranchSection"]:checked');
+                const rawBranch = branchInput ? branchInput.value : '';
+                let branch = rawBranch;
+
+                if (rawBranch === 'gisozi') {
+                    branch = sectionInput ? sectionInput.value : 'gisozi_maternelle';
+                }
+                if (rawBranch === 'kacyiru') {
+                    branch = sectionInput ? sectionInput.value : 'kacyiru_maternelle';
+                }
+
+                if ((rawBranch === 'gisozi' || rawBranch === 'kacyiru') && !sectionInput) {
+                    showToast('Veuillez sélectionner une section pour la branche choisie.', 'error');
+                    form.reportValidity();
+                    return;
+                }
+
                 const normalizedBranch = normalizeStudentBranch(branch);
                 const transportEnrolled = document.getElementById('regTransportBus').checked;
                 const transportFeeValue = document.getElementById('regTransportBusFee').value;
@@ -11068,7 +11260,8 @@
                 }
 
                 // Get branch-specific information
-                const branchInfo = getBranchDirectorInfo(student.branch);
+                const branchId = resolveDocumentBranch(student);
+                const branchInfo = getBranchDirectorInfo(branchId);
                 const accountantFullName = (
                     document.getElementById('accountantName')?.value ||
                     currentUser?.name ||
@@ -11242,7 +11435,8 @@
                 const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
                 const pageWidth = doc.internal.pageSize.getWidth();
                 const pageHeight = doc.internal.pageSize.getHeight();
-                const branchInfo = getBranchDirectorInfo(student.branch);
+                const branchId = resolveDocumentBranch(student);
+                const branchInfo = getBranchDirectorInfo(branchId);
                 const accountantFullName = (
                     document.getElementById('accountantName')?.value ||
                     currentUser?.name ||
@@ -11441,6 +11635,19 @@
                 const select = document.getElementById('regRequestedClass');
                 if (!select) return;
                 select.innerHTML = '<option value="">Sélectionner une classe</option>';
+                // If current selection targets the Kacyiru crèche, show age-based creche levels
+                const sectionValue = (document.querySelector('input[name="regBranchSection"]:checked') || document.querySelector('input[name="regBranch"]:checked'))?.value || '';
+                if (sectionValue === 'kacyiru_creche') {
+                    const crecheLevels = ['Crèche 3-6 mois', 'Crèche 6-12 mois', 'Crèche 12-24 mois'];
+                    crecheLevels.forEach(c => {
+                        const option = document.createElement('option');
+                        option.value = c;
+                        option.textContent = c;
+                        select.appendChild(option);
+                    });
+                    return;
+                }
+
                 const classes = ['N1','N2','P1','P2','P3','P4','P5','P6'];
                 classes.forEach(c => {
                     const option = document.createElement('option');
@@ -11453,6 +11660,7 @@
             function getRegistrationBranchLevel(branchValue) {
                 if (branchValue === 'gisozi_maternelle') return 'Maternelle';
                 if (branchValue === 'gisozi_primaire') return 'Primaire';
+                if (branchValue === 'kacyiru_creche') return 'Crèche';
                 return null;
             }
 
@@ -11463,6 +11671,10 @@
                 const normalizedClass = (className || '').toString().trim().toUpperCase();
                 if (selectedLevel === 'Maternelle') return normalizedClass.startsWith('N');
                 if (selectedLevel === 'Primaire') return normalizedClass.startsWith('P');
+                if (selectedLevel === 'Crèche' || selectedLevel === 'Creche') {
+                    // Accept classes labelled for crèche: either start with 'C' or contain the word 'CRECHE' (case-insensitive)
+                    return /^C/i.test(className) || /cr[eè]che/i.test(className);
+                }
                 return true;
             }
 
@@ -11522,6 +11734,12 @@
                 if (!branchValue) {
                     select.innerHTML = '<option value="">Sélectionner d\'abord une branche</option>';
                     select.disabled = false;
+                    return;
+                }
+
+                if (branchValue === 'gisozi' || branchValue === 'kacyiru') {
+                    select.innerHTML = '<option value="">Sélectionner d\'abord une section</option>';
+                    select.disabled = true;
                     return;
                 }
 
@@ -13920,7 +14138,7 @@
                 // Breakfast - configurable for all branches except explicit exclusions
                 const breakfastDiv = document.getElementById('feeBreakfast').closest('.mb-3');
                 const breakfastInput = document.getElementById('feeBreakfast');
-                if (['kacyiru', 'kimisagara', 'gisozi_maternelle', 'gisozi_primaire'].includes(branchId)) {
+                if (['kacyiru', 'kacyiru_maternelle', 'kacyiru_creche', 'kimisagara', 'gisozi_maternelle', 'gisozi_primaire'].includes(branchId)) {
                     breakfastDiv.style.display = 'block';
                     breakfastInput.required = true;
                 } else {

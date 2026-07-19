@@ -1238,6 +1238,172 @@
     font-size: 0.95rem;
   }
 
+  /* ═══ FORCER LE FORMAT A4 PENDANT LA CAPTURE PDF (html2canvas) ═══ */
+  .pdf-export-mode .bulletin {
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    margin: 0 !important;
+  }
+
+  .pdf-export-mode .bul-comment-body {
+    flex: 1 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  .pdf-export-mode .bul-sigs {
+    margin-top: auto !important;
+  }
+
+  /* ═══ AGRANDIR ET ESPACER LE CONTENU POUR REMPLIR LA PAGE A4 ═══ */
+  .pdf-export-mode.bulletin,
+  .pdf-export-mode .bulletin {
+    font-size: 1.25rem !important;
+    padding: 12mm !important;
+  }
+
+  .pdf-export-mode .bul-hd {
+    padding: 16px 14px 12px !important;
+  }
+
+  .pdf-export-mode .bul-school h3 {
+    font-size: 1.6rem !important;
+  }
+
+  .pdf-export-mode .bul-tagline {
+    font-size: .95rem !important;
+  }
+
+  .pdf-export-mode .bul-sub-title {
+    font-size: 1.05rem !important;
+    padding: 10px 16px !important;
+  }
+
+  .pdf-export-mode .bul-info-lbl {
+    font-size: .85rem !important;
+    padding: 10px 12px !important;
+    min-width: 110px !important;
+  }
+
+  .pdf-export-mode .bul-info-val {
+    font-size: 1rem !important;
+    padding: 10px 12px !important;
+    min-height: 44px !important;
+  }
+
+  .pdf-export-mode .bh-lbl {
+    font-size: .95rem !important;
+    padding: 12px 14px !important;
+  }
+
+  .pdf-export-mode .bul-tri-name {
+    font-size: .85rem !important;
+    padding: 8px 6px !important;
+  }
+
+  .pdf-export-mode .bul-tri-col {
+    font-size: .72rem !important;
+    padding: 6px 4px !important;
+  }
+
+  .pdf-export-mode .bul-branch-name {
+    font-size: 1rem !important;
+    padding: 14px 14px !important;
+  }
+
+  .pdf-export-mode .bul-cell {
+    font-size: .88rem !important;
+    padding: 10px 6px !important;
+  }
+
+  .pdf-export-mode .bul-cell span {
+    font-size: .88rem !important;
+  }
+
+  .pdf-export-mode .bul-app-name {
+    font-size: 1.05rem !important;
+    padding: 14px 14px !important;
+  }
+
+  .pdf-export-mode .bul-app-cell {
+    font-size: 1rem !important;
+    padding: 12px 6px !important;
+  }
+
+  .pdf-export-mode .bul-comment-hd {
+    font-size: 1rem !important;
+    padding: 12px 18px !important;
+  }
+
+  .pdf-export-mode .bul-comment-body {
+    font-size: 1rem !important;
+    padding: 16px 18px !important;
+    min-height: 90px !important;
+    max-height: none !important;
+  }
+
+  .pdf-export-mode .bul-sig-ttl {
+    font-size: .9rem !important;
+  }
+
+  .pdf-export-mode .bul-sig-dots {
+    font-size: .95rem !important;
+  }
+
+  .pdf-export-mode .bul-sig {
+    padding: 20px 14px !important;
+  }
+
+  .pdf-export-mode .bul-legal p {
+    font-size: .75rem !important;
+  }
+
+  .pdf-export-mode .cond-title-bar {
+    font-size: 1.2rem !important;
+    padding: 16px 22px !important;
+  }
+
+  .pdf-export-mode .cond-tbl th {
+    font-size: .95rem !important;
+    padding: 14px 16px !important;
+  }
+
+  .pdf-export-mode .cond-tbl td {
+    font-size: 1.05rem !important;
+    padding: 16px 16px !important;
+  }
+
+  .pdf-export-mode .cond-legend-hd {
+    font-size: .95rem !important;
+    padding: 10px 16px !important;
+  }
+
+  .pdf-export-mode .cond-legend-item {
+    font-size: 1.05rem !important;
+    padding: 14px !important;
+  }
+
+  .pdf-export-mode .bul-circle {
+    width: 62px !important;
+    height: 62px !important;
+  }
+
+  .pdf-export-mode .bul-circle img {
+    height: 50px !important;
+  }
+
+  .pdf-export-mode .bul-logo-box {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
   .bulletin::before {
     content:'🎈🧸🎨';
     position:absolute;
@@ -4176,6 +4342,16 @@
     d.innerHTML = `<i class="fas ${icons[type]||'fa-info-circle'}" style="color:${colors[type]};flex-shrink:0;"></i><span>${msg}</span>`;
     w.appendChild(d);
     setTimeout(()=>d.remove(), 3500);
+  }
+
+  function enablePdfExportSizing(container) {
+    if (!container) return;
+    container.classList.add('pdf-export-mode');
+  }
+
+  function disablePdfExportSizing(container) {
+    if (!container) return;
+    container.classList.remove('pdf-export-mode');
   }
 
   function openModal(id)  { document.getElementById(id).classList.add('open'); }
@@ -9732,10 +9908,15 @@
             b.style.overflow = 'hidden';
             b.style.pageBreakAfter = 'always';
           });
-          await html2pdf().set(options).from(printArea).save();
-          printArea.style.height = '';
-          printArea.style.minHeight = '';
-          printArea.style.overflow = '';
+          try {
+            enablePdfExportSizing(printArea);
+            await html2pdf().set(options).from(printArea).save();
+          } finally {
+            disablePdfExportSizing(printArea);
+            printArea.style.height = '';
+            printArea.style.minHeight = '';
+            printArea.style.overflow = '';
+          }
         } else {
           toast('Erreur: html2pdf n\'est pas disponible', 'error');
           return;
@@ -9838,7 +10019,12 @@
       };
 
       if (typeof html2pdf !== 'undefined') {
-        html2pdf().set(options).from(printArea).save();
+        try {
+          enablePdfExportSizing(printArea);
+          await html2pdf().set(options).from(printArea).save();
+        } finally {
+          disablePdfExportSizing(printArea);
+        }
         console.log('✅ PDF généré:', filename);
         toast('✅ PDF téléchargé avec succès', 'ok');
       } else {
@@ -10154,25 +10340,37 @@
           // 1) Student academic PDF
           printArea.innerHTML = acadElem.outerHTML;
           printArea.style.cssText = 'display:block!important; position:fixed!important; top:0!important; left:0!important; width:210mm!important; z-index:-1!important; background:white!important;';
-          const academicBlob = await html2pdf().set({
-            margin: 0,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, allowTaint: true, scrollY: 0 },
-            jsPDF: { unit: 'mm', format: 'a4' },
-            pagebreak: { mode: ['avoid-all'] }
-          }).from(printArea).outputPdf('blob');
+          let academicBlob;
+          try {
+            enablePdfExportSizing(printArea);
+            academicBlob = await html2pdf().set({
+              margin: 0,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, allowTaint: true, scrollY: 0 },
+              jsPDF: { unit: 'mm', format: 'a4' },
+              pagebreak: { mode: ['avoid-all'] }
+            }).from(printArea).outputPdf('blob');
+          } finally {
+            disablePdfExportSizing(printArea);
+          }
           printArea.style.cssText = 'display:none!important';
 
           // 2) Student conduct PDF
           printArea.innerHTML = condElem.outerHTML;
           printArea.style.cssText = 'display:block!important; position:fixed!important; top:0!important; left:0!important; width:210mm!important; z-index:-1!important; background:white!important;';
-          const conductBlob = await html2pdf().set({
-            margin: 0,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, allowTaint: true, scrollY: 0 },
-            jsPDF: { unit: 'mm', format: 'a4' },
-            pagebreak: { mode: ['avoid-all'] }
-          }).from(printArea).outputPdf('blob');
+          let conductBlob;
+          try {
+            enablePdfExportSizing(printArea);
+            conductBlob = await html2pdf().set({
+              margin: 0,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, allowTaint: true, scrollY: 0 },
+              jsPDF: { unit: 'mm', format: 'a4' },
+              pagebreak: { mode: ['avoid-all'] }
+            }).from(printArea).outputPdf('blob');
+          } finally {
+            disablePdfExportSizing(printArea);
+          }
           printArea.style.cssText = 'display:none!important';
           await new Promise(r => setTimeout(r, 300));
 
@@ -10196,25 +10394,37 @@
 
       if (classAcademicPages.length > 0) {
         printArea.innerHTML = classAcademicPages.map(section => `<div>${section}</div><div style="page-break-after:always;"></div>`).join('');
-        const classAcademicBlob = await html2pdf().set({
-          margin: [0.3, 0.3, 0.3, 0.3],
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break' }
-        }).from(printArea).outputPdf('blob');
+        let classAcademicBlob;
+        try {
+          enablePdfExportSizing(printArea);
+          classAcademicBlob = await html2pdf().set({
+            margin: [0.3, 0.3, 0.3, 0.3],
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break' }
+          }).from(printArea).outputPdf('blob');
+        } finally {
+          disablePdfExportSizing(printArea);
+        }
         zip.file(`CLASSE_${classFolderName}_ACADEMIQUE.pdf`, classAcademicBlob);
       }
 
       if (classConductPages.length > 0) {
         printArea.innerHTML = classConductPages.map(section => `<div>${section}</div><div style="page-break-after:always;"></div>`).join('');
-        const classConductBlob = await html2pdf().set({
-          margin: [0.3, 0.3, 0.3, 0.3],
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break' }
-        }).from(printArea).outputPdf('blob');
+        let classConductBlob;
+        try {
+          enablePdfExportSizing(printArea);
+          classConductBlob = await html2pdf().set({
+            margin: [0.3, 0.3, 0.3, 0.3],
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break' }
+          }).from(printArea).outputPdf('blob');
+        } finally {
+          disablePdfExportSizing(printArea);
+        }
         zip.file(`CLASSE_${classFolderName}_CONDUITE.pdf`, classConductBlob);
       }
 
@@ -10342,16 +10552,22 @@
 
         // Capture #bulAcad (already visible inside printArea)
         const bulAcad = document.getElementById('bulAcad');
-        const acadCanvas = await h2c(bulAcad, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          willReadFrequently: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          windowWidth: bulAcad.scrollWidth,
-          windowHeight: bulAcad.scrollHeight
-        });
+        let acadCanvas;
+        try {
+          enablePdfExportSizing(bulAcad);
+          acadCanvas = await h2c(bulAcad, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            willReadFrequently: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            windowWidth: bulAcad.scrollWidth,
+            windowHeight: bulAcad.scrollHeight
+          });
+        } finally {
+          disablePdfExportSizing(bulAcad);
+        }
         const acadImgData = acadCanvas.toDataURL('image/jpeg', 0.95);
         if (!firstPage) academicDoc.addPage();
         academicDoc.addImage(acadImgData, 'JPEG', 0, 0, 210, 297);
@@ -10376,16 +10592,22 @@
           )
         ));
 
-        const condCanvas = await h2c(bulCond, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          willReadFrequently: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          windowWidth: bulCond.scrollWidth,
-          windowHeight: bulCond.scrollHeight
-        });
+        let condCanvas;
+        try {
+          enablePdfExportSizing(bulCond);
+          condCanvas = await h2c(bulCond, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            willReadFrequently: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            windowWidth: bulCond.scrollWidth,
+            windowHeight: bulCond.scrollHeight
+          });
+        } finally {
+          disablePdfExportSizing(bulCond);
+        }
         const condImgData = condCanvas.toDataURL('image/jpeg', 0.95);
         if (!firstPage) conductDoc.addPage();
         conductDoc.addImage(condImgData, 'JPEG', 0, 0, 210, 297);

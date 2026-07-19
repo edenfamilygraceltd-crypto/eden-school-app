@@ -7811,7 +7811,8 @@
                 return;
             }
 
-            const branchName = getBranchName(student.branch);
+            const branchId = resolveDocumentBranch(student);
+            const branchName = getBranchName(branchId);
             const academicYear = String(
                 student.academicYear ||
                 student.schoolYear ||
