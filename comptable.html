@@ -2117,7 +2117,7 @@
                             <i class="fas fa-search me-2"></i>Detect Duplicates
                         </button>
                         <button class="btn-modern" style="background:#fd7e14; color:white;" onclick="openRegistrationDuplicateModal()">
-                            <i class="fas fa-clone me-2"></i>Détecter et Fusionner les Doublons
+                            <i class="fas fa-clone me-2"></i>Détecter et Nettoyer les Doublons
                         </button>
                         <button class="btn-modern btn-export-pdf" onclick="exportRegistrationReportPDF()">
                             <i class="fas fa-file-pdf me-2"></i>Export Report (PDF)
@@ -4069,14 +4069,14 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <i class="fas fa-clone me-2 text-warning"></i>
-                            Doublons d'inscriptions
+                            <i class="fas fa-clone me-2" style="color:#fd7e14;"></i>
+                            Doublons d'Inscription
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div id="registrationDuplicateSummary" class="alert alert-secondary mb-3">
-                            Cliquez sur <strong>Analyse</strong> pour rechercher les doublons d'inscription.
+                            Cliquez sur "Analyse" pour rechercher les doublons.
                         </div>
 
                         <div class="d-flex flex-wrap gap-2 mb-3">
@@ -4084,43 +4084,41 @@
                                 <i class="fas fa-search me-1"></i>Analyse
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectRecommendedRegistrationDuplicates()">
-                                <i class="fas fa-check-square me-1"></i>Select Recommended
+                                <i class="fas fa-check-square me-1"></i>Sélection Recommandée
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearRegistrationDuplicateSelection()">
-                                <i class="fas fa-square me-1"></i>Clear Selection
+                                <i class="fas fa-square me-1"></i>Effacer Sélection
                             </button>
                             <span class="small text-muted align-self-center" id="registrationDuplicateSelectedCount">0 sélectionné(s)</span>
                         </div>
 
-                        <div class="small text-muted mb-2" id="registrationDuplicateSelectedStudents">Selected students: none</div>
+                        <div class="small text-muted mb-2" id="registrationDuplicateSelectedStudents">Élèves sélectionnés : aucun</div>
 
                         <div class="table-responsive">
                             <table class="modern-table">
                                 <thead>
                                     <tr>
-                                        <th>Select</th>
-                                        <th>Keep</th>
+                                        <th>Sélectionner</th>
+                                        <th>Statut</th>
                                         <th>Élève</th>
-                                        <th>Date naissance</th>
-                                        <th>Chef de famille</th>
+                                        <th>Score</th>
+                                        <th>Classe</th>
+                                        <th>Date Naissance</th>
+                                        <th>Chef de Famille</th>
                                         <th>Téléphone</th>
-                                        <th>Branche</th>
-                                        <th>Source</th>
-                                        <th>Actions</th>
+                                        <th>Inscrit le</th>
                                     </tr>
                                 </thead>
                                 <tbody id="registrationDuplicateTableBody">
-                                    <tr>
-                                        <td colspan="9" class="text-center text-muted py-3">Aucun doublon chargé</td>
-                                    </tr>
+                                    <tr><td colspan="9" class="text-center text-muted py-3">Aucun doublon chargé</td></tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                        <button type="button" class="btn btn-danger" id="deleteRegistrationDuplicatesBtn" onclick="deleteSelectedRegistrationDuplicates()">
-                            <i class="fas fa-trash me-2"></i>Supprimer les doublons sélectionnés
+                        <button type="button" class="btn btn-danger" id="deleteRegistrationDuplicatesBtn" onclick="deleteSelectedRegistrationDuplicates()" disabled>
+                            <i class="fas fa-trash me-2"></i>Supprimer les Doublons Sélectionnés
                         </button>
                     </div>
                 </div>
@@ -5876,18 +5874,23 @@
                 return true;
             }
 
+            function normalizeBranchId(branchId) {
+                return (branchId || '').toString().trim().toLowerCase();
+            }
+
             function matchesBranchAndLevelForSelection(student, branchSel) {
                 if (!student) return false;
-                const activeBranch = branchSel || selectedBranch;
+                const activeBranch = normalizeBranchId(branchSel || selectedBranch);
+                const studentBranch = normalizeBranchId(student.branch || student.branche);
                 const firebaseBranch = getFirebaseBranchForWorkers(activeBranch);
-                if (student.branch !== firebaseBranch && student.branch !== activeBranch) return false;
+                if (studentBranch !== firebaseBranch && studentBranch !== activeBranch) return false;
                 return matchesSelectedStudentLevel(student, activeBranch);
             }
 
             function matchesPaymentBranchAndLevelForSelection(payment, branchSel) {
                 if (!payment) return false;
 
-                const activeBranch = branchSel || selectedBranch;
+                const activeBranch = normalizeBranchId(branchSel || selectedBranch);
                 const firebaseBranch = getFirebaseBranchForWorkers(activeBranch);
                 const student = students.find(s => s.id === payment.studentId);
 
@@ -7557,7 +7560,7 @@
             }
 
             function scanAllDuplicateGroups(branch) {
-                const branchStudents = getStudentsForCurrentBranch(branch);
+                const branchStudents = getStudentsForCurrentBranch(branch).map(s => ({ ...s }));
                 const visited = new Set();
                 const groups = [];
 
@@ -10646,16 +10649,18 @@
                 }
                 
                 // Filtrer par branche d'abord
-                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const activeBranch = normalizeBranchId(selectedBranch);
+                const firebaseBranch = getFirebaseBranchForWorkers(activeBranch);
                 let levelFilter = null;
-                if (selectedBranch === 'gisozi_maternelle') {
+                if (activeBranch === 'gisozi_maternelle') {
                     levelFilter = 'nursery';
-                } else if (selectedBranch === 'gisozi_primaire') {
+                } else if (activeBranch === 'gisozi_primaire') {
                     levelFilter = 'primary';
                 }
                 const branchStudents = students.filter(student => {
-                    if (student.branch !== firebaseBranch) return false;
-                    if (levelFilter && student.level !== levelFilter) return false;
+                    const studentBranch = normalizeBranchId(student.branch || student.branche);
+                    if (studentBranch !== firebaseBranch && studentBranch !== activeBranch) return false;
+                    if (levelFilter && (student.level || '').toString().trim().toLowerCase() !== levelFilter) return false;
                     return true;
                 });
                 
@@ -12399,15 +12404,11 @@
                     await studentsRef.child(studentId).remove();
                     showToast(currentLanguage === 'fr' ? 'Élève supprimé avec succès !' : 'Student deleted successfully!', 'success');
 
-                    if (typeof applyStudentFilters === 'function') applyStudentFilters();
-                    if (typeof loadStudentFees === 'function') loadStudentFees();
-                    try {
-                        if (typeof loadFees === 'function') loadFees();
-                    } catch (e) {
-                        console.warn('loadFees failed after student deletion:', e);
-                    }
-                    if (typeof recalculateExpectedIncome === 'function') recalculateExpectedIncome();
-                    if (typeof updateDailyReportTable === 'function') updateDailyReportTable();
+                    try { if (typeof applyStudentFilters === 'function') applyStudentFilters(); } catch (e) { console.warn(e); }
+                    try { if (typeof loadStudentFees === 'function') loadStudentFees(); } catch (e) { console.warn(e); }
+                    try { if (typeof loadFees === 'function') loadFees(); } catch (e) { console.warn(e); }
+                    try { if (typeof recalculateExpectedIncome === 'function') recalculateExpectedIncome(); } catch (e) { console.warn(e); }
+                    try { if (typeof updateDailyReportTable === 'function') updateDailyReportTable(); } catch (e) { console.warn(e); }
                     return true;
                     
                 } catch (error) {
@@ -14197,6 +14198,11 @@
                 document.getElementById('registrationDuplicateSelectedCount').textContent = '0 sélectionné(s)';
                 document.getElementById('registrationDuplicateSelectedStudents').textContent = 'Selected students: none';
                 document.getElementById('deleteRegistrationDuplicatesBtn').disabled = true;
+                if (!pendingInscriptionsData.length) {
+                    loadPendingInscriptions().catch(error => {
+                        console.error('Error loading pending inscriptions before duplicate modal:', error);
+                    });
+                }
                 const modal = new bootstrap.Modal(document.getElementById('registrationDuplicateModal'));
                 modal.show();
             }
@@ -14237,7 +14243,13 @@
                 return duplicateGroups;
             }
 
-            function analyseRegistrationDuplicates() {
+            async function analyseRegistrationDuplicates() {
+                if (!pendingInscriptionsData.length) {
+                    await loadPendingInscriptions().catch(error => {
+                        console.error('Error loading pending inscriptions before duplicate analysis:', error);
+                    });
+                }
+
                 // Use fuzzy scan across students as primary grouping, fall back to registration/pending groups
                 const studentGroups = scanAllDuplicateGroups(selectedBranch || undefined);
                 let groups = [];
