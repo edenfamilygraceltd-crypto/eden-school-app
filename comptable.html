@@ -1563,6 +1563,8 @@
                         </div>
                     </div>
                     </div>
+
+                        
                 </div>
                 
                 <div class="d-flex align-items-center gap-3">
@@ -2112,9 +2114,6 @@
                     <div class="d-flex gap-2">
                         <button class="btn-modern btn-primary-modern" onclick="showRegistrationModal()">
                             <i class="fas fa-user-plus me-2"></i>New Inscription
-                        </button>
-                        <button class="btn-modern" onclick="detectRegistrationDuplicates()">
-                            <i class="fas fa-search me-2"></i>Detect Duplicates
                         </button>
                         <button class="btn-modern" style="background:#fd7e14; color:white;" onclick="openRegistrationDuplicateModal()">
                             <i class="fas fa-clone me-2"></i>Détecter et Nettoyer les Doublons
@@ -5660,6 +5659,7 @@
                 const fields = [
                     ['Nom-prénom:', student.name || '', 'Sexe:', student.gender === 'GARCON' ? 'GARÇON' : 'FILLE'],
                     ['École de provenance:', student.previousSchool || '', 'Date de naissance:', student.birthDate ? new Date(student.birthDate).toLocaleDateString('fr-FR') : ''],
+                    ['Année scolaire:', getCurrentAcademicYearLabel(), '', ''],
                     ['Classe:', student.class || '', 'Classe affectée:', student.class || '']
                 ];
             
@@ -5902,6 +5902,46 @@
 
                 const selectedLevel = getSelectedStudentLevel(activeBranch);
                 return !selectedLevel;
+            }
+
+            // ============================================
+            // CORRESPONDANCE ROBUSTE DE BRANCHE POUR L'INSCRIPTION
+            // Gère les anciennes valeurs génériques ('gisozi', 'kacyiru') 
+            // en plus des valeurs précises ('gisozi_maternelle', etc.)
+            // ============================================
+            function registrationPaymentMatchesBranch(payment, targetBranch) {
+                if (!payment) return false;
+
+                const target = (targetBranch || '').toString().trim().toLowerCase();
+
+                // 1. Priorité : si on a le studentId, on se fie à la branche ACTUELLE de l'élève
+                //    (plus fiable que la branche figée au moment du paiement)
+                if (payment.studentId) {
+                    const student = students.find(s => s.id === payment.studentId);
+                    if (student) {
+                        return matchesBranchAndLevelForSelection(student, target);
+                    }
+                }
+
+                // 2. Repli : comparer directement la branche stockée sur le paiement
+                const paymentBranch = (payment.branch || '').toString().trim().toLowerCase();
+                if (paymentBranch === target) return true;
+
+                // 3. Gestion des anciennes valeurs génériques (avant la séparation Maternelle/Primaire)
+                if (paymentBranch === 'gisozi' && (target === 'gisozi_maternelle' || target === 'gisozi_primaire')) {
+                    // On essaie de deviner la section via la classe de l'élève
+                    const cls = (payment.studentClass || '').toString().trim().toUpperCase();
+                    if (cls.startsWith('N')) return target === 'gisozi_maternelle';
+                    if (cls.startsWith('P')) return target === 'gisozi_primaire';
+                    // Classe inconnue : on l'affiche quand même (mieux vaut visible que perdu)
+                    return true;
+                }
+
+                if (paymentBranch === 'kacyiru' && ['kacyiru', 'kacyiru_maternelle', 'kacyiru_creche'].includes(target)) {
+                    return true;
+                }
+
+                return false;
             }
 
             async function loadBranchClasses(branchId) {
@@ -6853,8 +6893,12 @@
                     } else if (sectionId === 'transport') {
                         loadTransportSection();
                     } else if (sectionId === 'registration') {
-                        loadRegistration();
-                        loadPendingInscriptions();
+                        // Petite temporisation pour laisser les listeners Firebase (students, etc.) 
+                        // finir leur premier chargement avant de filtrer par branche
+                        setTimeout(() => {
+                            loadRegistration();
+                            loadPendingInscriptions();
+                        }, 100);
                     } else if (sectionId === 'students') {
                         applyStudentFilters();
                     } else if (sectionId === 'settings') {
@@ -7416,12 +7460,21 @@
                 `;
 
                 try {
-                    const snapshot = await db.ref('registrationPayments').orderByChild('branch').equalTo(selectedBranch).once('value');
-                    const payments = [];
+                    // On récupère TOUS les paiements d'inscription (pas de filtre serveur par branche,
+                    // car les anciennes données peuvent avoir une branche générique 'gisozi'/'kacyiru')
+                    const snapshot = await db.ref('registrationPayments').once('value');
+                    const allPayments = [];
                     snapshot.forEach(child => {
-                        const payment = child.val();
-                        payments.push({ id: child.key, ...payment });
+                        allPayments.push({ id: child.key, ...child.val() });
                     });
+
+                    // Filtrage robuste côté client (gère les anciennes ET nouvelles valeurs de branche)
+                    const payments = allPayments.filter(payment =>
+                        registrationPaymentMatchesBranch(payment, selectedBranch)
+                    );
+
+                    // Tri du plus récent au plus ancien
+                    payments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
                     updateRegistrationTable(payments);
                 } catch (error) {
@@ -7493,6 +7546,19 @@
             function normalizeKey(s) {
                 if (!s) return '';
                 return s.toString().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[^a-z0-9]/g, '').trim();
+            }
+
+            // ============================================
+            // ANNÉE SCOLAIRE DYNAMIQUE — toujours à jour pour impressions/téléchargements
+            // ============================================
+            function getCurrentAcademicYearLabel() {
+                if (currentTermConfig && currentTermConfig.academicYear) {
+                    return currentTermConfig.academicYear;
+                }
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth() + 1;
+                return month >= 9 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
             }
 
             // ============================================
@@ -7676,6 +7742,8 @@
                 doc.save(fileName);
                 showToast('Duplicates exported as PDF', 'success');
             }
+
+            
 
             async function exportRegistrationReportPDF() {
                 const JsPDF = resolveJsPDF();
@@ -7883,6 +7951,20 @@
                 document.getElementById('confirmAmountPaid').value = '';
                 document.getElementById('confirmPaymentMode').value = 'cash';
                 document.getElementById('confirmTransactionRef').value = '';
+
+                // Sélectionne automatiquement l'année scolaire actuellement configurée
+                const currentAcademicYear = getCurrentAcademicYearLabel();
+                const academicYearSelect = document.getElementById('confirmAcademicYear');
+                if (academicYearSelect) {
+                    const optionExists = Array.from(academicYearSelect.options).some(opt => opt.value === currentAcademicYear);
+                    if (!optionExists) {
+                        const opt = document.createElement('option');
+                        opt.value = currentAcademicYear;
+                        opt.textContent = currentAcademicYear;
+                        academicYearSelect.appendChild(opt);
+                    }
+                    academicYearSelect.value = currentAcademicYear;
+                }
 
                 const modal = new bootstrap.Modal(document.getElementById('confirmInscriptionModal'));
                 modal.show();
@@ -8170,8 +8252,10 @@
                 }
 
                 if (document.getElementById('registration').classList.contains('active')) {
-                    loadRegistration();
-                    loadPendingInscriptions();
+                    setTimeout(() => {
+                        loadRegistration();
+                        loadPendingInscriptions();
+                    }, 50);
                 }
                 
                 // Load opening balance reports for new branch
@@ -11659,13 +11743,7 @@
                     currentUserName ||
                     branchInfo.accountant
                 );
-                const academicYear = String(
-                    student.academicYear ||
-                    student.schoolYear ||
-                    student.year ||
-                    (currentTermConfig && currentTermConfig.academicYear) ||
-                    ''
-                ).trim();
+                const academicYear = getCurrentAcademicYearLabel(); // toujours l'année scolaire actuellement configurée
                 const today = new Date();
                 const formattedDate = today.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
                 const birthDate = student.birthDate ? new Date(student.birthDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
@@ -11916,7 +11994,7 @@
                 // Student card
                 doc.setDrawColor(180, 204, 192);
                 doc.setLineWidth(0.4);
-                doc.roundedRect(margin, y, contentW, 64, 2, 2, 'S');
+                doc.roundedRect(margin, y, contentW, 72, 2, 2, 'S');
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(11);
                 doc.setTextColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
@@ -11935,9 +12013,11 @@
                 labelValue('Branche:', getBranchName(student.branch), margin + 4, rowY);
                 labelValue('Transport bus:', student.transportEnrolled ? 'Oui' : 'Non', margin + 104, rowY);
                 rowY += 8;
-                labelValue('Adresse:', student.address, margin + 4, rowY);
+                labelValue('Année scolaire:', getCurrentAcademicYearLabel(), margin + 4, rowY);
+                labelValue('Adresse:', student.address, margin + 104, rowY);
+                rowY += 8;
 
-                y += 70;
+                y += 78;
 
                 // Parent + spouse cards
                 const colGap = 6;
