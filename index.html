@@ -3300,16 +3300,25 @@ function endGame(){
 }
 function restartGame(){closeModal();setTimeout(()=>startGame(),300);}
 function updateGameScores(){
-    document.getElementById('gameScore').textContent=CONFIG.gameScore;
-    document.getElementById('bestScore').textContent=CONFIG.bestScore;
-    document.getElementById('gamesCompleted').textContent=CONFIG.gamesCompleted;
+    const safeGameScore = Number.isFinite(Number(CONFIG.gameScore)) ? Number(CONFIG.gameScore) : 0;
+    const safeBestScore = Number.isFinite(Number(CONFIG.bestScore)) ? Number(CONFIG.bestScore) : 0;
+    const safeGamesCompleted = Number.isFinite(Number(CONFIG.gamesCompleted)) ? Number(CONFIG.gamesCompleted) : 0;
+    const safeLives = Number.isFinite(Number(CONFIG.lives)) ? Number(CONFIG.lives) : 3;
+
+    const scoreEl = document.getElementById('gameScore');
+    if(scoreEl) scoreEl.textContent = safeGameScore;
+    const bestEl = document.getElementById('bestScore');
+    if(bestEl) bestEl.textContent = safeBestScore;
+    const gamesCompletedEl = document.getElementById('gamesCompleted');
+    if(gamesCompletedEl) gamesCompletedEl.textContent = safeGamesCompleted;
+
     // also update the new score bar elements if present
     const starsEl = document.getElementById('totalStars');
-    if(starsEl) starsEl.textContent = CONFIG.gameScore;
+    if(starsEl) starsEl.textContent = safeGameScore;
     const gamesEl = document.getElementById('gamesWon');
-    if(gamesEl) gamesEl.textContent = CONFIG.gamesCompleted;
+    if(gamesEl) gamesEl.textContent = safeGamesCompleted;
     const livesEl = document.getElementById('totalLives');
-    if(livesEl) livesEl.textContent = CONFIG.lives!==undefined?CONFIG.lives:3;
+    if(livesEl) livesEl.textContent = safeLives;
 }
 
 
