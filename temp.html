@@ -4536,12 +4536,13 @@
             }
 
             // Fee configuration change handlers
-            document.getElementById('feeQuarter').addEventListener('change', loadFeeConfiguration);
-            document.getElementById('feeYear').addEventListener('change', loadFeeConfiguration);
+            // These controls are not rendered on every accountant view.
+            document.getElementById('feeQuarter')?.addEventListener('change', loadFeeConfiguration);
+            document.getElementById('feeYear')?.addEventListener('change', loadFeeConfiguration);
 
             // Student payment type change handler
-            document.getElementById('studentPaymentType').addEventListener('change', populatePaymentAmount);
-            document.getElementById('studentPaymentMode').addEventListener('change', updateStudentPaymentPayerField);
+            document.getElementById('studentPaymentType')?.addEventListener('change', populatePaymentAmount);
+            document.getElementById('studentPaymentMode')?.addEventListener('change', updateStudentPaymentPayerField);
         });
 
         // Update the payer field based on payment mode

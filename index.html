@@ -2207,7 +2207,7 @@ document.addEventListener('mousemove', e => {
   cgEl.style.top  = e.clientY+'px';
 });
 
-/* ══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════��══════
    SECTION COLOUR (body class)
 ══════════════════════════════════════════════════════════ */
 document.querySelectorAll('[data-s]').forEach(s =>
@@ -2585,7 +2585,7 @@ document.addEventListener('click',e=>{
 
 /* ══════════════════════════════════════════════════════════
    CAROUSEL
-══════════════════════════════════════════════════════════ */
+═════════════════════════════════��════════════════════════ */
 const slides=document.querySelectorAll('.carousel-slide');
 const dots=document.querySelectorAll('.carousel-dot');
 
@@ -3183,7 +3183,7 @@ function logoutFromIndex(){
 
 /* ══════════════════════════════════════════════════════════
    GALERIE
-══════════════════════════════════════════════════════════ */
+════��═════════════════════════════════════════════════════ */
 function openGalleryModal(index){
   const image=GALLERY_IMAGES[index];const totalImages=GALLERY_IMAGES.length;
   let thumbnailsHTML='';
@@ -3569,7 +3569,7 @@ function contactByPhone(){showToast(`Appel vers ${document.getElementById('conta
 function contactByEmail(){showToast(`Email vers ${document.getElementById('contactEmail').textContent}...`,"info");}
 function contactByWhatsApp(){showToast("Ouverture de WhatsApp...","info");}
 
-document.getElementById('contactOptionsModal').addEventListener('click',e=>{if(e.target===document.getElementById('contactOptionsModal')) closeContactOptionsModal();});
+document.getElementById('contactOptionsModal')?.addEventListener('click',e=>{if(e.target===document.getElementById('contactOptionsModal')) closeContactOptionsModal();});
 
 const adminMessageFormEl=document.getElementById('adminMessageForm');
 if(adminMessageFormEl){adminMessageFormEl.addEventListener('submit',async(e)=>{
@@ -3592,8 +3592,8 @@ if(adminMessageFormEl){adminMessageFormEl.addEventListener('submit',async(e)=>{
 ══════════════════════════════════════════════════════════ */
 const BRANCHES_DATA_INSCRIPTION={KACYIRU:{name:"Kacyiru",phone:"0791639766 / 0792570074",email:"sergetumbwe@gmail.com",address:"KG 17 Ave, Kacyiru, Kigali"},GISOZI:{name:"Gisozi",phone:"0788410242 / 0794116491 / 0796145647",email:"gisozi@edenfamily.edu.rw",address:"KG 11 Ave, Gisozi, Kigali"},KIMISAGARA:{name:"Kimisagara",phone:"0785892018 / 0791826950",email:"kimisagara@edenfamily.edu.rw",address:"KG 7 Ave, Kimisagara, Kigali"}};
 
-document.getElementById('maternelle').addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='block';document.getElementById('niveauPrimaireGroup').style.display='none';document.getElementById('sdmsGroup').style.display='none';}});
-document.getElementById('primaire').addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='none';document.getElementById('niveauPrimaireGroup').style.display='block';document.getElementById('sdmsGroup').style.display='block';}});
+document.getElementById('maternelle')?.addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='block';document.getElementById('niveauPrimaireGroup').style.display='none';document.getElementById('sdmsGroup').style.display='none';}});
+document.getElementById('primaire')?.addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='none';document.getElementById('niveauPrimaireGroup').style.display='block';document.getElementById('sdmsGroup').style.display='block';}});
 
 document.querySelectorAll('input[name="regBranch"]').forEach(radio=>{radio.addEventListener('change',function(){if(this.checked){const branchData=BRANCHES_DATA_INSCRIPTION[this.value]||BRANCHES_DATA_INSCRIPTION[normalizeBranchKey(this.value)];if(branchData){document.getElementById('contactText').innerHTML=`<strong>Contact ${branchData.name}:</strong><br>${branchData.phone}<br>${branchData.email}`;document.getElementById('contactInfo').style.display='block';}}});});
 
@@ -3643,7 +3643,7 @@ async function submitInscriptionForm(){
   finally{submitBtn.innerHTML='<i class="fas fa-paper-plane"></i> Soumettre l\'inscription';submitBtn.disabled=false;}
 }
 
-document.getElementById('chefTelephone').addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'');});
+document.getElementById('chefTelephone')?.addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'');});
 
 /* ══════════════════════════════════════════════════════════
    CONTACT CARDS ANIMATION

@@ -141,7 +141,7 @@
             log(`OTP généré: ${otp}`, 'success');
         }
 
-        document.getElementById('testForm').addEventListener('submit', async function(e) {
+        document.getElementById('testForm')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const email = document.getElementById('testEmail').value;

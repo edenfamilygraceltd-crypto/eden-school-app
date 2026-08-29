@@ -1049,7 +1049,7 @@
     return `EDU-${y}${m}${d}-${rnd}`;
   }
 
-  document.getElementById('publicRegistrationForm').addEventListener('submit', async function(e){
+  document.getElementById('publicRegistrationForm')?.addEventListener('submit', async function(e){
     e.preventDefault();
     if (!currentUser) {
       showToast(t('toast_need_login'));
