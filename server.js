@@ -156,6 +156,12 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname)));
 
+// Express ne retombe pas toujours sur index.html lorsqu'il est exécuté comme fonction Vercel.
+// Servir explicitement la page d'accueil évite le "Cannot GET /".
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // Middleware pour gérer les erreurs
 app.use((err, req, res, next) => {
   console.error(err.stack);
