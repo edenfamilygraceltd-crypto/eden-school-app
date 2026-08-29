@@ -2207,7 +2207,7 @@ document.addEventListener('mousemove', e => {
   cgEl.style.top  = e.clientY+'px';
 });
 
-/* ═══════════════════════════════════════════════════���══════
+/* ═══════════════════════════════════════════════════����══════
    SECTION COLOUR (body class)
 ══════════════════════════════════════════════════════════ */
 document.querySelectorAll('[data-s]').forEach(s =>
@@ -2585,7 +2585,7 @@ document.addEventListener('click',e=>{
 
 /* ══════════════════════════════════════════════════════════
    CAROUSEL
-═════════════════════════════════��════════════════════════ */
+═══════════════════════════════��═��════════════════════════ */
 const slides=document.querySelectorAll('.carousel-slide');
 const dots=document.querySelectorAll('.carousel-dot');
 
@@ -3300,19 +3300,25 @@ function endGame(){
 }
 function restartGame(){closeModal();setTimeout(()=>startGame(),300);}
 function updateGameScores(){
-    const gameScoreEl = document.getElementById('gameScore');
-    const bestScoreEl = document.getElementById('bestScore');
+    const safeGameScore = Number.isFinite(Number(CONFIG.gameScore)) ? Number(CONFIG.gameScore) : 0;
+    const safeBestScore = Number.isFinite(Number(CONFIG.bestScore)) ? Number(CONFIG.bestScore) : 0;
+    const safeGamesCompleted = Number.isFinite(Number(CONFIG.gamesCompleted)) ? Number(CONFIG.gamesCompleted) : 0;
+    const safeLives = Number.isFinite(Number(CONFIG.lives)) ? Number(CONFIG.lives) : 3;
+
+    const scoreEl = document.getElementById('gameScore');
+    if(scoreEl) scoreEl.textContent = safeGameScore;
+    const bestEl = document.getElementById('bestScore');
+    if(bestEl) bestEl.textContent = safeBestScore;
     const gamesCompletedEl = document.getElementById('gamesCompleted');
-    if (gameScoreEl) gameScoreEl.textContent = CONFIG.gameScore;
-    if (bestScoreEl) bestScoreEl.textContent = CONFIG.bestScore;
-    if (gamesCompletedEl) gamesCompletedEl.textContent = CONFIG.gamesCompleted;
-    // also update the new score bar elements if present
+    if(gamesCompletedEl) gamesCompletedEl.textContent = safeGamesCompleted;
+
+    // Also update the new score bar elements if present.
     const starsEl = document.getElementById('totalStars');
-    if(starsEl) starsEl.textContent = CONFIG.gameScore;
+    if(starsEl) starsEl.textContent = safeGameScore;
     const gamesEl = document.getElementById('gamesWon');
-    if(gamesEl) gamesEl.textContent = CONFIG.gamesCompleted;
+    if(gamesEl) gamesEl.textContent = safeGamesCompleted;
     const livesEl = document.getElementById('totalLives');
-    if(livesEl) livesEl.textContent = CONFIG.lives!==undefined?CONFIG.lives:3;
+    if(livesEl) livesEl.textContent = safeLives;
 }
 
 
