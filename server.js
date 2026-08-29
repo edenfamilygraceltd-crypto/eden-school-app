@@ -10,23 +10,53 @@ const multer = require('multer');
 const nodemailer = require('nodemailer');
 const { google } = require('googleapis');
 
-// Importer les credentials Firebase
-const serviceAccount = require('./serviceAccountKey.json');
+// Initialiser Firebase Admin uniquement quand les credentials serveur sont disponibles.
+// Le fichier serviceAccountKey.json est gitignored et ne doit jamais être requis au démarrage.
+function getFirebaseAdmin() {
+  if (admin.apps.length) return admin;
 
+  const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
+  if (fs.existsSync(serviceAccountPath)) {
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    return admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: process.env.FIREBASE_DATABASE_URL,
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+    });
+  }
 
-// Initialiser Firebase Admin
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://edensmart-app-default-rtdb.firebaseio.com',
-  storageBucket: 'edensmart-app.appspot.com' // Bucket de stockage
-});
+  if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    return admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      }),
+      databaseURL: process.env.FIREBASE_DATABASE_URL,
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+    });
+  }
 
-const db = admin.database(); // Realtime Database
-const bucket = admin.storage().bucket(); // Firebase Storage
+  throw new Error('FIREBASE_ADMIN_NOT_CONFIGURED');
+}
+
+function getDatabase() {
+  return admin.database(getFirebaseAdmin());
+}
+
+function getBucket() {
+  return admin.storage(getFirebaseAdmin()).bucket();
+}
+
+const db = { ref: (...args) => getDatabase().ref(...args) };
+const bucket = {
+  file: (...args) => getBucket().file(...args),
+  get name() { return getBucket().name; }
+};
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const UPLOADS_DIR = process.env.VERCEL ? path.join('/tmp', 'eden-uploads') : path.join(__dirname, 'uploads');
 const DRIVE_KEY_PATH = path.join(__dirname, 'drive-key.json');
 const ACCOUNT_ALERT_EMAIL = process.env.ACCOUNT_ALERT_EMAIL || 'sergetumbwe@gmail.com';
 
@@ -96,12 +126,23 @@ async function sendAccountCreationAlertEmail(payload) {
   });
 }
 
-// ── Auth Google Drive (initialisée une seule fois) ──
-const driveAuth = new google.auth.GoogleAuth({
-  keyFile: DRIVE_KEY_PATH,
-  scopes: ['https://www.googleapis.com/auth/drive']
-});
-const drive = google.drive({ version: 'v3', auth: driveAuth });
+// ── Auth Google Drive (initialisée à la demande) ──
+function getDrive() {
+  const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const authOptions = {
+    scopes: ['https://www.googleapis.com/auth/drive']
+  };
+
+  if (credentials) {
+    authOptions.credentials = JSON.parse(credentials);
+  } else if (fs.existsSync(DRIVE_KEY_PATH)) {
+    authOptions.keyFile = DRIVE_KEY_PATH;
+  } else {
+    throw new Error('GOOGLE_DRIVE_NOT_CONFIGURED');
+  }
+
+  return google.drive({ version: 'v3', auth: new google.auth.GoogleAuth(authOptions) });
+}
 
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -295,7 +336,7 @@ function getFolderByType(type) {
 // ── Upload + Permissions + URL ──
 async function uploadToDrive(filePath, fileName, mimeType, folderId) {
   // 1. Créer le fichier dans Drive
-  const file = await drive.files.create({
+  const file = await getDrive().files.create({
     resource: {
       name:    fileName,
       parents: [folderId]
@@ -311,7 +352,7 @@ async function uploadToDrive(filePath, fileName, mimeType, folderId) {
   const fileId = file.data.id;
 
   // 2. Rendre le fichier public
-  await drive.permissions.create({
+  await getDrive().permissions.create({
     fileId:      fileId,
     requestBody: {
       role: "reader",
@@ -415,7 +456,7 @@ app.get("/files/:type", async (req, res) => {
   try {
     const folderId  = getFolderByType(req.params.type);
 
-    const response = await drive.files.list({
+    const response = await getDrive().files.list({
       q:      `'${folderId}' in parents and trashed = false`,
       fields: "files(id, name, mimeType, createdTime, size)",
       orderBy: "createdTime desc",
@@ -438,7 +479,7 @@ app.delete("/delete/:fileId", async (req, res) => {
   try {
     const fileId = req.params.fileId;
 
-    await drive.files.delete({ fileId, supportsAllDrives: true });
+    await getDrive().files.delete({ fileId, supportsAllDrives: true });
 
     res.json({ success: true, message: "Fichier supprimé" });
   } catch (error) {
@@ -446,11 +487,15 @@ app.delete("/delete/:fileId", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Backend Node.js démarré sur le port ${PORT}`);
-  console.log(`📁 Dossiers Drive configurés pour: examen, devoir, photo, video, test, travaux, vacances, presentation`);
-  console.log(`🔑 Clé Drive: ${fs.existsSync(DRIVE_KEY_PATH) ? 'trouvée' : 'MANQUANTE'}`);
-  console.log(`📧 Alerte création de compte vers: ${ACCOUNT_ALERT_EMAIL}`);
-});
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Backend Node.js démarré sur le port ${PORT}`);
+    console.log(`Dossiers Drive configurés pour: examen, devoir, photo, video, test, travaux, vacances, presentation`);
+    console.log(`Clé Drive: ${fs.existsSync(DRIVE_KEY_PATH) || process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? 'trouvée' : 'MANQUANTE'}`);
+    console.log(`Alerte création de compte vers: ${ACCOUNT_ALERT_EMAIL}`);
+  });
+}
 
 
