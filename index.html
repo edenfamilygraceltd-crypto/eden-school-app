@@ -2207,7 +2207,7 @@ document.addEventListener('mousemove', e => {
   cgEl.style.top  = e.clientY+'px';
 });
 
-/* ═══════════════════════════════════════════════════��══════
+/* ═══════════════════════════════════════════════════���══════
    SECTION COLOUR (body class)
 ══════════════════════════════════════════════════════════ */
 document.querySelectorAll('[data-s]').forEach(s =>
@@ -3300,9 +3300,12 @@ function endGame(){
 }
 function restartGame(){closeModal();setTimeout(()=>startGame(),300);}
 function updateGameScores(){
-    document.getElementById('gameScore').textContent=CONFIG.gameScore;
-    document.getElementById('bestScore').textContent=CONFIG.bestScore;
-    document.getElementById('gamesCompleted').textContent=CONFIG.gamesCompleted;
+    const gameScoreEl = document.getElementById('gameScore');
+    const bestScoreEl = document.getElementById('bestScore');
+    const gamesCompletedEl = document.getElementById('gamesCompleted');
+    if (gameScoreEl) gameScoreEl.textContent = CONFIG.gameScore;
+    if (bestScoreEl) bestScoreEl.textContent = CONFIG.bestScore;
+    if (gamesCompletedEl) gamesCompletedEl.textContent = CONFIG.gamesCompleted;
     // also update the new score bar elements if present
     const starsEl = document.getElementById('totalStars');
     if(starsEl) starsEl.textContent = CONFIG.gameScore;
