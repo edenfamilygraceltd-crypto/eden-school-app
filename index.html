@@ -17,29 +17,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Eden Family School</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/font/lucide.css">
   <link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="nav-redesign.css">
+  <link rel="stylesheet" href="section-redesign.css">
+<link rel="stylesheet" href="campus-rebuild.css">
+<link rel="stylesheet" href="gallery-rebuild.css">
+<link rel="stylesheet" href="gallery-fresh.css">
+<link rel="stylesheet" href="academic-rebuild.css">
+<link rel="stylesheet" href="footer-premium.css">
+<link rel="stylesheet" href="final-sections.css">
+<link rel="stylesheet" href="gallery-fix.css">
   <style>
     :root {
-      --primary-color: #667eea;
-      --secondary-color: #764ba2;
-      --accent-color: #ff6b6b;
-      --success-color: #4CAF50;
-      --warning-color: #FF9800;
-      --light-bg: #f8f9fa;
-      --dark-text: #333;
+      --primary-color: #10244d;
+      --secondary-color: #1c3c74;
+      --accent-color: #c9a227;
+      --success-color: #2e7d46;
+      --warning-color: #b8860b;
+      --light-bg: #f7f5ef;
+      --dark-text: #1c2333;
       --white: #ffffff;
-      --shadow: 0 5px 20px rgba(0,0,0,0.1);
-      --transition: all 0.3s ease;
-      --branch-kimisagara: #4CAF50;
-      --branch-gisozi: #2196F3;
-      --branch-kacyiru: #9C27B0;
+      --shadow: 0 10px 32px rgba(16,36,77,0.12);
+      --transition: all 0.3s cubic-bezier(.2,.8,.2,1);
+      --branch-kimisagara: #2e7d46;
+      --branch-gisozi: #2e5fa3;
+      --branch-kacyiru: #6b4a9c;
       /* Variables bubble */
-      --p:#667eea;--s:#764ba2;--acc:#ff6b6b;
-      --grad:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      --p:#10244d;--s:#1c3c74;--acc:#c9a227;
+      --grad:linear-gradient(135deg,#10244d 0%,#1c3c74 100%);
       --BS:60px;
       --BM:36px;
+      --line: #e3ddc9;
+      --gold-deep: #9c7c14;
+    }
+    body{ font-family:'Inter',sans-serif; }
+    h1,h2,h3,h4,.logo,.carousel-content h1,.branches-intro h2,.map-title,.features-title,
+    .youtube-section h2,.branch-title,.section-title,.games-header h1,.footer-section h3{
+      font-family:'Fraunces',serif; letter-spacing:-.01em;
     }
 
     * {
@@ -53,47 +70,41 @@
     }
 
     body {
-      font-family: 'Poppins', sans-serif;
-      line-height: 1.6;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.7;
       color: var(--dark-text);
       background: var(--light-bg);
       overflow-x: hidden;
     }
 
-    /* ══════════════════════════════════════
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
        CURSOR GLOW
-    ══════════════════════════════════════ */
-    #cg{
-      position:fixed;width:320px;height:320px;border-radius:50%;
-      pointer-events:none;z-index:0;transform:translate(-50%,-50%);
-      background:radial-gradient(circle,rgba(102,126,234,.09) 0%,transparent 70%);
-    }
+    Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+    #cg{ display:none; }
 
-    /* ══════════════════════════════════════
-       NAVBAR — 3 states
-    ══════════════════════════════════════ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+       NAVBAR Ã¢â‚¬â€ 3 states
+    Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     nav {
-      background: linear-gradient(120deg, #0b63ce 0%, #1f7ae0 55%, #3f9be8 100%) !important;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: var(--primary-color) !important;
       padding: 0;
       position: fixed;
       width: 100%;
       top: 0;
       z-index: 2000;
-      box-shadow: 0 8px 30px rgba(11,99,206,.28);
+      box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 12px 28px -12px rgba(8,17,36,.45);
       overflow: visible;
       transition:
-        top            .5s cubic-bezier(.34,1.56,.64,1),
-        left           .5s cubic-bezier(.34,1.56,.64,1),
-        right          .5s cubic-bezier(.34,1.56,.64,1),
-        border-radius  .5s cubic-bezier(.34,1.56,.64,1),
-        padding        .45s ease,
-        box-shadow     .4s ease,
-        transform      .45s ease,
-        background     .4s ease,
-        opacity        .35s ease,
-        width          .45s cubic-bezier(.34,1.56,.64,1);
+        top            .35s ease,
+        left           .35s ease,
+        right          .35s ease,
+        border-radius  .35s ease,
+        padding        .3s ease,
+        box-shadow     .3s ease,
+        transform      .35s ease,
+        background     .3s ease,
+        opacity        .3s ease,
+        width          .35s ease;
     }
 
     /* STATE 1: Compact pill */
@@ -104,10 +115,8 @@
       transform: translateX(-50%);
       width: auto;
       min-width: min(820px, 92vw);
-      border-radius: 50px;
-      box-shadow:
-        0 4px 30px rgba(102,126,234,.3),
-        0 8px 40px rgba(0,0,0,.15);
+      border-radius: 999px;
+      box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 16px 36px -12px rgba(8,17,36,.55);
     }
 
     /* STATE 2: Shrink away */
@@ -145,7 +154,7 @@
       transition: var(--transition), font-size .35s, gap .35s;
       white-space: nowrap;
     }
-    .logo img { transition: transform 0.6s cubic-bezier(.34,1.56,.64,1); cursor: pointer; }
+    .logo img { transition: transform 0.6s cubic-bezier(.2,.8,.2,1); cursor: pointer; }
     @keyframes logo-spin { from { transform: rotate(0deg) scale(1); } 50% { transform: scale(1.15); } to { transform: rotate(360deg) scale(1); } }
     .logo-spin { animation: logo-spin 0.6s ease; }
     .logo:hover { transform: translateY(-2px); }
@@ -165,21 +174,23 @@
 
     .nav-links a {
       color: var(--white);
+      opacity: .8;
       text-decoration: none;
       font-weight: 500;
-      transition: var(--transition), padding .3s, font-size .3s;
+      transition: var(--transition), padding .3s, font-size .3s, opacity .3s;
       padding: 0.5rem 0.7rem;
-      border-radius: 8px;
+      border-radius: 999px;
       font-size: 0.86rem;
       position: relative;
       white-space: nowrap;
       display: flex;
       align-items: center;
-      gap: .4rem;
+      gap: .45rem;
     }
-    nav.pill .nav-links a { font-size: .78rem; padding: .38rem .55rem; }
+    .nav-links a i { font-size: .82em; opacity: .9; }
+    nav.pill .nav-links a { font-size: .78rem; padding: .42rem .58rem; }
 
-    /* Hide text labels in pill — show only icons */
+    /* Hide text labels in pill Ã¢â‚¬â€ show only icons */
     nav.pill .nav-links a .lbl {
       max-width: 0; overflow: hidden; opacity: 0;
       transition: max-width .35s ease, opacity .3s ease;
@@ -189,21 +200,29 @@
       transition: max-width .35s ease, opacity .3s ease;
     }
 
-    .nav-links a {
-      border-radius: 50px;
-    }
     .nav-links a:hover {
-      background: rgba(255,255,255,.16);
+      background: rgba(255,255,255,.09);
       transform: translateY(-2px);
+      opacity: 1;
     }
     .nav-links a.active {
-      background: rgba(255,255,255,.22);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.32);
+      background: rgba(255,255,255,.07);
+      opacity: 1;
+    }
+    .nav-links a.active::after {
+      content: '';
+      position: absolute;
+      left: .85rem;
+      right: .85rem;
+      bottom: 3px;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--accent-color);
     }
     nav.pill .nav-links a.active {
-      background: rgba(255,255,255,.35) !important;
-      border-radius: 50px;
+      background: rgba(255,255,255,.18) !important;
     }
+    nav.pill .nav-links a.active::after { display: none; }
 
     /* Mobile menu button */
     .mobile-menu {
@@ -226,7 +245,7 @@
       border-radius: 8px;
     }
 
-    /* ══════════════════════ BUBBLE ══════════════════════ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â BUBBLE Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     #bubble {
       position: fixed;
       z-index: 2100;
@@ -245,12 +264,12 @@
       pointer-events: none;
       transform: scale(0) rotate(0deg);
       box-shadow:
-        0 0 0 2.5px rgba(102,126,234,.4),
-        0 6px 28px rgba(102,126,234,.3),
+        0 0 0 2.5px rgba(16,36,77,.4),
+        0 6px 28px rgba(16,36,77,.3),
         0 8px 32px rgba(0,0,0,.2);
       transition:
-        width  .4s cubic-bezier(.34,1.56,.64,1),
-        height .4s cubic-bezier(.34,1.56,.64,1),
+        width  .4s cubic-bezier(.2,.8,.2,1),
+        height .4s cubic-bezier(.2,.8,.2,1),
         box-shadow .3s,
         opacity .35s,
         filter .7s ease;
@@ -264,22 +283,22 @@
       height: var(--BM);
       animation: floatBob 3s ease-in-out infinite;
       box-shadow:
-        0 0 0 1.5px rgba(102,126,234,.3),
-        0 3px 14px rgba(102,126,234,.22),
+        0 0 0 1.5px rgba(16,36,77,.3),
+        0 3px 14px rgba(16,36,77,.22),
         0 4px 18px rgba(0,0,0,.13);
     }
     #bubble.open {
       animation: none;
       filter: none !important;
       box-shadow:
-        0 0 0 3px rgba(102,126,234,.55),
-        0 10px 40px rgba(102,126,234,.4);
+        0 0 0 3px rgba(16,36,77,.55),
+        0 10px 40px rgba(16,36,77,.4);
     }
     #bubble.near-footer {
       filter: none !important;
       box-shadow:
-        0 0 0 3px rgba(102,126,234,.7),
-        0 0 28px rgba(102,126,234,.55),
+        0 0 0 3px rgba(16,36,77,.7),
+        0 0 28px rgba(16,36,77,.55),
         0 8px 32px rgba(0,0,0,.25) !important;
       animation: floatBob 3s ease-in-out infinite !important;
     }
@@ -292,7 +311,7 @@
       position: absolute;
       inset: -8px;
       border-radius: 50%;
-      border: 1.5px solid rgba(102,126,234,.33);
+      border: 1.5px solid rgba(16,36,77,.33);
       animation: pR 2.8s ease-out infinite;
       pointer-events: none;
     }
@@ -310,13 +329,13 @@
       pointer-events: none;
       position: relative;
       z-index: 2;
-      transition: font-size .35s cubic-bezier(.34,1.56,.64,1),
-                  transform .5s cubic-bezier(.34,1.56,.64,1),
+      transition: font-size .35s cubic-bezier(.2,.8,.2,1),
+                  transform .5s cubic-bezier(.2,.8,.2,1),
                   opacity .22s;
     }
     #bubble.mini .bi { font-size: .82rem; }
 
-    /* ══════════════════════ RADIAL ITEMS ══════════════════════ */
+    /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â RADIAL ITEMS Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
     .ri {
       position: fixed;
       z-index: 2050;
@@ -357,9 +376,9 @@
       padding: 3px 8px;
       border-radius: 8px;
       pointer-events: none;
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Inter', sans-serif;
     }
-    .ri:hover .rb { transform: scale(1.18); box-shadow: 0 0 22px rgba(102,126,234,.55); border-color: var(--white); }
+    .ri:hover .rb { transform: scale(1.18); box-shadow: 0 0 22px rgba(16,36,77,.55); border-color: var(--white); }
     .rb i { font-size: 1.15rem; color: var(--white); }
     .rl { display: none; }
 
@@ -375,18 +394,20 @@
     .carousel-container {
       position: relative;
       width: 100%;
-      height: calc(100vh - 65px);
+      height: calc(100vh - 82px);
+      min-height: 620px;
       overflow: hidden;
-      margin-top: 80px;
-      padding-top: 0;
-      padding-bottom: 15px;
+      margin-top: 82px;
+      padding: 0;
       box-sizing: border-box;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: #132744;
     }
     .carousel-slide {
       position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       opacity: 0;
@@ -398,53 +419,74 @@
     .carousel-slide.active { opacity: 1; }
     .carousel-overlay {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.85), rgba(118, 75, 162, 0.85));
+      inset: 0;
       display: flex;
       align-items: center;
-      justify-content: center;
-      text-align: center;
-      color: var(--white);
-      padding: 1rem;
+      justify-content: flex-start;
+      text-align: left;
+      color: #fff;
+      padding: clamp(5rem,9vw,8rem) clamp(1.25rem,6vw,6rem);
+      background:
+        linear-gradient(90deg,rgba(8,23,46,.92) 0%,rgba(8,23,46,.72) 38%,rgba(8,23,46,.18) 72%,rgba(8,23,46,.05) 100%),
+        linear-gradient(0deg,rgba(8,23,46,.30),transparent 45%);
     }
-    .carousel-content { max-width: 800px; animation: fadeInUp 1s; }
+    .carousel-content {
+      width:min(720px,100%);
+      animation:fadeInUp 1s;
+      position:relative;
+    }
+    .carousel-content::before { display:none; }
     .carousel-content h1 {
-      font-size: 3.5rem;
-      margin-bottom: 1rem;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      max-width:760px;
+      font-size:clamp(2.45rem,5.4vw,5rem);
+      line-height:.98;
+      margin-bottom:1.35rem;
+      letter-spacing:-.035em;
+      text-shadow:0 12px 40px rgba(0,0,0,.35);
     }
-    .carousel-content p { font-size: 1.5rem; margin-bottom: 2rem; opacity: 0.9; }
+    .carousel-content h1 i{color:#e3c56b;font-size:.62em;margin-right:.22em;vertical-align:.08em}
+    .carousel-content p {
+      max-width:620px;
+      font-size:clamp(1rem,1.6vw,1.25rem);
+      line-height:1.65;
+      margin-bottom:2rem;
+      color:rgba(255,255,255,.84);
+    }
+    .carousel-content>div{display:flex;flex-wrap:wrap;align-items:center;gap:.7rem}
     .carousel-btn {
-      background: var(--white);
-      color: var(--primary-color);
-      padding: 1rem 2.5rem;
-      border-radius: 50px;
-      text-decoration: none;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      margin: 0.5rem;
-      transition: var(--transition);
-      cursor: pointer;
-      border: 2px solid transparent;
-      font-family: 'Poppins', sans-serif;
-      box-shadow: var(--shadow);
+      min-height:54px;
+      padding:.9rem 1.35rem;
+      border-radius:14px;
+      text-decoration:none;
+      font-weight:700;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:9px;
+      margin:0;
+      transition:var(--transition);
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,.20);
+      font-family:'Inter',sans-serif;
+      box-shadow:0 14px 34px rgba(0,0,0,.20);
+      background:#f5d36a;
+      color:#152744;
     }
-    .carousel-btn:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      border-color: var(--primary-color);
-    }
+    .carousel-btn:nth-child(2){background:rgba(255,255,255,.10);color:#fff;border-color:rgba(255,255,255,.32);backdrop-filter:blur(8px)}
+    .carousel-btn:hover {transform:translateY(-4px);box-shadow:0 18px 38px rgba(0,0,0,.28)}
     .carousel-controls {
-      position: absolute;
-      bottom: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 1rem;
-      z-index: 10;
+      position:absolute;
+      left:clamp(1.25rem,6vw,6rem);
+      bottom:2rem;
+      transform:none;
+      display:flex;
+      gap:.55rem;
+      z-index:10;
+      padding:.45rem .6rem;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:999px;
+      background:rgba(9,24,46,.38);
+      backdrop-filter:blur(12px);
     }
     .carousel-dot {
       width: 15px; height: 15px;
@@ -606,7 +648,7 @@
       border-radius: 16px;
       padding: 2rem;
       box-shadow: 0 20px 45px rgba(0,0,0,0.1);
-      transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1), border-color .35s cubic-bezier(.34,1.56,.64,1);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s cubic-bezier(.2,.8,.2,1), border-color .35s cubic-bezier(.2,.8,.2,1);
       cursor: pointer;
       text-align: center;
       border: 1px solid rgba(255,255,255,0.6);
@@ -614,7 +656,7 @@
       flex-direction: column;
       align-items: center;
     }
-    .academic-card:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 25px 55px rgba(0,0,0,0.16); border-color: rgba(102,126,234,0.3); }
+    .academic-card:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 25px 55px rgba(0,0,0,0.16); border-color: rgba(16,36,77,0.3); }
     .academic-card i {
       font-size: 3.5rem;
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -640,11 +682,11 @@
       padding: 1.5rem 3rem; border: none; border-radius: 15px;
       font-size: 1.2rem; font-weight: 600; cursor: pointer;
       transition: var(--transition);
-      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 5px 20px rgba(16, 36, 77, 0.3);
       display: flex; align-items: center; gap: 10px;
       min-width: 250px; justify-content: center;
     }
-    .level-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 10px 35px rgba(102, 126, 234, 0.5); }
+    .level-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 10px 35px rgba(16, 36, 77, 0.5); }
 
     /* YouTube Section */
     .youtube-section {
@@ -748,7 +790,7 @@
     .level-option:hover { border-color: var(--primary-color); transform: translateY(-5px); }
     .level-option.selected {
       border-color: var(--primary-color);
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+      background: linear-gradient(135deg, rgba(16, 36, 77, 0.1), rgba(28, 60, 116, 0.1));
     }
     .level-option i { font-size: 1.4rem; margin-bottom: 0.7rem; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; background-clip: text; color: transparent; }
     .level-option h5 { font-size: 1.05rem; margin-bottom: 0.3rem; font-weight: 600; }
@@ -780,23 +822,23 @@
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       color: var(--white); border: none; border-radius: 16px;
       font-size: 1.05rem; font-weight: 600; cursor: pointer;
-      transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1), border-color .35s cubic-bezier(.34,1.56,.64,1);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s cubic-bezier(.2,.8,.2,1), border-color .35s cubic-bezier(.2,.8,.2,1);
       display: inline-flex; align-items: center; gap: 10px;
       border: 2px solid transparent;
-      box-shadow: 0 15px 35px rgba(102, 126, 234, 0.18);
+      box-shadow: 0 15px 35px rgba(16, 36, 77, 0.18);
     }
-    .btn-primary:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 18px 45px rgba(102, 126, 234, 0.35); border-color: transparent; }
+    .btn-primary:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 18px 45px rgba(16, 36, 77, 0.35); border-color: transparent; }
     .futuristic-card {
       background: rgba(255,255,255,0.72);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,0.5);
       border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(102,126,234,0.15);
-      transition: all .35s cubic-bezier(.34,1.56,.64,1);
+      box-shadow: 0 8px 32px rgba(16,36,77,0.15);
+      transition: all .35s cubic-bezier(.2,.8,.2,1);
     }
     .futuristic-card:hover {
       transform: translateY(-8px) scale(1.02);
-      box-shadow: 0 20px 45px rgba(102,126,234,0.28);
+      box-shadow: 0 20px 45px rgba(16,36,77,0.28);
     }
 
     /* Modal Styles */
@@ -887,7 +929,7 @@
 
     .voir-plus-container { text-align: center; margin-top: 3rem; }
     .voir-plus-btn { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: var(--white); border: none; padding: 1rem 2.5rem; border-radius: 50px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: var(--transition); display: inline-flex; align-items: center; gap: 10px; border: 2px solid transparent; }
-    .voir-plus-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); border-color: var(--white); }
+    .voir-plus-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(16, 36, 77, 0.4); border-color: var(--white); }
 
     /* Loading */
     .loading { display: flex; justify-content: center; align-items: center; padding: 2rem; }
@@ -902,7 +944,7 @@
     .login-form { display: flex; flex-direction: column; gap: 1rem; }
     .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
     .form-group label { font-weight: 600; color: var(--dark-text); }
-    .form-group input, .form-group select { padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 1rem; transition: var(--transition); }
+    .form-group input, .form-group select { padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 1rem; transition: var(--transition); }
     .form-group input:focus, .form-group select:focus { border-color: var(--primary-color); outline: none; }
 
     /* Footer */
@@ -927,7 +969,7 @@
       text-align: center;
       cursor: pointer;
       border: 1px solid rgba(255,255,255,0.5);
-      transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s cubic-bezier(.2,.8,.2,1);
       opacity: 0;
       transform: translateY(30px);
       animation: fadeInUp 0.6s ease forwards;
@@ -940,22 +982,22 @@
     /* Contact modal */
     .contact-options-modal { max-width: 600px; }
     .contact-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
-    .contact-option { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(102, 126, 234, 0.22); border-radius: 16px; padding: 1.5rem; text-align: center; cursor: pointer; transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1); }
+    .contact-option { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(16, 36, 77, 0.22); border-radius: 16px; padding: 1.5rem; text-align: center; cursor: pointer; transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s cubic-bezier(.2,.8,.2,1); }
     .contact-option:hover { transform: translateY(-5px); background: var(--primary-color); color: var(--white); }
 
     /* Form */
-    #adminMessageForm input, #adminMessageForm select, #adminMessageForm textarea { padding: 1rem; border: 2px solid rgba(221,221,221,0.7); border-radius: 16px; font-family: 'Poppins', sans-serif; transition: border-color .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1); width: 100%; margin-bottom: 1rem; background: rgba(255,255,255,0.92); }
-    #adminMessageForm input:focus, #adminMessageForm select:focus, #adminMessageForm textarea:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12); outline: none; }
+    #adminMessageForm input, #adminMessageForm select, #adminMessageForm textarea { padding: 1rem; border: 2px solid rgba(221,221,221,0.7); border-radius: 16px; font-family: 'Inter', sans-serif; transition: border-color .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s cubic-bezier(.2,.8,.2,1); width: 100%; margin-bottom: 1rem; background: rgba(255,255,255,0.92); }
+    #adminMessageForm input:focus, #adminMessageForm select:focus, #adminMessageForm textarea:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(16, 36, 77, 0.12); outline: none; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
     /* Branches Section */
-    #branches { padding: 5rem 2rem; max-width: 1400px; margin: 0 auto; position: relative; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05)); }
+    #branches { padding: 5rem 2rem; max-width: 1400px; margin: 0 auto; position: relative; background: linear-gradient(135deg, rgba(16, 36, 77, 0.05), rgba(28, 60, 116, 0.05)); }
     .branches-intro { text-align: center; max-width: 800px; margin: 0 auto 3rem; animation: fadeInUp 1s ease-out; }
     .branches-intro h2 { font-size: 2.8rem; color: var(--primary-color); margin-bottom: 1rem; position: relative; display: inline-block; }
     .branches-intro h2::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 100px; height: 4px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: 2px; }
     .branches-intro p { font-size: 1.1rem; color: #666; margin-top: 1.5rem; line-height: 1.8; }
     .branches-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2.5rem; margin: 4rem 0; }
-    .branch-card { background: rgba(255,255,255,0.78); backdrop-filter: blur(12px); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 55px rgba(0,0,0,0.12); transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s cubic-bezier(.34,1.56,.64,1), border-color .35s cubic-bezier(.34,1.56,.64,1); position: relative; animation: slideUp 0.8s ease-out forwards; opacity: 0; transform: translateY(30px); border: 1px solid rgba(255,255,255,0.65); }
+    .branch-card { background: rgba(255,255,255,0.78); backdrop-filter: blur(12px); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 55px rgba(0,0,0,0.12); transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s cubic-bezier(.2,.8,.2,1), border-color .35s cubic-bezier(.2,.8,.2,1); position: relative; animation: slideUp 0.8s ease-out forwards; opacity: 0; transform: translateY(30px); border: 1px solid rgba(255,255,255,0.65); }
     .branch-card:nth-child(1) { animation-delay: 0.2s; }
     .branch-card:nth-child(2) { animation-delay: 0.4s; }
     .branch-card:nth-child(3) { animation-delay: 0.6s; }
@@ -983,15 +1025,15 @@
     .branch-info-item i { width: 20px; margin-right: 10px; transition: var(--transition); }
     .branch-info-item:hover i { color: var(--primary-color); transform: scale(1.2); }
     .branch-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
-    .branch-btn { padding: 0.8rem 1.5rem; border: none; border-radius: 50px; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.95rem; position: relative; overflow: hidden; }
+    .branch-btn { padding: 0.8rem 1.5rem; border: none; border-radius: 50px; font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.95rem; position: relative; overflow: hidden; }
     .branch-btn.gallery { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: var(--white); border: 2px solid transparent; }
     .branch-btn.directions { background: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
     .branch-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
     .branch-btn.gallery:hover { background: linear-gradient(135deg, var(--secondary-color), var(--primary-color)); }
     .branch-btn.directions:hover { background: var(--primary-color); color: var(--white); }
 
-    .branches-features { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-radius: 20px; padding: 3rem; margin-top: 4rem; position: relative; overflow: hidden; border: 2px solid rgba(102, 126, 234, 0.2); }
-    .branches-features::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 1px, transparent 1px); background-size: 50px 50px; animation: float 20s linear infinite; opacity: 0.5; }
+    .branches-features { background: linear-gradient(135deg, rgba(16, 36, 77, 0.1), rgba(28, 60, 116, 0.1)); border-radius: 20px; padding: 3rem; margin-top: 4rem; position: relative; overflow: hidden; border: 2px solid rgba(16, 36, 77, 0.2); }
+    .branches-features::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(16, 36, 77, 0.1) 1px, transparent 1px); background-size: 50px 50px; animation: float 20s linear infinite; opacity: 0.5; }
     .features-title { text-align: center; font-size: 2.2rem; color: var(--primary-color); margin-bottom: 3rem; position: relative; z-index: 1; }
     .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; position: relative; z-index: 1; }
     .feature-item { background: var(--white); padding: 2rem; border-radius: 15px; text-align: center; box-shadow: var(--shadow); transition: var(--transition); animation: fadeInUp 0.8s ease-out forwards; opacity: 0; border: 2px solid transparent; }
@@ -1000,13 +1042,13 @@
     .feature-item:nth-child(3) { animation-delay: 0.3s; }
     .feature-item:nth-child(4) { animation-delay: 0.4s; }
     .feature-item:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); border-color: var(--primary-color); }
-    .feature-icon { width: 70px; height: 70px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--white); font-size: 1.8rem; transition: var(--transition); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3); }
+    .feature-icon { width: 70px; height: 70px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--white); font-size: 1.8rem; transition: var(--transition); box-shadow: 0 5px 15px rgba(16, 36, 77, 0.3); }
     .feature-item:hover .feature-icon { transform: rotateY(180deg) scale(1.1); }
     .feature-item h4 { font-size: 1.3rem; margin-bottom: 1rem; color: var(--dark-text); font-weight: 600; }
     .feature-item p { color: #666; font-size: 0.95rem; line-height: 1.6; }
 
     .branches-map { margin-top: 4rem; background: var(--white); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); animation: fadeIn 1s ease-out; border: 2px solid rgba(0,0,0,0.1); }
-    .map-container { position: relative; height: 400px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: var(--white); }
+    .map-container { position: relative; height: 400px; background: linear-gradient(135deg, #10244d, #1c3c74); display: flex; align-items: center; justify-content: center; color: var(--white); }
     .map-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 2rem; z-index: 2; }
     .map-title { font-size: 2rem; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
     .map-description { font-size: 1.1rem; max-width: 600px; margin-bottom: 1rem; }
@@ -1059,7 +1101,7 @@
     }
 
     /* Inscription */
-    #inscription { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 4rem 2rem; border-radius: 20px; margin: 3rem 0; position: relative; }
+    #inscription { background: linear-gradient(135deg, #10244d 0%, #764ba2 100%); padding: 4rem 2rem; border-radius: 20px; margin: 3rem 0; position: relative; }
     .form-inscription-container { max-width: 900px; width: 100%; background: white; border-radius: 20px; box-shadow: 0 5px 30px rgba(0,0,0,0.2); overflow: hidden; margin: 0 auto; animation: slideUp 0.6s ease; }
 
     @keyframes navBounce {
@@ -1095,9 +1137,9 @@
   
   
 /* ============================================================ */
-/* 10 jeux de mémoire - CSS moteur (collé automatiquement)      */
+/* 10 jeux de mÃƒÂ©moire - CSS moteur (collÃƒÂ© automatiquement)      */
 /* ============================================================ */
-/* ===== EDEN — Section Jeux : fond + cartes ===== */
+/* ===== EDEN Ã¢â‚¬â€ Section Jeux : fond + cartes ===== */
 .games-section{
   position:relative;
   overflow:hidden;
@@ -1127,7 +1169,7 @@
   cursor:pointer;
   box-shadow:0 12px 30px rgba(30,42,94,.10);
   border:3px solid transparent;
-  transition:transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease, border-color .25s ease;
+  transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease, border-color .25s ease;
   display:flex;flex-direction:column;align-items:center;gap:.6rem;
 }
 .game-card:hover{
@@ -1142,12 +1184,12 @@
   display:flex;align-items:center;justify-content:center;
   font-size:2.6rem;
 }
-.game-card h3{ font-family:'Poppins',sans-serif; font-size:1.05rem; font-weight:700; color:#1e2a5e; margin:0; }
+.game-card h3{ font-family:'Inter',sans-serif; font-size:1.05rem; font-weight:700; color:#1e2a5e; margin:0; }
 .game-card p{ font-size:.8rem; color:#8b8fa3; margin:0; }
 .play-btn{
   background:var(--card-color,#8b7ef0); color:#fff; border:none;
   padding:.6rem 1.4rem; border-radius:50px;
-  font-family:'Poppins',sans-serif; font-weight:700; font-size:.85rem;
+  font-family:'Inter',sans-serif; font-weight:700; font-size:.85rem;
   cursor:pointer; margin-top:.2rem;
   display:flex;align-items:center;gap:.4rem;
   transition:transform .15s ease, opacity .2s ease;
@@ -1167,7 +1209,7 @@
 .memcard:hover{ transform:scale(1.06); }
 .memcard.matched{ opacity:.5; cursor:default; }
 
-/* ===== Jeu de Kim (mémoire visuelle) ===== */
+/* ===== Jeu de Kim (mÃƒÂ©moire visuelle) ===== */
 .kim-grid{ display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin:1rem 0; }
 .kim-item{ width:60px;height:60px; background:#f2f2ff; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.9rem; }
 .kim-item.dim{ opacity:.9; }
@@ -1178,7 +1220,7 @@
 }
 .kim-opt:hover{ background:#eee9ff; }
 
-/* ===== Séquence (Simon) ===== */
+/* ===== SÃƒÂ©quence (Simon) ===== */
 .simon-grid{
   display:grid; grid-template-columns:repeat(auto-fit,minmax(68px,1fr));
   gap:.7rem; margin:1rem auto 0; max-width:420px;
@@ -1194,7 +1236,16 @@
 .mem-instruction{ text-align:center; font-weight:700; color:#1e2a5e; margin-bottom:.5rem; }
 .mem-sub{ text-align:center; color:#8b8fa3; font-size:.85rem; margin-top:1rem; }
 
-  </style>
+
+/* ===== EDEN NAV REDESIGN Ã¢â‚¬â€ VISUAL ONLY / ANIMATIONS PRESERVED ===== */
+nav{background:rgba(12,25,52,.94)!important;border-bottom:1px solid rgba(255,255,255,.10);box-shadow:0 10px 40px rgba(8,17,36,.20),0 1px 0 rgba(255,255,255,.06) inset;backdrop-filter:blur(18px) saturate(130%);-webkit-backdrop-filter:blur(18px) saturate(130%)}
+.nav-container{max-width:1440px;min-height:76px;padding:.85rem 2rem}.logo{gap:12px;font-size:1.02rem;letter-spacing:.055em;color:#fff}.logo img{width:42px!important;height:42px!important;object-fit:contain;margin-right:0!important;filter:drop-shadow(0 5px 14px rgba(0,0,0,.20))}.logo .lbl{font-weight:700}.nav-links{gap:.25rem;align-items:center}.nav-links li{display:flex;align-items:center}.nav-links a{position:relative;padding:.62rem .78rem;border:1px solid transparent;border-radius:12px;font-size:.82rem;letter-spacing:.01em;opacity:.78;color:rgba(255,255,255,.92)}.nav-links a i{font-size:.78rem;color:#d9b94f}.nav-links a:hover{background:rgba(255,255,255,.075);border-color:rgba(255,255,255,.08);opacity:1}.nav-links a.active{background:rgba(201,162,39,.12);border-color:rgba(201,162,39,.20);color:#fff}.nav-links a.active::after{left:50%;right:auto;bottom:4px;width:20px;height:2px;transform:translateX(-50%);background:#d6b63f}
+#staffAccessLi a{padding:.62rem .9rem!important;background:rgba(255,255,255,.045)!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:12px!important}#staffAccessLi a i{color:#fff}#parentLoginLi .btn-primary{min-height:42px;padding:.62rem 1rem!important;border-radius:12px!important;background:#d3ae32!important;color:#17213a!important;box-shadow:0 8px 22px rgba(201,162,39,.20)!important;border:1px solid rgba(255,255,255,.18)!important}#parentLoginLi .btn-primary:hover{background:#e0bf4b!important;color:#101b32!important}#logoutLi button{min-height:42px;padding:.45rem .8rem!important;background:rgba(255,255,255,.055)!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:12px!important;color:#fff!important}
+nav.pill,nav.shrink{background:rgba(12,25,52,.96)!important;border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(20px) saturate(135%);-webkit-backdrop-filter:blur(20px) saturate(135%)}nav.pill .nav-container{min-height:58px;padding:.48rem 1rem}nav.pill .logo img{width:32px!important;height:32px}.nav.pill .nav-links a{border-color:transparent}nav.pill #parentLoginLi .btn-primary{min-height:36px;padding:.45rem .75rem!important}.mobile-menu{width:44px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff}.mobile-menu:hover{background:rgba(255,255,255,.10)}
+@media (max-width:1100px) and (min-width:769px){.nav-container{padding-left:1.1rem;padding-right:1.1rem}.logo .lbl{display:none}.nav-links a{padding-left:.55rem;padding-right:.55rem}.nav-links a .lbl{font-size:.76rem}}
+@media (max-width:768px){nav{background:rgba(12,25,52,.97)!important;border-radius:0!important;top:0!important;left:0!important;width:100%!important;transform:none!important}.nav-container{min-height:68px;padding:.65rem 1rem}.logo{font-size:.88rem;letter-spacing:.035em}.logo img{width:38px!important;height:38px!important}.nav-links{top:68px!important;left:-100%!important;width:100%!important;padding:1rem;gap:.35rem;background:rgba(12,25,52,.985)!important;border-top:1px solid rgba(255,255,255,.09);border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 24px 50px rgba(0,0,0,.25);text-align:left}.nav-links.active{left:0!important}.nav-links li{width:100%}.nav-links a,.nav-links button{width:100%;justify-content:flex-start}.nav-links a{padding:.78rem .9rem;border-radius:12px}.nav-links a.active{background:rgba(201,162,39,.13)}#staffAccessLi a,#parentLoginLi .btn-primary,#logoutLi button{width:100%!important;justify-content:flex-start}nav.pill{min-width:100%!important}nav.pill .nav-links{display:flex!important}}@media(max-width:420px){.logo .lbl{max-width:190px;overflow:hidden;text-overflow:ellipsis}.nav-container{padding-left:.75rem;padding-right:.75rem}}
+
+</style>
   <script src="firebase-config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -1215,9 +1266,9 @@
     try {
       if (!firebase.apps.length) {
         firebase.initializeApp(appConfig);
-        console.log("Firebase initialisé");
+        console.log("Firebase initialisÃƒÂ©");
       } else {
-        console.log("Firebase déjà initialisé");
+        console.log("Firebase dÃƒÂ©jÃƒÂ  initialisÃƒÂ©");
       }
     } catch (error) {
       console.log("Erreur Firebase:", error);
@@ -1263,7 +1314,7 @@
           <input type="password" id="parentPassword" required placeholder="Votre mot de passe">
         </div>
         <div class="form-group" style="padding:0.8rem; border:2px dashed #d7def7; border-radius:10px; background:#f8faff;">
-          <label for="loginRobotAnswer">Vérification anti-robot (puzzle)</label>
+          <label for="loginRobotAnswer">VÃƒÂ©rification anti-robot (puzzle)</label>
           <p id="loginRobotHint" style="margin:0.35rem 0; font-size:0.9rem; color:#445;">Chargement du puzzle...</p>
           <div id="loginRobotScrambled" style="font-weight:700; letter-spacing:0.25rem; color:#0b63ce; margin-bottom:0.5rem;"></div>
           <input type="text" id="loginRobotAnswer" required autocomplete="off" placeholder="Recomposez le mot bizarre">
@@ -1290,19 +1341,19 @@
 <div id="registerModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
-      <h2><i class="fas fa-user-plus"></i> Créer un compte parent</h2>
+      <h2><i class="fas fa-user-plus"></i> CrÃƒÂ©er un compte parent</h2>
       <button class="modal-close" onclick="closeRegisterModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
       <form class="login-form" onsubmit="handleRegister(event)">
         <div class="form-group"><label>Email</label><input type="email" id="registerEmail" required placeholder="votre@email.com"></div>
-        <div class="form-group"><label>Mot de passe</label><input type="password" id="registerPassword" required placeholder="Minimum 6 caractères"></div>
+        <div class="form-group"><label>Mot de passe</label><input type="password" id="registerPassword" required placeholder="Minimum 6 caractÃƒÂ¨res"></div>
         <div class="form-group"><label>Confirmer le mot de passe</label><input type="password" id="registerConfirmPassword" required placeholder="Confirmer"></div>
-        <div class="form-group"><label>Nom de l'élève</label><input type="text" id="registerStudentName" required placeholder="Nom complet de l'élève"></div>
+        <div class="form-group"><label>Nom de l'ÃƒÂ©lÃƒÂ¨ve</label><input type="text" id="registerStudentName" required placeholder="Nom complet de l'ÃƒÂ©lÃƒÂ¨ve"></div>
         <div class="form-group">
           <label>Niveau de classe</label>
           <select id="registerClassLevel" required>
-            <option value="">Sélectionnez le niveau</option>
+            <option value="">SÃƒÂ©lectionnez le niveau</option>
             <option value="maternelle">Maternelle</option>
             <option value="primaire1">Primaire 1</option>
             <option value="primaire2">Primaire 2</option>
@@ -1313,7 +1364,7 @@
           </select>
         </div>
         <div class="form-group" style="padding:0.8rem; border:2px dashed #d7def7; border-radius:10px; background:#f8faff;">
-          <label for="registerRobotAnswer">Vérification anti-robot (puzzle)</label>
+          <label for="registerRobotAnswer">VÃƒÂ©rification anti-robot (puzzle)</label>
           <p id="registerRobotHint" style="margin:0.35rem 0; font-size:0.9rem; color:#445;">Chargement du puzzle...</p>
           <div id="registerRobotScrambled" style="font-weight:700; letter-spacing:0.25rem; color:#0b63ce; margin-bottom:0.5rem;"></div>
           <input type="text" id="registerRobotAnswer" required autocomplete="off" placeholder="Recomposez le mot bizarre">
@@ -1324,7 +1375,7 @@
         <button type="submit" class="btn-primary" style="width: 100%;"><i class="fas fa-user-plus"></i> S'inscrire</button>
       </form>
       <p style="text-align: center; margin-top: 1rem;">
-        <a href="#" onclick="openLoginModal(); closeRegisterModal();">Déjà un compte ? Connectez-vous</a>
+        <a href="#" onclick="openLoginModal(); closeRegisterModal();">DÃƒÂ©jÃƒÂ  un compte ? Connectez-vous</a>
       </p>
     </div>
   </div>
@@ -1337,7 +1388,7 @@
       <div class="modal-header registration-modern-header">
         <div>
           <h5 class="modal-title mb-1" id="registrationModalTitle">FORMULAIRE D'INSCRIPTION SCOLAIRE</h5>
-          <small class="registration-subtitle" id="registrationModalSubtitle">Design moderne, mêmes fonctions</small>
+          <small class="registration-subtitle" id="registrationModalSubtitle">Design moderne, mÃƒÂªmes fonctions</small>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -1350,18 +1401,18 @@
             </div>
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label" for="regChildFullName">Nom-prénom *</label>
+                <label class="form-label" for="regChildFullName">Nom-prÃƒÂ©nom *</label>
                 <input type="text" class="form-control-modern" id="regChildFullName" required>
               </div>
               <div class="col-md-6">
                 <label class="form-label d-block">Sexe *</label>
                 <div class="registration-choice-grid">
-                  <label class="registration-choice-item"><input type="radio" name="regChildGender" value="garcon" required> GARÇON</label>
+                  <label class="registration-choice-item"><input type="radio" name="regChildGender" value="garcon" required> GARÃƒâ€¡ON</label>
                   <label class="registration-choice-item"><input type="radio" name="regChildGender" value="fille" required> FILLE</label>
                 </div>
               </div>
               <div class="col-md-6">
-                <label class="form-label" for="regPreviousSchool">École de provenance</label>
+                <label class="form-label" for="regPreviousSchool">Ãƒâ€°cole de provenance</label>
                 <input type="text" class="form-control-modern" id="regPreviousSchool">
               </div>
               <div class="col-md-6">
@@ -1384,13 +1435,13 @@
                 </div>
               </div>
               <div class="col-md-6">
-                <label class="form-label" for="regRequestedClass">Classe demandée (selon branche) *</label>
+                <label class="form-label" for="regRequestedClass">Classe demandÃƒÂ©e (selon branche) *</label>
                 <select class="form-control-modern" id="regRequestedClass" required>
-                  <option value="">Sélectionner d'abord une branche</option>
+                  <option value="">SÃƒÂ©lectionner d'abord une branche</option>
                 </select>
               </div>
               <div class="col-md-6">
-                <label class="form-label" for="regAssignedClass">Classe affectée</label>
+                <label class="form-label" for="regAssignedClass">Classe affectÃƒÂ©e</label>
                 <input type="text" class="form-control-modern" id="regAssignedClass">
               </div>
               <div class="col-12">
@@ -1405,7 +1456,7 @@
               <div class="col-md-6">
                 <label class="form-label" for="regTransportBusFee">Frais de transport mensuel</label>
                 <select class="form-control-modern" id="regTransportBusFee" onchange="toggleRegTransportCustomFee()">
-                  <option value="">Sélectionner</option>
+                  <option value="">SÃƒÂ©lectionner</option>
                   <option value="20000">20000</option>
                   <option value="25000">25000</option>
                   <option value="30000">30000</option>
@@ -1417,7 +1468,7 @@
                 </select>
               </div>
               <div class="col-md-6" id="regTransportCustomFeeGroup" style="display:none;">
-                <label class="form-label" for="regTransportCustomFee">Montant transport personnalisé</label>
+                <label class="form-label" for="regTransportCustomFee">Montant transport personnalisÃƒÂ©</label>
                 <input type="number" class="form-control-modern" id="regTransportCustomFee">
               </div>
             </div>
@@ -1431,15 +1482,15 @@
                   <h6 class="mb-0">Chef de famille</h6>
                 </div>
                 <div class="mb-3">
-                  <label class="form-label" for="regParentName">Nom-prénom *</label>
+                  <label class="form-label" for="regParentName">Nom-prÃƒÂ©nom *</label>
                   <input type="text" class="form-control-modern" id="regParentName" required>
                 </div>
                 <div class="mb-3">
-                  <label class="form-label" for="regParentPhone">Numéro de Téléphone *</label>
+                  <label class="form-label" for="regParentPhone">NumÃƒÂ©ro de TÃƒÂ©lÃƒÂ©phone *</label>
                   <input type="tel" class="form-control-modern" id="regParentPhone" required>
                 </div>
                 <div>
-                  <label class="form-label" for="regParentID">Numéro de la pièce d'identité</label>
+                  <label class="form-label" for="regParentID">NumÃƒÂ©ro de la piÃƒÂ¨ce d'identitÃƒÂ©</label>
                   <input type="text" class="form-control-modern" id="regParentID">
                 </div>
               </section>
@@ -1452,15 +1503,15 @@
                   <h6 class="mb-0">La conjoint(e)</h6>
                 </div>
                 <div class="mb-3">
-                  <label class="form-label" for="regSpouseName">Nom-prénom</label>
+                  <label class="form-label" for="regSpouseName">Nom-prÃƒÂ©nom</label>
                   <input type="text" class="form-control-modern" id="regSpouseName">
                 </div>
                 <div class="mb-3">
-                  <label class="form-label" for="regSpousePhone">Numéro de Téléphone</label>
+                  <label class="form-label" for="regSpousePhone">NumÃƒÂ©ro de TÃƒÂ©lÃƒÂ©phone</label>
                   <input type="tel" class="form-control-modern" id="regSpousePhone">
                 </div>
                 <div>
-                  <label class="form-label" for="regSpouseID">Numéro de la pièce d'identité</label>
+                  <label class="form-label" for="regSpouseID">NumÃƒÂ©ro de la piÃƒÂ¨ce d'identitÃƒÂ©</label>
                   <input type="text" class="form-control-modern" id="regSpouseID">
                 </div>
               </section>
@@ -1497,7 +1548,7 @@
                 </select>
               </div>
               <div class="col-md-6">
-                <label class="form-label" for="regTransactionRef">Référence de transaction</label>
+                <label class="form-label" for="regTransactionRef">RÃƒÂ©fÃƒÂ©rence de transaction</label>
                 <input type="text" class="form-control-modern" id="regTransactionRef">
               </div>
               <div class="col-md-6">
@@ -1530,40 +1581,24 @@
 <!-- Navigation -->
 <nav id="navbar">
   <div class="nav-container" id="ni">
-    <a href="#accueil" class="logo" id="navLogo">
-      <img src="asset/img/logo_eden.png" alt="Logo Eden Family School" style="height: 40px; margin-right: 10px;">
-      <span class="lbl">EDEN FAMILY SCHOOL</span>
+    <a href="#accueil" class="logo" id="navLogo" aria-label="Eden Family School Ã¢â‚¬â€ Accueil">
+      <span class="logo-mark"><img src="asset/img/logo_eden.png" alt=""></span>
+      <span class="logo-copy"><strong>EDEN</strong><small>FAMILY SCHOOL</small></span>
     </a>
     <ul class="nav-links" id="navLinks">
-      <li><a href="#accueil" class="active"><i class="fas fa-home"></i><span class="lbl"> Accueil</span></a></li>
-      <li><a href="#galerie"><i class="fas fa-images"></i><span class="lbl"> Galerie</span></a></li>
-      <li><a href="#academique"><i class="fas fa-graduation-cap"></i><span class="lbl"> Activités</span></a></li>
-      <li><a href="inscription.html" id="navInscriptionLink"><i class="fas fa-pen-fancy"></i><span class="lbl"> Inscription</span></a></li>
-
-      <li><a href="#bibliotheque"><i class="fas fa-book"></i><span class="lbl"> Bibliothèque</span></a></li>
-      <li><a href="#youtube"><i class="fab fa-youtube"></i><span class="lbl"> YouTube</span></a></li>
-      <li><a href="#jeux"><i class="fas fa-gamepad"></i><span class="lbl"> Jeux</span></a></li>
-      <li><a href="#contact"><i class="fas fa-envelope"></i><span class="lbl"> Contact</span></a></li>
-      <li id="staffAccessLi">
-        <a href="Auth.html" style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;">
-          <i class="fas fa-user-tie"></i><span class="lbl"> Staff Access</span>
-        </a>
-      </li>
-      <li id="parentLoginLi">
-        <button class="btn-primary" onclick="handleGoogleSignIn()" style="padding: 0.5rem 1.5rem; display: inline-flex; align-items: center; gap: 0.5rem;">
-          <i class="fab fa-google"></i><span class="lbl"> Se connecter avec Google</span>
-        </button>
-      </li>
-      <li id="logoutLi" style="display: none;">
-        <button onclick="logoutFromIndex()" style="padding: 0.5rem 1.5rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 50px; cursor: pointer; font-family: 'Poppins', sans-serif; display: inline-flex; align-items: center; gap: 0.5rem;">
-          <img id="userPhotoDisplay" src="" alt="Photo" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover; display:none;">
-          <i class="fas fa-sign-out-alt"></i> <span id="userNameDisplay"></span> - Déconnexion
-        </button>
-      </li>
+      <li><a href="#accueil" class="active"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/><path d="M9 21v-6h6v6"/></svg><span class="lbl">Accueil</span></a></li>
+      <li><a href="#galerie"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span class="lbl">Galerie</span></a></li>
+      <li><a href="#academique"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4"/><path d="M22 10v6"/></svg><span class="lbl">ActivitÃƒÂ©s</span></a></li>
+      <li><a href="inscription.html" id="navInscriptionLink"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/><path d="M18.5 15.5 21 18l-4 4H14v-3.5Z"/></svg><span class="lbl">Inscription</span></a></li>
+      <li><a href="#bibliotheque"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 6h8M8 10h7"/></svg><span class="lbl">BibliothÃƒÂ¨que</span></a></li>
+      <li><a href="#youtube"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3Z"/></svg><span class="lbl">YouTube</span></a></li>
+      <li><a href="#jeux"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12a4 4 0 0 1 3.8 5.2l-1.2 4a2.5 2.5 0 0 1-4.5.6L14.8 16H9.2l-1.3 1.8a2.5 2.5 0 0 1-4.5-.6l-1.2-4A4 4 0 0 1 6 8Z"/><path d="M8 11v4M6 13h4M16.5 12.5h.01M19 14h.01"/></svg><span class="lbl">Jeux</span></a></li>
+      <li><a href="#contact"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-8.8 8.5 9.3 9.3 0 0 1-4-.9L3 20l1.4-4A8.2 8.2 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg><span class="lbl">Contact</span></a></li>
+      <li id="staffAccessLi" class="nav-action-item"><a href="Auth.html" class="nav-action nav-staff"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg><span class="lbl">Espace staff</span></a></li>
+      <li id="parentLoginLi" class="nav-action-item"><button class="nav-action nav-login" onclick="handleGoogleSignIn()" type="button"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M21 3l-8 8"/><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/></svg><span class="lbl">Connexion</span></button></li>
+      <li id="logoutLi" class="nav-action-item" style="display:none;"><button class="nav-action nav-account" onclick="logoutFromIndex()" type="button"><img id="userPhotoDisplay" src="" alt="" style="display:none;"><span class="account-glyph"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span><span id="userNameDisplay" class="lbl"></span><span class="account-exit"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M21 3v18"/></svg></span></button></li>
     </ul>
-    <button id="mobileMenuBtn" type="button" class="mobile-menu" aria-label="Menu mobile">
-      <i class="fas fa-bars"></i>
-    </button>
+    <div class="nav-mobile-actions"><button id="mobileMenuBtn" type="button" class="mobile-menu" aria-label="Menu mobile" aria-expanded="false"><svg class="nav-svg nav-menu-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button></div>
   </div>
 </nav>
 
@@ -1578,7 +1613,7 @@
         <p>Learning by doing - Excellence et Innovation</p>
         <div>
           <button class="carousel-btn" onclick="scrollToSection('galerie')"><i class="fas fa-images"></i> Voir la Galerie</button>
-          <button class="carousel-btn" onclick="handleGoogleSignIn()"><i class="fab fa-google"></i> Se connecter avec Google</button>
+          <a class="carousel-btn" href="inscription.html"><i class="fas fa-pen-to-square"></i> Inscription</a>
         </div>
       </div>
     </div>
@@ -1586,18 +1621,18 @@
   <div class="carousel-slide" style="background-image: url('asset/img/gisozi_graduation.JPG');">
     <div class="carousel-overlay">
       <div class="carousel-content">
-        <h1><i class="fas fa-graduation-cap"></i> Excellence Académique</h1>
-        <p>Une éducation de qualité pour vos enfants</p>
-        <button class="carousel-btn" onclick="scrollToSection('academique')"><i class="fas fa-graduation-cap"></i> Activités Académiques</button>
+        <h1><i class="fas fa-graduation-cap"></i> Excellence AcadÃƒÂ©mique</h1>
+        <p>Une ÃƒÂ©ducation de qualitÃƒÂ© pour vos enfants</p>
+        <button class="carousel-btn" onclick="scrollToSection('academique')"><i class="fas fa-graduation-cap"></i> ActivitÃƒÂ©s AcadÃƒÂ©miques</button>
       </div>
     </div>
   </div>
   <div class="carousel-slide" style="background-image: url('asset/img/sport.jpg');">
     <div class="carousel-overlay">
       <div class="carousel-content">
-        <h1><i class="fas fa-users"></i> Notre Communauté</h1>
+        <h1><i class="fas fa-users"></i> Notre CommunautÃƒÂ©</h1>
         <p>Ensemble pour l'avenir de vos enfants</p>
-        <button class="carousel-btn" onclick="scrollToSection('jeux')"><i class="fas fa-gamepad"></i> Jeux Éducatifs</button>
+        <button class="carousel-btn" onclick="scrollToSection('jeux')"><i class="fas fa-gamepad"></i> Jeux Ãƒâ€°ducatifs</button>
       </div>
     </div>
   </div>
@@ -1612,95 +1647,39 @@
 <section id="branches" data-s="branches">
   <div class="branches-intro">
     <h2><i class="fas fa-map-marker-alt"></i> Nos Branches</h2>
-    <p>Découvrez les trois campus d'Eden Family School à travers Kigali.</p>
+    <p>DÃƒÂ©couvrez les trois campus d'Eden Family School ÃƒÂ  travers Kigali.</p>
   </div>
-  <div class="branches-grid">
-    <!-- Branche Kimisagara -->
-    <div class="branch-card kimisagara">
-      <div class="branch-image">
-        <img src="asset/img/kimisagara.jpg" alt="Eden Family School Kimisagara">
-        <div class="branch-overlay"><div class="branch-icon"><i class="fas fa-child"></i></div></div>
-      </div>
-      <div class="branch-content">
-        <div class="branch-header">
-          <div class="branch-badge kimisagara">K</div>
-          <div><h3 class="branch-title">Kimisagara</h3><p class="branch-subtitle">École maternelle</p></div>
-        </div>
-        <div class="branch-info">
-          <div class="branch-info-item"><i class="fas fa-map-marker-alt"></i><span>KG 7 Ave, Kimisagara, Kigali</span></div>
-          <div class="branch-info-item"><i class="fas fa-phone"></i><span>Comptable: 0785892018 | Responsable: 0791826950</span></div>
-          <div class="branch-info-item"><i class="fas fa-envelope"></i><span>kimisagara@edenfamily.edu.rw</span></div>
-          <div class="branch-info-item"><i class="fas fa-clock"></i><span>Lun-Ven: 7h30 - 17h30</span></div>
-        </div>
-        <div class="branch-actions">
-          <button class="branch-btn gallery" onclick="openBranchGallery('kimisagara')"><i class="fas fa-images"></i> Galerie</button>
-          <button class="branch-btn directions" onclick="showKimisagaraDirections()"><i class="fas fa-directions"></i> Itinéraire</button>
-        </div>
-      </div>
-    </div>
-    <!-- Branche Gisozi -->
-    <div class="branch-card gisozi">
-      <div class="branch-image">
-        <img src="asset/img/gisozi_graduation.JPG" alt="Eden Family School Gisozi">
-        <div class="branch-overlay"><div class="branch-icon"><i class="fas fa-school"></i></div></div>
-      </div>
-      <div class="branch-content">
-        <div class="branch-header">
-          <div class="branch-badge gisozi">G</div>
-          <div><h3 class="branch-title">Gisozi</h3><p class="branch-subtitle">École maternelle et primaire</p></div>
-        </div>
-        <div class="branch-info">
-          <div class="branch-info-item"><i class="fas fa-map-marker-alt"></i><span>KG 11 Ave, Gisozi, Kigali</span></div>
-          <div class="branch-info-item"><i class="fas fa-phone"></i><span>Directrice: 0788410242 / 0794116491 | DOS: 0796145647 | DG: 0788883842</span></div>
-          <div class="branch-info-item"><i class="fas fa-envelope"></i><span>gisozi@edenfamily.edu.rw</span></div>
-          <div class="branch-info-item"><i class="fas fa-clock"></i><span>Lun-Ven: 7h30 - 18h00</span></div>
-        </div>
-        <div class="branch-actions">
-          <button class="branch-btn gallery" onclick="openBranchGallery('gisozi')"><i class="fas fa-images"></i> Galerie</button>
-          <button class="branch-btn directions" onclick="showGisoziDirections()"><i class="fas fa-directions"></i> Itinéraire</button>
-        </div>
-      </div>
-    </div>
-    <!-- Branche Kacyiru -->
-    <div class="branch-card kacyiru">
-      <div class="branch-image">
-        <img src="asset/img/sport.jpg" alt="Eden Family School Kacyiru">
-        <div class="branch-overlay"><div class="branch-icon"><i class="fas fa-child"></i></div></div>
-      </div>
-      <div class="branch-content">
-        <div class="branch-header">
-          <div class="branch-badge kacyiru">K</div>
-          <div><h3 class="branch-title">Kacyiru</h3><p class="branch-subtitle">École maternelle</p></div>
-        </div>
-        <div class="branch-info">
-          <div class="branch-info-item"><i class="fas fa-map-marker-alt"></i><span>KG 17 Ave, Kacyiru, Kigali</span></div>
-          <div class="branch-info-item"><i class="fas fa-phone"></i><span>Directeur: 0791639766 | Comptable: 0792570074</span></div>
-          <div class="branch-info-item"><i class="fas fa-envelope"></i><span>sergetumbwe@gmail.com</span></div>
-          <div class="branch-info-item"><i class="fas fa-clock"></i><span>Lun-Ven: 7h30 - 17h30</span></div>
-        </div>
-        <div class="branch-actions">
-          <button class="branch-btn gallery" onclick="openBranchGallery('kacyiru')"><i class="fas fa-images"></i> Galerie</button>
-          <button class="branch-btn directions" onclick="showKacyiruDirections()"><i class="fas fa-directions"></i> Itinéraire</button>
-        </div>
-      </div>
+  <div class="campus-showcase">
+    <article class="campus-feature">
+      <img src="asset/img/sport.jpg" alt="Eden Family School Kacyiru">
+      <div class="campus-feature-shade"></div>
+      <div class="campus-feature-copy"><span class="campus-number">01 / 03</span><span class="campus-type">Maternelle</span><h3>Kacyiru</h3><p>Un campus familial oÃƒÂ¹ apprentissage, mouvement et ÃƒÂ©panouissement avancent ensemble.</p><button onclick="openBranchGallery('kacyiru')">DÃƒÂ©couvrir le campus <span>Ã¢â€ â€”</span></button></div>
+    </article>
+    <div class="campus-side">
+      <article class="campus-mini">
+        <img src="asset/img/kimisagara.jpg" alt="Eden Family School Kimisagara"><div class="campus-mini-shade"></div><div class="campus-mini-copy"><span>02 / 03 Ã‚Â· MATERNELLE</span><h3>Kimisagara</h3><p>KG 7 Ave Ã‚Â· 7h30Ã¢â‚¬â€œ17h30</p><button onclick="openBranchGallery('kimisagara')">Galerie Ã¢â€ â€”</button></div>
+      </article>
+      <article class="campus-mini">
+        <img src="asset/img/sport.jpg" alt="Eden Family School Kacyiru"><div class="campus-mini-shade"></div><div class="campus-mini-copy"><span>03 / 03 Ã‚Â· MATERNELLE</span><h3>Kacyiru</h3><p>KG 17 Ave Ã‚Â· 7h30Ã¢â‚¬â€œ17h30</p><button onclick="openBranchGallery('kacyiru')">Galerie Ã¢â€ â€”</button></div>
+      </article>
     </div>
   </div>
   <!-- Features -->
   <div class="branches-features">
-    <h3 class="features-title"><i class="fas fa-star"></i> Notre Approche Éducative</h3>
+    <h3 class="features-title"><i class="fas fa-star"></i> Notre Approche Ãƒâ€°ducative</h3>
     <div class="features-grid">
-      <div class="feature-item"><div class="feature-icon"><i class="fas fa-child"></i></div><h4>Éveil précoce</h4><p>Notre approche maternelle privilégie l'éveil sensoriel et le développement global</p></div>
-      <div class="feature-item"><div class="feature-icon"><i class="fas fa-book"></i></div><h4>Fondamentaux solides</h4><p>Au primaire, nous bâtissons des bases académiques solides pour chaque élève</p></div>
-      <div class="feature-item"><div class="feature-icon"><i class="fas fa-heart"></i></div><h4>Environnement bienveillant</h4><p>Chaque enfant est accueilli dans un cadre sécurisé et stimulant</p></div>
-      <div class="feature-item"><div class="feature-icon"><i class="fas fa-users"></i></div><h4>Suivi personnalisé</h4><p>Un accompagnement adapté au rythme de développement de chaque enfant</p></div>
+      <div class="feature-item"><div class="feature-icon"><i class="fas fa-child"></i></div><h4>Ãƒâ€°veil prÃƒÂ©coce</h4><p>Notre approche maternelle privilÃƒÂ©gie l'ÃƒÂ©veil sensoriel et le dÃƒÂ©veloppement global</p></div>
+      <div class="feature-item"><div class="feature-icon"><i class="fas fa-book"></i></div><h4>Fondamentaux solides</h4><p>Au primaire, nous bÃƒÂ¢tissons des bases acadÃƒÂ©miques solides pour chaque ÃƒÂ©lÃƒÂ¨ve</p></div>
+      <div class="feature-item"><div class="feature-icon"><i class="fas fa-heart"></i></div><h4>Environnement bienveillant</h4><p>Chaque enfant est accueilli dans un cadre sÃƒÂ©curisÃƒÂ© et stimulant</p></div>
+      <div class="feature-item"><div class="feature-icon"><i class="fas fa-users"></i></div><h4>Suivi personnalisÃƒÂ©</h4><p>Un accompagnement adaptÃƒÂ© au rythme de dÃƒÂ©veloppement de chaque enfant</p></div>
     </div>
   </div>
   <!-- Map -->
   <div class="branches-map">
     <div class="map-container">
       <div class="map-overlay">
-        <h3 class="map-title"><i class="fas fa-map"></i> Nos Campus à Kigali</h3>
-        <p class="map-description">Trois emplacements stratégiques pour servir les familles de Kigali</p>
+        <h3 class="map-title"><i class="fas fa-map"></i> Nos Campus ÃƒÂ  Kigali</h3>
+        <p class="map-description">Trois emplacements stratÃƒÂ©giques pour servir les familles de Kigali</p>
         <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center;">
           <div style="display: flex; align-items: center; gap: 0.5rem;"><div style="width: 15px; height: 15px; background: var(--branch-kimisagara); border-radius: 50%;"></div><span>Kimisagara</span></div>
           <div style="display: flex; align-items: center; gap: 0.5rem;"><div style="width: 15px; height: 15px; background: var(--branch-gisozi); border-radius: 50%;"></div><span>Gisozi</span></div>
@@ -1720,41 +1699,37 @@
 </section>
 
 <!-- Section Galerie -->
-<section id="galerie" data-s="galerie">
-  <h2 class="section-title"><i class="fas fa-images"></i> Notre Galerie</h2>
-  <div class="gallery-carousel" id="galleryCarousel">
-    <div class="gallery-carousel-track" id="galleryCarouselTrack"></div>
-    <button class="gallery-carousel-arrow prev" onclick="galleryCarouselPrev()"><i class="fas fa-chevron-left"></i></button>
-    <button class="gallery-carousel-arrow next" onclick="galleryCarouselNext()"><i class="fas fa-chevron-right"></i></button>
-    <div class="gallery-carousel-dots" id="galleryCarouselDots"></div>
+<section id="galerie" class="eden-gallery">
+  <div class="gallery-intro"><span>03 Ã‚Â· MOMENTS</span><h2>La vie ÃƒÂ <br><em>Eden.</em></h2><p>Des moments de dÃƒÂ©couverte, de partage et de joie qui racontent notre ÃƒÂ©cole mieux que les mots.</p></div>
+  <div class="gallery-stage" id="edenGalleryStage">
+    <div class="gallery-track" id="edenGalleryTrack"></div>
+    <div class="gallery-ui"><div class="gallery-progress" id="edenGalleryDots"></div><div class="gallery-count" id="edenGalleryCount">01</div><div class="gallery-controls"><button id="edenGalleryPrev" aria-label="Photo prÃƒÂ©cÃƒÂ©dente">Ã¢â€ Â</button><button id="edenGalleryNext" aria-label="Photo suivante">Ã¢â€ â€™</button></div></div>
   </div>
-  <div class="voir-plus-container">
-    <a href="galerie-hub.html" class="voir-plus-btn">
-      <i class="fas fa-th-large"></i> Voir plus (photos, vidéos, documents)
-    </a>
-  </div>
+  <div class="gallery-footer"><span>EDEN FAMILY SCHOOL Ã‚Â· KIGALI</span><a href="galerie-hub.html">Voir toute la galerie <b>Ã¢â€ â€”</b></a></div>
 </section>
 
-<!-- Section Académique -->
-<section id="academique" data-s="academique">
-  <h2 class="section-title">Activités Académiques</h2>
-  <div class="academic-grid">
-    <a href="#" class="academic-card" onclick="showActivityByFilter('devoirs')"><i class="fas fa-book"></i><h3>Devoirs</h3><p>Consultez et téléchargez les devoirs</p><span class="badge" id="devoirsCount">5 nouveaux</span></a>
-    <a href="#" class="academic-card" onclick="showActivityByFilter('examens')"><i class="fas fa-file-alt"></i><h3>Examens</h3><p>Sujets et résultats des examens</p><span class="badge">Prochain: 15/12</span></a>
-    <a href="#" class="academic-card" onclick="showActivityByFilter('vacances')"><i class="fas fa-umbrella-beach"></i><h3>Travaux de Vacances</h3><p>Activités et devoirs pour les vacances</p><span class="badge">Nouveau</span></a>
-    <a href="#" class="academic-card" onclick="showActivityByFilter('exercices')"><i class="fas fa-clipboard-check"></i><h3>Tests & Évaluations</h3><p>Tests continus et évaluations</p><span class="badge">3 à venir</span></a>
+<!-- Section AcadÃƒÂ©mique -->
+<section id="academique" data-s="academique" class="academic-rebuild">
+  <div class="academic-heading"><span>02 Ã‚Â· APPRENDRE</span><h2>Grandir par<br><em>la connaissance.</em></h2><p>Un espace pensÃƒÂ© pour suivre, dÃƒÂ©couvrir et accompagner chaque ÃƒÂ©tape du parcours scolaire.</p></div>
+  <div class="academic-layout">
+    <a href="#" class="academic-feature" onclick="showActivityByFilter('devoirs')"><span class="academic-index">01</span><div><small>TRAVAIL QUOTIDIEN</small><h3>Devoirs</h3><p>Consultez les travaux et ressources prÃƒÂ©parÃƒÂ©s pour vos enfants.</p><strong>Explorer <b>Ã¢â€ â€”</b></strong></div></a>
+    <div class="academic-list">
+      <a href="#" onclick="showActivityByFilter('examens')"><span>02</span><div><small>Ãƒâ€°VALUATION</small><h3>Examens</h3><p>Sujets et rÃƒÂ©sultats</p></div><b>Ã¢â€ â€”</b></a>
+      <a href="#" onclick="showActivityByFilter('vacances')"><span>03</span><div><small>Ãƒâ‚¬ LA MAISON</small><h3>Travaux de vacances</h3><p>ActivitÃƒÂ©s pour continuer ÃƒÂ  apprendre</p></div><b>Ã¢â€ â€”</b></a>
+      <a href="#" onclick="showActivityByFilter('exercices')"><span>04</span><div><small>PROGRESSION</small><h3>Tests & ÃƒÂ©valuations</h3><p>Suivre les acquis de chaque ÃƒÂ©lÃƒÂ¨ve</p></div><b>Ã¢â€ â€”</b></a>
+    </div>
   </div>
 </section>
 
 
 
-<!-- Section Bibliothèque -->
+<!-- Section BibliothÃƒÂ¨que -->
 <section id="bibliotheque" data-s="bibliotheque">
-  <h2 class="section-title"><i class="fas fa-book-reader"></i> Bibliothèque de Lecture</h2>
+  <h2 class="section-title"><i class="fas fa-book-reader"></i> BibliothÃƒÂ¨que de Lecture</h2>
   <div class="library-container">
     <div class="library-level-buttons">
       <button class="level-btn" onclick="showLibrary('maternelle')"><i class="fas fa-child"></i> MATERNELLE</button>
-      <button class="level-btn" onclick="showLibrary('primaire')"><i class="fas fa-school"></i> ÉCOLE PRIMAIRE</button>
+      <button class="level-btn" onclick="showLibrary('primaire')"><i class="fas fa-school"></i> Ãƒâ€°COLE PRIMAIRE</button>
     </div>
     <div style="text-align: center; margin-top: 2rem;">
       <h3><i class="fas fa-search"></i> Recherche de Livres</h3>
@@ -1773,9 +1748,9 @@
 <!-- Section YouTube -->
 <section id="youtube" data-s="youtube">
   <div class="youtube-section">
-    <h2><i class="fab fa-youtube"></i> Chaîne YouTube Eden Family School</h2>
-    <p>Découvrez notre chaîne YouTube officielle avec des vidéos éducatives !</p>
-    <a href="https://www.youtube.com/@edenfamilyschool" target="_blank" class="youtube-btn"><i class="fab fa-youtube"></i> Visiter la chaîne</a>
+    <h2><i class="fab fa-youtube"></i> ChaÃƒÂ®ne YouTube Eden Family School</h2>
+    <p>DÃƒÂ©couvrez notre chaÃƒÂ®ne YouTube officielle avec des vidÃƒÂ©os ÃƒÂ©ducatives !</p>
+    <a href="https://www.youtube.com/@edenfamilyschool" target="_blank" class="youtube-btn"><i class="fab fa-youtube"></i> Visiter la chaÃƒÂ®ne</a>
   </div>
   <div class="video-grid">
     <div class="video-card">
@@ -1784,7 +1759,7 @@
           <source id="schoolVideoSource" src="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" type="video/mp4">
         </video>
         <div class="video-fallback" id="schoolVideoFallback" style="display:none;position:absolute;inset:0;background:#000;">
-          <iframe id="schoolVideoYoutube" width="100%" height="100%" style="border:0;" title="Présentation de l'école" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe id="schoolVideoYoutube" width="100%" height="100%" style="border:0;" title="PrÃƒÂ©sentation de l'ÃƒÂ©cole" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
         <div class="video-controls" id="schoolVideoControls">
           <button class="control-btn" id="rewindBtn"><i class="fas fa-backward"></i> -10s</button>
@@ -1797,58 +1772,58 @@
         </div>
       </div>
       <div class="video-info">
-        <h4>Présentation de l'école</h4>
-        <p>Découvrez notre école et nos installations</p>
-        <a href="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" download class="youtube-link" id="schoolVideoDownload"><i class="fas fa-download"></i> Télécharger</a>
+        <h4>PrÃƒÂ©sentation de l'ÃƒÂ©cole</h4>
+        <p>DÃƒÂ©couvrez notre ÃƒÂ©cole et nos installations</p>
+        <a href="asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4" download class="youtube-link" id="schoolVideoDownload"><i class="fas fa-download"></i> TÃƒÂ©lÃƒÂ©charger</a>
         <a href="https://www.youtube.com/@edenfamilyschool" target="_blank" rel="noopener" class="youtube-link" id="schoolVideoYoutubeLink" style="display:none;"><i class="fab fa-youtube"></i> Voir sur YouTube</a>
       </div>
     </div>
     <div class="video-card">
       <div class="video-thumbnail">
-        <iframe src="https://www.youtube.com/embed/KZzPurEUKW0" title="Activités scolaires" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <iframe src="https://www.youtube.com/embed/KZzPurEUKW0" title="ActivitÃƒÂ©s scolaires" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       </div>
-      <div class="video-info"><h4>Activités scolaires</h4><p>Les activités quotidiennes de nos élèves</p><a href="https://youtu.be/KZzPurEUKW0" target="_blank" class="youtube-link"><i class="fab fa-youtube"></i> Voir sur YouTube</a></div>
+      <div class="video-info"><h4>ActivitÃƒÂ©s scolaires</h4><p>Les activitÃƒÂ©s quotidiennes de nos ÃƒÂ©lÃƒÂ¨ves</p><a href="https://youtu.be/KZzPurEUKW0" target="_blank" class="youtube-link"><i class="fab fa-youtube"></i> Voir sur YouTube</a></div>
     </div>
     <div class="video-card">
       <div class="video-thumbnail">
-        <iframe src="https://www.youtube.com/embed/ywAuUh3QI4k" title="Dernière vidéo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <iframe src="https://www.youtube.com/embed/ywAuUh3QI4k" title="DerniÃƒÂ¨re vidÃƒÂ©o" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       </div>
-      <div class="video-info"><h4>Dernière vidéo</h4><p>Activités récentes de notre école</p><a href="https://youtu.be/ywAuUh3QI4k" target="_blank" class="youtube-link"><i class="fab fa-youtube"></i> Voir sur YouTube</a></div>
+      <div class="video-info"><h4>DerniÃƒÂ¨re vidÃƒÂ©o</h4><p>ActivitÃƒÂ©s rÃƒÂ©centes de notre ÃƒÂ©cole</p><a href="https://youtu.be/ywAuUh3QI4k" target="_blank" class="youtube-link"><i class="fab fa-youtube"></i> Voir sur YouTube</a></div>
     </div>
     <div class="video-card">
       <div class="video-thumbnail">
-        <iframe src="https://www.youtube.com/embed/Bwa-VT5v1sk" title="Journée sportive" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <iframe src="https://www.youtube.com/embed/Bwa-VT5v1sk" title="JournÃƒÂ©e sportive" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       </div>
-      <div class="video-info"><h4>Journée sportive</h4><p>Compétitions sportives de nos élèves</p><a href="https://youtu.be/Bwa-VT5v1sk" target="_blank" class="youtube-link"><i class="fab fa-youtube"></i> Voir sur YouTube</a></div>
+      <div class="video-info"><h4>JournÃƒÂ©e sportive</h4><p>CompÃƒÂ©titions sportives de nos ÃƒÂ©lÃƒÂ¨ves</p><a href="https://youtu.be/Bwa-VT5v1sk" target="_blank" class="youtube-link"><i class="fab fa-youtube"></i> Voir sur YouTube</a></div>
     </div>
   </div>
 </section>
 
-<!-- Section Jeux Éducatifs -->
+<!-- Section Jeux Ãƒâ€°ducatifs -->
 <section id="jeux" class="games-section" data-s="jeux">
   <!-- HERO TITLE -->
   <div class="games-hero">
-    <h1>🎮 Jeux Éducatifs</h1>
-    <p>Section Maternelle — Apprendre en jouant !</p>
+    <h1><i class="fas fa-gamepad" aria-hidden="true"></i> Jeux Ãƒâ€°ducatifs</h1>
+    <p>Section Maternelle Ã¢â‚¬â€ Apprendre en jouant !</p>
   </div>
 
   <!-- nouveau design de jeu fourni par l'utilisateur -->
   <!-- LEVEL TABS -->
   <div class="level-tabs">
-    <button class="ltab active" onclick="setLevel('N1',this)">🌸 N1 <span style="font-size:.7rem;opacity:.7">(3-4 ans)</span></button>
-    <button class="ltab" onclick="setLevel('N2',this)">🌼 N2 <span style="font-size:.7rem;opacity:.7">(4-5 ans)</span></button>
-    <button class="ltab" onclick="setLevel('N3',this)">🌟 N3 <span style="font-size:.7rem;opacity:.7">(5-6 ans)</span></button>
+    <button class="ltab active" onclick="setLevel('N1',this)"><i class="fas fa-seedling" aria-hidden="true"></i> N1 <span style="font-size:.7rem;opacity:.7">(3-4 ans)</span></button>
+    <button class="ltab" onclick="setLevel('N2',this)"><i class="fas fa-leaf" aria-hidden="true"></i> N2 <span style="font-size:.7rem;opacity:.7">(4-5 ans)</span></button>
+    <button class="ltab" onclick="setLevel('N3',this)"><i class="fas fa-star" aria-hidden="true"></i> N3 <span style="font-size:.7rem;opacity:.7">(5-6 ans)</span></button>
   </div>
 
   <!-- SCORE BAR -->
   <div class="score-bar">
-    <div class="score-chip stars"><span class="icon">⭐</span> <span id="totalStars">0</span> étoiles</div>
-    <div class="score-chip hearts"><span class="icon">❤️</span> <span id="totalLives">3</span> vies</div>
-    <div class="score-chip games"><span class="icon">🏆</span> <span id="gamesWon">0</span> gagnés</div>
+    <div class="score-chip stars"><span class="icon"><i class="fas fa-star" aria-hidden="true"></i></span> <span id="totalStars">0</span> ÃƒÂ©toiles</div>
+    <div class="score-chip hearts"><span class="icon"><i class="fas fa-heart" aria-hidden="true"></i></span> <span id="totalLives">3</span> vies</div>
+    <div class="score-chip games"><span class="icon"><i class="fas fa-trophy" aria-hidden="true"></i></span> <span id="gamesWon">0</span> gagnÃƒÂ©s</div>
   </div>
 
   <!-- SECTION LABEL -->
-  <div class="section-label" id="sectionLabel">Niveau N1 — Choisissez un jeu !</div>
+  <div class="section-label" id="sectionLabel">Niveau N1 Ã¢â‚¬â€ Choisissez un jeu !</div>
 
   <!-- GAME GRID -->
   <div class="game-grid" id="gameGrid">
@@ -1884,20 +1859,20 @@
     </div>
   </div>
   <div style="background:white;padding:2rem;border-radius:15px;box-shadow:var(--shadow);margin-top:3rem;">
-    <h3 style="text-align:center;margin-bottom:2rem;">Envoyer un message à l'administration</h3>
+    <h3 style="text-align:center;margin-bottom:2rem;">Envoyer un message ÃƒÂ  l'administration</h3>
     <form id="adminMessageForm">
       <div class="form-row">
         <input type="text" id="msgName" placeholder="Votre nom" required>
-        <input type="tel" id="msgPhone" placeholder="Votre téléphone" required>
+        <input type="tel" id="msgPhone" placeholder="Votre tÃƒÂ©lÃƒÂ©phone" required>
       </div>
       <select id="msgRecipient" required style="width:100%;margin-bottom:1rem;">
         <option value="">Destinataire</option>
         <option value="comptable">Comptable</option>
         <option value="directeur">Directeur / Directrice</option>
-        <option value="secretaire">Secrétaire</option>
+        <option value="secretaire">SecrÃƒÂ©taire</option>
       </select>
       <select id="msgBranche" required style="width:100%;margin-bottom:1rem;">
-        <option value="">Branche concernée</option>
+        <option value="">Branche concernÃƒÂ©e</option>
         <option value="Kimisagara">Kimisagara</option>
         <option value="Gisozi">Gisozi</option>
         <option value="Kacyiru">Kacyiru</option>
@@ -1927,71 +1902,44 @@
 </div>
 
 <!-- Footer -->
-<footer>
-  <div class="footer-content">
-    <div class="footer-section">
-      <h3><i class="fas fa-graduation-cap"></i> EDEN FAMILY SCHOOL</h3>
-      <p>Excellence et Innovation dans l'éducation. Notre devise "Learning by doing" reflète notre engagement.</p>
-      <div style="margin-top: 1rem;">
-        <a href="#" style="margin-right: 1rem; font-size: 1.5rem;"><i class="fab fa-facebook"></i></a>
-        <a href="#" style="margin-right: 1rem; font-size: 1.5rem;"><i class="fab fa-twitter"></i></a>
-        <a href="#" style="margin-right: 1rem; font-size: 1.5rem;"><i class="fab fa-instagram"></i></a>
-        <a href="#" style="font-size: 1.5rem;"><i class="fab fa-youtube"></i></a>
-      </div>
-    </div>
-    <div class="footer-section">
-      <h3>Contact</h3>
-      <p><i class="fas fa-map-marker-alt"></i> Kigali, Rwanda<br>
-      <i class="fas fa-envelope"></i> edengracefamilyltd@gmail.com<br>
-      <i class="fas fa-phone"></i> +250 788 883 842</p>
-    </div>
-    <div class="footer-section">
-      <h3>Liens rapides</h3>
-      <p>
-        <a href="#accueil"><i class="fas fa-home"></i> Accueil</a><br>
-        <a href="#galerie"><i class="fas fa-images"></i> Galerie</a><br>
-        <a href="#jeux"><i class="fas fa-gamepad"></i> Jeux Éducatifs</a><br>
-        <a href="#youtube"><i class="fab fa-youtube"></i> YouTube</a>
-      </p>
-    </div>
+<footer class="eden-footer">
+  <div class="footer-inner">
+    <div class="footer-brand"><div class="footer-mark"><i class="fas fa-graduation-cap"></i></div><div><span>EDEN FAMILY SCHOOL</span><p>Learning by doing.</p></div></div>
+    <div class="footer-nav"><span>Explorer</span><a href="#accueil">Accueil</a><a href="#branches">Nos campus</a><a href="#galerie">Galerie</a><a href="#academique">AcadÃ©mique</a></div>
+    <div class="footer-nav"><span>La vie Ã  Eden</span><a href="#youtube">YouTube</a><a href="#jeux">Jeux Ã©ducatifs</a><a href="#contact">Contact</a></div>
+    <div class="footer-contact"><span>Nous trouver</span><p>Kigali, Rwanda</p><a href="mailto:edengracefamilyltd@gmail.com">edengracefamilyltd@gmail.com</a><a href="tel:+250788883842">+250 788 883 842</a><div class="footer-social"><a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a><a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a><a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a></div></div>
   </div>
-  <div class="footer-bottom">
-    <p>&copy; 2024 Eden Family School - Tous droits réservés</p>
-    <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-      <a href="#" onclick="showPrivacyPolicy()" style="color: var(--white); margin-right: 1rem;">Politique de confidentialité</a>
-      <a href="#" onclick="showTerms()" style="color: var(--white);">Conditions d'utilisation</a>
-    </p>
-  </div>
+  <div class="footer-bottom"><span>Â© 2024 Eden Family School</span><div><a href="#" onclick="showPrivacyPolicy();return false">ConfidentialitÃ©</a><a href="#" onclick="showTerms();return false">Conditions</a></div><span>Kigali Â· Rwanda</span></div>
 </footer>
 
 <script>
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    CURSOR GLOW
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 const cgEl = document.getElementById('cg');
 document.addEventListener('mousemove', e => {
   cgEl.style.left = e.clientX+'px';
   cgEl.style.top  = e.clientY+'px';
 });
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    SECTION COLOUR (body class)
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 document.querySelectorAll('[data-s]').forEach(s =>
   new IntersectionObserver(es => {
     es.forEach(e => { if(e.isIntersecting) document.body.className = 's-'+e.target.dataset.s; });
   },{threshold:.45}).observe(s)
 );
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    RADIAL MENU ITEMS
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 const ITEMS = [
   {label:'Accueil',      icon:'fas fa-home',          href:'#accueil'},
   {label:'Galerie',      icon:'fas fa-images',         href:'#galerie'},
-  {label:'Activités',    icon:'fas fa-graduation-cap', href:'#academique'},
+  {label:'ActivitÃƒÂ©s',    icon:'fas fa-graduation-cap', href:'#academique'},
   {label:'Inscription',  icon:'fas fa-pen-fancy',      href:'inscription.html'},
-  {label:'Bibliothèque', icon:'fas fa-book',           href:'#bibliotheque'},
+  {label:'BibliothÃƒÂ¨que', icon:'fas fa-book',           href:'#bibliotheque'},
   {label:'YouTube',      icon:'fab fa-youtube',        href:'#youtube'},
   {label:'Jeux',         icon:'fas fa-gamepad',        href:'#jeux'},
 ];
@@ -2034,8 +1982,8 @@ function placeItems(open, radius, instant) {
 
   riEls.forEach((el, i) => {
     const delay = i * 0.055;
-    const tr = `opacity .42s cubic-bezier(.34,1.56,.64,1) ${delay}s,`+
-               `transform .42s cubic-bezier(.34,1.56,.64,1) ${delay}s`;
+    const tr = `opacity .42s cubic-bezier(.2,.8,.2,1) ${delay}s,`+
+               `transform .42s cubic-bezier(.2,.8,.2,1) ${delay}s`;
     if (instant) { el.style.transition = 'none'; }
     else { el.style.transition = tr; el.classList.remove('spinning-out'); }
 
@@ -2059,9 +2007,9 @@ function placeItems(open, radius, instant) {
   });
 }
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    BUBBLE LOGIC
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 const bubble  = document.getElementById('bubble');
 const bicon   = document.getElementById('bicon');
 const navbar  = document.getElementById('navbar');
@@ -2076,7 +2024,7 @@ function openMenu() {
   menuOpen = true;
   if (isMini) setBubbleMini(false);
   bubble.classList.add('open');
-  bicon.style.transition = 'transform .45s cubic-bezier(.34,1.56,.64,1)';
+  bicon.style.transition = 'transform .45s cubic-bezier(.2,.8,.2,1)';
   bicon.style.transform  = 'rotate(180deg) scale(1.1)';
   setTimeout(() => { bicon.className = 'bi fas fa-arrow-up'; bicon.style.transform = 'rotate(360deg) scale(1)'; }, 230);
   placeItems(true, isMini ? R_MINI : R_BIG, false);
@@ -2086,7 +2034,7 @@ function closeMenu(instant, spinOut) {
   if (!menuOpen) return;
   menuOpen = false;
   bubble.classList.remove('open');
-  bicon.style.transition = 'transform .45s cubic-bezier(.34,1.56,.64,1)';
+  bicon.style.transition = 'transform .45s cubic-bezier(.2,.8,.2,1)';
   bicon.style.transform  = 'rotate(180deg) scale(1.1)';
   setTimeout(() => { bicon.className = 'bi fas fa-home'; bicon.style.transform = 'rotate(0deg) scale(1)'; }, 230);
   if (spinOut) { spinCloseItems(); }
@@ -2100,7 +2048,7 @@ function setBubbleMini(mini) {
   else { bubble.classList.remove('mini'); if (menuOpen) placeItems(true, R_BIG, false); }
 }
 
-/* ── DRAG ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ DRAG Ã¢â€â‚¬Ã¢â€â‚¬ */
 let isDragging=false, dragStartX=0, dragStartY=0, bubStartX=0, bubStartY=0, dragMoved=false;
 const DRAG_THRESHOLD=6;
 
@@ -2110,7 +2058,7 @@ function cl2(v,lo,hi){return Math.min(hi,Math.max(lo,v));}
 
 function onDragStart(clientX,clientY){isDragging=true;dragMoved=false;dragStartX=clientX;dragStartY=clientY;const pos=getBubbleXY();bubStartX=pos.x;bubStartY=pos.y;bubble.style.transition='none';bubble.style.cursor='grabbing';}
 function onDragMove(clientX,clientY){if(!isDragging)return;const dx=clientX-dragStartX,dy=clientY-dragStartY;if(!dragMoved&&(Math.abs(dx)>DRAG_THRESHOLD||Math.abs(dy)>DRAG_THRESHOLD)){dragMoved=true;setBubbleFree(bubStartX,bubStartY);}if(dragMoved){const bSize=parseInt(getComputedStyle(bubble).width)||60;const newX=cl2(bubStartX+dx,0,window.innerWidth-bSize),newY=cl2(bubStartY+dy,0,window.innerHeight-bSize);bubble.style.left=newX+'px';bubble.style.top=newY+'px';if(menuOpen)placeItems(true,R_BIG,true);}}
-function onDragEnd(){if(!isDragging)return;isDragging=false;bubble.style.cursor='pointer';bubble.style.transition='width .4s cubic-bezier(.34,1.56,.64,1), height .4s cubic-bezier(.34,1.56,.64,1), box-shadow .3s, opacity .35s, filter .7s ease';}
+function onDragEnd(){if(!isDragging)return;isDragging=false;bubble.style.cursor='pointer';bubble.style.transition='width .4s cubic-bezier(.2,.8,.2,1), height .4s cubic-bezier(.2,.8,.2,1), box-shadow .3s, opacity .35s, filter .7s ease';}
 
 bubble.addEventListener('mousedown',e=>{if(e.button!==0)return;e.preventDefault();onDragStart(e.clientX,e.clientY);});
 document.addEventListener('mousemove',e=>{onDragMove(e.clientX,e.clientY);});
@@ -2119,7 +2067,7 @@ bubble.addEventListener('touchstart',e=>{const t=e.touches[0];onDragStart(t.clie
 document.addEventListener('touchmove',e=>{const t=e.touches[0];onDragMove(t.clientX,t.clientY);},{passive:true});
 document.addEventListener('touchend',()=>{onDragEnd();});
 
-/* ── BUBBLE CLICK ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ BUBBLE CLICK Ã¢â€â‚¬Ã¢â€â‚¬ */
 let bubbleClicked=false;
 bubble.addEventListener('click',e=>{
   e.stopPropagation();
@@ -2154,9 +2102,9 @@ riEls.forEach(el=>{
   });
 });
 
-/* ══════════════════════════════════════════════════════════
-   SCROLL ENGINE — navbar pill + bubble
-══════════════════════════════════════════════════════════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+   SCROLL ENGINE Ã¢â‚¬â€ navbar pill + bubble
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 const PILL_START  = 60;
 const PILL_END    = 180;
 const BUBBLE_END  = 320;
@@ -2184,10 +2132,10 @@ function doScroll(){
   let nearFooter = false;
   if(footerEl){const fRect=footerEl.getBoundingClientRect();nearFooter=fRect.top<window.innerHeight+100;}
 
-  /* ZONE 0 — full bar */
+  /* ZONE 0 Ã¢â‚¬â€ full bar */
   if(sc < PILL_START){
     navbar.classList.remove('pill','shrink');
-    navbar.style.cssText = 'background: #0b63ce; padding: 0; position: fixed; width: 100%; top: 0; z-index: 2000; box-shadow: 0 2px 20px rgba(0,0,0,.1); overflow: visible;';
+    navbar.style.cssText = 'background: rgba(248,246,239,.97); padding: 0; position: fixed; width: 100%; top: 0; z-index: 2000; box-shadow: 0 10px 34px rgba(19,39,70,.10); overflow: visible;';
     bubble.classList.remove('vis','blurred','near-footer');
     bubble.style.transform='scale(0) rotate(0deg)';bubble.style.opacity='0';bubble.style.pointerEvents='none';
     bubble.style.right=(window.innerWidth/2-30)+'px';bubble.style.bottom='35px';
@@ -2197,7 +2145,7 @@ function doScroll(){
     return;
   }
 
-  /* ZONE 1 — navbar morphs to pill */
+  /* ZONE 1 Ã¢â‚¬â€ navbar morphs to pill */
   if(sc < PILL_END){
     navbar.classList.remove('shrink');
     navbar.classList.add('pill');
@@ -2209,7 +2157,7 @@ function doScroll(){
     return;
   }
 
-  /* ZONE 2 — pill fades, bubble rolls in */
+  /* ZONE 2 Ã¢â‚¬â€ pill fades, bubble rolls in */
   if(sc < BUBBLE_END){
     const p=(sc-PILL_END)/(BUBBLE_END-PILL_END);
     navbar.classList.add('pill');navbar.classList.remove('shrink');
@@ -2229,7 +2177,7 @@ function doScroll(){
     return;
   }
 
-  /* ZONE 3 — bubble at rest */
+  /* ZONE 3 Ã¢â‚¬â€ bubble at rest */
   navbar.classList.add('shrink');
   navbar.style.opacity='0';navbar.style.pointerEvents='none';
   bubble.classList.add('vis');
@@ -2255,18 +2203,18 @@ function doScroll(){
     else bubble.classList.remove('blurred');
   } else { bubble.classList.remove('blurred'); }
 
-  /* Près du footer — flèche haut */
+  /* PrÃƒÂ¨s du footer Ã¢â‚¬â€ flÃƒÂ¨che haut */
   if(nearFooter&&!menuOpen){
     bubble.classList.add('near-footer');bubble.classList.remove('blurred');
     if(bicon.className!=='bi fas fa-arrow-up'){
-      bicon.style.transition='transform .4s cubic-bezier(.34,1.56,.64,1)';
+      bicon.style.transition='transform .4s cubic-bezier(.2,.8,.2,1)';
       bicon.style.transform='rotate(180deg) scale(1.1)';
       setTimeout(()=>{bicon.className='bi fas fa-arrow-up';bicon.style.transform='rotate(360deg) scale(1)';},220);
     }
   } else if(!nearFooter&&!menuOpen){
     bubble.classList.remove('near-footer');
     if(bicon.className==='bi fas fa-arrow-up'){
-      bicon.style.transition='transform .4s cubic-bezier(.34,1.56,.64,1)';
+      bicon.style.transition='transform .4s cubic-bezier(.2,.8,.2,1)';
       bicon.style.transform='rotate(180deg) scale(1.1)';
       setTimeout(()=>{bicon.className='bi fas fa-home';bicon.style.transform='rotate(0deg) scale(1)';},220);
     }
@@ -2275,9 +2223,9 @@ function doScroll(){
 
 doScroll();
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    VARIABLES GLOBALES DE L'APP
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 const CONFIG = {
   selectedLevel: 'maternelle', selectedDifficulty: 'facile',
   currentSlide: 0, autoSlideInterval: null, isAutoSlideEnabled: true,
@@ -2288,17 +2236,17 @@ const CONFIG = {
 };
 
 let GALLERY_IMAGES = [
-  {src:'asset/img/kimisagara.jpg',largeSrc:'asset/img/kimisagara.jpg',title:'Eden Family school kimisagara',desc:'École à Kimisagara',date:'2024-10-15',category:'École'},
-  {src:'asset/img/gisozi_graduation2.JPG',largeSrc:'asset/img/gisozi_graduation2.JPG',title:'Nos Élèves',desc:'Passionnés par l\'apprentissage',date:'2024-10-20',category:'Élèves'},
-  {src:'asset/img/sport2.jpg',largeSrc:'asset/img/sport2.jpg',title:'Activités Sportives',desc:'Sports et activités culturelles',date:'2024-10-18',category:'Activités'},
-  {src:'asset/img/club_de_dance.jpg',largeSrc:'asset/img/club_de_dance.jpg',title:'Bibliothèque',desc:'Riche collection de livres',date:'2024-10-22',category:'École'},
-  {src:'asset/img/gisozi_graduation.JPG',largeSrc:'asset/img/gisozi_graduation.JPG',title:'Laboratoire',desc:'Sciences pratiques',date:'2024-10-25',category:'École'},
-  {src:'asset/img/love_eden.jpg',largeSrc:'asset/img/love_eden.jpg',title:'Cour de Récréation',desc:'Sécurisée et amusante',date:'2024-10-28',category:'École'},
+  {src:'asset/img/kimisagara.jpg',largeSrc:'asset/img/kimisagara.jpg',title:'Eden Family school kimisagara',desc:'Ãƒâ€°cole ÃƒÂ  Kimisagara',date:'2024-10-15',category:'Ãƒâ€°cole'},
+  {src:'asset/img/gisozi_graduation2.JPG',largeSrc:'asset/img/gisozi_graduation2.JPG',title:'Nos Ãƒâ€°lÃƒÂ¨ves',desc:'PassionnÃƒÂ©s par l\'apprentissage',date:'2024-10-20',category:'Ãƒâ€°lÃƒÂ¨ves'},
+  {src:'asset/img/sport2.jpg',largeSrc:'asset/img/sport2.jpg',title:'ActivitÃƒÂ©s Sportives',desc:'Sports et activitÃƒÂ©s culturelles',date:'2024-10-18',category:'ActivitÃƒÂ©s'},
+  {src:'asset/img/club_de_dance.jpg',largeSrc:'asset/img/club_de_dance.jpg',title:'BibliothÃƒÂ¨que',desc:'Riche collection de livres',date:'2024-10-22',category:'Ãƒâ€°cole'},
+  {src:'asset/img/gisozi_graduation.JPG',largeSrc:'asset/img/gisozi_graduation.JPG',title:'Laboratoire',desc:'Sciences pratiques',date:'2024-10-25',category:'Ãƒâ€°cole'},
+  {src:'asset/img/love_eden.jpg',largeSrc:'asset/img/love_eden.jpg',title:'Cour de RÃƒÂ©crÃƒÂ©ation',desc:'SÃƒÂ©curisÃƒÂ©e et amusante',date:'2024-10-28',category:'Ãƒâ€°cole'},
 ];
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    NAVIGATION
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 function scrollToSection(sectionId){
   const section=document.getElementById(sectionId);
   if(section){
@@ -2350,9 +2298,9 @@ document.addEventListener('click',e=>{
   }
 });
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    CAROUSEL
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 const slides=document.querySelectorAll('.carousel-slide');
 const dots=document.querySelectorAll('.carousel-dot');
 
@@ -2368,9 +2316,9 @@ function goToSlide(n){CONFIG.currentSlide=n;showSlide(CONFIG.currentSlide);reset
 function startAutoSlide(){if(CONFIG.isAutoSlideEnabled) CONFIG.autoSlideInterval=setInterval(()=>{CONFIG.currentSlide++;showSlide(CONFIG.currentSlide);},5000);}
 function resetAutoSlide(){clearInterval(CONFIG.autoSlideInterval);startAutoSlide();}
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    MODALS
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 function openModal(title,content){
   document.getElementById('modalTitle').innerHTML=title;
   document.getElementById('modalBody').innerHTML=content;
@@ -2424,7 +2372,7 @@ function showPaymentPopup(branche) {
       </div>
       <h3>Paiement des frais d'inscription</h3>
       <p>Branche : <strong>${branchLabel}</strong></p>
-      <p>Contactez l'administration pour recevoir les détails de paiement.</p>
+      <p>Contactez l'administration pour recevoir les dÃƒÂ©tails de paiement.</p>
     </div>`;
   openModal('<i class="fas fa-hand-holding-usd"></i> Instructions de paiement', content);
 }
@@ -2508,7 +2456,7 @@ async function showActivityByFilter(type) {
       </select>
     </div>
     <div id="activityResults"><div class="loading"><div class="spinner"></div></div></div>`;
-  openModal('<i class="fas fa-tasks"></i> Activités académiques', content);
+  openModal('<i class="fas fa-tasks"></i> ActivitÃƒÂ©s acadÃƒÂ©miques', content);
   await loadActivities(type);
   document.getElementById('filterBranche').onchange = () => loadActivities(type);
   document.getElementById('filterClasse').onchange = () => loadActivities(type);
@@ -2526,15 +2474,15 @@ async function loadActivities(type) {
     resultsEl.innerHTML = items.length ? items.map(i => `
       <div class="homework-item">
         <div>
-          <span class="homework-subject">${i.titre || 'Activité'}</span><br>
+          <span class="homework-subject">${i.titre || 'ActivitÃƒÂ©'}</span><br>
           <span class="homework-date">${i.branche || 'Toutes'} - ${i.classe || 'Tous'} - ${i.date || ''}</span>
           <p>${i.description || ''}</p>
         </div>
         ${i.fichierUrl ? `<a href="${i.fichierUrl}" download class="homework-download"><i class="fas fa-download"></i> Fichier</a>` : ''}
-      </div>`).join('') : '<p style="text-align:center;color:#666;">Aucune activité disponible.</p>';
+      </div>`).join('') : '<p style="text-align:center;color:#666;">Aucune activitÃƒÂ© disponible.</p>';
   } catch(err) {
-    console.error('Erreur chargement activités :', err);
-    document.getElementById('activityResults').innerHTML = '<p style="text-align:center;color:#666;">Impossible de charger les activités pour le moment.</p>';
+    console.error('Erreur chargement activitÃƒÂ©s :', err);
+    document.getElementById('activityResults').innerHTML = '<p style="text-align:center;color:#666;">Impossible de charger les activitÃƒÂ©s pour le moment.</p>';
   }
 }
 
@@ -2575,7 +2523,7 @@ async function handleBranchSelection(branchValue){
 
   if(branchValue==='gisozi_maternelle'){
     sectionGroup.style.display='block';
-    classSelect.innerHTML = '<option value="">Sélectionner d\'abord une section Gisozi</option>';
+    classSelect.innerHTML = '<option value="">SÃƒÂ©lectionner d\'abord une section Gisozi</option>';
     classSelect.disabled = true;
     document.querySelectorAll('input[name="regGisoziSection"]').forEach(el=>el.checked=false);
     return;
@@ -2621,7 +2569,7 @@ async function populateRegistrationClassesByBranch(branchKey){
     }
 
     const uniqueClasses = [...new Set(classNames)].sort((a,b)=>a.localeCompare(b,'fr'));
-    select.innerHTML = '<option value="">Sélectionner une classe</option>';
+    select.innerHTML = '<option value="">SÃƒÂ©lectionner une classe</option>';
     uniqueClasses.forEach(cls => {
       const option = document.createElement('option');
       option.value = cls;
@@ -2674,7 +2622,7 @@ async function saveRegistrationAndGenerateID(){
 
   try {
     await firebase.database().ref('inscriptions-scolaires').push(data);
-    showToast('Inscription enregistrée avec succès', 'success');
+    showToast('Inscription enregistrÃƒÂ©e avec succÃƒÂ¨s', 'success');
     form.reset();
     closeRegistrationModal();
     setTimeout(() => showPaymentPopup(data.branche), 600);
@@ -2700,12 +2648,12 @@ window.onclick=function(event){
 };
 document.addEventListener('keydown',function(event){if(event.key==='Escape'){closeModal();closeLoginModal();closeRegisterModal();}});
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    FIREBASE AUTH
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 let currentFirebaseUser=null;
 
-// Isoler la session par onglet pour éviter qu'une 2e connexion déconnecte la 1re
+// Isoler la session par onglet pour ÃƒÂ©viter qu'une 2e connexion dÃƒÂ©connecte la 1re
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION).catch((err) => {
   console.warn('setPersistence(Session) impossible:', err);
 });
@@ -2746,12 +2694,12 @@ function handleGoogleSignIn(){
     if (typeof window.FIREBASE_CONFIG !== 'undefined') {
       firebase.initializeApp(window.FIREBASE_CONFIG);
     } else {
-      showToast('Firebase non initialisé','error');
+      showToast('Firebase non initialisÃƒÂ©','error');
       return;
     }
   }
   if(currentFirebaseUser){
-    showToast('Vous êtes déjà connecté','success');
+    showToast('Vous ÃƒÂªtes dÃƒÂ©jÃƒÂ  connectÃƒÂ©','success');
     return;
   }
   firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
@@ -2773,12 +2721,12 @@ function handleGoogleSignIn(){
         });
       }
       closeLoginModal();
-      showToast('Connexion Google réussie','success');
+      showToast('Connexion Google rÃƒÂ©ussie','success');
     })
     .catch(err => {
       console.error(err);
       const msg = err && err.code === 'auth/unauthorized-domain'
-        ? 'Domaine non autorisé. Ajoutez edenfamilyschool.vercel.app dans Firebase → Authentication → Authorized domains.'
+        ? 'Domaine non autorisÃƒÂ©. Ajoutez edenfamilyschool.vercel.app dans Firebase Ã¢â€ â€™ Authentication Ã¢â€ â€™ Authorized domains.'
         : 'Erreur connexion Google';
       showToast(msg,'error');
     });
@@ -2822,13 +2770,13 @@ function createRobotPuzzle(type){
   const scrambled=shuffleWord(solution);
   ROBOT_PUZZLES[type].solution=solution;
 
-  hintEl.textContent='Mémorisez ce mot bizarre: '+solution+' (il disparaît ensuite), puis recomposez-le avec les lettres mélangées.';
+  hintEl.textContent='MÃƒÂ©morisez ce mot bizarre: '+solution+' (il disparaÃƒÂ®t ensuite), puis recomposez-le avec les lettres mÃƒÂ©langÃƒÂ©es.';
   scrambledEl.textContent=scrambled.split('').join(' ');
   answerEl.value='';
 
   setTimeout(()=>{
     if(ROBOT_PUZZLES[type].solution===solution){
-      hintEl.textContent='Recomposez maintenant le mot bizarre à partir des lettres ci-dessus.';
+      hintEl.textContent='Recomposez maintenant le mot bizarre ÃƒÂ  partir des lettres ci-dessus.';
     }
   },2200);
 }
@@ -2849,10 +2797,10 @@ async function notifyAccountCreation(payload){
       body:JSON.stringify(payload)
     });
     const result=await response.json().catch(()=>({}));
-    if(!response.ok) throw new Error(result.error||result.warning||'Alerte email non envoyée');
+    if(!response.ok) throw new Error(result.error||result.warning||'Alerte email non envoyÃƒÂ©e');
     return result;
   } catch(error){
-    console.warn('Alerte création de compte non envoyée:',error);
+    console.warn('Alerte crÃƒÂ©ation de compte non envoyÃƒÂ©e:',error);
     return {success:false,error:error.message};
   }
 }
@@ -2870,7 +2818,7 @@ function handleLogin(event){
       if(!user.emailVerified){
         await user.sendEmailVerification();
         await firebase.auth().signOut();
-        showToast('Email non vérifié. Un lien de vérification vient d\'être envoyé.','warning');
+        showToast('Email non vÃƒÂ©rifiÃƒÂ©. Un lien de vÃƒÂ©rification vient d\'ÃƒÂªtre envoyÃƒÂ©.','warning');
         return;
       }
       const snapshot=await firebase.database().ref('parents/'+user.uid).once('value');
@@ -2928,14 +2876,14 @@ async function handleRegister(event){
       source: 'Portail Parents',
       verificationSent: true
     });
-    // On ne déconnecte pas l'utilisateur
+    // On ne dÃƒÂ©connecte pas l'utilisateur
     // await firebase.auth().signOut();
-    // CONFIG.isLoggedIn = false; // inutile car onAuthStateChanged va le mettre à true
+    // CONFIG.isLoggedIn = false; // inutile car onAuthStateChanged va le mettre ÃƒÂ  true
     closeRegisterModal();
     showToast(
       alertResult.success
-        ? 'Inscription réussie ! Un email de vérification vous a été envoyé. Vous êtes maintenant connecté.'
-        : 'Inscription réussie. Vérifiez votre email. Vous êtes connecté.',
+        ? 'Inscription rÃƒÂ©ussie ! Un email de vÃƒÂ©rification vous a ÃƒÂ©tÃƒÂ© envoyÃƒÂ©. Vous ÃƒÂªtes maintenant connectÃƒÂ©.'
+        : 'Inscription rÃƒÂ©ussie. VÃƒÂ©rifiez votre email. Vous ÃƒÂªtes connectÃƒÂ©.',
       'success'
     );
   } catch(err){
@@ -2945,31 +2893,31 @@ async function handleRegister(event){
 }
 
 function logoutFromIndex(){
-  firebase.auth().signOut().then(()=>{showToast("Déconnexion réussie","info");}).catch(err=>{console.error(err);});
+  firebase.auth().signOut().then(()=>{showToast("DÃƒÂ©connexion rÃƒÂ©ussie","info");}).catch(err=>{console.error(err);});
 }
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    GALERIE
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 function openGalleryModal(index){
   const image=GALLERY_IMAGES[index];const totalImages=GALLERY_IMAGES.length;
   let thumbnailsHTML='';
   GALLERY_IMAGES.forEach((img,i)=>{thumbnailsHTML+=`<img src="${img.src}" class="gallery-thumbnail ${i===index?'active':''}" onclick="switchGalleryImage(${i})" alt="${img.title}">`;});
-  const content=`<div class="gallery-modal-content"><img src="${image.largeSrc}" alt="${image.title}" class="gallery-modal-image"><div class="gallery-modal-thumbnails">${thumbnailsHTML}</div><div><h3>${image.title}</h3><p>${image.desc}</p><div class="gallery-modal-nav" style="margin-top:1rem;"><button class="btn-primary" onclick="switchGalleryImage(${index-1})" ${index===0?'disabled':''}>← Précédent</button><span>${index+1}/${totalImages}</span><button class="btn-primary" onclick="switchGalleryImage(${index+1})" ${index===totalImages-1?'disabled':''}>Suivant →</button></div></div></div>`;
+  const content=`<div class="gallery-modal-content"><img src="${image.largeSrc}" alt="${image.title}" class="gallery-modal-image"><div class="gallery-modal-thumbnails">${thumbnailsHTML}</div><div><h3>${image.title}</h3><p>${image.desc}</p><div class="gallery-modal-nav" style="margin-top:1rem;"><button class="btn-primary" onclick="switchGalleryImage(${index-1})" ${index===0?'disabled':''}>Ã¢â€ Â PrÃƒÂ©cÃƒÂ©dent</button><span>${index+1}/${totalImages}</span><button class="btn-primary" onclick="switchGalleryImage(${index+1})" ${index===totalImages-1?'disabled':''}>Suivant Ã¢â€ â€™</button></div></div></div>`;
   openModal(`<i class="fas fa-image"></i> ${image.title}`,content);
 }
 function switchGalleryImage(index){closeModal();setTimeout(()=>{if(index>=0&&index<GALLERY_IMAGES.length) openGalleryModal(index);},300);}
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    JEUX
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 const GAMES_DATA = {
-  math:{maternelle:{facile:[{question:"Combien font 1 + 1 ?",options:[{text:"1",image:"https://cdn-icons-png.flaticon.com/512/2921/2921221.png"},{text:"2",image:"https://cdn-icons-png.flaticon.com/512/2921/2921222.png"},{text:"3",image:"https://cdn-icons-png.flaticon.com/512/2921/2921223.png"},{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"}],answer:1,audio:"Un plus un égale combien ?"}],moyen:[{question:"Combien font 3 + 4 ?",options:[{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"},{text:"8",image:"https://cdn-icons-png.flaticon.com/512/2921/2921228.png"}],answer:2,audio:"Trois plus quatre égale combien ?"}],difficile:[{question:"Combien font 5 + 6 ?",options:[{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"},{text:"11",image:"https://cdn-icons-png.flaticon.com/512/2921/2921231.png"},{text:"12",image:"https://cdn-icons-png.flaticon.com/512/2921/2921232.png"},{text:"13",image:"https://cdn-icons-png.flaticon.com/512/2921/2921233.png"}],answer:1,audio:"Cinq plus six égale combien ?"}]},primaire:{facile:[{question:"Combien font 12 + 8 ?",options:[{text:"18",image:"https://cdn-icons-png.flaticon.com/512/2921/2921238.png"},{text:"20",image:"https://cdn-icons-png.flaticon.com/512/2921/2921240.png"},{text:"22",image:"https://cdn-icons-png.flaticon.com/512/2921/2921242.png"},{text:"24",image:"https://cdn-icons-png.flaticon.com/512/2921/2921244.png"}],answer:1,audio:"Douze plus huit égale combien ?"}],moyen:[{question:"Combien font 25 - 13 ?",options:[{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"},{text:"12",image:"https://cdn-icons-png.flaticon.com/512/2921/2921232.png"},{text:"13",image:"https://cdn-icons-png.flaticon.com/512/2921/2921233.png"},{text:"15",image:"https://cdn-icons-png.flaticon.com/512/2921/2921235.png"}],answer:1,audio:"Vingt-cinq moins treize égale combien ?"}],difficile:[{question:"Combien font 7 × 8 ?",options:[{text:"48",image:"https://cdn-icons-png.flaticon.com/512/2921/2921248.png"},{text:"54",image:"https://cdn-icons-png.flaticon.com/512/2921/2921254.png"},{text:"56",image:"https://cdn-icons-png.flaticon.com/512/2921/2921256.png"},{text:"64",image:"https://cdn-icons-png.flaticon.com/512/2921/2921264.png"}],answer:2,audio:"Sept fois huit égale combien ?"}]}},
-  fruits:{maternelle:{facile:[{question:"Trouve la pomme",options:[{text:"Pomme",image:"https://cdn-icons-png.flaticon.com/512/415/415733.png"},{text:"Banane",image:"https://cdn-icons-png.flaticon.com/512/2909/2909761.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/3082/3082383.png"},{text:"Fraise",image:"https://cdn-icons-png.flaticon.com/512/2937/2937251.png"}],answer:0,audio:"Trouve la pomme"}],moyen:[{question:"Trouve la fraise",options:[{text:"Cerise",image:"https://cdn-icons-png.flaticon.com/512/2909/2909776.png"},{text:"Fraise",image:"https://cdn-icons-png.flaticon.com/512/2937/2937251.png"},{text:"Raisin",image:"https://cdn-icons-png.flaticon.com/512/2909/2909792.png"},{text:"Ananas",image:"https://cdn-icons-png.flaticon.com/512/2909/2909771.png"}],answer:1,audio:"Trouve la fraise"}],difficile:[{question:"Trouve l'ananas",options:[{text:"Mangue",image:"https://cdn-icons-png.flaticon.com/512/2909/2909784.png"},{text:"Pastèque",image:"https://cdn-icons-png.flaticon.com/512/2909/2909791.png"},{text:"Ananas",image:"https://cdn-icons-png.flaticon.com/512/2909/2909771.png"},{text:"Pêche",image:"https://cdn-icons-png.flaticon.com/512/2909/2909798.png"}],answer:2,audio:"Trouve l'ananas"}]},primaire:{facile:[{question:"Trouve le légume",options:[{text:"Carotte",image:"https://cdn-icons-png.flaticon.com/512/2909/2909806.png"},{text:"Pomme",image:"https://cdn-icons-png.flaticon.com/512/415/415733.png"},{text:"Banane",image:"https://cdn-icons-png.flaticon.com/512/2909/2909761.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/3082/3082383.png"}],answer:0,audio:"Trouve le légume"}],moyen:[{question:"Trouve le brocoli",options:[{text:"Chou-fleur",image:"https://cdn-icons-png.flaticon.com/512/2909/2909777.png"},{text:"Brocoli",image:"https://cdn-icons-png.flaticon.com/512/2909/2909773.png"},{text:"Salade",image:"https://cdn-icons-png.flaticon.com/512/2909/2909793.png"},{text:"Tomate",image:"https://cdn-icons-png.flaticon.com/512/2909/2909789.png"}],answer:1,audio:"Trouve le brocoli"}],difficile:[{question:"Trouve l'aubergine",options:[{text:"Courgette",image:"https://cdn-icons-png.flaticon.com/512/2909/2909778.png"},{text:"Poivron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909800.png"},{text:"Aubergine",image:"https://cdn-icons-png.flaticon.com/512/2909/2909770.png"},{text:"Concombre",image:"https://cdn-icons-png.flaticon.com/512/2909/2909775.png"}],answer:2,audio:"Trouve l'aubergine"}]}},
-  animaux:{maternelle:{facile:[{question:"Trouve le chat",options:[{text:"Chat",image:"https://cdn-icons-png.flaticon.com/512/1998/1998594.png"},{text:"Chien",image:"https://cdn-icons-png.flaticon.com/512/1998/1998598.png"},{text:"Lapin",image:"https://cdn-icons-png.flaticon.com/512/1998/1998613.png"},{text:"Oiseau",image:"https://cdn-icons-png.flaticon.com/512/1998/1998627.png"}],answer:0,audio:"Trouve le chat"}],moyen:[{question:"Trouve l'oiseau",options:[{text:"Poisson",image:"https://cdn-icons-png.flaticon.com/512/1998/1998622.png"},{text:"Tortue",image:"https://cdn-icons-png.flaticon.com/512/1998/1998628.png"},{text:"Oiseau",image:"https://cdn-icons-png.flaticon.com/512/1998/1998627.png"},{text:"Hamster",image:"https://cdn-icons-png.flaticon.com/512/1998/1998601.png"}],answer:2,audio:"Trouve l'oiseau"}],difficile:[{question:"Trouve le hamster",options:[{text:"Souris",image:"https://cdn-icons-png.flaticon.com/512/1998/1998625.png"},{text:"Cochon d'Inde",image:"https://cdn-icons-png.flaticon.com/512/1998/1998599.png"},{text:"Hamster",image:"https://cdn-icons-png.flaticon.com/512/1998/1998601.png"},{text:"Écureuil",image:"https://cdn-icons-png.flaticon.com/512/1998/1998597.png"}],answer:2,audio:"Trouve le hamster"}]},primaire:{facile:[{question:"Trouve l'éléphant",options:[{text:"Lion",image:"https://cdn-icons-png.flaticon.com/512/1998/1998610.png"},{text:"Éléphant",image:"https://cdn-icons-png.flaticon.com/512/1998/1998595.png"},{text:"Girafe",image:"https://cdn-icons-png.flaticon.com/512/1998/1998600.png"},{text:"Zèbre",image:"https://cdn-icons-png.flaticon.com/512/1998/1998630.png"}],answer:1,audio:"Trouve l'éléphant"}],moyen:[{question:"Trouve le panda",options:[{text:"Kangourou",image:"https://cdn-icons-png.flaticon.com/512/1998/1998604.png"},{text:"Panda",image:"https://cdn-icons-png.flaticon.com/512/1998/1998619.png"},{text:"Koala",image:"https://cdn-icons-png.flaticon.com/512/1998/1998606.png"},{text:"Singe",image:"https://cdn-icons-png.flaticon.com/512/1998/1998624.png"}],answer:1,audio:"Trouve le panda"}],difficile:[{question:"Trouve le manchot",options:[{text:"Morse",image:"https://cdn-icons-png.flaticon.com/512/1998/1998617.png"},{text:"Phoque",image:"https://cdn-icons-png.flaticon.com/512/1998/1998621.png"},{text:"Manchot",image:"https://cdn-icons-png.flaticon.com/512/1998/1998615.png"},{text:"Ours polaire",image:"https://cdn-icons-png.flaticon.com/512/1998/1998626.png"}],answer:2,audio:"Trouve le manchot"}]}},
-  couleurs:{maternelle:{facile:[{question:"Trouve la couleur rouge",options:[{text:"Rouge",image:"https://cdn-icons-png.flaticon.com/512/2909/2909797.png"},{text:"Bleu",image:"https://cdn-icons-png.flaticon.com/512/2909/2909772.png"},{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Jaune",image:"https://cdn-icons-png.flaticon.com/512/2909/2909802.png"}],answer:0,audio:"Trouve la couleur rouge"}],moyen:[{question:"Trouve la couleur verte",options:[{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/2909/2909790.png"},{text:"Rose",image:"https://cdn-icons-png.flaticon.com/512/2909/2909796.png"},{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"}],answer:2,audio:"Trouve la couleur verte"}],difficile:[{question:"Trouve la couleur violette",options:[{text:"Marron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909783.png"},{text:"Gris",image:"https://cdn-icons-png.flaticon.com/512/2909/2909781.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"},{text:"Noir",image:"https://cdn-icons-png.flaticon.com/512/2909/2909785.png"}],answer:2,audio:"Trouve la couleur violette"}]},primaire:{facile:[{question:"Mélange bleu + jaune = ?",options:[{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/2909/2909790.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"},{text:"Rose",image:"https://cdn-icons-png.flaticon.com/512/2909/2909796.png"}],answer:0,audio:"Bleu plus jaune donne quelle couleur ?"}],moyen:[{question:"Mélange rouge + bleu = ?",options:[{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/2909/2909790.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"},{text:"Marron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909783.png"}],answer:2,audio:"Rouge plus bleu donne quelle couleur ?"}],difficile:[{question:"Mélange toutes les couleurs = ?",options:[{text:"Blanc",image:"https://cdn-icons-png.flaticon.com/512/2909/2909779.png"},{text:"Noir",image:"https://cdn-icons-png.flaticon.com/512/2909/2909785.png"},{text:"Marron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909783.png"},{text:"Gris",image:"https://cdn-icons-png.flaticon.com/512/2909/2909781.png"}],answer:2,audio:"Toutes les couleurs mélangées donnent quelle couleur ?"}]}},
-  alphabet:{maternelle:{facile:[{question:"Trouve la lettre A",options:[{text:"A",image:"https://cdn-icons-png.flaticon.com/512/3208/3208752.png"},{text:"B",image:"https://cdn-icons-png.flaticon.com/512/3208/3208753.png"},{text:"C",image:"https://cdn-icons-png.flaticon.com/512/3208/3208754.png"},{text:"D",image:"https://cdn-icons-png.flaticon.com/512/3208/3208755.png"}],answer:0,audio:"Trouve la lettre A"}],moyen:[{question:"Trouve la lettre M",options:[{text:"L",image:"https://cdn-icons-png.flaticon.com/512/3208/3208763.png"},{text:"M",image:"https://cdn-icons-png.flaticon.com/512/3208/3208764.png"},{text:"N",image:"https://cdn-icons-png.flaticon.com/512/3208/3208765.png"},{text:"O",image:"https://cdn-icons-png.flaticon.com/512/3208/3208766.png"}],answer:1,audio:"Trouve la lettre M"}],difficile:[{question:"Trouve la lettre Z",options:[{text:"X",image:"https://cdn-icons-png.flaticon.com/512/3208/3208788.png"},{text:"Y",image:"https://cdn-icons-png.flaticon.com/512/3208/3208789.png"},{text:"Z",image:"https://cdn-icons-png.flaticon.com/512/3208/3208790.png"},{text:"W",image:"https://cdn-icons-png.flaticon.com/512/3208/3208787.png"}],answer:2,audio:"Trouve la lettre Z"}]},primaire:{facile:[{question:"Première lettre de 'maison'",options:[{text:"M",image:"https://cdn-icons-png.flaticon.com/512/3208/3208764.png"},{text:"A",image:"https://cdn-icons-png.flaticon.com/512/3208/3208752.png"},{text:"I",image:"https://cdn-icons-png.flaticon.com/512/3208/3208760.png"},{text:"S",image:"https://cdn-icons-png.flaticon.com/512/3208/3208769.png"}],answer:0,audio:"Quelle est la première lettre du mot maison ?"}],moyen:[{question:"Dernière lettre de 'école'",options:[{text:"C",image:"https://cdn-icons-png.flaticon.com/512/3208/3208754.png"},{text:"O",image:"https://cdn-icons-png.flaticon.com/512/3208/3208766.png"},{text:"L",image:"https://cdn-icons-png.flaticon.com/512/3208/3208763.png"},{text:"E",image:"https://cdn-icons-png.flaticon.com/512/3208/3208756.png"}],answer:3,audio:"Quelle est la dernière lettre du mot école ?"}],difficile:[{question:"Mot qui commence par 'C'",options:[{text:"Maison",image:"https://cdn-icons-png.flaticon.com/512/3075/3075977.png"},{text:"Chat",image:"https://cdn-icons-png.flaticon.com/512/1998/1998594.png"},{text:"Arbre",image:"https://cdn-icons-png.flaticon.com/512/2909/2909768.png"},{text:"Fleur",image:"https://cdn-icons-png.flaticon.com/512/2909/2909774.png"}],answer:1,audio:"Quel mot commence par la lettre C ?"}]}},
-  comptage:{maternelle:{facile:[{question:"Compte les pommes",count:3,options:[{text:"2",image:"https://cdn-icons-png.flaticon.com/512/2921/2921222.png"},{text:"3",image:"https://cdn-icons-png.flaticon.com/512/2921/2921223.png"},{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"},{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"}],answer:1,audio:"Compte les pommes"}],moyen:[{question:"Compte les étoiles",count:5,options:[{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"},{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"}],answer:1,audio:"Compte les étoiles"}],difficile:[{question:"Compte les ballons",count:8,options:[{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"},{text:"8",image:"https://cdn-icons-png.flaticon.com/512/2921/2921228.png"},{text:"9",image:"https://cdn-icons-png.flaticon.com/512/2921/2921229.png"},{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"}],answer:1,audio:"Compte les ballons"}]},primaire:{facile:[{question:"Additionne: 2 + 3",count:5,options:[{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"},{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"}],answer:1,audio:"Deux plus trois ?"}],moyen:[{question:"10 - 4 = ?",count:6,options:[{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"},{text:"8",image:"https://cdn-icons-png.flaticon.com/512/2921/2921228.png"}],answer:1,audio:"Dix moins quatre ?"}],difficile:[{question:"3 × 4 = ?",count:12,options:[{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"},{text:"12",image:"https://cdn-icons-png.flaticon.com/512/2921/2921232.png"},{text:"14",image:"https://cdn-icons-png.flaticon.com/512/2921/2921234.png"},{text:"16",image:"https://cdn-icons-png.flaticon.com/512/2921/2921236.png"}],answer:1,audio:"Trois fois quatre ?"}]}}
+  math:{maternelle:{facile:[{question:"Combien font 1 + 1 ?",options:[{text:"1",image:"https://cdn-icons-png.flaticon.com/512/2921/2921221.png"},{text:"2",image:"https://cdn-icons-png.flaticon.com/512/2921/2921222.png"},{text:"3",image:"https://cdn-icons-png.flaticon.com/512/2921/2921223.png"},{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"}],answer:1,audio:"Un plus un ÃƒÂ©gale combien ?"}],moyen:[{question:"Combien font 3 + 4 ?",options:[{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"},{text:"8",image:"https://cdn-icons-png.flaticon.com/512/2921/2921228.png"}],answer:2,audio:"Trois plus quatre ÃƒÂ©gale combien ?"}],difficile:[{question:"Combien font 5 + 6 ?",options:[{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"},{text:"11",image:"https://cdn-icons-png.flaticon.com/512/2921/2921231.png"},{text:"12",image:"https://cdn-icons-png.flaticon.com/512/2921/2921232.png"},{text:"13",image:"https://cdn-icons-png.flaticon.com/512/2921/2921233.png"}],answer:1,audio:"Cinq plus six ÃƒÂ©gale combien ?"}]},primaire:{facile:[{question:"Combien font 12 + 8 ?",options:[{text:"18",image:"https://cdn-icons-png.flaticon.com/512/2921/2921238.png"},{text:"20",image:"https://cdn-icons-png.flaticon.com/512/2921/2921240.png"},{text:"22",image:"https://cdn-icons-png.flaticon.com/512/2921/2921242.png"},{text:"24",image:"https://cdn-icons-png.flaticon.com/512/2921/2921244.png"}],answer:1,audio:"Douze plus huit ÃƒÂ©gale combien ?"}],moyen:[{question:"Combien font 25 - 13 ?",options:[{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"},{text:"12",image:"https://cdn-icons-png.flaticon.com/512/2921/2921232.png"},{text:"13",image:"https://cdn-icons-png.flaticon.com/512/2921/2921233.png"},{text:"15",image:"https://cdn-icons-png.flaticon.com/512/2921/2921235.png"}],answer:1,audio:"Vingt-cinq moins treize ÃƒÂ©gale combien ?"}],difficile:[{question:"Combien font 7 Ãƒâ€” 8 ?",options:[{text:"48",image:"https://cdn-icons-png.flaticon.com/512/2921/2921248.png"},{text:"54",image:"https://cdn-icons-png.flaticon.com/512/2921/2921254.png"},{text:"56",image:"https://cdn-icons-png.flaticon.com/512/2921/2921256.png"},{text:"64",image:"https://cdn-icons-png.flaticon.com/512/2921/2921264.png"}],answer:2,audio:"Sept fois huit ÃƒÂ©gale combien ?"}]}},
+  fruits:{maternelle:{facile:[{question:"Trouve la pomme",options:[{text:"Pomme",image:"https://cdn-icons-png.flaticon.com/512/415/415733.png"},{text:"Banane",image:"https://cdn-icons-png.flaticon.com/512/2909/2909761.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/3082/3082383.png"},{text:"Fraise",image:"https://cdn-icons-png.flaticon.com/512/2937/2937251.png"}],answer:0,audio:"Trouve la pomme"}],moyen:[{question:"Trouve la fraise",options:[{text:"Cerise",image:"https://cdn-icons-png.flaticon.com/512/2909/2909776.png"},{text:"Fraise",image:"https://cdn-icons-png.flaticon.com/512/2937/2937251.png"},{text:"Raisin",image:"https://cdn-icons-png.flaticon.com/512/2909/2909792.png"},{text:"Ananas",image:"https://cdn-icons-png.flaticon.com/512/2909/2909771.png"}],answer:1,audio:"Trouve la fraise"}],difficile:[{question:"Trouve l'ananas",options:[{text:"Mangue",image:"https://cdn-icons-png.flaticon.com/512/2909/2909784.png"},{text:"PastÃƒÂ¨que",image:"https://cdn-icons-png.flaticon.com/512/2909/2909791.png"},{text:"Ananas",image:"https://cdn-icons-png.flaticon.com/512/2909/2909771.png"},{text:"PÃƒÂªche",image:"https://cdn-icons-png.flaticon.com/512/2909/2909798.png"}],answer:2,audio:"Trouve l'ananas"}]},primaire:{facile:[{question:"Trouve le lÃƒÂ©gume",options:[{text:"Carotte",image:"https://cdn-icons-png.flaticon.com/512/2909/2909806.png"},{text:"Pomme",image:"https://cdn-icons-png.flaticon.com/512/415/415733.png"},{text:"Banane",image:"https://cdn-icons-png.flaticon.com/512/2909/2909761.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/3082/3082383.png"}],answer:0,audio:"Trouve le lÃƒÂ©gume"}],moyen:[{question:"Trouve le brocoli",options:[{text:"Chou-fleur",image:"https://cdn-icons-png.flaticon.com/512/2909/2909777.png"},{text:"Brocoli",image:"https://cdn-icons-png.flaticon.com/512/2909/2909773.png"},{text:"Salade",image:"https://cdn-icons-png.flaticon.com/512/2909/2909793.png"},{text:"Tomate",image:"https://cdn-icons-png.flaticon.com/512/2909/2909789.png"}],answer:1,audio:"Trouve le brocoli"}],difficile:[{question:"Trouve l'aubergine",options:[{text:"Courgette",image:"https://cdn-icons-png.flaticon.com/512/2909/2909778.png"},{text:"Poivron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909800.png"},{text:"Aubergine",image:"https://cdn-icons-png.flaticon.com/512/2909/2909770.png"},{text:"Concombre",image:"https://cdn-icons-png.flaticon.com/512/2909/2909775.png"}],answer:2,audio:"Trouve l'aubergine"}]}},
+  animaux:{maternelle:{facile:[{question:"Trouve le chat",options:[{text:"Chat",image:"https://cdn-icons-png.flaticon.com/512/1998/1998594.png"},{text:"Chien",image:"https://cdn-icons-png.flaticon.com/512/1998/1998598.png"},{text:"Lapin",image:"https://cdn-icons-png.flaticon.com/512/1998/1998613.png"},{text:"Oiseau",image:"https://cdn-icons-png.flaticon.com/512/1998/1998627.png"}],answer:0,audio:"Trouve le chat"}],moyen:[{question:"Trouve l'oiseau",options:[{text:"Poisson",image:"https://cdn-icons-png.flaticon.com/512/1998/1998622.png"},{text:"Tortue",image:"https://cdn-icons-png.flaticon.com/512/1998/1998628.png"},{text:"Oiseau",image:"https://cdn-icons-png.flaticon.com/512/1998/1998627.png"},{text:"Hamster",image:"https://cdn-icons-png.flaticon.com/512/1998/1998601.png"}],answer:2,audio:"Trouve l'oiseau"}],difficile:[{question:"Trouve le hamster",options:[{text:"Souris",image:"https://cdn-icons-png.flaticon.com/512/1998/1998625.png"},{text:"Cochon d'Inde",image:"https://cdn-icons-png.flaticon.com/512/1998/1998599.png"},{text:"Hamster",image:"https://cdn-icons-png.flaticon.com/512/1998/1998601.png"},{text:"Ãƒâ€°cureuil",image:"https://cdn-icons-png.flaticon.com/512/1998/1998597.png"}],answer:2,audio:"Trouve le hamster"}]},primaire:{facile:[{question:"Trouve l'ÃƒÂ©lÃƒÂ©phant",options:[{text:"Lion",image:"https://cdn-icons-png.flaticon.com/512/1998/1998610.png"},{text:"Ãƒâ€°lÃƒÂ©phant",image:"https://cdn-icons-png.flaticon.com/512/1998/1998595.png"},{text:"Girafe",image:"https://cdn-icons-png.flaticon.com/512/1998/1998600.png"},{text:"ZÃƒÂ¨bre",image:"https://cdn-icons-png.flaticon.com/512/1998/1998630.png"}],answer:1,audio:"Trouve l'ÃƒÂ©lÃƒÂ©phant"}],moyen:[{question:"Trouve le panda",options:[{text:"Kangourou",image:"https://cdn-icons-png.flaticon.com/512/1998/1998604.png"},{text:"Panda",image:"https://cdn-icons-png.flaticon.com/512/1998/1998619.png"},{text:"Koala",image:"https://cdn-icons-png.flaticon.com/512/1998/1998606.png"},{text:"Singe",image:"https://cdn-icons-png.flaticon.com/512/1998/1998624.png"}],answer:1,audio:"Trouve le panda"}],difficile:[{question:"Trouve le manchot",options:[{text:"Morse",image:"https://cdn-icons-png.flaticon.com/512/1998/1998617.png"},{text:"Phoque",image:"https://cdn-icons-png.flaticon.com/512/1998/1998621.png"},{text:"Manchot",image:"https://cdn-icons-png.flaticon.com/512/1998/1998615.png"},{text:"Ours polaire",image:"https://cdn-icons-png.flaticon.com/512/1998/1998626.png"}],answer:2,audio:"Trouve le manchot"}]}},
+  couleurs:{maternelle:{facile:[{question:"Trouve la couleur rouge",options:[{text:"Rouge",image:"https://cdn-icons-png.flaticon.com/512/2909/2909797.png"},{text:"Bleu",image:"https://cdn-icons-png.flaticon.com/512/2909/2909772.png"},{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Jaune",image:"https://cdn-icons-png.flaticon.com/512/2909/2909802.png"}],answer:0,audio:"Trouve la couleur rouge"}],moyen:[{question:"Trouve la couleur verte",options:[{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/2909/2909790.png"},{text:"Rose",image:"https://cdn-icons-png.flaticon.com/512/2909/2909796.png"},{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"}],answer:2,audio:"Trouve la couleur verte"}],difficile:[{question:"Trouve la couleur violette",options:[{text:"Marron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909783.png"},{text:"Gris",image:"https://cdn-icons-png.flaticon.com/512/2909/2909781.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"},{text:"Noir",image:"https://cdn-icons-png.flaticon.com/512/2909/2909785.png"}],answer:2,audio:"Trouve la couleur violette"}]},primaire:{facile:[{question:"MÃƒÂ©lange bleu + jaune = ?",options:[{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/2909/2909790.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"},{text:"Rose",image:"https://cdn-icons-png.flaticon.com/512/2909/2909796.png"}],answer:0,audio:"Bleu plus jaune donne quelle couleur ?"}],moyen:[{question:"MÃƒÂ©lange rouge + bleu = ?",options:[{text:"Vert",image:"https://cdn-icons-png.flaticon.com/512/2909/2909780.png"},{text:"Orange",image:"https://cdn-icons-png.flaticon.com/512/2909/2909790.png"},{text:"Violet",image:"https://cdn-icons-png.flaticon.com/512/2909/2909794.png"},{text:"Marron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909783.png"}],answer:2,audio:"Rouge plus bleu donne quelle couleur ?"}],difficile:[{question:"MÃƒÂ©lange toutes les couleurs = ?",options:[{text:"Blanc",image:"https://cdn-icons-png.flaticon.com/512/2909/2909779.png"},{text:"Noir",image:"https://cdn-icons-png.flaticon.com/512/2909/2909785.png"},{text:"Marron",image:"https://cdn-icons-png.flaticon.com/512/2909/2909783.png"},{text:"Gris",image:"https://cdn-icons-png.flaticon.com/512/2909/2909781.png"}],answer:2,audio:"Toutes les couleurs mÃƒÂ©langÃƒÂ©es donnent quelle couleur ?"}]}},
+  alphabet:{maternelle:{facile:[{question:"Trouve la lettre A",options:[{text:"A",image:"https://cdn-icons-png.flaticon.com/512/3208/3208752.png"},{text:"B",image:"https://cdn-icons-png.flaticon.com/512/3208/3208753.png"},{text:"C",image:"https://cdn-icons-png.flaticon.com/512/3208/3208754.png"},{text:"D",image:"https://cdn-icons-png.flaticon.com/512/3208/3208755.png"}],answer:0,audio:"Trouve la lettre A"}],moyen:[{question:"Trouve la lettre M",options:[{text:"L",image:"https://cdn-icons-png.flaticon.com/512/3208/3208763.png"},{text:"M",image:"https://cdn-icons-png.flaticon.com/512/3208/3208764.png"},{text:"N",image:"https://cdn-icons-png.flaticon.com/512/3208/3208765.png"},{text:"O",image:"https://cdn-icons-png.flaticon.com/512/3208/3208766.png"}],answer:1,audio:"Trouve la lettre M"}],difficile:[{question:"Trouve la lettre Z",options:[{text:"X",image:"https://cdn-icons-png.flaticon.com/512/3208/3208788.png"},{text:"Y",image:"https://cdn-icons-png.flaticon.com/512/3208/3208789.png"},{text:"Z",image:"https://cdn-icons-png.flaticon.com/512/3208/3208790.png"},{text:"W",image:"https://cdn-icons-png.flaticon.com/512/3208/3208787.png"}],answer:2,audio:"Trouve la lettre Z"}]},primaire:{facile:[{question:"PremiÃƒÂ¨re lettre de 'maison'",options:[{text:"M",image:"https://cdn-icons-png.flaticon.com/512/3208/3208764.png"},{text:"A",image:"https://cdn-icons-png.flaticon.com/512/3208/3208752.png"},{text:"I",image:"https://cdn-icons-png.flaticon.com/512/3208/3208760.png"},{text:"S",image:"https://cdn-icons-png.flaticon.com/512/3208/3208769.png"}],answer:0,audio:"Quelle est la premiÃƒÂ¨re lettre du mot maison ?"}],moyen:[{question:"DerniÃƒÂ¨re lettre de 'ÃƒÂ©cole'",options:[{text:"C",image:"https://cdn-icons-png.flaticon.com/512/3208/3208754.png"},{text:"O",image:"https://cdn-icons-png.flaticon.com/512/3208/3208766.png"},{text:"L",image:"https://cdn-icons-png.flaticon.com/512/3208/3208763.png"},{text:"E",image:"https://cdn-icons-png.flaticon.com/512/3208/3208756.png"}],answer:3,audio:"Quelle est la derniÃƒÂ¨re lettre du mot ÃƒÂ©cole ?"}],difficile:[{question:"Mot qui commence par 'C'",options:[{text:"Maison",image:"https://cdn-icons-png.flaticon.com/512/3075/3075977.png"},{text:"Chat",image:"https://cdn-icons-png.flaticon.com/512/1998/1998594.png"},{text:"Arbre",image:"https://cdn-icons-png.flaticon.com/512/2909/2909768.png"},{text:"Fleur",image:"https://cdn-icons-png.flaticon.com/512/2909/2909774.png"}],answer:1,audio:"Quel mot commence par la lettre C ?"}]}},
+  comptage:{maternelle:{facile:[{question:"Compte les pommes",count:3,options:[{text:"2",image:"https://cdn-icons-png.flaticon.com/512/2921/2921222.png"},{text:"3",image:"https://cdn-icons-png.flaticon.com/512/2921/2921223.png"},{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"},{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"}],answer:1,audio:"Compte les pommes"}],moyen:[{question:"Compte les ÃƒÂ©toiles",count:5,options:[{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"},{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"}],answer:1,audio:"Compte les ÃƒÂ©toiles"}],difficile:[{question:"Compte les ballons",count:8,options:[{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"},{text:"8",image:"https://cdn-icons-png.flaticon.com/512/2921/2921228.png"},{text:"9",image:"https://cdn-icons-png.flaticon.com/512/2921/2921229.png"},{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"}],answer:1,audio:"Compte les ballons"}]},primaire:{facile:[{question:"Additionne: 2 + 3",count:5,options:[{text:"4",image:"https://cdn-icons-png.flaticon.com/512/2921/2921224.png"},{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"}],answer:1,audio:"Deux plus trois ?"}],moyen:[{question:"10 - 4 = ?",count:6,options:[{text:"5",image:"https://cdn-icons-png.flaticon.com/512/2921/2921225.png"},{text:"6",image:"https://cdn-icons-png.flaticon.com/512/2921/2921226.png"},{text:"7",image:"https://cdn-icons-png.flaticon.com/512/2921/2921227.png"},{text:"8",image:"https://cdn-icons-png.flaticon.com/512/2921/2921228.png"}],answer:1,audio:"Dix moins quatre ?"}],difficile:[{question:"3 Ãƒâ€” 4 = ?",count:12,options:[{text:"10",image:"https://cdn-icons-png.flaticon.com/512/2921/2921230.png"},{text:"12",image:"https://cdn-icons-png.flaticon.com/512/2921/2921232.png"},{text:"14",image:"https://cdn-icons-png.flaticon.com/512/2921/2921234.png"},{text:"16",image:"https://cdn-icons-png.flaticon.com/512/2921/2921236.png"}],answer:1,audio:"Trois fois quatre ?"}]}}
 };
 
 let currentGame=null,currentQuestion=0,gameScoreLocal=0,gameQuestions=[];
@@ -3020,17 +2968,17 @@ function checkGameAnswer(selectedIndex){
     const livesEl = document.getElementById('totalLives');
     if(livesEl) livesEl.textContent = CONFIG.lives;
     speak("Essaie encore !");
-    showToast("Mauvaise réponse","error");
+    showToast("Mauvaise rÃƒÂ©ponse","error");
   }
-  else{gameScoreLocal+=10;CONFIG.gameScore+=10;updateGameScores();speak("Bravo ! Bonne réponse !");showToast("Bonne réponse ! +10 points","success");}
+  else{gameScoreLocal+=10;CONFIG.gameScore+=10;updateGameScores();speak("Bravo ! Bonne rÃƒÂ©ponse !");showToast("Bonne rÃƒÂ©ponse ! +10 points","success");}
   const nextBtn=document.getElementById('nextQuestionBtn');if(nextBtn) nextBtn.style.display='inline-flex';
 }
 function nextQuestion(){currentQuestion++;if(currentQuestion<gameQuestions.length)showGameQuestion();else endGame();}
 function endGame(){
   CONFIG.gamesCompleted++;updateGameScores();
   if(CONFIG.gameScore>CONFIG.bestScore){CONFIG.bestScore=CONFIG.gameScore;localStorage.setItem('bestScore',CONFIG.bestScore);}
-  const content=`<div style="text-align:center;padding:2rem;"><div style="font-size:4rem;color:var(--success-color);margin-bottom:1rem;"><i class="fas fa-trophy"></i></div><h3>Jeu Terminé !</h3><p>Score: <strong>${gameScoreLocal} points</strong></p><p>Score global: <strong>${CONFIG.gameScore}</strong></p><div style="margin-top:2rem;"><button class="btn-primary" onclick="closeModal()"><i class="fas fa-times"></i> Fermer</button><button class="btn-primary" onclick="restartGame()" style="margin-left:1rem;"><i class="fas fa-redo"></i> Rejouer</button></div></div>`;
-  openModal('<i class="fas fa-trophy"></i> Résultats',content);
+  const content=`<div style="text-align:center;padding:2rem;"><div style="font-size:4rem;color:var(--success-color);margin-bottom:1rem;"><i class="fas fa-trophy"></i></div><h3>Jeu TerminÃƒÂ© !</h3><p>Score: <strong>${gameScoreLocal} points</strong></p><p>Score global: <strong>${CONFIG.gameScore}</strong></p><div style="margin-top:2rem;"><button class="btn-primary" onclick="closeModal()"><i class="fas fa-times"></i> Fermer</button><button class="btn-primary" onclick="restartGame()" style="margin-left:1rem;"><i class="fas fa-redo"></i> Rejouer</button></div></div>`;
+  openModal('<i class="fas fa-trophy"></i> RÃƒÂ©sultats',content);
   localStorage.setItem('gameScore',CONFIG.gameScore);localStorage.setItem('gamesCompleted',CONFIG.gamesCompleted);
 }
 function restartGame(){closeModal();setTimeout(()=>startGame(),300);}
@@ -3059,18 +3007,18 @@ function updateGameScores(){
 
 
 
-/* ══════════════════════════════════════════════════════════
-   BIBLIOTHÈQUE
-══════════════════════════════════════════════════════════ */
-const LIBRARY_BOOKS={maternelle:[{title:"Le Petit Chaperon Rouge",author:"Charles Perrault",type:"conte",image:"https://cdn-icons-png.flaticon.com/512/2232/2232688.png",description:"Un conte classique"},{title:"Boucle d'Or",author:"Conte traditionnel",type:"conte",image:"https://cdn-icons-png.flaticon.com/512/2232/2232691.png",description:"L'histoire de Boucle d'Or"},{title:"Mon premier alphabet",author:"Éditions Eden",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232689.png",description:"Apprendre les lettres"},{title:"Les Chiffres Magiques",author:"Éditions Eden",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232690.png",description:"Découverte des chiffres"}],primaire:[{title:"Le Petit Prince",author:"Antoine de Saint-Exupéry",type:"roman",image:"https://cdn-icons-png.flaticon.com/512/2232/2232692.png",description:"Un classique de la littérature"},{title:"Les Fables de La Fontaine",author:"Jean de La Fontaine",type:"poesie",image:"https://cdn-icons-png.flaticon.com/512/2232/2232693.png",description:"Fables célèbres"},{title:"Mathématiques Faciles",author:"Prof. Mathis",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232696.png",description:"Exercices progressifs"},{title:"Découverte des Sciences",author:"Dr. Science",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232697.png",description:"Expériences scientifiques"}]};
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+   BIBLIOTHÃƒË†QUE
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
+const LIBRARY_BOOKS={maternelle:[{title:"Le Petit Chaperon Rouge",author:"Charles Perrault",type:"conte",image:"https://cdn-icons-png.flaticon.com/512/2232/2232688.png",description:"Un conte classique"},{title:"Boucle d'Or",author:"Conte traditionnel",type:"conte",image:"https://cdn-icons-png.flaticon.com/512/2232/2232691.png",description:"L'histoire de Boucle d'Or"},{title:"Mon premier alphabet",author:"Ãƒâ€°ditions Eden",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232689.png",description:"Apprendre les lettres"},{title:"Les Chiffres Magiques",author:"Ãƒâ€°ditions Eden",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232690.png",description:"DÃƒÂ©couverte des chiffres"}],primaire:[{title:"Le Petit Prince",author:"Antoine de Saint-ExupÃƒÂ©ry",type:"roman",image:"https://cdn-icons-png.flaticon.com/512/2232/2232692.png",description:"Un classique de la littÃƒÂ©rature"},{title:"Les Fables de La Fontaine",author:"Jean de La Fontaine",type:"poesie",image:"https://cdn-icons-png.flaticon.com/512/2232/2232693.png",description:"Fables cÃƒÂ©lÃƒÂ¨bres"},{title:"MathÃƒÂ©matiques Faciles",author:"Prof. Mathis",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232696.png",description:"Exercices progressifs"},{title:"DÃƒÂ©couverte des Sciences",author:"Dr. Science",type:"educatif",image:"https://cdn-icons-png.flaticon.com/512/2232/2232697.png",description:"ExpÃƒÂ©riences scientifiques"}]};
 
 function showLibrary(level){
   if(!CONFIG.isLoggedIn){showToast('Veuillez vous connecter','info');openLoginModal();return;}
-  const books=LIBRARY_BOOKS[level];const levelName=level==='maternelle'?'Maternelle':'École Primaire';
+  const books=LIBRARY_BOOKS[level];const levelName=level==='maternelle'?'Maternelle':'Ãƒâ€°cole Primaire';
   let booksHTML='<div class="book-grid">';
   books.forEach((book,index)=>{booksHTML+=`<div class="book-item" onclick="readBook(${index},'${level}')"><img src="${book.image}" alt="${book.title}" style="width:80px;height:80px;object-fit:contain;margin-bottom:10px;"><div class="book-title">${book.title}</div><div class="book-author">${book.author}</div></div>`;});
   booksHTML+='</div>';
-  openModal(`<i class="fas fa-book"></i> Bibliothèque ${levelName}`,booksHTML);
+  openModal(`<i class="fas fa-book"></i> BibliothÃƒÂ¨que ${levelName}`,booksHTML);
 }
 function searchBooks(){
   if(!CONFIG.isLoggedIn){showToast('Veuillez vous connecter','info');openLoginModal();return;}
@@ -3079,35 +3027,35 @@ function searchBooks(){
   const allBooks=[...LIBRARY_BOOKS.maternelle,...LIBRARY_BOOKS.primaire];
   const results=allBooks.filter(book=>book.title.toLowerCase().includes(searchTerm)||book.author.toLowerCase().includes(searchTerm));
   const libraryResults=document.getElementById('libraryResults');
-  if(results.length===0){libraryResults.innerHTML='<p style="text-align:center;color:#666;">Aucun livre trouvé.</p>';return;}
+  if(results.length===0){libraryResults.innerHTML='<p style="text-align:center;color:#666;">Aucun livre trouvÃƒÂ©.</p>';return;}
   let resultsHTML='<div class="book-grid">';
   results.forEach((book,index)=>{const level=LIBRARY_BOOKS.maternelle.includes(book)?'maternelle':'primaire';const bookIndex=LIBRARY_BOOKS[level].indexOf(book);resultsHTML+=`<div class="book-item" onclick="readBook(${bookIndex},'${level}')"><img src="${book.image}" alt="${book.title}" style="width:80px;height:80px;object-fit:contain;margin-bottom:10px;"><div class="book-title">${book.title}</div><div class="book-author">${book.author}</div></div>`;});
   resultsHTML+='</div>';
-  libraryResults.innerHTML=`<h3 style="text-align:center;margin-bottom:1rem;">Résultats (${results.length})</h3>${resultsHTML}`;
+  libraryResults.innerHTML=`<h3 style="text-align:center;margin-bottom:1rem;">RÃƒÂ©sultats (${results.length})</h3>${resultsHTML}`;
 }
 function readBook(index,level){
   if(!CONFIG.isLoggedIn){showToast('Veuillez vous connecter','info');openLoginModal();return;}
   const book=LIBRARY_BOOKS[level][index];if(!book)return;
-  const content=`<div style="text-align:center;"><img src="${book.image}" alt="${book.title}" style="width:150px;height:150px;object-fit:contain;margin-bottom:1rem;"><h3>${book.title}</h3><p><strong>Auteur:</strong> ${book.author}</p><p>${book.description}</p><div style="margin-top:1rem;"><button class="btn-primary" onclick="showToast('Téléchargement...','info')"><i class="fas fa-download"></i> Télécharger PDF</button></div></div>`;
+  const content=`<div style="text-align:center;"><img src="${book.image}" alt="${book.title}" style="width:150px;height:150px;object-fit:contain;margin-bottom:1rem;"><h3>${book.title}</h3><p><strong>Auteur:</strong> ${book.author}</p><p>${book.description}</p><div style="margin-top:1rem;"><button class="btn-primary" onclick="showToast('TÃƒÂ©lÃƒÂ©chargement...','info')"><i class="fas fa-download"></i> TÃƒÂ©lÃƒÂ©charger PDF</button></div></div>`;
   openModal(`<i class="fas fa-book"></i> ${book.title}`,content);
 }
-function loadMoreBooks(){if(!CONFIG.isLoggedIn){showToast('Veuillez vous connecter','info');openLoginModal();return;}showToast("Chargement de livres supplémentaires...",'success');}
+function loadMoreBooks(){if(!CONFIG.isLoggedIn){showToast('Veuillez vous connecter','info');openLoginModal();return;}showToast("Chargement de livres supplÃƒÂ©mentaires...",'success');}
 
-/* ══════════════════════════════════════════════════════════
-   ACADÉMIQUE
-══════════════════════════════════════════════════════════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+   ACADÃƒâ€°MIQUE
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 function showHomework(){
   if(!CONFIG.isLoggedIn){showToast("Veuillez vous connecter","warning");openLoginModal();return;}
-  const content=`<h3>Devoirs à faire</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">Mathématiques</span><br><span class="homework-date">Pour le 15 novembre</span><p>Exercices 1 à 10 page 45</p></div><button class="homework-download" onclick="showToast('PDF téléchargé','success')"><i class="fas fa-download"></i> PDF</button></li><li class="homework-item"><div><span class="homework-subject">Français</span><br><span class="homework-date">Pour le 16 novembre</span><p>Lecture et compréhension</p></div><button class="homework-download" onclick="showToast('PDF téléchargé','success')"><i class="fas fa-download"></i> PDF</button></li></ul>`;
+  const content=`<h3>Devoirs ÃƒÂ  faire</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">MathÃƒÂ©matiques</span><br><span class="homework-date">Pour le 15 novembre</span><p>Exercices 1 ÃƒÂ  10 page 45</p></div><button class="homework-download" onclick="showToast('PDF tÃƒÂ©lÃƒÂ©chargÃƒÂ©','success')"><i class="fas fa-download"></i> PDF</button></li><li class="homework-item"><div><span class="homework-subject">FranÃƒÂ§ais</span><br><span class="homework-date">Pour le 16 novembre</span><p>Lecture et comprÃƒÂ©hension</p></div><button class="homework-download" onclick="showToast('PDF tÃƒÂ©lÃƒÂ©chargÃƒÂ©','success')"><i class="fas fa-download"></i> PDF</button></li></ul>`;
   openModal('<i class="fas fa-book"></i> Devoirs',content);
 }
-function showTests(){const content=`<h3>Tests et Évaluations</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">Test de Français</span><br><span class="homework-date">15 novembre 2024</span></div><span style="color:var(--success-color);font-weight:bold;">18/20</span></li><li class="homework-item"><div><span class="homework-subject">Test de Maths</span><br><span class="homework-date">10 novembre 2024</span></div><span style="color:var(--success-color);font-weight:bold;">16/20</span></li></ul>`;openModal('<i class="fas fa-clipboard-check"></i> Tests',content);}
-function showExams(){const content=`<h3>Calendrier des Examens</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">Français - Examen</span><br><span class="homework-date">2 décembre 2024, 9:00-11:00</span><p>Salle 101</p></div></li><li class="homework-item"><div><span class="homework-subject">Mathématiques - Examen</span><br><span class="homework-date">4 décembre 2024, 9:00-11:00</span><p>Salle 102</p></div></li></ul>`;openModal('<i class="fas fa-file-alt"></i> Examens',content);}
-function showVacationWork(){const content=`<h3>Travaux de Vacances</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">Cahier - Français</span><br><span class="homework-date">Vacances de Noël</span></div><button class="homework-download" onclick="showToast('Téléchargement','info')"><i class="fas fa-download"></i></button></li><li class="homework-item"><div><span class="homework-subject">Cahier - Mathématiques</span><br><span class="homework-date">Vacances de Noël</span></div><button class="homework-download" onclick="showToast('Téléchargement','info')"><i class="fas fa-download"></i></button></li></ul>`;openModal('<i class="fas fa-umbrella-beach"></i> Vacances',content);}
+function showTests(){const content=`<h3>Tests et Ãƒâ€°valuations</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">Test de FranÃƒÂ§ais</span><br><span class="homework-date">15 novembre 2024</span></div><span style="color:var(--success-color);font-weight:bold;">18/20</span></li><li class="homework-item"><div><span class="homework-subject">Test de Maths</span><br><span class="homework-date">10 novembre 2024</span></div><span style="color:var(--success-color);font-weight:bold;">16/20</span></li></ul>`;openModal('<i class="fas fa-clipboard-check"></i> Tests',content);}
+function showExams(){const content=`<h3>Calendrier des Examens</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">FranÃƒÂ§ais - Examen</span><br><span class="homework-date">2 dÃƒÂ©cembre 2024, 9:00-11:00</span><p>Salle 101</p></div></li><li class="homework-item"><div><span class="homework-subject">MathÃƒÂ©matiques - Examen</span><br><span class="homework-date">4 dÃƒÂ©cembre 2024, 9:00-11:00</span><p>Salle 102</p></div></li></ul>`;openModal('<i class="fas fa-file-alt"></i> Examens',content);}
+function showVacationWork(){const content=`<h3>Travaux de Vacances</h3><ul class="homework-list"><li class="homework-item"><div><span class="homework-subject">Cahier - FranÃƒÂ§ais</span><br><span class="homework-date">Vacances de NoÃƒÂ«l</span></div><button class="homework-download" onclick="showToast('TÃƒÂ©lÃƒÂ©chargement','info')"><i class="fas fa-download"></i></button></li><li class="homework-item"><div><span class="homework-subject">Cahier - MathÃƒÂ©matiques</span><br><span class="homework-date">Vacances de NoÃƒÂ«l</span></div><button class="homework-download" onclick="showToast('TÃƒÂ©lÃƒÂ©chargement','info')"><i class="fas fa-download"></i></button></li></ul>`;openModal('<i class="fas fa-umbrella-beach"></i> Vacances',content);}
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    UTILITAIRES
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 function showToast(message,type='info'){
   const toast=document.createElement('div');
   toast.className=`toast toast-${type}`;
@@ -3119,7 +3067,7 @@ function showToast(message,type='info'){
 function handleInscriptionSuccessReturn(){
   const params = new URLSearchParams(window.location.search);
   if (params.get('inscription') === 'success') {
-    showToast('Votre demande d\'inscription a bien été envoyée ! Notre équipe vous contactera bientôt.', 'success');
+    showToast('Votre demande d\'inscription a bien ÃƒÂ©tÃƒÂ© envoyÃƒÂ©e ! Notre ÃƒÂ©quipe vous contactera bientÃƒÂ´t.', 'success');
 
     const navTargets = document.querySelectorAll('.nav-links a, .ri .rb');
     navTargets.forEach(el => el.classList.add('nav-alert'));
@@ -3148,12 +3096,12 @@ function handleScroll(){
 
 window.addEventListener('scroll',handleScroll);
 
-function showPrivacyPolicy(){openModal('<i class="fas fa-shield-alt"></i> Politique de Confidentialité','<p>Nous nous engageons à protéger vos données personnelles.</p>');}
+function showPrivacyPolicy(){openModal('<i class="fas fa-shield-alt"></i> Politique de ConfidentialitÃƒÂ©','<p>Nous nous engageons ÃƒÂ  protÃƒÂ©ger vos donnÃƒÂ©es personnelles.</p>');}
 function showTerms(){openModal('<i class="fas fa-file-contract"></i> Conditions d\'Utilisation','<p>En utilisant ce portail, vous acceptez ces conditions.</p>');}
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    BRANCHES
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 const BRANCHES_DATA = {
   kimisagara:{name:"Kimisagara",phone:"0785892018",email:"kimisagara@edenfamily.edu.rw",whatsapp:"+250785892018",mapLink:"https://maps.app.goo.gl/7NTitr14XKeXg9Hf7"},
   gisozi:{name:"Gisozi",phone:"0788410242",email:"gisozi@edenfamily.edu.rw",whatsapp:"+250788410242",mapLink:"https://maps.app.goo.gl/tDQhe2s72jdmqJjC7"},
@@ -3180,15 +3128,15 @@ const COACHING_PROGRAMS = [
   {id:'coaching-kimisagara-maternelle',branch:'kimisagara',level:'Maternelle',students:18,monthlyFee:25000,paidThisMonth:12,needsApproval:false,status:'Actif'},
   {id:'coaching-kimisagara-primaire',branch:'kimisagara',level:'Primaire',students:12,monthlyFee:30000,paidThisMonth:9,needsApproval:true,status:'En attente'},
   {id:'coaching-gisozi-maternelle',branch:'gisozi',level:'Maternelle',students:15,monthlyFee:25000,paidThisMonth:11,needsApproval:false,status:'Actif'},
-  {id:'coaching-gisozi-primaire',branch:'gisozi',level:'Primaire',students:10,monthlyFee:30000,paidThisMonth:6,needsApproval:true,status:'À régulariser'},
+  {id:'coaching-gisozi-primaire',branch:'gisozi',level:'Primaire',students:10,monthlyFee:30000,paidThisMonth:6,needsApproval:true,status:'Ãƒâ‚¬ rÃƒÂ©gulariser'},
   {id:'coaching-kacyiru-maternelle',branch:'kacyiru',level:'Maternelle',students:20,monthlyFee:25000,paidThisMonth:16,needsApproval:false,status:'Actif'},
   {id:'coaching-kacyiru-primaire',branch:'kacyiru',level:'Primaire',students:9,monthlyFee:30000,paidThisMonth:7,needsApproval:false,status:'Actif'}
 ];
 
 const COACHING_PAYMENT_HISTORY = [
   {id:'pay-1',programId:'coaching-kimisagara-primaire',student:'Aline Uwimana',date:'2024-11-01',amount:30000,status:'En attente'},
-  {id:'pay-2',programId:'coaching-gisozi-primaire',student:'Jean Nkurunziza',date:'2024-10-28',amount:30000,status:'Effectué'},
-  {id:'pay-3',programId:'coaching-kacyiru-maternelle',student:'Emma Mukandayisenga',date:'2024-11-03',amount:25000,status:'Effectué'},
+  {id:'pay-2',programId:'coaching-gisozi-primaire',student:'Jean Nkurunziza',date:'2024-10-28',amount:30000,status:'EffectuÃƒÂ©'},
+  {id:'pay-3',programId:'coaching-kacyiru-maternelle',student:'Emma Mukandayisenga',date:'2024-11-03',amount:25000,status:'EffectuÃƒÂ©'},
   {id:'pay-4',programId:'coaching-kimisagara-maternelle',student:'Samuel Habimana',date:'2024-11-05',amount:25000,status:'En attente'}
 ];
 
@@ -3245,7 +3193,7 @@ function renderCoachingSection(){
       <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);">${formatCurrencyRWF(program.monthlyFee)}</td>
       <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);">${formatCurrencyRWF(dueAmount)}</td>
       <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);"><span style="display:inline-block;padding:.4rem .75rem;border-radius:999px;background:${statusBadge};color:#fff;font-size:.9rem;">${program.status}</span></td>
-      <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);"><button class="btn-primary" onclick="openCoachingDetailsModal('${program.id}')"><i class="fas fa-info-circle"></i> Détails</button><button class="btn-primary" onclick="openCoachingPaymentModal('${program.id}')" style="margin-left:.4rem;"><i class="fas fa-hand-holding-usd"></i> Paiement</button></td>
+      <td style="padding:1rem;border-bottom:1px solid rgba(0,0,0,.08);"><button class="btn-primary" onclick="openCoachingDetailsModal('${program.id}')"><i class="fas fa-info-circle"></i> DÃƒÂ©tails</button><button class="btn-primary" onclick="openCoachingPaymentModal('${program.id}')" style="margin-left:.4rem;"><i class="fas fa-hand-holding-usd"></i> Paiement</button></td>
     `;
     tableBody.appendChild(row);
   });
@@ -3263,30 +3211,30 @@ function renderCoachingSection(){
 function openCoachingDetailsModal(programId){
   const program=COACHING_PROGRAMS.find(p=>p.id===programId);if(!program)return;
   const payments=COACHING_PAYMENT_HISTORY.filter(p=>p.programId===programId);
-  const paymentHtml=payments.length ? '<ul style="padding-left:1rem;">' + payments.map(p=>`<li><strong>${p.student}</strong> — ${formatCurrencyRWF(p.amount)} le ${p.date} <span style="color:${p.status==='Effectué'?'var(--success-color)':p.status==='En attente'?'var(--warning-color)':'var(--danger-color)'};">(${p.status})</span></li>`).join('') + '</ul>' : '<p>Aucun paiement enregistré pour ce programme.</p>';
-  const content=`<div style="display:grid;gap:1.25rem;"><div><strong>Niveau :</strong> ${program.level}</div><div><strong>Élèves inscrits :</strong> ${program.students}</div><div><strong>Tarif mensuel :</strong> ${formatCurrencyRWF(program.monthlyFee)}</div><div><strong>Montant dû :</strong> ${formatCurrencyRWF(Math.max(0,(program.students-program.paidThisMonth)*program.monthlyFee))}</div><div><strong>Statut :</strong> ${program.status}</div><div><strong>Historique des paiements :</strong>${paymentHtml}</div><div style="display:flex;gap:.75rem;"><button class="btn-primary" onclick="recordCoachingPayment('${program.id}')"><i class="fas fa-hand-holding-usd"></i> Enregistrer un paiement</button><button class="btn-primary" onclick="openCoachingStudentsModal()"><i class="fas fa-users"></i> Gérer les élèves</button></div></div>`;
-  openModal(`<i class="fas fa-chalkboard-teacher"></i> Détails Coaching`,content);
+  const paymentHtml=payments.length ? '<ul style="padding-left:1rem;">' + payments.map(p=>`<li><strong>${p.student}</strong> Ã¢â‚¬â€ ${formatCurrencyRWF(p.amount)} le ${p.date} <span style="color:${p.status==='EffectuÃƒÂ©'?'var(--success-color)':p.status==='En attente'?'var(--warning-color)':'var(--danger-color)'};">(${p.status})</span></li>`).join('') + '</ul>' : '<p>Aucun paiement enregistrÃƒÂ© pour ce programme.</p>';
+  const content=`<div style="display:grid;gap:1.25rem;"><div><strong>Niveau :</strong> ${program.level}</div><div><strong>Ãƒâ€°lÃƒÂ¨ves inscrits :</strong> ${program.students}</div><div><strong>Tarif mensuel :</strong> ${formatCurrencyRWF(program.monthlyFee)}</div><div><strong>Montant dÃƒÂ» :</strong> ${formatCurrencyRWF(Math.max(0,(program.students-program.paidThisMonth)*program.monthlyFee))}</div><div><strong>Statut :</strong> ${program.status}</div><div><strong>Historique des paiements :</strong>${paymentHtml}</div><div style="display:flex;gap:.75rem;"><button class="btn-primary" onclick="recordCoachingPayment('${program.id}')"><i class="fas fa-hand-holding-usd"></i> Enregistrer un paiement</button><button class="btn-primary" onclick="openCoachingStudentsModal()"><i class="fas fa-users"></i> GÃƒÂ©rer les ÃƒÂ©lÃƒÂ¨ves</button></div></div>`;
+  openModal(`<i class="fas fa-chalkboard-teacher"></i> DÃƒÂ©tails Coaching`,content);
 }
 function openCoachingStudentsModal(){
   const programs=getCoachingProgramsForBranch(selectedCoachingBranch);
-  const content=`<div style="display:grid;gap:1rem;">${programs.map(program=>`<div style="padding:1rem;border:1px solid rgba(0,0,0,.08);border-radius:15px;"><strong>${program.level}</strong><div>Élèves: ${program.students}</div><div>Paiements reçus: ${program.paidThisMonth}</div><div>Statut: ${program.status}</div></div>`).join('')}<button class="btn-primary" onclick="closeModal()" style="justify-self:flex-start;"><i class="fas fa-times"></i> Fermer</button></div>`;
-  openModal(`<i class="fas fa-users"></i> Élèves de coaching`,content);
+  const content=`<div style="display:grid;gap:1rem;">${programs.map(program=>`<div style="padding:1rem;border:1px solid rgba(0,0,0,.08);border-radius:15px;"><strong>${program.level}</strong><div>Ãƒâ€°lÃƒÂ¨ves: ${program.students}</div><div>Paiements reÃƒÂ§us: ${program.paidThisMonth}</div><div>Statut: ${program.status}</div></div>`).join('')}<button class="btn-primary" onclick="closeModal()" style="justify-self:flex-start;"><i class="fas fa-times"></i> Fermer</button></div>`;
+  openModal(`<i class="fas fa-users"></i> Ãƒâ€°lÃƒÂ¨ves de coaching`,content);
 }
 function openCoachingPaymentModal(programId){
   const program=COACHING_PROGRAMS.find(p=>p.id===programId);if(!program)return;
   const dueCount=Math.max(0,program.students-program.paidThisMonth);
   const dueAmount=dueCount*program.monthlyFee;
-  const content=`<div style="display:grid;gap:1rem;"><p>Programme : <strong>${program.level}</strong></p><p>Élèves non payés : <strong>${dueCount}</strong></p><p>Montant dû : <strong>${formatCurrencyRWF(dueAmount)}</strong></p><button class="btn-primary" onclick="recordCoachingPayment('${program.id}')"><i class="fas fa-hand-holding-usd"></i> Enregistrer un paiement</button><button class="btn-primary" onclick="closeModal()" style="justify-self:flex-start;"><i class="fas fa-times"></i> Annuler</button></div>`;
+  const content=`<div style="display:grid;gap:1rem;"><p>Programme : <strong>${program.level}</strong></p><p>Ãƒâ€°lÃƒÂ¨ves non payÃƒÂ©s : <strong>${dueCount}</strong></p><p>Montant dÃƒÂ» : <strong>${formatCurrencyRWF(dueAmount)}</strong></p><button class="btn-primary" onclick="recordCoachingPayment('${program.id}')"><i class="fas fa-hand-holding-usd"></i> Enregistrer un paiement</button><button class="btn-primary" onclick="closeModal()" style="justify-self:flex-start;"><i class="fas fa-times"></i> Annuler</button></div>`;
   openModal(`<i class="fas fa-credit-card"></i> Paiement coaching`,content);
 }
 function recordCoachingPayment(programId){
   const program=COACHING_PROGRAMS.find(p=>p.id===programId);if(!program)return;
   const dueCount=Math.max(0,program.students-program.paidThisMonth);
-  if(dueCount===0){showToast('Aucun paiement dû pour ce programme.','info');return;}
+  if(dueCount===0){showToast('Aucun paiement dÃƒÂ» pour ce programme.','info');return;}
   program.paidThisMonth += 1;
   const paymentAmount=program.monthlyFee;
-  COACHING_PAYMENT_HISTORY.unshift({id:`pay-${Date.now()}`,programId,student:`Élève ${program.paidThisMonth}`,date:new Date().toLocaleDateString('fr-FR'),amount:paymentAmount,status:'Effectué'});
-  showToast('Paiement de coaching enregistré.','success');
+  COACHING_PAYMENT_HISTORY.unshift({id:`pay-${Date.now()}`,programId,student:`Ãƒâ€°lÃƒÂ¨ve ${program.paidThisMonth}`,date:new Date().toLocaleDateString('fr-FR'),amount:paymentAmount,status:'EffectuÃƒÂ©'});
+  showToast('Paiement de coaching enregistrÃƒÂ©.','success');
   renderCoachingSection();
   closeModal();
 }
@@ -3296,9 +3244,9 @@ function openAllBranchesMap(){
   openModal('<i class="fas fa-map-marked-alt"></i> Nos Emplacements',content);
 }
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    CONTACT
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 function showContactOptions(branchName){
   const branch=BRANCHES_DATA[branchName.toLowerCase()];if(!branch)return;
   document.getElementById('contactBranchName').textContent=branch.name;
@@ -3325,13 +3273,13 @@ if(adminMessageFormEl){adminMessageFormEl.addEventListener('submit',async(e)=>{
     date: Date.now()
   };
   await firebase.database().ref('messages-admin').push(msg);
-  showToast('Message envoyé à l\'administration !','success');
+  showToast('Message envoyÃƒÂ© ÃƒÂ  l\'administration !','success');
   adminMessageFormEl.reset();
 });}
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    FORMULAIRE INSCRIPTION
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 const BRANCHES_DATA_INSCRIPTION={KACYIRU:{name:"Kacyiru",phone:"0791639766 / 0792570074",email:"sergetumbwe@gmail.com",address:"KG 17 Ave, Kacyiru, Kigali"},GISOZI:{name:"Gisozi",phone:"0788410242 / 0794116491 / 0796145647",email:"gisozi@edenfamily.edu.rw",address:"KG 11 Ave, Gisozi, Kigali"},KIMISAGARA:{name:"Kimisagara",phone:"0785892018 / 0791826950",email:"kimisagara@edenfamily.edu.rw",address:"KG 7 Ave, Kimisagara, Kigali"}};
 
 document.getElementById('maternelle').addEventListener('change',function(){if(this.checked){document.getElementById('niveauMaternelleGroup').style.display='block';document.getElementById('niveauPrimaireGroup').style.display='none';document.getElementById('sdmsGroup').style.display='none';}});
@@ -3387,14 +3335,14 @@ async function submitInscriptionForm(){
 
 document.getElementById('chefTelephone').addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'');});
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    CONTACT CARDS ANIMATION
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 
 
-/* ══════════════════════════════════════════════════════════
-   VIDÉO CONTRÔLES
-══════════════════════════════════════════════════════════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+   VIDÃƒâ€°O CONTRÃƒâ€LES
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 const SCHOOL_PRESENTATION_VIDEO = 'asset/vd/GISOZI_SCHOOL_PRESENTATION.mp4';
 const SCHOOL_PRESENTATION_YOUTUBE = 'Bwa-VT5v1sk';
 
@@ -3439,9 +3387,9 @@ if(video){
   video.addEventListener('error',showSchoolPresentationYoutubeFallback);
 }
 
-/* ══════════════════════════════════════════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    INIT
-══════════════════════════════════════════════════════════ */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 window.addEventListener('load',()=>{
   CONFIG.selectedLevel='maternelle';
   CONFIG.selectedDifficulty='facile';
@@ -3458,7 +3406,7 @@ window.addEventListener('load',()=>{
   renderCoachingSection();
   handleScroll();
   doScroll();
-  console.log('Eden Family School chargé avec succès!');
+  console.log('Eden Family School chargÃƒÂ© avec succÃƒÂ¨s!');
 });
 
 window.addEventListener('resize',()=>{
@@ -3481,7 +3429,7 @@ function setLevel(level,el){
   else if(level==='N2'){CONFIG.selectedDifficulty='moyen';}
   else if(level==='N3'){CONFIG.selectedDifficulty='difficile';}
   const labelEl=document.getElementById('sectionLabel');
-  if(labelEl) labelEl.textContent=`Niveau ${level} — Choisissez un jeu !`;
+  if(labelEl) labelEl.textContent=`Niveau ${level} Ã¢â‚¬â€ Choisissez un jeu !`;
   renderGrid();
 }
 
@@ -3489,19 +3437,19 @@ function renderGrid(){
   const grid=document.getElementById('gameGrid');
   if(!grid) return;
   const gamesList=[
-    {title:'Mathématiques',emoji:'🧮',color:'var(--primary)',start:'startMathGame'},
-    {title:'Fruits',emoji:'🍎',color:'var(--accent)',start:'startFruitGame'},
-    {title:'Animaux',emoji:'🐶',color:'var(--grass)',start:'startAnimalGame'},
-    {title:'Couleurs',emoji:'🎨',color:'var(--coral)',start:'startColorGame'},
-    {title:'Alphabet',emoji:'🔤',color:'var(--sky)',start:'startAlphabetGame'},
-    {title:'Comptage',emoji:'🔢',color:'var(--sun)',start:'startCountingGame'},
+    {title:'MathÃƒÂ©matiques',icon:'fa-calculator',color:'var(--primary)',start:'startMathGame'},
+    {title:'Fruits',icon:'fa-apple-whole',color:'var(--accent)',start:'startFruitGame'},
+    {title:'Animaux',icon:'fa-paw',color:'var(--grass)',start:'startAnimalGame'},
+    {title:'Couleurs',icon:'fa-palette',color:'var(--coral)',start:'startColorGame'},
+    {title:'Alphabet',icon:'fa-font',color:'var(--sky)',start:'startAlphabetGame'},
+    {title:'Comptage',icon:'fa-arrow-down-1-9',color:'var(--sun)',start:'startCountingGame'},
   ];
   grid.innerHTML='';
   gamesList.forEach(g=>{
     const card=document.createElement('div');
     card.className='game-card';
     card.style.setProperty('--card-color', g.color);
-    card.innerHTML=`<div class="emoji">${g.emoji}</div>
+    card.innerHTML=`<div class="emoji"><i class="fas ${g.icon}" aria-hidden="true"></i></div>
       <h3>${g.title}</h3>
       <p>Amuse-toi bien !</p>
       <button class="play-btn" onclick="${g.start}()">Jouer <i class="fas fa-play"></i></button>`;
@@ -3510,6 +3458,9 @@ function renderGrid(){
 }
 
 function capitalize(str){return str.charAt(0).toUpperCase()+str.slice(1);}
+</script>
+<script src="gallery-fresh.js"></script>
+<script>
 
 document.getElementById('navLogo')?.addEventListener('click', function(e) {
   e.preventDefault();

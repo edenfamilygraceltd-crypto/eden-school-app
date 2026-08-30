@@ -1,0 +1,25 @@
+#academique.academic-rebuild{background:#10244d;color:#fff;padding:120px 6vw 125px;position:relative;overflow:hidden;}
+#academique .academic-heading{max-width:1180px;margin:0 auto 65px;display:grid;grid-template-columns:1.15fr .85fr;align-items:end;gap:60px;}
+#academique .academic-heading>span{grid-column:1/-1;font-size:.68rem;letter-spacing:.2em;color:#d8b75b;}
+#academique .academic-heading h2{font-family:Fraunces,serif;font-weight:500;font-size:clamp(3rem,6vw,6.4rem);line-height:.9;letter-spacing:-.055em;margin:0;}
+#academique .academic-heading h2 em{color:#d8b75b;font-style:italic;}
+#academique .academic-heading p{max-width:390px;margin:0 0 5px;color:rgba(255,255,255,.62);font-size:.9rem;line-height:1.7;}
+#academique .academic-layout{max-width:1180px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:70px;}
+#academique .academic-feature{min-height:430px;border:1px solid rgba(255,255,255,.14);border-radius:3px;padding:38px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;text-decoration:none;position:relative;overflow:hidden;background:#18315f;transition:transform .35s ease,background .35s ease;}
+#academique .academic-feature:after{content:'A';position:absolute;right:-15px;top:-45px;font-family:Fraunces,serif;font-size:22rem;line-height:1;color:rgba(255,255,255,.035);pointer-events:none;}
+#academique .academic-feature:hover{transform:translateY(-5px);background:#1b376b;}
+#academique .academic-index{font-size:.68rem;letter-spacing:.16em;color:#d8b75b;}
+#academique .academic-feature small,#academique .academic-list small{font-size:.62rem;letter-spacing:.16em;color:#d8b75b;}
+#academique .academic-feature h3{font-family:Fraunces,serif;font-size:3.5rem;letter-spacing:-.04em;margin:8px 0 12px;font-weight:500;}
+#academique .academic-feature p{max-width:330px;color:rgba(255,255,255,.62);font-size:.85rem;line-height:1.65;margin:0 0 25px;}
+#academique .academic-feature strong{font-size:.75rem;font-weight:500;letter-spacing:.05em;}
+#academique .academic-feature strong b{margin-left:10px;color:#d8b75b;font-size:1rem;}
+#academique .academic-list{display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.15);}
+#academique .academic-list>a{display:grid;grid-template-columns:40px 1fr 30px;gap:20px;align-items:center;padding:25px 0;border-bottom:1px solid rgba(255,255,255,.15);color:#fff;text-decoration:none;transition:padding .3s ease;}
+#academique .academic-list>a:hover{padding-left:12px;}
+#academique .academic-list>a>span{font-family:Fraunces,serif;color:rgba(255,255,255,.35);font-size:1.05rem;}
+#academique .academic-list h3{font-size:1.35rem;font-weight:500;margin:5px 0 4px;letter-spacing:-.02em;}
+#academique .academic-list p{margin:0;color:rgba(255,255,255,.48);font-size:.75rem;}
+#academique .academic-list>a>b{font-size:1rem;font-weight:400;color:#d8b75b;text-align:right;}
+@media(max-width:850px){#academique.academic-rebuild{padding:85px 5vw;}#academique .academic-heading{grid-template-columns:1fr;gap:20px;margin-bottom:45px;}#academique .academic-heading p{max-width:500px;}#academique .academic-layout{grid-template-columns:1fr;gap:40px;}#academique .academic-feature{min-height:360px;}}
+@media(max-width:520px){#academique.academic-rebuild{padding:70px 20px;}#academique .academic-heading h2{font-size:3.3rem;}#academique .academic-feature{padding:28px;min-height:330px;}#academique .academic-feature h3{font-size:2.8rem;}#academique .academic-list>a{grid-template-columns:32px 1fr 22px;gap:12px;padding:21px 0;}#academique .academic-list h3{font-size:1.1rem;}}
