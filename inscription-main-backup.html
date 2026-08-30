@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inscription - Eden Family School</title>
+<link rel="icon" type="image/png" href="/asset/img/logo_eden.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+  :root{
+    --primary:#1e6b4e; --primary2:#2e8b57; --danger:#ef4444; --dark:#1f2937;
+    --gold:#e7b64b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
+  body{
+    background:linear-gradient(160deg,#0f3d2e 0%,#1e6b4e 45%,#2e8b57 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+  }
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes popIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+  @keyframes shimmer{0%{background-position:-400px 0;}100%{background-position:400px 0;}}
+  @keyframes pulseDot{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .fade-up{animation:fadeUp .55s cubic-bezier(.2,.8,.2,1) both;}
+  .pop-in{animation:popIn .4s cubic-bezier(.2,.8,.2,1) both;}
+  .stagger > *{opacity:0; animation:fadeUp .5s cubic-bezier(.2,.8,.2,1) forwards;}
+  .stagger > *:nth-child(1){animation-delay:.05s;}
+  .stagger > *:nth-child(2){animation-delay:.12s;}
+  .stagger > *:nth-child(3){animation-delay:.19s;}
+  .stagger > *:nth-child(4){animation-delay:.26s;}
+  .stagger > *:nth-child(5){animation-delay:.33s;}
+  .stagger > *:nth-child(6){animation-delay:.40s;}
+
+  .top-header{
+    background:rgba(8,32,24,.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(255,255,255,.12);
+    position:sticky; top:0; z-index:50;
+  }
+  .top-header-inner{
+    max-width:1100px;margin:0 auto;padding:.85rem 1.25rem;
+    display:flex;align-items:center;justify-content:space-between;gap:1rem; flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:.7rem;color:#fff;text-decoration:none;}
+  .brand img{height:38px;width:38px;border-radius:9px;background:#fff;object-fit:contain;padding:3px;transition:transform 0.6s cubic-bezier(.34,1.56,.64,1);cursor:pointer;}
+  @keyframes logo-spin{from{transform:rotate(0deg) scale(1);}50%{transform:scale(1.15);}to{transform:rotate(360deg) scale(1);}}
+  .logo-spin{animation:logo-spin 0.6s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-8px);}40%,80%{transform:translateX(8px);}}
+  .shake{animation:shake 0.6s ease;}
+  .choice-item.branch-disabled{opacity:.45;cursor:not-allowed;background:#eef2ef;border-color:#d0ddd5;}
+  .choice-item.branch-disabled input{pointer-events:none;}
+  .brand-text h1{font-family:'Poppins',sans-serif;font-size:1.02rem;font-weight:800;letter-spacing:.2px;}
+  .brand-text p{font-size:.68rem;color:rgba(255,255,255,.7);letter-spacing:.4px;text-transform:uppercase;}
+  .header-nav{display:flex;align-items:center;gap:.5rem; flex-wrap:wrap;}
+  .nav-pill{
+    padding:.5rem .95rem;border-radius:999px;font-weight:600;font-size:.82rem;color:#eafff2;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);cursor:pointer;
+    display:inline-flex;align-items:center;gap:.4rem;transition:.2s; text-decoration:none;
+  }
+  .nav-pill:hover{background:rgba(255,255,255,.18);transform:translateY(-1px);}
+  .nav-pill.active{background:linear-gradient(135deg,var(--gold),#c9932a);color:#1f2937;border-color:transparent;}
+  .user-chip{
+    display:flex;align-items:center;gap:.55rem;background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.16);padding:.35rem .7rem .35rem .35rem;border-radius:999px;
+  }
+  .user-chip img{width:28px;height:28px;border-radius:50%;}
+  .user-chip span{color:#fff;font-size:.8rem;font-weight:600;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .icon-btn{
+    background:transparent;border:none;color:#fff;opacity:.75;cursor:pointer;font-size:.95rem;
+  }
+  .icon-btn:hover{opacity:1;}
+  .lang-selector{display:flex;gap:.3rem;background:rgba(255,255,255,.08);padding:.25rem .5rem;border-radius:999px;border:1px solid rgba(255,255,255,.12);}
+  .lang-btn{background:transparent;border:none;color:rgba(255,255,255,.7);font-weight:600;font-size:.7rem;padding:.2rem .45rem;border-radius:999px;cursor:pointer;transition:.2s;text-transform:uppercase;}
+  .lang-btn:hover{color:#fff;background:rgba(255,255,255,.1);}
+  .lang-btn.active{background:var(--gold);color:#1f2937;}
+
+  .page-wrap{max-width:900px;margin:0 auto;padding:2.25rem 1.15rem 4rem;}
+  .hero{text-align:center;color:#fff;margin-bottom:1.8rem;}
+  .hero .eyebrow{display:inline-flex;align-items:center;gap:.4rem;background:rgba(231,182,75,.15);border:1px solid rgba(231,182,75,.4);color:var(--gold);padding:.3rem .85rem;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin-bottom:.9rem;}
+  .hero h2{font-family:'Poppins',sans-serif;font-weight:800;font-size:1.9rem;margin-bottom:.5rem;}
+  .hero p{color:rgba(255,255,255,.78);font-size:.95rem;max-width:520px;margin:0 auto;}
+
+  .gate-card{background:rgba(255,255,255,.97);border-radius:20px;padding:2.4rem 1.8rem;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.28);}
+  .gate-card i.fa-shield-heart{font-size:2.6rem;color:var(--primary2);margin-bottom:.9rem;}
+  .gate-card h3{font-family:'Poppins',sans-serif;font-weight:800;color:#164c3d;margin-bottom:.5rem;}
+  .gate-card p{color:#556;margin-bottom:1.5rem;font-size:.92rem;}
+  .google-btn{display:inline-flex;align-items:center;gap:.7rem;background:#fff;border:1.5px solid #dfe3e8;padding:.8rem 1.6rem;border-radius:12px;font-weight:700;color:#1f2937;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.08);transition:.2s;}
+  .google-btn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,.14);}
+  .google-btn img{width:20px;height:20px;}
+  .gate-note{margin-top:1.1rem;font-size:.78rem;color:#8a94a3;}
+
+  .block{background:linear-gradient(180deg,#f6fbf8 0%,#ffffff 40%);border:1px solid #dfeee5;border-radius:18px;padding:1.3rem;box-shadow:0 10px 24px rgba(17,75,58,.1); margin-bottom:1.1rem;}
+  .block-head{display:flex;align-items:center;gap:.65rem;margin-bottom:1rem;padding-bottom:.6rem;border-bottom:1px dashed #d8e7de;}
+  .step-pill{min-width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:.85rem;background:linear-gradient(135deg,#1e6b4e,#2e8b57);}
+  .block-head h3{font-size:1rem;color:#164c3d;font-family:'Poppins',sans-serif;font-weight:700;}
+  .row{display:grid;grid-template-columns:repeat(2,1fr);gap:.9rem;}
+  @media(max-width:640px){.row{grid-template-columns:1fr;}}
+  .field label{display:block;font-weight:600;font-size:.85rem;margin-bottom:.35rem;color:#164c3d;}
+  .field input, .field select, .field textarea{width:100%;padding:.65rem .8rem;border:2px solid #e2e8f0;border-radius:10px;font-size:.95rem;transition:.2s;}
+  .field input:focus,.field select:focus{outline:none;border-color:#2e8b57;box-shadow:0 0 0 3px rgba(46,139,87,.12);}
+  .choice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-top:.35rem;}
+  .choice-grid.g3{grid-template-columns:repeat(3,1fr);}
+  @media(max-width:640px){.choice-grid.g3{grid-template-columns:1fr;}}
+  .choice-item{display:flex;align-items:center;gap:.55rem;border:1px solid #d4e8dc;border-radius:12px;background:#f8fcfa;padding:.6rem .75rem;font-weight:600;cursor:pointer;color:#17493b;transition:.15s;}
+  .choice-item:hover{border-color:#2e8b57;}
+  .choice-item input{accent-color:#2e8b57;}
+  .switch-row{display:inline-flex;align-items:center;gap:.6rem;border:1px solid #d4e8dc;background:#f8fcfa;border-radius:12px;padding:.55rem .8rem;font-weight:600;color:#17493b;cursor:pointer;}
+  .submit-bar{display:flex;justify-content:flex-end;gap:.75rem;padding:1rem 0 0;}
+  .btn{padding:.75rem 1.5rem;border:none;border-radius:10px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.2s;font-size:.9rem;}
+  .btn-primary{background:linear-gradient(135deg,#2e8b57,#1e6b4e);color:#fff;}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(46,139,87,.35);}
+  .btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none;}
+  .btn-outline{background:#fff;border:1.5px solid #cfe3d8;color:#17493b;}
+  .btn-outline:hover{border-color:#2e8b57;background:#f3fbf6;}
+  .btn-outline:disabled{opacity:.45;cursor:not-allowed;}
+  #contactInfo{background:#FFF9C4;padding:1rem;border-radius:10px;margin:.5rem 0;border-left:5px solid #FFC107;display:none;font-size:.85rem;}
+  .toast{position:fixed;top:20px;right:20px;background:#fff;border-left:4px solid #2e8b57;padding:1rem 1.4rem;border-radius:10px;box-shadow:0 8px 25px rgba(0,0,0,.2);z-index:9999;display:none;font-weight:600;color:#164c3d;max-width:320px;}
+  .success-screen{display:none;text-align:center;padding:3rem 1.5rem;}
+  .success-screen i{font-size:3.5rem;color:#2e8b57;margin-bottom:1rem;}
+  .success-screen h2{margin-bottom:.5rem;color:#164c3d;font-family:'Poppins',sans-serif;}
+  .success-screen p{color:#555;margin-bottom:1.5rem;}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .reg-card{background:#fff;border:1px solid #e5eee9;border-radius:16px;padding:1.1rem 1.2rem;margin-bottom:.9rem;box-shadow:0 8px 20px rgba(17,75,58,.07);display:flex;flex-wrap:wrap;gap:.9rem;align-items:center;justify-content:space-between;}
+  .reg-info h4{font-size:1rem;color:#164c3d;font-family:'Poppins',sans-serif;margin-bottom:.15rem;}
+  .reg-info p{font-size:.8rem;color:#68788a;}
+  .reg-meta{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem;}
+  .tag{font-size:.7rem;font-weight:700;padding:.25rem .6rem;border-radius:999px;background:#eef6f1;color:#3a6a54;}
+  .status-badge{font-size:.72rem;font-weight:800;padding:.32rem .75rem;border-radius:999px;letter-spacing:.3px;display:inline-flex;align-items:center;gap:.35rem;}
+  .status-pending{background:#fff4d6;color:#8a6800;}
+  .status-pending .dot{width:7px;height:7px;border-radius:50%;background:#c99a00;animation:pulseDot 1.4s infinite;}
+  .status-approved{background:#e3f7e9;color:#166c3f;}
+  .status-rejected{background:#fde3e3;color:#a3222a;}
+  .reg-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+  .empty-state{text-align:center;color:rgba(255,255,255,.85);padding:2.5rem 1rem;}
+  .empty-state i{font-size:2.2rem;margin-bottom:.7rem;opacity:.8;}
+  .skeleton{height:78px;border-radius:16px;margin-bottom:.9rem;background:linear-gradient(90deg,#e9f2ed 25%,#f6fbf8 37%,#e9f2ed 63%);background-size:400px 100%;animation:shimmer 1.4s infinite linear;}
+  .required-err{color:#ef4444;font-size:.8rem;margin-top:.25rem;display:none;}
+
+  .hidden { display: none !important; }
+  .consent-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+  }
+  .consent-card {
+    width: min(100%, 520px);
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 2rem;
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.24);
+    text-align: left;
+  }
+  .consent-card h3 { margin-bottom: 0.8rem; font-size: 1.2rem; color: #164e3b; }
+  .consent-card p { color: #475569; line-height: 1.65; margin-bottom: 1.5rem; }
+  .consent-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: flex-end; }
+  .consent-actions .btn { min-width: 160px; }
+</style>
+</head>
+<body>
+
+<header class="top-header">
+  <div class="top-header-inner">
+    <a href="index.html" class="brand">
+      <img src="asset/img/logo_eden.png" alt="Eden Family School">
+      <div class="brand-text">
+        <h1>Eden Family School</h1>
+        <p data-i18n="header_sub">Portail d'inscription</p>
+      </div>
+    </a>
+    <div class="header-nav">
+      <div class="lang-selector">
+        <button class="lang-btn active" data-lang="fr" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" data-lang="rw" onclick="setLang('rw')">RW</button>
+      </div>
+      <button class="nav-pill active" id="navInscriptionBtn" onclick="showView('registration')">
+        <i class="fas fa-user-plus"></i> <span data-i18n="nav_register">Inscrire un enfant</span>
+      </button>
+      <button class="nav-pill" id="navMyRegsBtn" onclick="showView('myregs')" style="display:none;">
+        <i class="fas fa-child"></i> <span data-i18n="nav_myregs">Mes inscriptions</span>
+      </button>
+      <div id="userChipZone"></div>
+    </div>
+  </div>
+</header>
+
+<div class="page-wrap">
+
+  <div class="hero fade-up">
+    <span class="eyebrow"><i class="fas fa-lock"></i> <span data-i18n="auth_secure">Connexion sécurisée requise</span></span>
+    <h2 data-i18n="page_title">Inscription scolaire</h2>
+    <p data-i18n="page_desc">Connectez-vous avec votre compte Google pour inscrire votre enfant et suivre l'état de votre dossier en toute sécurité.</p>
+  </div>
+
+  <!-- ================= AUTH GATE ================= -->
+  <div id="authGate" class="gate-card pop-in">
+    <i class="fa-solid fa-shield-heart"></i>
+    <h3 data-i18n="auth_title">Connectez-vous pour continuer</h3>
+    <p data-i18n="auth_desc">La connexion Google est obligatoire avant toute inscription. Elle nous permet de relier le dossier de votre enfant à votre compte, afin que vous seul(e) puissiez suivre son statut et télécharger ses documents une fois validés.</p>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      <span data-i18n="auth_google_btn">Continuer avec Google</span>
+    </button>
+    <div class="gate-note" id="authError"></div>
+  </div>
+
+  <div id="consentModal" class="consent-modal hidden" style="display:none;">
+    <div class="consent-card">
+      <h3 data-i18n="consent_modal_title">Consentement Analytics</h3>
+      <p data-i18n="consent_modal_desc">Pour améliorer le service et analyser l'usage de ce portail, nous souhaitons collecter des événements anonymisés. Cela inclut les clics sur les boutons, les envois de formulaire et le suivi des pages. Aucune donnée sensible n'est utilisée sans votre accord.</p>
+      <div class="consent-actions">
+        <button class="btn btn-outline" onclick="saveUserConsent(currentUser?.uid, false)"><span data-i18n="consent_decline">Refuser</span></button>
+        <button class="btn btn-primary" onclick="saveUserConsent(currentUser?.uid, true)"><span data-i18n="consent_accept">Accepter</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= REGISTRATION VIEW ================= -->
+  <div id="registrationView" class="view">
+    <form id="publicRegistrationForm">
+      <div class="block fade-up">
+        <div class="block-head"><span class="step-pill">01</span><h3 data-i18n="step1_title">Information de l'enfant</h3></div>
+        <div class="row">
+          <div class="field">
+            <label data-i18n="child_fullname">Nom-prénom *</label>
+            <input type="text" id="rChildFullName" required>
+          </div>
+          <div class="field">
+            <label data-i18n="child_birthdate">Date de naissance *</label>
+            <input type="date" id="rChildBirthDate" required>
+          </div>
+        </div>
+        <div class="field" style="margin-top:.9rem;">
+          <label data-i18n="gender">Sexe *</label>
+          <div class="choice-grid">
+            <label class="choice-item"><input type="radio" name="rGender" value="GARCON" required> <span data-i18n="gender_male">GARÇON</span></label>
+            <label class="choice-item"><input type="radio" name="rGender" value="FILLE" required> <span data-i18n="gender_female">FILLE</span></label>
+          </div>
+        </div>
+        <div class="row" style="margin-top:.9rem;">
+          <div class="field">
+            <label data-i18n="prev_school">École de provenance</label>
+            <input type="text" id="rPreviousSchool">
+          </div>
+          <div class="field">
+            <label data-i18n="section">Section *</label>
+            <select id="rSection" required onchange="updateNiveauOptions()">
+              <option value="" data-i18n="select_option">Sélectionnez</option>
+              <option value="MATERNELLE" data-i18n="section_nursery">MATERNELLE</option>
+              <option value="PRIMAIRE" data-i18n="section_primary">PRIMAIRE</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:.9rem;">
+          <div class="field">
+            <label data-i18n="level">Niveau *</label>
+            <select id="rNiveau" required>
+              <option value="" data-i18n="choose_section_first">Choisissez d'abord la section</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-i18n="branch">Branche *</label>
+            <div class="choice-grid g3">
+              <label class="choice-item"><input type="radio" name="rBranch" value="kacyiru" required onchange="updateContactInfo()"> <span data-i18n="branch_kacyiru">KACYIRU</span></label>
+              <label class="choice-item"><input type="radio" name="rBranch" value="gisozi" required onchange="updateContactInfo()"> <span data-i18n="branch_gisozi">GISOZI</span></label>
+              <label class="choice-item"><input type="radio" name="rBranch" value="kimisagara" required onchange="updateContactInfo()"> <span data-i18n="branch_kimisagara">KIMISAGARA</span></label>
+            </div>
+          </div>
+        </div>
+        <div id="contactInfo"></div>
+        <div class="field" style="margin-top:.9rem;">
+          <label class="switch-row">
+            <input type="checkbox" id="rTransport"> <span data-i18n="transport">Transport bus</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="block fade-up">
+          <div class="block-head"><span class="step-pill">02</span><h3 data-i18n="step2_title">Chef de famille</h3></div>
+          <div class="field" style="margin-bottom:.7rem;"><label data-i18n="parent_name">Nom-prénom *</label><input type="text" id="rParentName" required></div>
+          <div class="field" style="margin-bottom:.7rem;"><label data-i18n="parent_phone">Téléphone *</label><input type="tel" id="rParentPhone" pattern="[0-9]{10}" required></div>
+          <div class="field"><label data-i18n="parent_id">Pièce d'identité</label><input type="text" id="rParentID"></div>
+        </div>
+        <div class="block fade-up">
+          <div class="block-head"><span class="step-pill">03</span><h3 data-i18n="step3_title">Conjoint(e)</h3></div>
+          <div class="field" style="margin-bottom:.7rem;"><label data-i18n="spouse_name">Nom-prénom</label><input type="text" id="rSpouseName"></div>
+          <div class="field" style="margin-bottom:.7rem;"><label data-i18n="spouse_phone">Téléphone</label><input type="tel" id="rSpousePhone" pattern="[0-9]{10}"></div>
+          <div class="field"><label data-i18n="spouse_id">Pièce d'identité</label><input type="text" id="rSpouseID"></div>
+        </div>
+      </div>
+
+      <div class="block fade-up">
+        <div class="block-head"><span class="step-pill">04</span><h3 data-i18n="step4_title">Adresse</h3></div>
+        <div class="row">
+          <div class="field">
+            <label data-i18n="city">Ville *</label>
+            <select id="rVille" required>
+              <option value="" data-i18n="select_option">Sélectionnez</option>
+              <option data-i18n="city_kigali">Kigali</option>
+              <option data-i18n="city_butare">Butare</option>
+              <option data-i18n="city_gisenyi">Gisenyi</option>
+              <option data-i18n="city_ruhengeri">Ruhengeri</option>
+              <option data-i18n="city_gitarama">Gitarama</option>
+              <option data-i18n="city_kibungo">Kibungo</option>
+            </select>
+          </div>
+          <div class="field"><label data-i18n="sector">Secteur *</label><input type="text" id="rSecteur" required></div>
+        </div>
+        <div class="row" style="margin-top:.9rem;">
+          <div class="field"><label data-i18n="umurenge">Umurenge *</label><input type="text" id="rUmurenge" required></div>
+          <div class="field"><label data-i18n="akagari">Akagari *</label><input type="text" id="rAkagari" required></div>
+        </div>
+        <div class="field" style="margin-top:.9rem;"><label data-i18n="umudugudu">Umudugudu *</label><input type="text" id="rUmudugudu" required></div>
+      </div>
+
+      <div class="submit-bar">
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <i class="fas fa-paper-plane"></i> <span data-i18n="submit_btn">Envoyer la demande d'inscription</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="success-screen pop-in" id="successScreen">
+      <i class="fas fa-check-circle"></i>
+      <h2 data-i18n="success_title">Demande envoyée avec succès !</h2>
+      <p><span data-i18n="success_ref_label">Votre référence :</span> <strong id="successRef"></strong><br>
+      <span data-i18n="success_msg">Notre équipe (secrétariat / comptabilité / direction) a été notifiée et validera votre dossier prochainement. Vous pourrez suivre son statut et télécharger les documents dans « Mes inscriptions ».</span></p>
+      <button class="btn btn-primary" onclick="showView('myregs')">
+        <i class="fas fa-child"></i> <span data-i18n="nav_myregs">Mes inscriptions</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MY REGISTRATIONS VIEW ================= -->
+  <div id="myregsView" class="view">
+    <div class="hero" style="margin-bottom:1.2rem;">
+      <h2 style="font-size:1.4rem;" data-i18n="myregs_title">Mes inscriptions</h2>
+      <p data-i18n="myregs_desc">Retrouvez ici le statut de chaque demande. La lettre d'admission et le formulaire d'inscription se débloquent dès qu'un membre de l'équipe (secrétariat, comptabilité ou direction) valide le dossier.</p>
+    </div>
+    <div id="myRegsList"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  // ========== TRANSLATIONS ==========
+  const translations = {
+    fr: {
+      header_sub: "Portail d'inscription",
+      nav_register: "Inscrire un enfant",
+      nav_myregs: "Mes inscriptions",
+      auth_secure: "Connexion sécurisée requise",
+      page_title: "Inscription scolaire",
+      page_desc: "Connectez-vous avec votre compte Google pour inscrire votre enfant et suivre l'état de votre dossier en toute sécurité.",
+      auth_title: "Connectez-vous pour continuer",
+      auth_desc: "La connexion Google est obligatoire avant toute inscription. Elle nous permet de relier le dossier de votre enfant à votre compte, afin que vous seul(e) puissiez suivre son statut et télécharger ses documents une fois validés.",
+      auth_google_btn: "Continuer avec Google",
+      step1_title: "Information de l'enfant",
+      child_fullname: "Nom-prénom *",
+      child_birthdate: "Date de naissance *",
+      gender: "Sexe *",
+      gender_male: "GARÇON",
+      gender_female: "FILLE",
+      prev_school: "École de provenance",
+      section: "Section *",
+      section_nursery: "MATERNELLE",
+      section_primary: "PRIMAIRE",
+      level: "Niveau *",
+      choose_section_first: "Choisissez d'abord la section",
+      branch: "Branche *",
+      branch_kacyiru: "KACYIRU",
+      branch_gisozi: "GISOZI",
+      branch_kimisagara: "KIMISAGARA",
+      transport: "Transport bus",
+      step2_title: "Chef de famille",
+      parent_name: "Nom-prénom *",
+      parent_phone: "Téléphone *",
+      parent_id: "Pièce d'identité",
+      step3_title: "Conjoint(e)",
+      spouse_name: "Nom-prénom",
+      spouse_phone: "Téléphone",
+      spouse_id: "Pièce d'identité",
+      step4_title: "Adresse",
+      city: "Ville *",
+      city_kigali: "Kigali",
+      city_butare: "Butare",
+      city_gisenyi: "Gisenyi",
+      city_ruhengeri: "Ruhengeri",
+      city_gitarama: "Gitarama",
+      city_kibungo: "Kibungo",
+      sector: "Secteur *",
+      umurenge: "Umurenge *",
+      akagari: "Akagari *",
+      umudugudu: "Umudugudu *",
+      submit_btn: "Envoyer la demande d'inscription",
+      success_title: "Demande envoyée avec succès !",
+      success_ref_label: "Votre référence :",
+      success_msg: "Notre équipe (secrétariat / comptabilité / direction) a été notifiée et validera votre dossier prochainement. Vous pourrez suivre son statut et télécharger les documents dans « Mes inscriptions ».",
+      myregs_title: "Mes inscriptions",
+      myregs_desc: "Retrouvez ici le statut de chaque demande. La lettre d'admission et le formulaire d'inscription se débloquent dès qu'un membre de l'équipe (secrétariat, comptabilité ou direction) valide le dossier.",
+      select_option: "Sélectionnez",
+      status_pending: "En attente de validation",
+      status_approved: "Approuvé",
+      status_rejected: "Rejeté",
+      empty_regs: "Vous n'avez encore inscrit aucun enfant.",
+      load_error: "Impossible de charger vos inscriptions pour le moment.",
+      admission_letter: "Lettre d'admission",
+      registration_form: "Formulaire d'inscription",
+      unavailable_after_validation: "Disponible après validation",
+      toast_need_login: "Veuillez vous connecter avec Google avant d'envoyer la demande.",
+      branch_primary_gisozi_only: "Pour la section PRIMAIRE, seule la branche GISOZI est disponible.",
+      toast_pdf_error: "La bibliothèque PDF n'a pas pu se charger.",
+      toast_need_approval: "Ce dossier doit être approuvé avant le téléchargement.",
+      toast_admission_downloaded: "Lettre d'admission téléchargée !",
+      toast_form_downloaded: "Formulaire d'inscription téléchargé !",
+      toast_submit_error: "Erreur lors de l'envoi. Veuillez réessayer.",
+      contact_prefix: "Contact",
+      branch_label_kacyiru: "EDEN FAMILY SCHOOL KACYIRU",
+      branch_label_gisozi: "EDEN FAMILY SCHOOL GISOZI",
+      branch_label_kimisagara: "EDEN FAMILY SCHOOL KIMISAGARA",
+      pdf_admission_title: "LETTRE D'ADMISSION",
+      pdf_admission_body: "Nous avons le plaisir de vous informer que votre enfant / We are pleased to inform you that your child:",
+      pdf_admitted: "a été admis(e) dans notre établissement / has been admitted to our school",
+      pdf_details: "Détails",
+      pdf_ref: "Référence",
+      pdf_level: "Niveau",
+      pdf_branch: "Branche",
+      pdf_birthdate: "Date de naissance",
+      pdf_transport: "Transport bus",
+      pdf_yes: "Oui",
+      pdf_no: "Non",
+      pdf_authorities: "AUTORITÉS SCOLAIRES",
+      pdf_signature_school: "AUTORITÉ SCOLAIRE",
+      pdf_signature_parent: "PARENT",
+      pdf_signature: "SIGNATURE",
+      pdf_form_title: "FORMULAIRE D'INSCRIPTION SCOLAIRE",
+      pdf_form_child: "01. Information de l'enfant",
+      pdf_form_parent: "02. Chef de famille",
+      pdf_form_spouse: "03. Conjoint(e)",
+      pdf_form_address: "04. Adresse",
+      pdf_form_phone: "Téléphone",
+      pdf_form_id: "Pièce d'identité",
+      pdf_form_prev_school: "École de provenance",
+      pdf_form_section: "Section / Niveau",
+      pdf_form_branch: "Branche",
+      pdf_form_transport: "Transport bus",
+      pdf_form_ref: "Référence",
+      pdf_form_ville: "Ville",
+      pdf_form_secteur: "Secteur",
+      pdf_form_umurenge: "Umurenge",
+      pdf_form_akagari: "Akagari",
+      pdf_form_umudugudu: "Umudugudu",
+      consent_modal_title: "Consentement Analytics",
+      consent_modal_desc: "Pour améliorer le service et analyser l'usage du portail, nous souhaitons collecter des événements anonymisés. Cela inclut les clics, le suivi de page et les envois de formulaire.",
+      consent_accept: "Accepter",
+      consent_decline: "Refuser"
+    },
+    en: {
+      header_sub: "Registration Portal",
+      nav_register: "Register a child",
+      nav_myregs: "My registrations",
+      auth_secure: "Secure login required",
+      page_title: "School Registration",
+      page_desc: "Sign in with your Google account to register your child and track your application status securely.",
+      auth_title: "Sign in to continue",
+      auth_desc: "Google login is required before any registration. It allows us to link your child's file to your account so that only you can track its status and download documents once validated.",
+      auth_google_btn: "Continue with Google",
+      step1_title: "Child Information",
+      child_fullname: "Full name *",
+      child_birthdate: "Date of birth *",
+      gender: "Gender *",
+      gender_male: "BOY",
+      gender_female: "GIRL",
+      prev_school: "Previous school",
+      section: "Section *",
+      section_nursery: "NURSERY",
+      section_primary: "PRIMARY",
+      level: "Level *",
+      choose_section_first: "Choose section first",
+      branch: "Branch *",
+      branch_kacyiru: "KACYIRU",
+      branch_gisozi: "GISOZI",
+      branch_kimisagara: "KIMISAGARA",
+      transport: "Bus transport",
+      step2_title: "Head of family",
+      parent_name: "Full name *",
+      parent_phone: "Phone *",
+      parent_id: "ID document",
+      step3_title: "Spouse",
+      spouse_name: "Full name",
+      spouse_phone: "Phone",
+      spouse_id: "ID document",
+      step4_title: "Address",
+      city: "City *",
+      city_kigali: "Kigali",
+      city_butare: "Butare",
+      city_gisenyi: "Gisenyi",
+      city_ruhengeri: "Ruhengeri",
+      city_gitarama: "Gitarama",
+      city_kibungo: "Kibungo",
+      sector: "Sector *",
+      umurenge: "Umurenge *",
+      akagari: "Akagari *",
+      umudugudu: "Umudugudu *",
+      submit_btn: "Submit registration request",
+      success_title: "Request sent successfully!",
+      success_ref_label: "Your reference:",
+      success_msg: "Our team (secretary / accountant / director) has been notified and will validate your file soon. You can track its status and download documents in \"My registrations\".",
+      myregs_title: "My registrations",
+      myregs_desc: "Find here the status of each request. The admission letter and registration form become available as soon as a team member (secretary, accountant or director) validates the file.",
+      select_option: "Select",
+      status_pending: "Pending validation",
+      status_approved: "Approved",
+      status_rejected: "Rejected",
+      empty_regs: "You haven't registered any child yet.",
+      load_error: "Unable to load your registrations at the moment.",
+      admission_letter: "Admission letter",
+      registration_form: "Registration form",
+      unavailable_after_validation: "Available after validation",
+      toast_need_login: "Please sign in with Google before submitting your request.",
+      branch_primary_gisozi_only: "For the PRIMARY section, only the GISOZI branch is available.",
+      toast_pdf_error: "The PDF library could not load.",
+      toast_need_approval: "This file must be approved before downloading.",
+      toast_admission_downloaded: "Admission letter downloaded!",
+      toast_form_downloaded: "Registration form downloaded!",
+      toast_submit_error: "Error while sending. Please try again.",
+      contact_prefix: "Contact",
+      branch_label_kacyiru: "EDEN FAMILY SCHOOL KACYIRU",
+      branch_label_gisozi: "EDEN FAMILY SCHOOL GISOZI",
+      branch_label_kimisagara: "EDEN FAMILY SCHOOL KIMISAGARA",
+      pdf_admission_title: "ADMISSION LETTER",
+      pdf_admission_body: "We are pleased to inform you that your child:",
+      pdf_admitted: "has been admitted to our school",
+      pdf_details: "Details",
+      pdf_ref: "Reference",
+      pdf_level: "Level",
+      pdf_branch: "Branch",
+      pdf_birthdate: "Date of birth",
+      pdf_transport: "Bus transport",
+      pdf_yes: "Yes",
+      pdf_no: "No",
+      pdf_authorities: "SCHOOL AUTHORITIES",
+      pdf_signature_school: "SCHOOL AUTHORITY",
+      pdf_signature_parent: "PARENT",
+      pdf_signature: "SIGNATURE",
+      pdf_form_title: "SCHOOL REGISTRATION FORM",
+      pdf_form_child: "01. Child Information",
+      pdf_form_parent: "02. Head of family",
+      pdf_form_spouse: "03. Spouse",
+      pdf_form_address: "04. Address",
+      pdf_form_phone: "Phone",
+      pdf_form_id: "ID document",
+      pdf_form_prev_school: "Previous school",
+      pdf_form_section: "Section / Level",
+      pdf_form_branch: "Branch",
+      pdf_form_transport: "Bus transport",
+      pdf_form_ref: "Reference",
+      pdf_form_ville: "City",
+      pdf_form_secteur: "Sector",
+      pdf_form_umurenge: "Umurenge",
+      pdf_form_akagari: "Akagari",
+      pdf_form_umudugudu: "Umudugudu",
+      consent_modal_title: "Analytics consent",
+      consent_modal_desc: "To improve the service and analyse portal usage, we want to collect anonymised events. This includes clicks, page tracking and form submissions.",
+      consent_accept: "Accept",
+      consent_decline: "Decline"
+    },
+    rw: {
+      header_sub: "Urubuga rwo kwiyandikisha",
+      nav_register: "Kwiyandikisha umwana",
+      nav_myregs: "Iyandikisha ryanjye",
+      auth_secure: "Kwinjira bisaba umutekano",
+      page_title: "Kwiyandikisha mu ishuri",
+      page_desc: "Injira n'aka konto ya Google kugira ngo wandike umwana wawe kandi ukurikire uko dosiye yawe igenda.",
+      auth_title: "Injira kugira ngo ukomeze",
+      auth_desc: "Kwinjira muri Google ni ngombwa mbere yo kwiyandikisha. Bidufasha guhuza dosiye y'umwana wawe n'aka konto yawe, kugira ngo ni wowe wenyine ushobore gukurikira ibyayo no gupakira inyandiko iyo zemejwe.",
+      auth_google_btn: "Komeza na Google",
+      step1_title: "Amakuru y'umwana",
+      child_fullname: "Izina ry'umwana *",
+      child_birthdate: "Itariki y'avukiye *",
+      gender: "Igitsina *",
+      gender_male: "UMUHUNGU",
+      gender_female: "UMUKOBWA",
+      prev_school: "Ishuri yavuyemo",
+      section: "Icyiciro *",
+      section_nursery: "MATERNELLE",
+      section_primary: "PRIMAIRE",
+      level: "Urwego *",
+      choose_section_first: "Hitamo icyiciro mbere",
+      branch: "Ishami *",
+      branch_kacyiru: "KACYIRU",
+      branch_gisozi: "GISOZI",
+      branch_kimisagara: "KIMISAGARA",
+      transport: "Bisi yo gutwara",
+      step2_title: "Umutware w'umuryango",
+      parent_name: "Izina ry'umutware *",
+      parent_phone: "Telefone *",
+      parent_id: "Icyangombwe",
+      step3_title: "Umusangiranye n'umutware",
+      spouse_name: "Izina",
+      spouse_phone: "Telefone",
+      spouse_id: "Icyangombwe",
+      step4_title: "Aho utuye",
+      city: "Umujyi *",
+      city_kigali: "Kigali",
+      city_butare: "Butare",
+      city_gisenyi: "Gisenyi",
+      city_ruhengeri: "Ruhengeri",
+      city_gitarama: "Gitarama",
+      city_kibungo: "Kibungo",
+      sector: "Secteur *",
+      umurenge: "Umurenge *",
+      akagari: "Akagari *",
+      umudugudu: "Umudugudu *",
+      submit_btn: "Ohereza icyifuzo cyo kwiyandikisha",
+      success_title: "Icyifuzo cyoherejwe neza!",
+      success_ref_label: "Referansi yawe:",
+      success_msg: "Itsinda ryacu (umwanditsi / umutariki / umuyobozi) ryamenyeshejwe kandi rizemeza dosiye yawe vuba. Uzashobora gukurikira ibyayo no gupakira inyandiko muri \"Iyandikisha ryanjye\".",
+      myregs_title: "Iyandikisha ryanjye",
+      myregs_desc: "Hano usanga uko buri cyifuzo gihagaze. Ibaruwa yo kwemerwa n'urupapuro rwo kwiyandikisha biboneka iyo umwe mu bagize itsinda (umwanditsi, umutariki cyangwa umuyobozi) amaze kwemeza dosiye.",
+      select_option: "Hitamo",
+      status_pending: "Rigitegereje kwemezwa",
+      status_approved: "Cyemewe",
+      status_rejected: "Byangijwe",
+      empty_regs: "Urakiri nta mwana wiyandikishije.",
+      load_error: "Ntibishoboka gupakira iyandikisha ryawe kuri ubu.",
+      admission_letter: "Ibaruwa yo kwemerwa",
+      registration_form: "Urupapuro rwo kwiyandikisha",
+      unavailable_after_validation: "Biboneka nyuma yo kwemezwa",
+      toast_need_login: "Nyamuneka injira muri Google mbere yo kohereza icyifuzo.",
+      branch_primary_gisozi_only: "Mu cyiciro cya PRIMAIRE, ishami rya GISOZI ni ryo ryo gusa riboneka.",
+      toast_pdf_error: "Bibliotheque ya PDF ntiyashoboye gukora.",
+      toast_need_approval: "Iyi dosiye igomba kwemezwa mbere yo gupakira.",
+      toast_admission_downloaded: "Ibaruwa yo kwemerwa yapakiwe!",
+      toast_form_downloaded: "Urupapuro rwo kwiyandikisha rwapakiwe!",
+      toast_submit_error: "Habaye ikibazo mu kohereza. Ongera ugerageze.",
+      contact_prefix: "Amakuru",
+      branch_label_kacyiru: "EDEN FAMILY SCHOOL KACYIRU",
+      branch_label_gisozi: "EDEN FAMILY SCHOOL GISOZI",
+      branch_label_kimisagara: "EDEN FAMILY SCHOOL KIMISAGARA",
+      pdf_admission_title: "IBARUWA YO KWEMERWA",
+      pdf_admission_body: "Twishimiye kubamenyesha ko umwana wanyu:",
+      pdf_admitted: "yemerewe mu ishuri ryacu",
+      pdf_details: "Ibihari",
+      pdf_ref: "Referansi",
+      pdf_level: "Urwego",
+      pdf_branch: "Ishami",
+      pdf_birthdate: "Itariki y'avukiye",
+      pdf_transport: "Bisi yo gutwara",
+      pdf_yes: "Yego",
+      pdf_no: "Oya",
+      pdf_authorities: "ABAYOBOZI B'ISHURI",
+      pdf_signature_school: "UMUYOBOZI W'ISHURI",
+      pdf_signature_parent: "UMUTWARE",
+      pdf_signature: "UMUKONO",
+      pdf_form_title: "URUPAPURO RWO KWIYANDIKISHA MU ISHURI",
+      pdf_form_child: "01. Amakuru y'umwana",
+      pdf_form_parent: "02. Umutware w'umuryango",
+      pdf_form_spouse: "03. Umusangiranye n'umutware",
+      pdf_form_address: "04. Aho utuye",
+      pdf_form_phone: "Telefone",
+      pdf_form_id: "Icyangombwe",
+      pdf_form_prev_school: "Ishuri yavuyemo",
+      pdf_form_section: "Icyiciro / Urwego",
+      pdf_form_branch: "Ishami",
+      pdf_form_transport: "Bisi yo gutwara",
+      pdf_form_ref: "Referansi",
+      pdf_form_ville: "Umujyi",
+      pdf_form_secteur: "Secteur",
+      pdf_form_umurenge: "Umurenge",
+      pdf_form_akagari: "Akagari",
+      pdf_form_umudugudu: "Umudugudu",
+      consent_modal_title: "Ubwumva bwa Analytics",
+      consent_modal_desc: "Kugira ngo tunoze serivisi kandi dusuzume uko uru rubuga rukoreshejwe, dukeneye gukusanya amakuru y'ibikorwa atariyafite umuntu. Ibi birimo gukanda buto, gukurikirana urupapuro no kohereza ifishi.",
+      consent_accept: "Emera",
+      consent_decline: "Oya"
+    }
+  };
+
+  // Current language
+  let currentLang = 'fr';
+
+  // Translation function
+  function t(key) {
+    return translations[currentLang]?.[key] || key;
+  }
+
+  // Apply translations to all elements with data-i18n
+  function applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      el.textContent = t(key);
+    });
+    // Update select options that have data-i18n (they are inside options)
+    document.querySelectorAll('select option[data-i18n]').forEach(opt => {
+      const key = opt.dataset.i18n;
+      opt.textContent = t(key);
+    });
+    // Update placeholder if any (we don't have placeholders but could add)
+    // Update radio button labels that have child spans
+    document.querySelectorAll('.choice-item span[data-i18n]').forEach(span => {
+      const key = span.dataset.i18n;
+      span.textContent = t(key);
+    });
+    // Update step titles that are h3 with data-i18n
+    // Already done by the first selector
+    // Update contact info if visible
+    if (document.getElementById('contactInfo').style.display === 'block') {
+      updateContactInfo(); // re-render with current language
+    }
+    // Update status badges if any visible (will be re-rendered on load)
+  }
+
+  // Set language
+  function setLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('efs_lang', lang);
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+    applyTranslations();
+    // Refresh my registrations list if visible to update status text
+    if (document.getElementById('myregsView').classList.contains('active')) {
+      loadMyRegistrations();
+    }
+    // Update contact info if visible
+    if (document.getElementById('contactInfo').style.display === 'block') {
+      updateContactInfo();
+    }
+    // Update success screen ref text (already handled by data-i18n)
+  }
+
+  // Load saved language
+  const savedLang = localStorage.getItem('efs_lang');
+  if (savedLang && translations[savedLang]) {
+    currentLang = savedLang;
+  }
+  // Highlight active lang button
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === currentLang);
+  });
+
+  // ========== FIREBASE ==========
+  const appConfig = typeof window !== 'undefined' && window.FIREBASE_CONFIG ? window.FIREBASE_CONFIG : {
+    apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+    authDomain: "edensmart-app.firebaseapp.com",
+    databaseURL: "https://edensmart-app-default-rtdb.firebaseio.com",
+    projectId: "edensmart-app",
+    storageBucket: "edensmart-app.firebasestorage.app",
+    messagingSenderId: "1093120876724",
+    appId: "1:1093120876724:web:bc37448cadd18d651c77e1"
+  };
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(appConfig);
+  }
+
+  const auth = firebase.auth();
+  const db = firebase.database();
+  const googleProvider = new firebase.auth.GoogleAuthProvider();
+  const ANALYTICS_PATH = 'analytics/events';
+  const CONSENT_PATH = 'users_consent';
+
+  auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+    .catch(err => console.warn('setPersistence(SESSION) impossible:', err));
+
+  let currentUser = null;
+  let analyticsConsentGranted = false;
+  let analyticsConsentLoaded = false;
+  let pendingAnalyticsEvents = [];
+
+  async function loadUserConsent(uid) {
+    analyticsConsentLoaded = false;
+    analyticsConsentGranted = false;
+    if (!uid) return;
+
+    try {
+      const snap = await db.ref(`${CONSENT_PATH}/${uid}`).once('value');
+      const consent = snap.val();
+      analyticsConsentGranted = !!(consent && consent.granted);
+      analyticsConsentLoaded = true;
+      if (!analyticsConsentGranted) {
+        showConsentModal();
+      } else {
+        flushPendingAnalyticsEvents();
+      }
+    } catch (err) {
+      console.warn('Chargement du consentement impossible:', err);
+      analyticsConsentLoaded = true;
+    }
+  }
+
+  async function saveUserConsent(uid, granted) {
+    if (!uid) return;
+    try {
+      await db.ref(`${CONSENT_PATH}/${uid}`).set({
+        granted: !!granted,
+        updatedAt: Date.now(),
+        source: 'inscription.html'
+      });
+      analyticsConsentGranted = !!granted;
+      analyticsConsentLoaded = true;
+      closeConsentModal();
+      if (granted) {
+        flushPendingAnalyticsEvents();
+        trackEvent('consent_granted', { method: 'gdpr_modal' });
+      } else {
+        trackEvent('consent_declined', { method: 'gdpr_modal' }, false);
+        pendingAnalyticsEvents = [];
+      }
+    } catch (error) {
+      console.warn('Enregistrement du consentement impossible:', error);
+    }
+  }
+
+  function flushPendingAnalyticsEvents() {
+    if (!currentUser || !analyticsConsentGranted || pendingAnalyticsEvents.length === 0) {
+      return;
+    }
+
+    const queuedEvents = pendingAnalyticsEvents.slice();
+    pendingAnalyticsEvents = [];
+    queuedEvents.forEach(evt => trackEvent(evt.eventType, evt.details, false));
+  }
+
+  function showConsentModal() {
+    const modal = document.getElementById('consentModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+
+  function closeConsentModal() {
+    const modal = document.getElementById('consentModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+
+  function trackEvent(eventName, details = {}, allowQueue = true) {
+    if (!currentUser) {
+      if (allowQueue) {
+        pendingAnalyticsEvents.push({
+          eventType: eventName,
+          details
+        });
+      }
+      return;
+    }
+
+    if (!analyticsConsentLoaded) {
+      if (allowQueue) {
+        pendingAnalyticsEvents.push({
+          eventType: eventName,
+          details
+        });
+      }
+      return;
+    }
+
+    if (!analyticsConsentGranted) {
+      return;
+    }
+
+    const payload = {
+      eventType: eventName,
+      userId: currentUser.uid,
+      userEmail: currentUser.email || '',
+      userName: currentUser.displayName || '',
+      page: window.location.pathname,
+      timestamp: Date.now(),
+      ...details
+    };
+
+    db.ref(ANALYTICS_PATH).push(payload).catch(err => {
+      console.warn('Impossible d\'enregistrer l\'événement analytics:', err);
+    });
+  }
+
+  function trackPageView(pageName) {
+    trackEvent('page_view', { pageName });
+  }
+
+  function trackClick(label, details = {}) {
+    trackEvent('button_click', { label, ...details });
+  }
+
+
+  // Auth state
+  auth.onAuthStateChanged(user => {
+    currentUser = user;
+    const gate = document.getElementById('authGate');
+    const regView = document.getElementById('registrationView');
+    const myRegsBtn = document.getElementById('navMyRegsBtn');
+    const userChipZone = document.getElementById('userChipZone');
+
+    if (user) {
+      gate.style.display = 'none';
+      regView.classList.add('active');
+      myRegsBtn.style.display = 'inline-flex';
+      userChipZone.innerHTML = `
+        <div class="user-chip">
+          <img src="${user.photoURL || 'https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(user.displayName || user.email)}" alt="">
+          <span>${user.displayName || user.email}</span>
+          <button class="icon-btn" title="${t('auth_google_btn')}" onclick="signOutUser()"><i class="fas fa-right-from-bracket"></i></button>
+        </div>`;
+      document.getElementById('submitBtn').disabled = false;
+      loadUserConsent(user.uid).then(() => {
+        trackPageView('inscription_public');
+      });
+      loadMyRegistrations();
+    } else {
+      gate.style.display = 'block';
+      regView.classList.remove('active');
+      document.getElementById('myregsView').classList.remove('active');
+      myRegsBtn.style.display = 'none';
+      userChipZone.innerHTML = '';
+      analyticsConsentGranted = false;
+      analyticsConsentLoaded = false;
+    }
+  });
+
+  function signInWithGoogle(){
+    const errBox = document.getElementById('authError');
+    errBox.textContent = '';
+    if (currentUser) {
+      showToast('Vous êtes déjà connecté','success');
+      return;
+    }
+    trackClick('google_login_button');
+    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+      .then(() => auth.signInWithPopup(googleProvider))
+      .catch(err => {
+        console.error(err);
+        errBox.textContent = "Connexion impossible : " + (err.message || 'veuillez réessayer.');
+      });
+  }
+
+  function signOutUser(){
+    auth.signOut();
+  }
+
+  function showView(name){
+    document.getElementById('registrationView').classList.remove('active');
+    document.getElementById('myregsView').classList.remove('active');
+    document.getElementById('navInscriptionBtn').classList.remove('active');
+    document.getElementById('navMyRegsBtn').classList.remove('active');
+
+    if (name === 'registration') {
+      document.getElementById('registrationView').classList.add('active');
+      document.getElementById('navInscriptionBtn').classList.add('active');
+      trackClick('nav_registration_tab');
+    } else {
+      document.getElementById('myregsView').classList.add('active');
+      document.getElementById('navMyRegsBtn').classList.add('active');
+      trackClick('nav_myregistrations_tab');
+      loadMyRegistrations();
+    }
+  }
+
+  // ========== Registration form logic ==========
+  const NIVEAUX = {
+    MATERNELLE: ['N1','N2','N3'],
+    PRIMAIRE: ['P1','P2','P3','P4','P5']
+  };
+
+  function updateNiveauOptions(){
+    const section = document.getElementById('rSection').value;
+    const sel = document.getElementById('rNiveau');
+    sel.innerHTML = '<option value="" data-i18n="select_option">Sélectionnez</option>';
+    (NIVEAUX[section] || []).forEach(n=>{
+      const o = document.createElement('option');
+      o.value = n; o.textContent = n;
+      sel.appendChild(o);
+    });
+
+    document.querySelectorAll('input[name="rBranch"]').forEach(radio => {
+      const item = radio.closest('.choice-item');
+      if (section === 'PRIMAIRE') {
+        if (radio.value !== 'gisozi') {
+          radio.disabled = true;
+          radio.checked = false;
+          item?.classList.add('branch-disabled');
+        } else {
+          radio.disabled = false;
+          radio.checked = true;
+          item?.classList.remove('branch-disabled');
+        }
+      } else if (section === 'MATERNELLE') {
+        radio.disabled = false;
+        item?.classList.remove('branch-disabled');
+      } else {
+        radio.disabled = false;
+        item?.classList.remove('branch-disabled');
+      }
+    });
+
+    applyTranslations();
+    updateContactInfo();
+  }
+
+  const BRANCH_CONTACTS = {
+    kacyiru:   { name:'Kacyiru',   phone:'0791639766 / 0792570074', email:'edenfamilyschoolkacyiru@gmail.com'},
+    gisozi:    { name:'Gisozi',    phone:'0788410242 / 0794116491 / 0796145647', email:'edenfamilyschoolgisozi@gmail.com' },
+    kimisagara:{ name:'Kimisagara',phone:'0785892018 / 0791826950', email:'edenfamilyschoolkimisagara@gmail.com' }
+  };
+
+  function updateContactInfo(){
+    const val = document.querySelector('input[name="rBranch"]:checked')?.value;
+    const box = document.getElementById('contactInfo');
+    if (!val) { box.style.display='none'; return; }
+    const c = BRANCH_CONTACTS[val];
+    if (!c) { box.style.display='none'; return; }
+    const prefix = t('contact_prefix');
+    box.innerHTML = `<strong>${prefix} ${c.name} :</strong> ${c.phone} — ${c.email}`;
+    box.style.display = 'block';
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(()=> t.style.display='none', 4500);
+  }
+
+  function generateReference(){
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    const rnd = Math.floor(Math.random()*900000+100000);
+    return `EDU-${y}${m}${d}-${rnd}`;
+  }
+
+  document.getElementById('publicRegistrationForm')?.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!currentUser) {
+      showToast(t('toast_need_login'));
+      const authGate = document.getElementById('authGate');
+      if (authGate) {
+        authGate.scrollIntoView({ behavior: 'smooth' });
+        authGate.classList.add('shake');
+        setTimeout(() => authGate.classList.remove('shake'), 600);
+      }
+      return;
+    }
+
+    const section = document.getElementById('rSection').value;
+    const branchInput = document.querySelector('input[name="rBranch"]:checked');
+    const branch = branchInput ? branchInput.value : '';
+    if (section === 'PRIMAIRE' && branch !== 'gisozi') {
+      showToast(t('branch_primary_gisozi_only'));
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('submit_btn');
+
+    try {
+      const genderInput = document.querySelector('input[name="rGender"]:checked');
+      const reference = generateReference();
+      const parentName = document.getElementById('rParentName').value;
+
+      const formData = {
+        reference,
+        codeUnique: reference,
+        nomPrenom: document.getElementById('rChildFullName').value,
+        dateNaissance: document.getElementById('rChildBirthDate').value,
+        sexe: genderInput ? genderInput.value : '',
+        ecoleProvenance: document.getElementById('rPreviousSchool').value || '',
+        section,
+        niveau: document.getElementById('rNiveau').value,
+        branche: branch,
+        transport: document.getElementById('rTransport').checked ? 'OUI' : 'NON',
+        chefNomPrenom: parentName,
+        chefDeFamille: parentName,
+        chefTelephone: document.getElementById('rParentPhone').value,
+        chefPieceIdentite: document.getElementById('rParentID').value || '',
+        conjointNomPrenom: document.getElementById('rSpouseName').value || '',
+        conjointTelephone: document.getElementById('rSpousePhone').value || '',
+        conjointPieceIdentite: document.getElementById('rSpouseID').value || '',
+        ville: document.getElementById('rVille').value,
+        secteur: document.getElementById('rSecteur').value,
+        umurenge: document.getElementById('rUmurenge').value,
+        akagari: document.getElementById('rAkagari').value,
+        umudugudu: document.getElementById('rUmudugudu').value,
+
+        statut: 'En attente',
+        approvedBy: null,
+        approvedByRole: null,
+        approvedAt: null,
+
+        parentUID: currentUser.uid,
+        parentEmail: currentUser.email || '',
+        parentDisplayName: currentUser.displayName || '',
+
+        dateInscription: new Date().toISOString(),
+        timestamp: Date.now(),
+        source: 'site_public'
+      };
+
+      await db.ref('inscriptions-scolaires').push(formData);
+
+      const notifRoles = ['secretary', 'comptable', 'director'];
+      const notifPromises = notifRoles.map(role =>
+        db.ref('notifications').push({
+          toRole: role,
+          type: 'inscription',
+          title: `Nouvelle demande d'inscription`,
+          body: `${formData.nomPrenom} (${formData.niveau}) - Branche: ${formData.branche}`,
+          reference,
+          read: false,
+          createdAt: Date.now()
+        })
+      );
+      await Promise.all(notifPromises);
+
+      await db.ref('activities').push({
+        description: `Nouvelle demande d'inscription: ${formData.nomPrenom} (${reference})`,
+        timestamp: Date.now()
+      });
+
+      trackEvent('registration_submitted', { reference });
+      document.getElementById('publicRegistrationForm').style.display = 'none';
+      document.getElementById('successScreen').style.display = 'block';
+      document.getElementById('successRef').textContent = reference;
+      // Apply translations to success screen (already has data-i18n)
+      applyTranslations();
+      loadMyRegistrations();
+
+    } catch (error) {
+      console.error(error);
+      showToast(t('toast_submit_error'));
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> ' + t('submit_btn');
+    }
+  });
+
+  // ========== My registrations ==========
+  function getRegistrationStatut(reg) {
+    if (reg.statut) return reg.statut;
+    if (reg.status === 'approuve') return 'Confirmé';
+    if (reg.status === 'rejete') return 'Rejeté';
+    if (reg.status === 'en_attente') return 'En attente';
+    return reg.status || 'En attente';
+  }
+
+  function isRegistrationApproved(reg) {
+    const s = getRegistrationStatut(reg);
+    return s === 'Confirmé' || reg.status === 'approuve';
+  }
+
+  function hasTransport(reg) {
+    return reg.transport === 'OUI' || reg.transport === true;
+  }
+
+  function statusBadge(reg){
+    const status = typeof reg === 'object' ? getRegistrationStatut(reg) : reg;
+    if (status === 'Confirmé' || status === 'approuve') {
+      return `<span class="status-badge status-approved"><i class="fas fa-check"></i> ${t('status_approved')}</span>`;
+    }
+    if (status === 'Rejeté' || status === 'rejete') {
+      return `<span class="status-badge status-rejected"><i class="fas fa-xmark"></i> ${t('status_rejected')}</span>`;
+    }
+    return `<span class="status-badge status-pending"><span class="dot"></span> ${t('status_pending')}</span>`;
+  }
+
+  const BRANCH_LABELS = { kacyiru:'Kacyiru', gisozi:'Gisozi', kimisagara:'Kimisagara' };
+
+  async function loadMyRegistrations(){
+    if (!currentUser) return;
+    const list = document.getElementById('myRegsList');
+    list.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+
+    try {
+      const snap = await db.ref('inscriptions-scolaires')
+        .orderByChild('parentUID')
+        .equalTo(currentUser.uid)
+        .once('value');
+
+      const regs = [];
+      snap.forEach(child => regs.push({ id: child.key, ...child.val() }));
+      regs.sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
+
+      if (regs.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-folder-open"></i>
+            <p>${t('empty_regs')}</p>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'stagger';
+      regs.forEach(reg => {
+        const isApproved = isRegistrationApproved(reg);
+        const card = document.createElement('div');
+        card.className = 'reg-card';
+        const branchLabel = BRANCH_LABELS[reg.branche] || reg.branche || '';
+        const dateStr = reg.dateInscription ? new Date(reg.dateInscription).toLocaleDateString(currentLang === 'fr' ? 'fr-FR' : currentLang === 'rw' ? 'rw-RW' : 'en-US') : '';
+        card.innerHTML = `
+          <div class="reg-info">
+            <h4>${reg.nomPrenom || 'Élève'}</h4>
+            <p>${t('pdf_ref')} : <strong>${reg.reference || 'N/A'}</strong> · ${reg.niveau || ''} · ${branchLabel}</p>
+            <div class="reg-meta">
+              ${statusBadge(reg)}
+              <span class="tag"><i class="fas fa-calendar-days"></i> ${dateStr}</span>
+            </div>
+          </div>
+          <div class="reg-actions">
+            <button class="btn btn-outline" ${isApproved ? '' : 'disabled title="' + t('unavailable_after_validation') + '"'} onclick='downloadAdmissionLetter(${JSON.stringify(reg).replace(/'/g, "&apos;")})'>
+              <i class="fas fa-file-alt"></i> ${t('admission_letter')}
+            </button>
+            <button class="btn btn-outline" ${isApproved ? '' : 'disabled title="' + t('unavailable_after_validation') + '"'} onclick='downloadRegistrationForm(${JSON.stringify(reg).replace(/'/g, "&apos;")})'>
+              <i class="fas fa-file-pdf"></i> ${t('registration_form')}
+            </button>
+          </div>
+        `;
+        wrap.appendChild(card);
+      });
+      list.appendChild(wrap);
+
+    } catch (error) {
+      console.error(error);
+      list.innerHTML = `<div class="empty-state"><i class="fas fa-triangle-exclamation"></i><p>${t('load_error')}</p></div>`;
+    }
+  }
+
+  // ========== PDF generation (mirrors comptable.html logic) ==========
+  const BRANCH_INFO = {
+    kacyiru: {
+      label: translations.fr.branch_label_kacyiru,
+      authorities: ['Directeur: TUMBWE Serge (0791639766)', 'Comptable: 0792570074', 'DG: NYIRIMBUTO Josephe (0788883842)'],
+      color: [30, 107, 78]
+    },
+    kimisagara: {
+      label: translations.fr.branch_label_kimisagara,
+      authorities: ['Comptable: 0785892018', 'Responsable: Masudi Idi (0791826950)', 'DG: NYIRIMBUTO Josephe (0788883842)'],
+      color: [51, 153, 102]
+    },
+    gisozi: {
+      label: translations.fr.branch_label_gisozi,
+      authorities: ['Directrice: YANKURIJE Stephanie (0788410242 / 0794116491)', 'DOS: NIYIBIZI Jean de Dieu (0796145647)', 'DG: NYIRIMBUTO Josephe (0788883842)'],
+      color: [255, 107, 107]
+    }
+  };
+
+  function resolveJsPDF(){
+    if (window.jspdf && typeof window.jspdf.jsPDF === 'function') return window.jspdf.jsPDF;
+    if (typeof window.jsPDF === 'function') return window.jsPDF;
+    return null;
+  }
+
+  function downloadAdmissionLetter(reg){
+    trackClick('download_admission_letter', { reference: reg.reference || reg.codeUnique || '' });
+    const JsPDF = resolveJsPDF();
+    if (!JsPDF) { showToast(t('toast_pdf_error')); return; }
+    if (!isRegistrationApproved(reg)) { showToast(t('toast_need_approval')); return; }
+
+    const info = BRANCH_INFO[reg.branche] || BRANCH_INFO.kacyiru;
+    const doc = new JsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+    const pageW = doc.internal.pageSize.getWidth();
+
+    doc.setFillColor(...info.color);
+    doc.rect(0, 0, pageW, 30, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(14);
+    doc.text(info.label, pageW/2, 14, {align:'center'});
+    doc.setFontSize(11);
+    doc.text(t('pdf_admission_title'), pageW/2, 22, {align:'center'});
+
+    doc.setTextColor(0,0,0);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.text('Kigali, ' + new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'long', year:'numeric'}), pageW-20, 40, {align:'right'});
+
+    let y = 55;
+    doc.text(t('pdf_admission_body'), 20, y);
+    y += 12;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(14);
+    doc.text(reg.nomPrenom || '', pageW/2, y, {align:'center'});
+    y += 10;
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(11);
+    doc.text(t('pdf_admitted'), pageW/2, y, {align:'center'});
+
+    y += 16;
+    const details = [
+      [t('pdf_ref'), reg.codeUnique || reg.reference || 'N/A'],
+      [t('pdf_level'), reg.niveau || 'N/A'],
+      [t('pdf_branch'), info.label],
+      [t('pdf_birthdate'), reg.dateNaissance ? new Date(reg.dateNaissance).toLocaleDateString('fr-FR') : 'N/A'],
+      [t('pdf_transport'), hasTransport(reg) ? t('pdf_yes') : t('pdf_no')]
+    ];
+    doc.setFontSize(11);
+    details.forEach(([label, value], i) => {
+      doc.text(label + ' :', 20, y + i*8);
+      doc.text(String(value), 90, y + i*8);
+    });
+    y += details.length*8 + 10;
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.text(t('pdf_authorities'), 20, y);
+    y += 7;
+    doc.setFont('helvetica','normal');
+    info.authorities.forEach(line => { doc.text(line, 20, y); y += 6; });
+
+    y += 20;
+    doc.rect(20, y, 70, 28);
+    doc.rect(pageW-90, y, 70, 28);
+    doc.setFontSize(9);
+    doc.text(t('pdf_signature_school'), 55, y+9, {align:'center'});
+    doc.text(t('pdf_signature_parent'), pageW-55, y+9, {align:'center'});
+    doc.text(t('pdf_signature'), pageW/2, y+38, {align:'center'});
+
+    doc.save(`Lettre_Admission_${reg.reference || 'eleve'}.pdf`);
+    showToast(t('toast_admission_downloaded'));
+  }
+
+  function downloadRegistrationForm(reg){
+    trackClick('download_registration_form', { reference: reg.reference || reg.codeUnique || '' });
+    const JsPDF = resolveJsPDF();
+    if (!JsPDF) { showToast(t('toast_pdf_error')); return; }
+    if (!isRegistrationApproved(reg)) { showToast(t('toast_need_approval')); return; }
+
+    const info = BRANCH_INFO[reg.branche] || BRANCH_INFO.kacyiru;
+    const doc = new JsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+    const pageW = doc.internal.pageSize.getWidth();
+
+    doc.setFillColor(...info.color);
+    doc.rect(0, 0, pageW, 26, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(13);
+    doc.text(t('pdf_form_title'), pageW/2, 11, {align:'center'});
+    doc.setFontSize(10);
+    doc.text(info.label, pageW/2, 19, {align:'center'});
+
+    doc.setTextColor(0,0,0);
+    let y = 38;
+    const line = (label, value) => { doc.setFont('helvetica','bold'); doc.text(label, 20, y); doc.setFont('helvetica','normal'); doc.text(String(value || '-'), 75, y); y += 7; };
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text(t('pdf_form_child'), 20, y); y += 8; doc.setFontSize(10);
+    line(t('child_fullname'), reg.nomPrenom);
+    line(t('gender'), reg.sexe === 'FILLE' ? t('gender_female') : t('gender_male'));
+    line(t('child_birthdate'), reg.dateNaissance ? new Date(reg.dateNaissance).toLocaleDateString('fr-FR') : '');
+    line(t('prev_school'), reg.ecoleProvenance);
+    line(t('pdf_form_section'), `${reg.section || ''} - ${reg.niveau || ''}`);
+    line(t('pdf_form_branch'), info.label);
+    line(t('pdf_form_transport'), hasTransport(reg) ? t('pdf_yes') : t('pdf_no'));
+    line(t('pdf_form_ref'), reg.codeUnique || reg.reference);
+
+    y += 3;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text(t('pdf_form_parent'), 20, y); y += 8; doc.setFontSize(10);
+    line(t('parent_name'), reg.chefNomPrenom || reg.chefDeFamille);
+    line(t('pdf_form_phone'), reg.chefTelephone);
+    line(t('pdf_form_id'), reg.chefPieceIdentite);
+
+    y += 3;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text(t('pdf_form_spouse'), 20, y); y += 8; doc.setFontSize(10);
+    line(t('spouse_name'), reg.conjointNomPrenom);
+    line(t('pdf_form_phone'), reg.conjointTelephone);
+    line(t('pdf_form_id'), reg.conjointPieceIdentite);
+
+    y += 3;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text(t('pdf_form_address'), 20, y); y += 8; doc.setFontSize(10);
+    line(t('pdf_form_ville'), reg.ville);
+    line(t('pdf_form_secteur'), reg.secteur);
+    line(t('pdf_form_umurenge'), reg.umurenge);
+    line(t('pdf_form_akagari'), reg.akagari);
+    line(t('pdf_form_umudugudu'), reg.umudugudu);
+
+    y += 12;
+    doc.rect(20, y, 70, 26);
+    doc.rect(pageW-90, y, 70, 26);
+    doc.setFontSize(9);
+    doc.text(t('pdf_signature_school'), 55, y+9, {align:'center'});
+    doc.text(t('pdf_signature_parent'), pageW-55, y+9, {align:'center'});
+    doc.text(t('pdf_signature'), pageW/2, y+36, {align:'center'});
+
+    doc.save(`Formulaire_Inscription_${reg.reference || 'eleve'}.pdf`);
+    showToast(t('toast_form_downloaded'));
+  }
+
+  document.querySelector('.brand')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    const img = this.querySelector('img');
+    if (img) {
+      img.classList.add('logo-spin');
+      setTimeout(() => {
+        img.classList.remove('logo-spin');
+        window.location.href = 'index.html';
+      }, 600);
+    } else {
+      window.location.href = 'index.html';
+    }
+  });
+
+  // Apply translations on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    applyTranslations();
+  });
+</script>
+</body>
+</html>
