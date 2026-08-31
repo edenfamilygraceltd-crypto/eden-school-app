@@ -102,8 +102,8 @@
 
           branchStudents.forEach((student, index) => {
             const amount = student.feesMonthlyAmount || 0;
-            const dateConfigured = student.feesDateConfigured || 'â€”';
-            const studentClass = student.classes || student.class || 'â€”';
+            const dateConfigured = student.feesDateConfigured || '—';
+            const studentClass = student.classes || student.class || '—';
             const amountDisplay = amount > 0
               ? `<span class="fw-bold text-primary">${formatCurrencyRWF(amount)}</span>`
               : `<span class="badge bg-warning text-dark">Not configured</span>`;
@@ -113,7 +113,7 @@
               <td><strong>${student.name || student.fullName}</strong></td>
               <td><span class="badge bg-secondary">${studentClass}</span></td>
               <td>${amountDisplay}</td>
-              <td>${dateConfigured !== 'â€”' ? new Date(dateConfigured).toLocaleDateString('en-US') : 'â€”'}</td>
+              <td>${dateConfigured !== '—' ? new Date(dateConfigured).toLocaleDateString('en-US') : '—'}</td>
               <td>
                 <button class="btn btn-sm btn-outline-primary me-1" onclick="editSingleFee('${student.id}')" title="Edit fee">
                   <i class="fas fa-edit"></i>
@@ -400,7 +400,7 @@
               </td>
               <td><strong>${student.name || student.fullName}</strong><br>
                   <small class="text-muted">${student.reference || ''}</small></td>
-              <td><span class="badge bg-secondary">${student.classes || student.class || 'â€”'}</span></td>
+              <td><span class="badge bg-secondary">${student.classes || student.class || '—'}</span></td>
               <td>${currentFee && currentFee > 0
                    ? '<span class="text-primary fw-bold">' + formatCurrencyRWF(currentFee) + '</span>'
                    : '<span class="badge bg-warning text-dark">Not set</span>'}</td>

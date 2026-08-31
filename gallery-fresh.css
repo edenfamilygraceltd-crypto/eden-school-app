@@ -11,15 +11,16 @@
 #galerie .gallery-slide img{width:100%;height:100%;object-fit:cover;display:block;}
 #galerie .gallery-slide:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(8,18,35,.42));pointer-events:none;}
 #galerie .gallery-ui{position:absolute;z-index:4;bottom:0;left:0;right:0;height:92px;padding:0 28px;display:grid;grid-template-columns:1fr 55px 105px;align-items:center;background:linear-gradient(180deg,transparent,rgba(8,18,35,.65));color:#fff;}
-#galerie .gallery-progress{display:flex;gap:6px;align-items:center;}
-#galerie .gallery-progress button{width:22px;height:2px;padding:0;border:0;background:rgba(255,255,255,.42);cursor:pointer;transition:.3s;}
+#galerie .gallery-progress{display:flex;gap:6px;align-items:center;overflow:hidden;}
+#galerie .gallery-progress button{width:22px;height:4px;padding:0;border:0;border-radius:4px;background:rgba(255,255,255,.48);cursor:pointer;transition:.3s;}
 #galerie .gallery-progress button.active{width:42px;background:#d8b75b;}
 #galerie .gallery-count{font-family:Fraunces,serif;font-size:1.1rem;text-align:center;}
 #galerie .gallery-controls{display:flex;justify-content:flex-end;gap:8px;}
-#galerie .gallery-controls button{width:46px;height:46px;border:1px solid rgba(255,255,255,.5);background:rgba(8,18,35,.2);color:#fff;font-size:1rem;cursor:pointer;transition:.25s;}
-#galerie .gallery-controls button:hover{background:#fff;color:#10244d;}
-#galerie .gallery-footer{max-width:1180px;margin:18px auto 0;display:flex;justify-content:space-between;align-items:center;font-size:.64rem;letter-spacing:.15em;color:#8a8b89;}
-#galerie .gallery-footer a{color:#10244d;text-decoration:none;border-bottom:1px solid #10244d;padding-bottom:5px;letter-spacing:.03em;text-transform:none;font-size:.76rem;}
-#galerie .gallery-footer b{color:#b08b32;margin-left:8px;}
+#galerie .gallery-controls button{width:46px;height:46px;border:1px solid rgba(255,255,255,.5);border-radius:50%;background:rgba(8,18,35,.42);color:#fff;font-size:1rem;cursor:pointer;transition:.25s;}
+#galerie .gallery-controls button:hover,#galerie .gallery-controls button:focus-visible{background:#fff;color:#10244d;outline:none;}
+#galerie .gallery-footer{max-width:1180px;margin:22px auto 0;display:flex;justify-content:space-between;align-items:center;gap:20px;font-size:.68rem;letter-spacing:.15em;color:#6f747a;}
+#galerie .gallery-all-link{display:inline-flex!important;align-items:center;justify-content:center;gap:12px;min-height:48px;padding:12px 20px!important;background:#10244d!important;color:#fff!important;border:2px solid #10244d!important;border-radius:8px!important;text-decoration:none!important;box-shadow:0 8px 20px rgba(16,36,77,.18);font-weight:800;font-size:.82rem!important;letter-spacing:.02em!important;white-space:nowrap;transition:transform .2s ease,background .2s ease,box-shadow .2s ease;}
+#galerie .gallery-all-link:hover,#galerie .gallery-all-link:focus-visible{background:#b08b32!important;border-color:#b08b32!important;color:#fff!important;transform:translateY(-2px);box-shadow:0 12px 26px rgba(16,36,77,.24);outline:none;}
+#galerie .gallery-all-link b{color:#fff!important;margin-left:0;font-size:1.1rem;}
 @media(max-width:850px){#galerie.eden-gallery{padding:85px 5vw 45px;}#galerie .gallery-intro{grid-template-columns:1fr;gap:20px;margin-bottom:32px;}#galerie .gallery-stage{height:540px;}#galerie .gallery-ui{grid-template-columns:1fr 45px 100px;padding:0 18px;}}
-@media(max-width:560px){#galerie.eden-gallery{padding:70px 20px 38px;}#galerie .gallery-intro h2{font-size:3.8rem;}#galerie .gallery-stage{height:430px;}#galerie .gallery-ui{height:76px;grid-template-columns:1fr 35px 96px;padding:0 14px;}#galerie .gallery-controls button{width:40px;height:40px;}#galerie .gallery-footer{align-items:flex-start;gap:20px;line-height:1.4;}#galerie .gallery-footer span{max-width:130px;}}
+@media(max-width:560px){#galerie.eden-gallery{padding:70px 20px 38px;}#galerie .gallery-intro h2{font-size:3.8rem;}#galerie .gallery-stage{height:430px;}#galerie .gallery-ui{height:76px;grid-template-columns:1fr 35px 96px;padding:0 14px;}#galerie .gallery-controls button{width:40px;height:40px;}#galerie .gallery-footer{align-items:stretch;flex-direction:column;gap:14px;line-height:1.4;}#galerie .gallery-footer span{max-width:none;}#galerie .gallery-all-link{width:100%;}}

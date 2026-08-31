@@ -278,6 +278,12 @@
         </div>
         <div id="contactInfo"></div>
         <div class="field" style="margin-top:.9rem;">
+          <label data-i18n="academic_year">Année académique *</label>
+          <select id="rAcademicYear" required>
+            <option value="" data-i18n="select_option">Sélectionnez</option>
+          </select>
+        </div>
+        <div class="field" style="margin-top:.9rem;">
           <label class="switch-row">
             <input type="checkbox" id="rTransport"> <span data-i18n="transport">Transport bus</span>
           </label>
@@ -388,6 +394,7 @@
       branch_kacyiru: "KACYIRU",
       branch_gisozi: "GISOZI",
       branch_kimisagara: "KIMISAGARA",
+      academic_year: "Année académique *",
       transport: "Transport bus",
       step2_title: "Chef de famille",
       parent_name: "Nom-prénom *",
@@ -498,6 +505,7 @@
       branch_kacyiru: "KACYIRU",
       branch_gisozi: "GISOZI",
       branch_kimisagara: "KIMISAGARA",
+      academic_year: "Academic year *",
       transport: "Bus transport",
       step2_title: "Head of family",
       parent_name: "Full name *",
@@ -608,6 +616,7 @@
       branch_kacyiru: "KACYIRU",
       branch_gisozi: "GISOZI",
       branch_kimisagara: "KIMISAGARA",
+      academic_year: "Umwaka wa sikolo *",
       transport: "Bisi yo gutwara",
       step2_title: "Umutware w'umuryango",
       parent_name: "Izina ry'umutware *",
@@ -1017,9 +1026,9 @@
   }
 
   const BRANCH_CONTACTS = {
-    kacyiru:   { name:'Kacyiru',   phone:'0791639766 / 0792570074', email:'edenfamilyschoolkacyiru@gmail.com'},
+    kacyiru:   { name:'Kacyiru',   phone:'0791639766 / 0792570074', email:'edenfamilyschool@gmail.com'},
     gisozi:    { name:'Gisozi',    phone:'0788410242 / 0794116491 / 0796145647', email:'edenfamilyschoolgisozi@gmail.com' },
-    kimisagara:{ name:'Kimisagara',phone:'0785892018 / 0791826950', email:'edenfamilyschoolkimisagara@gmail.com' }
+    kimisagara:{ name:'Kimisagara',phone:'0785892018 / 0791826950', email:'edenfamilygrace@gmail.com' }
   };
 
   function updateContactInfo(){
@@ -1031,6 +1040,23 @@
     const prefix = t('contact_prefix');
     box.innerHTML = `<strong>${prefix} ${c.name} :</strong> ${c.phone} — ${c.email}`;
     box.style.display = 'block';
+  }
+
+  function populateAcademicYearSelect(){
+    const sel = document.getElementById('rAcademicYear');
+    const currentYear = new Date().getFullYear();
+    sel.innerHTML = '<option value="" data-i18n="select_option">Sélectionnez</option>';
+    for (let i = -1; i <= 4; i++) {
+      const year = currentYear + i;
+      const label = `${year}-${year + 1}`;
+      const o = document.createElement('option');
+      o.value = label;
+      o.textContent = label;
+      sel.appendChild(o);
+    }
+    // Set current year as default
+    const currentSchoolYear = `${currentYear}-${currentYear + 1}`;
+    sel.value = currentSchoolYear;
   }
 
   function showToast(msg){
@@ -1089,6 +1115,7 @@
         section,
         niveau: document.getElementById('rNiveau').value,
         branche: branch,
+        anneeAcademique: document.getElementById('rAcademicYear').value,
         transport: document.getElementById('rTransport').checked ? 'OUI' : 'NON',
         chefNomPrenom: parentName,
         chefDeFamille: parentName,
@@ -1427,6 +1454,7 @@
   // Apply translations on page load
   document.addEventListener('DOMContentLoaded', () => {
     applyTranslations();
+    populateAcademicYearSelect();
   });
 </script>
 </body>
