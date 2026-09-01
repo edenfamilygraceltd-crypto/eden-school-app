@@ -7748,78 +7748,154 @@
             async function exportRegistrationReportPDF() {
                 const JsPDF = resolveJsPDF();
                 if (!JsPDF) { showToast('PDF library not loaded', 'error'); return; }
+
                 try {
-                    const regSnap = await db.ref('registrationPayments').orderByChild('branch').equalTo(selectedBranch).once('value');
-                    const regs = [];
-                    regSnap.forEach(ch => regs.push({ id: ch.key, ...ch.val() }));
+                    // Source principale: demandes d'inscription CONFIRM?ES, car elles
+                    // contiennent le studentId cr?? par la comptabilit?. On rejoint ensuite
+                    // la fiche students pour r?cup?rer classe, adresse et transport.
+                    const [inscSnap, studentsSnap, paymentsSnap] = await Promise.all([
+                        pendingInscriptionsRef.once('value'),
+                        studentsRef.once('value'),
+                        registrationPaymentsRef.once('value')
+                    ]);
 
-                    const pendSnap = await pendingInscriptionsRef.once('value');
-                    const pendings = [];
-                    pendSnap.forEach(ch => pendings.push({ id: ch.key, ...ch.val() }));
+                    const studentsById = {};
+                    studentsSnap.forEach(ch => { studentsById[ch.key] = { id: ch.key, ...ch.val() }; });
 
-                    const confirmed = [];
-                    const notConfirmed = [];
-                    pendings.forEach(p => {
-                        if (!inscriptionMatchesSelectedBranch(p)) return;
-                        const statutValue = p.statut || '';
-                        const statusValue = p.status || '';
-                        const isConfirmed = statutValue === 'Confirmé' || statusValue === 'approuve';
-                        if (isConfirmed) confirmed.push(p);
-                        else notConfirmed.push(p);
+                    const paymentsByStudent = {};
+                    paymentsSnap.forEach(ch => {
+                        const payment = { id: ch.key, ...ch.val() };
+                        if (payment.studentId) paymentsByStudent[payment.studentId] = payment;
                     });
 
-                    const doc = new JsPDF({ unit: 'mm', format: 'a4' });
-                    let y = 18;
+                    const rows = [];
+                    const seenStudentIds = new Set();
+
+                    // 1) Toutes les inscriptions confirm?es avec un studentId.
+                    inscSnap.forEach(ch => {
+                        const insc = { id: ch.key, ...ch.val() };
+                        const statut = String(insc.statut || '').trim().toLowerCase();
+                        const status = String(insc.status || '').trim().toLowerCase();
+                        const confirmed = statut === 'confirm?' || statut === 'confirme' || status === 'approuve' || !!insc.studentId;
+                        if (!confirmed || !insc.studentId || !inscriptionMatchesSelectedBranch(insc)) return;
+
+                        const student = studentsById[insc.studentId] || {};
+                        const payment = paymentsByStudent[insc.studentId] || {};
+                        const branch = student.branch || mapInscriptionBranchToInternal(insc.branche, insc.section, insc.niveau);
+
+                        rows.push({
+                            studentId: insc.studentId,
+                            reference: student.reference || payment.reference || insc.codeUnique || insc.studentId,
+                            name: student.name || student.fullName || insc.nomPrenom || 'N/A',
+                            className: student.classes || student.class || insc.niveau || payment.studentClass || 'N/A',
+                            branch: getBranchName(branch),
+                            academicYear: student.academicYear || insc.anneeScolaire || payment.academicYear || getCurrentAcademicYearLabel(),
+                            bus: student.transportEnrolled === true || String(student.transportEnrolled).toUpperCase() === 'OUI' || String(insc.transport || '').toUpperCase() === 'OUI' ? 'OUI' : 'NON',
+                            address: student.address || [insc.secteur, insc.umurenge, insc.akagari, insc.umudugudu].filter(Boolean).join(', ') || 'N/A',
+                            parent: student.parent || insc.chefNomPrenom || 'N/A',
+                            parentPhone: student.parentPhone || insc.chefTelephone || 'N/A',
+                            spouse: student.spouseName || insc.conjointNomPrenom || 'N/A',
+                            spousePhone: student.spousePhone || insc.conjointTelephone || 'N/A'
+                        });
+                        seenStudentIds.add(insc.studentId);
+                    });
+
+                    // 2) Filet de s?curit?: si une fiche ?l?ve active a ?t? cr??e mais que
+                    // l'ancienne demande n'est plus exploitable, elle reste dans le rapport.
+                    Object.values(studentsById).forEach(student => {
+                        if (seenStudentIds.has(student.id)) return;
+                        const active = String(student.status || '').toLowerCase() !== 'inactive' && String(student.status || '').toLowerCase() !== 'deleted';
+                        if (!active || !registrationPaymentMatchesBranch({ ...student, branch: student.branch }, selectedBranch)) return;
+                        if (!student.reference && !student.name) return;
+
+                        const payment = paymentsByStudent[student.id] || {};
+                        rows.push({
+                            studentId: student.id,
+                            reference: student.reference || payment.reference || student.id,
+                            name: student.name || student.fullName || 'N/A',
+                            className: student.classes || student.class || payment.studentClass || 'N/A',
+                            branch: getBranchName(student.branch),
+                            academicYear: student.academicYear || payment.academicYear || getCurrentAcademicYearLabel(),
+                            bus: student.transportEnrolled === true || String(student.transportEnrolled).toUpperCase() === 'OUI' ? 'OUI' : 'NON',
+                            address: student.address || 'N/A',
+                            parent: student.parent || 'N/A',
+                            parentPhone: student.parentPhone || 'N/A',
+                            spouse: student.spouseName || 'N/A',
+                            spousePhone: student.spousePhone || 'N/A'
+                        });
+                    });
+
+                    rows.sort((a, b) => String(a.name).localeCompare(String(b.name), 'fr'));
+
+                    const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+                    const titleBranch = selectedBranch ? getBranchName(selectedBranch) : 'Toutes les branches';
+                    const today = new Date().toLocaleDateString('fr-FR');
+
+                    doc.setFont('helvetica', 'bold');
                     doc.setFontSize(16);
-                    doc.text(`Registration Report - ${selectedBranch || 'All branches'}`, 14, y);
-                    y += 8;
+                    doc.text('RAPPORT DES ?L?VES INSCRITS', 14, 13);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(10);
+                    doc.text(`Branche : ${titleBranch}   |   Ann?e scolaire : ${getCurrentAcademicYearLabel()}   |   Date : ${today}`, 14, 20);
+                    doc.text(`Total des ?l?ves inscrits : ${rows.length}`, 14, 26);
 
-                    // Registered payments
-                    doc.setFontSize(12);
-                    doc.text(`Registered Payments (${regs.length})`, 14, y);
-                    y += 6;
-                    if (regs.length > 0) {
-                        const head = [['Ref','Name','Class','Amount','Date','Mode']];
-                        const body = regs.map(r => [r.reference || '', r.studentName || '', r.studentClass || '', r.amount || 0, r.paymentDate || '', r.paymentMode || '']);
-                        doc.autoTable({ head: head, body: body, startY: y, styles: { fontSize: 9 } });
-                        y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : y + 40;
+                    const body = rows.map((r, i) => [
+                        i + 1,
+                        r.reference,
+                        r.name,
+                        r.className,
+                        r.branch,
+                        r.bus,
+                        r.address,
+                        r.parent,
+                        r.parentPhone,
+                        r.spouse,
+                        r.spousePhone
+                    ]);
+
+                    if (body.length) {
+                        doc.autoTable({
+                            startY: 31,
+                            head: [[
+                                'N?', 'R?F?RENCE', '?L?VE', 'CLASSE', 'BRANCHE',
+                                'BUS', 'ADRESSE / LIEU DE R?SIDENCE', 'PARENT / TUTEUR',
+                                'T?L. PARENT', '2e PARENT', 'T?L. 2e PARENT'
+                            ]],
+                            body,
+                            styles: { fontSize: 7.2, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
+                            headStyles: { fontSize: 7.2, fontStyle: 'bold' },
+                            columnStyles: {
+                                0: { cellWidth: 9 }, 1: { cellWidth: 24 }, 2: { cellWidth: 31 },
+                                3: { cellWidth: 18 }, 4: { cellWidth: 20 }, 5: { cellWidth: 11 },
+                                6: { cellWidth: 42 }, 7: { cellWidth: 28 }, 8: { cellWidth: 25 },
+                                9: { cellWidth: 25 }, 10: { cellWidth: 25 }
+                            },
+                            margin: { left: 10, right: 10, top: 31, bottom: 12 },
+                            didDrawPage: data => {
+                                doc.setFontSize(7);
+                                doc.text(`Rapport des ?l?ves inscrits ? page ${data.pageNumber}`, 10, 203);
+                            }
+                        });
                     } else {
-                        doc.text('No registered payments found.', 14, y);
-                        y += 8;
+                        doc.setFontSize(11);
+                        doc.text('Aucun ?l?ve inscrit trouv? pour cette branche.', 14, 38);
                     }
 
-                    // Confirmed
-                    doc.text(`Confirmed Requests (${confirmed.length})`, 14, y);
-                    y += 6;
-                    if (confirmed.length > 0) {
-                        const head = [['Code','Name','DOB','Parent','Phone','Date']];
-                        const body = confirmed.map(p => [p.codeUnique || p.id || '', p.nomPrenom || '', p.dateNaissance || '', p.chefNomPrenom || '', p.chefTelephone || '', p.dateInscription || '']);
-                        doc.autoTable({ head: head, body: body, startY: y, styles: { fontSize: 9 } });
-                        y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : y + 40;
-                    } else {
-                        doc.text('No confirmed requests found.', 14, y);
-                        y += 8;
+                    // R?sum? transport en bas du document.
+                    const busCount = rows.filter(r => r.bus === 'OUI').length;
+                    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 42;
+                    if (finalY < 190) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(9);
+                        doc.text(`?l?ves utilisant le bus : ${busCount}   |   Sans bus : ${rows.length - busCount}`, 10, finalY + 8);
                     }
 
-                    // Not confirmed
-                    doc.text(`Pending / Not Confirmed (${notConfirmed.length})`, 14, y);
-                    y += 6;
-                    if (notConfirmed.length > 0) {
-                        const head = [['Code','Name','DOB','Parent','Phone','Date']];
-                        const body = notConfirmed.map(p => [p.codeUnique || p.id || '', p.nomPrenom || '', p.dateNaissance || '', p.chefNomPrenom || '', p.chefTelephone || '', p.dateInscription || '']);
-                        doc.autoTable({ head: head, body: body, startY: y, styles: { fontSize: 9 } });
-                        y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : y + 40;
-                    } else {
-                        doc.text('No pending requests found.', 14, y);
-                        y += 8;
-                    }
-
-                    const fileName = `Registration_Report_${selectedBranch || 'all'}_${new Date().toISOString().slice(0,10)}.pdf`;
-                    doc.save(fileName);
-                    showToast('Registration report downloaded!', 'success');
+                    const safeBranch = String(selectedBranch || 'all').replace(/[^a-z0-9_-]/gi, '_');
+                    doc.save(`Rapport_Eleves_Inscrits_${safeBranch}_${new Date().toISOString().slice(0,10)}.pdf`);
+                    showToast(`Rapport PDF t?l?charg? : ${rows.length} ?l?ve(s)`, 'success');
                 } catch (error) {
                     console.error('Error exporting registration report:', error);
-                    showToast('Erreur lors de l\'export du rapport', 'error');
+                    showToast('Erreur lors de l\'export du rapport : ' + (error.message || error), 'error');
                 }
             }
 
