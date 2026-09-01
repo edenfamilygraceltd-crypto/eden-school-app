@@ -2726,7 +2726,7 @@ function handleGoogleSignIn(){
     .catch(err => {
       console.error(err);
       const msg = err && err.code === 'auth/unauthorized-domain'
-        ? `Domaine non autorise: ${window.location.hostname || 'localhost'}. Ajoutez ce domaine dans Firebase > Authentication > Settings > Authorized domains.`
+        ? 'Domaine non autorisé. Ajoutez edenfamilyschool.vercel.app dans Firebase → Authentication → Authorized domains.'
         : 'Erreur connexion Google';
       showToast(msg,'error');
     });

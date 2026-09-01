@@ -103,7 +103,6 @@
             getAuth, 
             createUserWithEmailAndPassword, 
             signInWithEmailAndPassword, 
-            sendPasswordResetEmail,
             signOut, 
             onAuthStateChanged,
             deleteUser,
@@ -170,7 +169,6 @@
         window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
         window.sendEmailVerification = sendEmailVerification;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-        window.sendPasswordResetEmail = sendPasswordResetEmail;
         window.signOut = signOut;
         // Avoid clobbering the app-level deleteUser(userId) handler used by admin buttons.
         window.firebaseDeleteUser = deleteUser;
@@ -561,39 +559,10 @@
                     <i class="fas fa-sign-in-alt"></i>
                     Se connecter
                 </button>
-
-                <button id="forgotPasswordBtn" type="button" class="w-full text-primary-600 hover:text-primary-800 text-sm font-semibold py-2 transition">
-                    <i class="fas fa-key mr-1"></i>
-                    Mot de passe oubli? ? R?cup?rer mon compte par email
-                </button>
                 
                 <div id="loginMessage" class="text-sm text-center hidden"></div>
             </div>
 
-        </div>
-    </div>
-
-    <!-- Modal de r?cup?ration du compte -->
-    <div id="passwordRecoveryModal" class="modal-overlay hidden" aria-hidden="true">
-        <div class="modal-content">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-11 h-11 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center">
-                    <i class="fas fa-envelope-open-text"></i>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold text-secondary-900">R?cup?rer mon compte</h3>
-                    <p class="text-sm text-secondary-500">Firebase enverra un email s?curis? de r?initialisation.</p>
-                </div>
-            </div>
-            <label class="block text-sm font-medium text-secondary-700 mb-2">Adresse email du compte</label>
-            <input type="email" id="recoveryEmail" class="w-full px-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="admin@school.rw" autocomplete="email">
-            <div id="recoveryMessage" class="text-sm mt-3 hidden"></div>
-            <div class="flex gap-3 mt-6">
-                <button type="button" id="closeRecoveryBtn" class="flex-1 px-4 py-3 border border-secondary-300 rounded-lg text-secondary-700 hover:bg-secondary-50 transition">Annuler</button>
-                <button type="button" id="sendRecoveryBtn" class="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition">
-                    <i class="fas fa-paper-plane mr-1"></i> Envoyer
-                </button>
-            </div>
         </div>
     </div>
 
@@ -1285,9 +1254,6 @@
 
                 // Connexion email/mot de passe
                 document.getElementById('loginBtn').addEventListener('click', handleLogin);
-                document.getElementById('forgotPasswordBtn').addEventListener('click', openPasswordRecovery);
-                document.getElementById('closeRecoveryBtn').addEventListener('click', closePasswordRecovery);
-                document.getElementById('sendRecoveryBtn').addEventListener('click', sendPasswordRecovery);
                 
                 // Gestion des onglets principaux
                 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1516,52 +1482,6 @@
         }
 
         // ====== FONCTIONS D'AUTHENTIFICATION ======
-
-        function openPasswordRecovery() {
-            const modal = document.getElementById('passwordRecoveryModal');
-            const emailInput = document.getElementById('recoveryEmail');
-            const loginEmail = document.getElementById('loginEmail');
-            if (loginEmail && loginEmail.value.trim()) emailInput.value = loginEmail.value.trim();
-            document.getElementById('recoveryMessage').classList.add('hidden');
-            modal.classList.remove('hidden');
-            modal.setAttribute('aria-hidden', 'false');
-            setTimeout(() => emailInput.focus(), 50);
-        }
-
-        function closePasswordRecovery() {
-            const modal = document.getElementById('passwordRecoveryModal');
-            modal.classList.add('hidden');
-            modal.setAttribute('aria-hidden', 'true');
-        }
-
-        async function sendPasswordRecovery() {
-            const email = document.getElementById('recoveryEmail').value.trim();
-            const message = document.getElementById('recoveryMessage');
-            const button = document.getElementById('sendRecoveryBtn');
-            if (!isValidEmail(email)) {
-                message.textContent = 'Veuillez entrer une adresse email valide.';
-                message.className = 'text-sm mt-3 text-danger-600';
-                return;
-            }
-            setButtonLoading(button, true);
-            try {
-                window.auth.languageCode = 'fr';
-                await window.sendPasswordResetEmail(window.auth, email);
-                message.textContent = 'Email de r?cup?ration envoy?. Consultez votre bo?te de r?ception et suivez le lien s?curis? Firebase.';
-                message.className = 'text-sm mt-3 text-success-700';
-                showToast('?? Email de r?cup?ration envoy?', 'success', 6000);
-            } catch (error) {
-                console.error('? Erreur r?cup?ration compte:', error.code, error.message);
-                let text = "Impossible d'envoyer l'email de r?cup?ration.";
-                if (error.code === 'auth/invalid-email') text = 'Adresse email invalide.';
-                else if (error.code === 'auth/too-many-requests') text = 'Trop de demandes. R?essayez plus tard.';
-                else if (error.code === 'auth/unauthorized-domain') text = `Domaine non autoris?: ${window.location.hostname}. Ajoutez-le dans Firebase ? Authentication ? Settings ? Authorized domains.`;
-                message.textContent = text;
-                message.className = 'text-sm mt-3 text-danger-600';
-            } finally {
-                setButtonLoading(button, false);
-            }
-        }
 
         async function handleLogin() {
             const email = document.getElementById('loginEmail').value.trim();
@@ -3520,9 +3440,6 @@
         window.togglePasswordVisibility = togglePasswordVisibility;
         window.handleLogout = handleLogout;
         window.openCreateUserModal = openCreateUserModal;
-        window.openPasswordRecovery = openPasswordRecovery;
-        window.closePasswordRecovery = closePasswordRecovery;
-        window.sendPasswordRecovery = sendPasswordRecovery;
         window.openReportBugModal = openReportBugModal;
         window.submitReport = submitReport;
         window.closeModal = closeModal;
