@@ -6700,18 +6700,8 @@
                             ...childSnapshot.val()
                         };
                         registrationPayments.push(payment);
-                });
+                    });
                     recalculateExpectedIncome();
-                    if (document.getElementById("registration")?.classList.contains("active")) {
-                        loadRegistration();
-                    }
-                });
-
-                // Keep registration report synchronized with Secretary enrollments.
-                pendingInscriptionsRef.on("value", () => {
-                    if (document.getElementById("registration")?.classList.contains("active")) {
-                        loadRegistration();
-                    }
                 });
 
                 // Écouter l'historique des payrolls

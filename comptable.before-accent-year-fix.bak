@@ -6700,18 +6700,8 @@
                             ...childSnapshot.val()
                         };
                         registrationPayments.push(payment);
-                });
+                    });
                     recalculateExpectedIncome();
-                    if (document.getElementById("registration")?.classList.contains("active")) {
-                        loadRegistration();
-                    }
-                });
-
-                // Keep registration report synchronized with Secretary enrollments.
-                pendingInscriptionsRef.on("value", () => {
-                    if (document.getElementById("registration")?.classList.contains("active")) {
-                        loadRegistration();
-                    }
                 });
 
                 // Écouter l'historique des payrolls
@@ -7458,132 +7448,49 @@
 
             async function loadRegistration() {
                 const tbody = document.getElementById('registrationTable');
-                if (!tbody) return;
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="9" class="text-center py-4">
                             <div class="text-muted">
                                 <i class="fas fa-spinner fa-pulse fa-2x mb-3"></i>
-                                <p>Loading registration records...</p>
+                                <p>Loading registration payments...</p>
                             </div>
                         </td>
                     </tr>
                 `;
 
                 try {
-                    // IMPORTANT: A secretary can create an enrolled student in /students and
-                    // /inscriptions-scolaires without creating a /registrationPayments record.
-                    // The old code therefore made those students invisible in this section.
-                    // We now build the list from BOTH sources and merge them by studentId/code.
-                    const [paymentsSnap, inscriptionsSnap] = await Promise.all([
-                        registrationPaymentsRef.once('value'),
-                        pendingInscriptionsRef.once('value')
-                    ]);
-
-                    const paymentByStudent = new Map();
+                    // On récupère TOUS les paiements d'inscription (pas de filtre serveur par branche,
+                    // car les anciennes données peuvent avoir une branche générique 'gisozi'/'kacyiru')
+                    const snapshot = await db.ref('registrationPayments').once('value');
                     const allPayments = [];
-                    paymentsSnap.forEach(child => {
-                        const payment = { id: child.key, ...child.val() };
-                        allPayments.push(payment);
-                        if (payment.studentId) paymentByStudent.set(String(payment.studentId), payment);
+                    snapshot.forEach(child => {
+                        allPayments.push({ id: child.key, ...child.val() });
                     });
 
-                    const records = new Map();
+                    // Filtrage robuste côté client (gère les anciennes ET nouvelles valeurs de branche)
+                    const payments = allPayments.filter(payment =>
+                        registrationPaymentMatchesBranch(payment, selectedBranch)
+                    );
 
-                    // First: every non-rejected school registration is a registration record,
-                    // even when no payment has been entered yet.
-                    inscriptionsSnap.forEach(child => {
-                        const insc = { id: child.key, ...child.val() };
-                        const status = String(insc.statut || insc.status || '').trim().toLowerCase();
-                        if (status === 'rejet?' || status === 'rejete' || status === 'rejected') return;
-
-                        const studentId = insc.studentId ? String(insc.studentId) : '';
-                        const payment = studentId ? paymentByStudent.get(studentId) : null;
-                        const branchValue = payment?.branch || insc.branche || insc.branch || '';
-                        const sectionValue = payment?.section || insc.section || '';
-                        const levelValue = payment?.studentClass || insc.classe || insc.niveau || '';
-
-                        if (!registrationRecordMatchesBranch(branchValue, sectionValue, levelValue, selectedBranch)) return;
-
-                        const record = {
-                            ...(payment || {}),
-                            id: payment?.id || `inscription-${child.key}`,
-                            studentId: payment?.studentId || insc.studentId || '',
-                            studentName: payment?.studentName || insc.nomPrenom || insc.name || insc.fullName || 'N/A',
-                            studentClass: payment?.studentClass || insc.classe || insc.niveau || 'N/A',
-                            branch: payment?.branch || insc.branche || insc.branch || '',
-                            academicYear: payment?.academicYear || insc.anneeAcademique || '',
-                            reference: payment?.reference || insc.codeUnique || `INS-${child.key.slice(-8)}`,
-                            amount: payment?.amount ?? 0,
-                            paymentDate: payment?.paymentDate || '',
-                            paymentMode: payment?.paymentMode || '',
-                            timestamp: payment?.timestamp || insc.timestamp || 0,
-                            registrationStatus: insc.statut || insc.status || 'Enregistr?',
-                            unpaid: !payment
-                        };
-                        const key = studentId || `inscription:${child.key}`;
-                        records.set(key, record);
-                    });
-
-                    // Second: keep payment records that do not have an inscription record,
-                    // for backward compatibility with older registrations.
-                    allPayments.forEach(payment => {
-                        const branchValue = payment.branch || '';
-                        const levelValue = payment.studentClass || '';
-                        if (!registrationRecordMatchesBranch(branchValue, payment.section || '', levelValue, selectedBranch)) return;
-                        const key = payment.studentId ? String(payment.studentId) : `payment:${payment.id}`;
-                        if (!records.has(key)) records.set(key, { ...payment, unpaid: false });
-                    });
-
-                    const payments = Array.from(records.values())
-                        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    // Tri du plus récent au plus ancien
+                    payments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
                     updateRegistrationTable(payments);
                 } catch (error) {
-                    console.error('Error loading registration records:', error);
-                    showToast('Error loading registration records.', 'error');
+                    console.error('Error loading registration payments:', error);
+                    showToast('Error loading registration payments.', 'error');
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="9" class="text-center py-4">
                                 <div class="text-danger">
                                     <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                                    <p>Unable to load registration records.</p>
+                                    <p>Unable to load registration payments.</p>
                                 </div>
                             </td>
                         </tr>
                     `;
                 }
-            }
-
-            function registrationRecordMatchesBranch(branch, section, studentClass, targetBranch) {
-                const target = (targetBranch || '').toString().trim().toLowerCase();
-                if (!target || target === 'all') return true;
-
-                const rawBranch = (branch || '').toString().trim().toLowerCase();
-                const rawSection = (section || '').toString().trim().toLowerCase();
-                const rawClass = (studentClass || '').toString().trim().toLowerCase();
-
-                const aliases = {
-                    kacyiru: ['kacyiru'],
-                    kimisagara: ['kimisagara'],
-                    gisozi_maternelle: ['gisozi_maternelle', 'gisozi nursery', 'gisozi maternelle'],
-                    gisozi_primaire: ['gisozi_primaire', 'gisozi primary', 'gisozi primaire']
-                };
-
-                if (aliases[target]?.includes(rawBranch)) return true;
-                if (target === 'kacyiru' && rawBranch.includes('kacyiru')) return true;
-                if (target === 'kimisagara' && rawBranch.includes('kimisagara')) return true;
-
-                if (rawBranch === 'gisozi' || rawBranch.includes('gisozi')) {
-                    const nursery = rawSection.includes('maternelle') || rawSection.includes('nursery') || rawClass.startsWith('n');
-                    const primary = rawSection.includes('primaire') || rawSection.includes('primary') || rawClass.startsWith('p');
-                    if (target === 'gisozi_maternelle') return nursery && !primary;
-                    if (target === 'gisozi_primaire') return primary && !nursery;
-                    // Unknown Gisozi section: keep it visible rather than losing a registration.
-                    return target === 'gisozi_maternelle' || target === 'gisozi_primaire';
-                }
-
-                return false;
             }
 
             function updateRegistrationTable(payments) {
@@ -7610,9 +7517,9 @@
                         <td><strong>${payment.reference || payment.studentId || 'N/A'}</strong></td>
                         <td>${payment.studentName || 'N/A'}</td>
                         <td>${payment.studentClass || 'N/A'}</td>
-                        <td>${payment.unpaid ? '<span class="badge bg-warning text-dark">NON PAY?</span>' : formatCurrencyRWF(payment.amount || 0)}</td>
-                        <td>${payment.paymentDate || '?'}</td>
-                        <td>${payment.unpaid ? '<span class="badge bg-secondary">En attente</span>' : (payment.paymentMode ? payment.paymentMode.toString().replace(/\b(momo)\b/i, 'Mobile Money') : '?')}</td>
+                        <td>${formatCurrencyRWF(payment.amount || 0)}</td>
+                        <td>${payment.paymentDate || ''}</td>
+                        <td>${payment.paymentMode ? payment.paymentMode.toString().replace(/\b(momo)\b/i, 'Mobile Money') : ''}</td>
                         <td>${getBranchName(payment.branch)}</td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary me-1" title="Admission Letter" onclick="openEditBeforeDownloadModal('${payment.studentId}', 'letter')">
@@ -7840,12 +7747,12 @@
 
             async function exportRegistrationReportPDF() {
                 const JsPDF = resolveJsPDF();
-                if (!JsPDF) { showToast('PDF library non chargée', 'error'); return; }
+                if (!JsPDF) { showToast('PDF library not loaded', 'error'); return; }
 
                 try {
-                    // Le rapport est construit UNIQUEMENT ? partir des inscriptions confirmées.
-                    // Un élève actif trouvé dans /students ne suffit pas : cela évite de mélanger
-                    // les anciens élèves avec les élèves réellement inscrits pour l'année choisie.
+                    // Source principale: demandes d'inscription CONFIRM?ES, car elles
+                    // contiennent le studentId cr?? par la comptabilit?. On rejoint ensuite
+                    // la fiche students pour r?cup?rer classe, adresse et transport.
                     const [inscSnap, studentsSnap, paymentsSnap] = await Promise.all([
                         pendingInscriptionsRef.once('value'),
                         studentsRef.once('value'),
@@ -7861,93 +7768,64 @@
                         if (payment.studentId) paymentsByStudent[payment.studentId] = payment;
                     });
 
-                    const normalizeReportValue = value => String(value ?? '')
-                        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                        .trim().toLowerCase();
-                    const isConfirmedInscription = insc => {
-                        const statut = normalizeReportValue(insc.statut);
-                        const status = normalizeReportValue(insc.status);
-                        return ['confirme', 'confirmed', 'approuve', 'approved'].includes(statut) ||
-                               ['confirme', 'confirmed', 'approuve', 'approved'].includes(status);
-                    };
-                    const normalizeYear = value => normalizeReportValue(value).replace(/\s+/g, '');
-
-                    // Demander l'année AU MOMENT DU TÉLÉCHARGEMENT.
-                    const academicYears = new Set();
-                    inscSnap.forEach(ch => {
-                        const insc = ch.val() || {};
-                        if (isConfirmedInscription(insc) && insc.studentId && inscriptionMatchesSelectedBranch(insc)) {
-                            const year = insc.anneeScolaire || insc.academicYear;
-                            if (year) academicYears.add(String(year).trim());
-                        }
-                    });
-                    Object.values(studentsById).forEach(student => {
-                        if (student.academicYear) academicYears.add(String(student.academicYear).trim());
-                    });
-
-                    const sortedYears = [...academicYears].filter(Boolean).sort((a, b) => b.localeCompare(a));
-                    const currentYear = getCurrentAcademicYearLabel();
-                    if (!sortedYears.includes(currentYear)) sortedYears.unshift(currentYear);
-                    const yearPrompt = sortedYears.map((year, index) => `${index + 1}. ${year}`).join('\n');
-                    const yearAnswer = window.prompt(
-                        `Sélectionnez l'année académique à afficher dans le rapport :\n\n${yearPrompt}\n\nEntrez le numéro :`,
-                        '1'
-                    );
-                    if (yearAnswer === null) return;
-                    const yearIndex = Number.parseInt(yearAnswer, 10) - 1;
-                    if (!Number.isInteger(yearIndex) || !sortedYears[yearIndex]) {
-                        showToast('Année académique invalide.', 'warning');
-                        return;
-                    }
-                    const selectedAcademicYear = sortedYears[yearIndex];
-                    const selectedYearKey = normalizeYear(selectedAcademicYear);
-
                     const rows = [];
                     const seenStudentIds = new Set();
 
-                    // Une ligne = une inscription confirmée + une fiche élève correspondante.
+                    // 1) Toutes les inscriptions confirm?es avec un studentId.
                     inscSnap.forEach(ch => {
                         const insc = { id: ch.key, ...ch.val() };
-                        if (!isConfirmedInscription(insc) || !insc.studentId) return;
-                        if (!inscriptionMatchesSelectedBranch(insc)) return;
+                        const statut = String(insc.statut || '').trim().toLowerCase();
+                        const status = String(insc.status || '').trim().toLowerCase();
+                        const confirmed = statut === 'confirm?' || statut === 'confirme' || status === 'approuve' || !!insc.studentId;
+                        if (!confirmed || !insc.studentId || !inscriptionMatchesSelectedBranch(insc)) return;
 
-                        const inscriptionYear = insc.anneeScolaire || insc.academicYear;
-                        const student = studentsById[insc.studentId];
-                        if (!student) return;
-                        const studentYear = student.academicYear || inscriptionYear;
-                        const recordYear = inscriptionYear || student.academicYear;
-                        if (normalizeYear(recordYear) !== selectedYearKey) return;
-                        if (seenStudentIds.has(insc.studentId)) return;
-
+                        const student = studentsById[insc.studentId] || {};
                         const payment = paymentsByStudent[insc.studentId] || {};
                         const branch = student.branch || mapInscriptionBranchToInternal(insc.branche, insc.section, insc.niveau);
-                        const address = student.address || [insc.secteur, insc.umurenge, insc.akagari, insc.umudugudu].filter(Boolean).join(', ');
-                        const secondParent = student.spouseName || student.secondParent || student.parent2 || student.parent2Name ||
-                            insc.conjointNomPrenom || insc.secondParent || insc.parent2 || insc.parent2Name || '';
-                        const secondParentPhone = student.spousePhone || student.secondParentPhone || student.parent2Phone ||
-                            insc.conjointTelephone || insc.secondParentPhone || insc.parent2Phone || '';
 
                         rows.push({
                             studentId: insc.studentId,
                             reference: student.reference || payment.reference || insc.codeUnique || insc.studentId,
                             name: student.name || student.fullName || insc.nomPrenom || 'N/A',
-                            className: student.classes || student.class || insc.assignedClass || insc.niveau || payment.studentClass || 'N/A',
+                            className: student.classes || student.class || insc.niveau || payment.studentClass || 'N/A',
                             branch: getBranchName(branch),
-                            academicYear: studentYear || selectedAcademicYear,
-                            bus: student.transportEnrolled === true || normalizeReportValue(student.transportEnrolled) === 'oui' || normalizeReportValue(insc.transport) === 'oui' ? 'OUI' : 'NON',
-                            address: address || 'N/A',
+                            academicYear: student.academicYear || insc.anneeScolaire || payment.academicYear || getCurrentAcademicYearLabel(),
+                            bus: student.transportEnrolled === true || String(student.transportEnrolled).toUpperCase() === 'OUI' || String(insc.transport || '').toUpperCase() === 'OUI' ? 'OUI' : 'NON',
+                            address: student.address || [insc.secteur, insc.umurenge, insc.akagari, insc.umudugudu].filter(Boolean).join(', ') || 'N/A',
                             parent: student.parent || insc.chefNomPrenom || 'N/A',
                             parentPhone: student.parentPhone || insc.chefTelephone || 'N/A',
-                            spouse: secondParent || 'N/A',
-                            spousePhone: secondParentPhone || 'N/A'
+                            spouse: student.spouseName || insc.conjointNomPrenom || 'N/A',
+                            spousePhone: student.spousePhone || insc.conjointTelephone || 'N/A'
                         });
                         seenStudentIds.add(insc.studentId);
                     });
 
-                    // Regroupement visuel : branche, classe, puis nom. Aucun élève hors inscription confirmée.
-                    rows.sort((a, b) => String(a.branch).localeCompare(String(b.branch), 'fr') ||
-                        String(a.className).localeCompare(String(b.className), 'fr') ||
-                        String(a.name).localeCompare(String(b.name), 'fr'));
+                    // 2) Filet de s?curit?: si une fiche ?l?ve active a ?t? cr??e mais que
+                    // l'ancienne demande n'est plus exploitable, elle reste dans le rapport.
+                    Object.values(studentsById).forEach(student => {
+                        if (seenStudentIds.has(student.id)) return;
+                        const active = String(student.status || '').toLowerCase() !== 'inactive' && String(student.status || '').toLowerCase() !== 'deleted';
+                        if (!active || !registrationPaymentMatchesBranch({ ...student, branch: student.branch }, selectedBranch)) return;
+                        if (!student.reference && !student.name) return;
+
+                        const payment = paymentsByStudent[student.id] || {};
+                        rows.push({
+                            studentId: student.id,
+                            reference: student.reference || payment.reference || student.id,
+                            name: student.name || student.fullName || 'N/A',
+                            className: student.classes || student.class || payment.studentClass || 'N/A',
+                            branch: getBranchName(student.branch),
+                            academicYear: student.academicYear || payment.academicYear || getCurrentAcademicYearLabel(),
+                            bus: student.transportEnrolled === true || String(student.transportEnrolled).toUpperCase() === 'OUI' ? 'OUI' : 'NON',
+                            address: student.address || 'N/A',
+                            parent: student.parent || 'N/A',
+                            parentPhone: student.parentPhone || 'N/A',
+                            spouse: student.spouseName || 'N/A',
+                            spousePhone: student.spousePhone || 'N/A'
+                        });
+                    });
+
+                    rows.sort((a, b) => String(a.name).localeCompare(String(b.name), 'fr'));
 
                     const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
                     const titleBranch = selectedBranch ? getBranchName(selectedBranch) : 'Toutes les branches';
@@ -7955,24 +7833,33 @@
 
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(16);
-                    doc.text('RAPPORT DES ÉLÈVES INSCRITS', 14, 13);
+                    doc.text('RAPPORT DES ?L?VES INSCRITS', 14, 13);
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(10);
-                    doc.text(`Branche : ${titleBranch}   |   Année scolaire : ${selectedAcademicYear}   |   Date : ${today}`, 14, 20);
-                    doc.text(`Total des élèves inscrits : ${rows.length}`, 14, 26);
+                    doc.text(`Branche : ${titleBranch}   |   Ann?e scolaire : ${getCurrentAcademicYearLabel()}   |   Date : ${today}`, 14, 20);
+                    doc.text(`Total des ?l?ves inscrits : ${rows.length}`, 14, 26);
 
                     const body = rows.map((r, i) => [
-                        i + 1, r.reference, r.name, r.className, r.branch, r.bus,
-                        r.address, r.parent, r.parentPhone, r.spouse, r.spousePhone
+                        i + 1,
+                        r.reference,
+                        r.name,
+                        r.className,
+                        r.branch,
+                        r.bus,
+                        r.address,
+                        r.parent,
+                        r.parentPhone,
+                        r.spouse,
+                        r.spousePhone
                     ]);
 
                     if (body.length) {
                         doc.autoTable({
                             startY: 31,
                             head: [[
-                                'N?', 'RÉFÉRENCE', 'ÉLÈVE', 'CLASSE', 'BRANCHE', 'BUS',
-                                'ADRESSE / LIEU DE RÉSIDENCE', 'PARENT / TUTEUR', 'TÉL. PARENT',
-                                '2e PARENT', 'TÉL. 2e PARENT'
+                                'N?', 'R?F?RENCE', '?L?VE', 'CLASSE', 'BRANCHE',
+                                'BUS', 'ADRESSE / LIEU DE R?SIDENCE', 'PARENT / TUTEUR',
+                                'T?L. PARENT', '2e PARENT', 'T?L. 2e PARENT'
                             ]],
                             body,
                             styles: { fontSize: 7.2, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
@@ -7983,32 +7870,31 @@
                                 6: { cellWidth: 42 }, 7: { cellWidth: 28 }, 8: { cellWidth: 25 },
                                 9: { cellWidth: 25 }, 10: { cellWidth: 25 }
                             },
-                            margin: { left: 10, right: 10, top: 31, bottom: 14 },
+                            margin: { left: 10, right: 10, top: 31, bottom: 12 },
                             didDrawPage: data => {
                                 doc.setFontSize(7);
-                                doc.text(`Rapport des élèves inscrits à page ${data.pageNumber}`, 10, 203);
+                                doc.text(`Rapport des ?l?ves inscrits ? page ${data.pageNumber}`, 10, 203);
                             }
                         });
                     } else {
                         doc.setFontSize(11);
-                        doc.text('Aucun élève inscrit trouvé pour cette année académique.', 14, 38);
+                        doc.text('Aucun ?l?ve inscrit trouv? pour cette branche.', 14, 38);
                     }
 
+                    // R?sum? transport en bas du document.
                     const busCount = rows.filter(r => r.bus === 'OUI').length;
                     const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 42;
-                    const summaryY = finalY + 8;
-                    if (summaryY > 190) doc.addPage();
-                    const y = summaryY > 190 ? 20 : summaryY;
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.text(`Total : ${rows.length} élève(s)   |   Bus : ${busCount}   |   Sans bus : ${rows.length - busCount}`, 10, y);
+                    if (finalY < 190) {
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(9);
+                        doc.text(`?l?ves utilisant le bus : ${busCount}   |   Sans bus : ${rows.length - busCount}`, 10, finalY + 8);
+                    }
 
                     const safeBranch = String(selectedBranch || 'all').replace(/[^a-z0-9_-]/gi, '_');
-                    const safeYear = selectedAcademicYear.replace(/[^0-9-]/g, '_');
-                    doc.save(`Rapport_Eleves_Inscrits_${safeBranch}_${safeYear}.pdf`);
-                    showToast(`Rapport PDF téléchargé : ${rows.length} élève(s) ? ${selectedAcademicYear}`, 'success');
+                    doc.save(`Rapport_Eleves_Inscrits_${safeBranch}_${new Date().toISOString().slice(0,10)}.pdf`);
+                    showToast(`Rapport PDF t?l?charg? : ${rows.length} ?l?ve(s)`, 'success');
                 } catch (error) {
-                    console.error('Erreur export rapport inscription:', error);
+                    console.error('Error exporting registration report:', error);
                     showToast('Erreur lors de l\'export du rapport : ' + (error.message || error), 'error');
                 }
             }
@@ -8018,10 +7904,9 @@
                 const rawSection = (section || '').toString().trim().toUpperCase();
                 const rawNiveau = (niveau || '').toString().trim().toUpperCase();
 
-                // Normalize both short keys and full branch labels saved in Firebase.
-                if (rawBranch.includes('KACYIRU')) return 'kacyiru';
-                if (rawBranch.includes('KIMISAGARA')) return 'kimisagara';
-                if (rawBranch.includes('GISOZI')) {
+                if (rawBranch === 'KACYIRU') return 'kacyiru';
+                if (rawBranch === 'KIMISAGARA') return 'kimisagara';
+                if (rawBranch === 'GISOZI') {
                     const resolvedSection = rawSection || (rawNiveau.startsWith('N') ? 'MATERNELLE' : rawNiveau.startsWith('P') ? 'PRIMAIRE' : '');
                     return resolvedSection === 'PRIMAIRE' ? 'gisozi_primaire' : 'gisozi_maternelle';
                 }
@@ -8065,7 +7950,7 @@
                         const statusValue = data.status;
                         const isConfirmed = statutValue === 'Confirmé' || statusValue === 'approuve';
                         const isRejected = statutValue === 'Rejeté' || statusValue === 'rejete';
-                        const isPending = statutValue === 'En attente' || statutValue === 'En attente de validation' || statusValue === 'en_attente' || statusValue === 'pending' || statusValue === 'en_attente_de_validation' || (statutValue === undefined && statusValue === undefined);
+                        const isPending = statutValue === 'En attente' || statusValue === 'en_attente' || (statutValue === undefined && statusValue === undefined);
 
                         if (isConfirmed || isRejected) return;
                         if (!isPending) return;

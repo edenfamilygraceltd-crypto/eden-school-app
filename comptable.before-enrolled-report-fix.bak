@@ -6700,18 +6700,8 @@
                             ...childSnapshot.val()
                         };
                         registrationPayments.push(payment);
-                });
+                    });
                     recalculateExpectedIncome();
-                    if (document.getElementById("registration")?.classList.contains("active")) {
-                        loadRegistration();
-                    }
-                });
-
-                // Keep registration report synchronized with Secretary enrollments.
-                pendingInscriptionsRef.on("value", () => {
-                    if (document.getElementById("registration")?.classList.contains("active")) {
-                        loadRegistration();
-                    }
                 });
 
                 // Écouter l'historique des payrolls
@@ -7458,132 +7448,49 @@
 
             async function loadRegistration() {
                 const tbody = document.getElementById('registrationTable');
-                if (!tbody) return;
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="9" class="text-center py-4">
                             <div class="text-muted">
                                 <i class="fas fa-spinner fa-pulse fa-2x mb-3"></i>
-                                <p>Loading registration records...</p>
+                                <p>Loading registration payments...</p>
                             </div>
                         </td>
                     </tr>
                 `;
 
                 try {
-                    // IMPORTANT: A secretary can create an enrolled student in /students and
-                    // /inscriptions-scolaires without creating a /registrationPayments record.
-                    // The old code therefore made those students invisible in this section.
-                    // We now build the list from BOTH sources and merge them by studentId/code.
-                    const [paymentsSnap, inscriptionsSnap] = await Promise.all([
-                        registrationPaymentsRef.once('value'),
-                        pendingInscriptionsRef.once('value')
-                    ]);
-
-                    const paymentByStudent = new Map();
+                    // On récupère TOUS les paiements d'inscription (pas de filtre serveur par branche,
+                    // car les anciennes données peuvent avoir une branche générique 'gisozi'/'kacyiru')
+                    const snapshot = await db.ref('registrationPayments').once('value');
                     const allPayments = [];
-                    paymentsSnap.forEach(child => {
-                        const payment = { id: child.key, ...child.val() };
-                        allPayments.push(payment);
-                        if (payment.studentId) paymentByStudent.set(String(payment.studentId), payment);
+                    snapshot.forEach(child => {
+                        allPayments.push({ id: child.key, ...child.val() });
                     });
 
-                    const records = new Map();
+                    // Filtrage robuste côté client (gère les anciennes ET nouvelles valeurs de branche)
+                    const payments = allPayments.filter(payment =>
+                        registrationPaymentMatchesBranch(payment, selectedBranch)
+                    );
 
-                    // First: every non-rejected school registration is a registration record,
-                    // even when no payment has been entered yet.
-                    inscriptionsSnap.forEach(child => {
-                        const insc = { id: child.key, ...child.val() };
-                        const status = String(insc.statut || insc.status || '').trim().toLowerCase();
-                        if (status === 'rejet?' || status === 'rejete' || status === 'rejected') return;
-
-                        const studentId = insc.studentId ? String(insc.studentId) : '';
-                        const payment = studentId ? paymentByStudent.get(studentId) : null;
-                        const branchValue = payment?.branch || insc.branche || insc.branch || '';
-                        const sectionValue = payment?.section || insc.section || '';
-                        const levelValue = payment?.studentClass || insc.classe || insc.niveau || '';
-
-                        if (!registrationRecordMatchesBranch(branchValue, sectionValue, levelValue, selectedBranch)) return;
-
-                        const record = {
-                            ...(payment || {}),
-                            id: payment?.id || `inscription-${child.key}`,
-                            studentId: payment?.studentId || insc.studentId || '',
-                            studentName: payment?.studentName || insc.nomPrenom || insc.name || insc.fullName || 'N/A',
-                            studentClass: payment?.studentClass || insc.classe || insc.niveau || 'N/A',
-                            branch: payment?.branch || insc.branche || insc.branch || '',
-                            academicYear: payment?.academicYear || insc.anneeAcademique || '',
-                            reference: payment?.reference || insc.codeUnique || `INS-${child.key.slice(-8)}`,
-                            amount: payment?.amount ?? 0,
-                            paymentDate: payment?.paymentDate || '',
-                            paymentMode: payment?.paymentMode || '',
-                            timestamp: payment?.timestamp || insc.timestamp || 0,
-                            registrationStatus: insc.statut || insc.status || 'Enregistr?',
-                            unpaid: !payment
-                        };
-                        const key = studentId || `inscription:${child.key}`;
-                        records.set(key, record);
-                    });
-
-                    // Second: keep payment records that do not have an inscription record,
-                    // for backward compatibility with older registrations.
-                    allPayments.forEach(payment => {
-                        const branchValue = payment.branch || '';
-                        const levelValue = payment.studentClass || '';
-                        if (!registrationRecordMatchesBranch(branchValue, payment.section || '', levelValue, selectedBranch)) return;
-                        const key = payment.studentId ? String(payment.studentId) : `payment:${payment.id}`;
-                        if (!records.has(key)) records.set(key, { ...payment, unpaid: false });
-                    });
-
-                    const payments = Array.from(records.values())
-                        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    // Tri du plus récent au plus ancien
+                    payments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
                     updateRegistrationTable(payments);
                 } catch (error) {
-                    console.error('Error loading registration records:', error);
-                    showToast('Error loading registration records.', 'error');
+                    console.error('Error loading registration payments:', error);
+                    showToast('Error loading registration payments.', 'error');
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="9" class="text-center py-4">
                                 <div class="text-danger">
                                     <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                                    <p>Unable to load registration records.</p>
+                                    <p>Unable to load registration payments.</p>
                                 </div>
                             </td>
                         </tr>
                     `;
                 }
-            }
-
-            function registrationRecordMatchesBranch(branch, section, studentClass, targetBranch) {
-                const target = (targetBranch || '').toString().trim().toLowerCase();
-                if (!target || target === 'all') return true;
-
-                const rawBranch = (branch || '').toString().trim().toLowerCase();
-                const rawSection = (section || '').toString().trim().toLowerCase();
-                const rawClass = (studentClass || '').toString().trim().toLowerCase();
-
-                const aliases = {
-                    kacyiru: ['kacyiru'],
-                    kimisagara: ['kimisagara'],
-                    gisozi_maternelle: ['gisozi_maternelle', 'gisozi nursery', 'gisozi maternelle'],
-                    gisozi_primaire: ['gisozi_primaire', 'gisozi primary', 'gisozi primaire']
-                };
-
-                if (aliases[target]?.includes(rawBranch)) return true;
-                if (target === 'kacyiru' && rawBranch.includes('kacyiru')) return true;
-                if (target === 'kimisagara' && rawBranch.includes('kimisagara')) return true;
-
-                if (rawBranch === 'gisozi' || rawBranch.includes('gisozi')) {
-                    const nursery = rawSection.includes('maternelle') || rawSection.includes('nursery') || rawClass.startsWith('n');
-                    const primary = rawSection.includes('primaire') || rawSection.includes('primary') || rawClass.startsWith('p');
-                    if (target === 'gisozi_maternelle') return nursery && !primary;
-                    if (target === 'gisozi_primaire') return primary && !nursery;
-                    // Unknown Gisozi section: keep it visible rather than losing a registration.
-                    return target === 'gisozi_maternelle' || target === 'gisozi_primaire';
-                }
-
-                return false;
             }
 
             function updateRegistrationTable(payments) {
@@ -7610,9 +7517,9 @@
                         <td><strong>${payment.reference || payment.studentId || 'N/A'}</strong></td>
                         <td>${payment.studentName || 'N/A'}</td>
                         <td>${payment.studentClass || 'N/A'}</td>
-                        <td>${payment.unpaid ? '<span class="badge bg-warning text-dark">NON PAY?</span>' : formatCurrencyRWF(payment.amount || 0)}</td>
-                        <td>${payment.paymentDate || '?'}</td>
-                        <td>${payment.unpaid ? '<span class="badge bg-secondary">En attente</span>' : (payment.paymentMode ? payment.paymentMode.toString().replace(/\b(momo)\b/i, 'Mobile Money') : '?')}</td>
+                        <td>${formatCurrencyRWF(payment.amount || 0)}</td>
+                        <td>${payment.paymentDate || ''}</td>
+                        <td>${payment.paymentMode ? payment.paymentMode.toString().replace(/\b(momo)\b/i, 'Mobile Money') : ''}</td>
                         <td>${getBranchName(payment.branch)}</td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary me-1" title="Admission Letter" onclick="openEditBeforeDownloadModal('${payment.studentId}', 'letter')">
@@ -8018,10 +7925,9 @@
                 const rawSection = (section || '').toString().trim().toUpperCase();
                 const rawNiveau = (niveau || '').toString().trim().toUpperCase();
 
-                // Normalize both short keys and full branch labels saved in Firebase.
-                if (rawBranch.includes('KACYIRU')) return 'kacyiru';
-                if (rawBranch.includes('KIMISAGARA')) return 'kimisagara';
-                if (rawBranch.includes('GISOZI')) {
+                if (rawBranch === 'KACYIRU') return 'kacyiru';
+                if (rawBranch === 'KIMISAGARA') return 'kimisagara';
+                if (rawBranch === 'GISOZI') {
                     const resolvedSection = rawSection || (rawNiveau.startsWith('N') ? 'MATERNELLE' : rawNiveau.startsWith('P') ? 'PRIMAIRE' : '');
                     return resolvedSection === 'PRIMAIRE' ? 'gisozi_primaire' : 'gisozi_maternelle';
                 }
@@ -8065,7 +7971,7 @@
                         const statusValue = data.status;
                         const isConfirmed = statutValue === 'Confirmé' || statusValue === 'approuve';
                         const isRejected = statutValue === 'Rejeté' || statusValue === 'rejete';
-                        const isPending = statutValue === 'En attente' || statutValue === 'En attente de validation' || statusValue === 'en_attente' || statusValue === 'pending' || statusValue === 'en_attente_de_validation' || (statutValue === undefined && statusValue === undefined);
+                        const isPending = statutValue === 'En attente' || statusValue === 'en_attente' || (statutValue === undefined && statusValue === undefined);
 
                         if (isConfirmed || isRejected) return;
                         if (!isPending) return;
