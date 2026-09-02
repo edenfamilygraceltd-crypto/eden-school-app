@@ -7925,9 +7925,10 @@
                 const rawSection = (section || '').toString().trim().toUpperCase();
                 const rawNiveau = (niveau || '').toString().trim().toUpperCase();
 
-                if (rawBranch === 'KACYIRU') return 'kacyiru';
-                if (rawBranch === 'KIMISAGARA') return 'kimisagara';
-                if (rawBranch === 'GISOZI') {
+                // Normalize both short keys and full branch labels saved in Firebase.
+                if (rawBranch.includes('KACYIRU')) return 'kacyiru';
+                if (rawBranch.includes('KIMISAGARA')) return 'kimisagara';
+                if (rawBranch.includes('GISOZI')) {
                     const resolvedSection = rawSection || (rawNiveau.startsWith('N') ? 'MATERNELLE' : rawNiveau.startsWith('P') ? 'PRIMAIRE' : '');
                     return resolvedSection === 'PRIMAIRE' ? 'gisozi_primaire' : 'gisozi_maternelle';
                 }
