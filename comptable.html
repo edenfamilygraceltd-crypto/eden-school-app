@@ -7759,6 +7759,32 @@
                 return groups;
             }
 
+            function scanAllDuplicateGroupsFromRecords(records) {
+                const branchStudents = (records || []).map(s => ({ ...s }));
+                const groups = [];
+                const used = new Set();
+                for (let i = 0; i < branchStudents.length; i++) {
+                    const a = branchStudents[i];
+                    if (used.has(a.id)) continue;
+                    const group = [a];
+                    for (let j = i + 1; j < branchStudents.length; j++) {
+                        const b = branchStudents[j];
+                        if (used.has(b.id)) continue;
+                        const score = computeStudentDuplicateScore(a, b).score;
+                        const nameA = normalizeKey(getDuplicateStudentName(a));
+                        const nameB = normalizeKey(getDuplicateStudentName(b));
+                        const sameName = nameA && nameA === nameB;
+                        if (score >= 75 || sameName) group.push(b);
+                    }
+                    if (group.length > 1) {
+                        group.sort((a, b) => (a.timestamp || a.createdAt || 0) - (b.timestamp || b.createdAt || 0));
+                        group.forEach(x => used.add(x.id));
+                        groups.push(group);
+                    }
+                }
+                return groups;
+            }
+
             async function detectRegistrationDuplicates() {
                 const container = document.getElementById('duplicatesContainer');
                 const section = document.getElementById('duplicatesSection');
@@ -14583,7 +14609,14 @@
 
                 let groups = [];
                 try {
-                    const studentGroups = scanAllDuplicateGroups(selectedBranch || undefined);
+                    const studentSnapshot = await studentsRef.once('value');
+                    const databaseStudents = [];
+                    studentSnapshot.forEach(childSnapshot => {
+                        databaseStudents.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    });
+                    const branchForScan = selectedBranch || undefined;
+                    const branchStudents = databaseStudents.filter(student => matchesBranchAndLevelForSelection(student, branchForScan));
+                    const studentGroups = scanAllDuplicateGroupsFromRecords(branchStudents);
                     groups = (studentGroups || []).map(g => ({
                         source: 'student',
                         items: g.map(s => ({ source: 'student', record: s, timestamp: s.timestamp || 0, id: s.id }))
