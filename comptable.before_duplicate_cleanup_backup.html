@@ -14502,281 +14502,221 @@
 
             // ---------------- Registration duplicates utilities ----------------
             let registrationDuplicateCandidates = [];
-            let registrationDuplicateGroupsState = [];
-
-            function escapeDuplicateHtml(value) {
-                return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
-            }
-
-            function getDuplicateStudentName(rec) {
-                return rec?.name || rec?.fullName || rec?.studentName || rec?.nomPrenom || 'Ã‰lÃ¨ve sans nom';
-            }
-
-            function getDuplicateStudentClass(rec) {
-                return rec?.class || rec?.classes || rec?.studentClass || rec?.niveau || rec?.requestedClass || rec?.classe || '';
-            }
-
-            function getDuplicateStudentPhone(rec) {
-                return rec?.parentPhone || rec?.chefTelephone || rec?.parent || '';
-            }
-
-            function getDuplicateStudentBirthDate(rec) {
-                return rec?.birthDate || rec?.studentBirthDate || rec?.dateNaissance || '';
-            }
 
             function openRegistrationDuplicateModal() {
                 const summary = document.getElementById('registrationDuplicateSummary');
                 const tableBody = document.getElementById('registrationDuplicateTableBody');
                 registrationDuplicateCandidates = [];
-                registrationDuplicateGroupsState = [];
                 summary.className = 'alert alert-secondary mb-3';
-                summary.innerHTML = '<i class="fas fa-shield-alt me-2"></i>Le systÃ¨me va rechercher les doublons. <strong>Aucune suppression ne sera faite automatiquement.</strong> Pour chaque groupe, vous devrez choisir l\'Ã©lÃ¨ve correct ou indiquer que les deux sont diffÃ©rents.';
-                tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4"><i class="fas fa-search me-2"></i>Appuyez sur <strong>Analyse</strong> pour dÃ©marrer.</td></tr>';
-                const countEl = document.getElementById('registrationDuplicateSelectedCount');
-                const studentsEl = document.getElementById('registrationDuplicateSelectedStudents');
-                const deleteBtn = document.getElementById('deleteRegistrationDuplicatesBtn');
-                if (countEl) countEl.textContent = '0 groupe(s) confirmÃ©(s)';
-                if (studentsEl) studentsEl.textContent = 'DÃ©cisions : aucune';
-                if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i>Nettoyer les doublons confirmÃ©s'; }
-                if (!pendingInscriptionsData.length && typeof loadPendingInscriptions === 'function') {
-                    loadPendingInscriptions().catch(error => console.error('Error loading pending inscriptions:', error));
+                summary.innerHTML = '<i class="fas fa-info-circle me-2"></i>Cliquez sur <strong>Analyse</strong> pour rechercher les doublons d\'inscription.';
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="fas fa-search me-2"></i>Appuyez sur le bouton <strong>Analyse</strong> pour démarrer la recherche.
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('registrationDuplicateSelectedCount').textContent = '0 sélectionné(s)';
+                document.getElementById('registrationDuplicateSelectedStudents').textContent = 'Selected students: none';
+                document.getElementById('deleteRegistrationDuplicatesBtn').disabled = true;
+                if (!pendingInscriptionsData.length) {
+                    loadPendingInscriptions().catch(error => {
+                        console.error('Error loading pending inscriptions before duplicate modal:', error);
+                    });
                 }
                 const modal = new bootstrap.Modal(document.getElementById('registrationDuplicateModal'));
                 modal.show();
             }
 
             function collectRegistrationDuplicateGroups() {
-                const regs = (registrationPayments || []).filter(r => !selectedBranch || (r.branch || '').toString() === (selectedBranch || '').toString());
-                const pend = (pendingInscriptionsData || []).filter(p => !selectedBranch || inscriptionMatchesSelectedBranch(p));
+                // gather registrationPayments for current branch and pending inscriptions
+                const regs = (registrationPayments || []).filter(r => (r.branch || '').toString() === (selectedBranch || '').toString());
+                const pend = (pendingInscriptionsData || []).filter(p => inscriptionMatchesSelectedBranch(p));
+
                 const groups = new Map();
-                const add = (key, item) => { if (!groups.has(key)) groups.set(key, []); groups.get(key).push(item); };
 
                 regs.forEach(r => {
                     const name = r.studentName || r.name || '';
                     const cls = r.studentClass || r.class || r.classes || '';
                     const dob = r.studentBirthDate || r.birthDate || r.dateNaissance || '';
-                    const phone = r.parentPhone || r.chefTelephone || '';
-                    const key = r.studentId ? `id:${r.studentId}` : `name:${normalizeKey(name)}|class:${normalizeKey(cls)}|dob:${normalizeKey(dob)}|phone:${normalizePhone(phone)}`;
-                    add(key, { source: 'registration', record: r, timestamp: r.timestamp || 0, id: r.id });
+                    const phone = r.parentPhone || r.chefTelephone || r.transactionRef || '';
+                    const key = r.studentId ? `id:${r.studentId}` : `name:${normalizeKey(name)}|class:${normalizeKey(cls)}|dob:${dob}|phone:${normalizeKey(phone)}`;
+                    if (!groups.has(key)) groups.set(key, []);
+                    groups.get(key).push({ source: 'registration', record: r, timestamp: r.timestamp || 0, id: r.id });
                 });
+
                 pend.forEach(p => {
                     const name = p.nomPrenom || p.name || '';
                     const cls = p.niveau || p.requestedClass || p.classe || p.assignedClass || '';
                     const dob = p.dateNaissance || '';
                     const phone = p.chefTelephone || '';
-                    const key = `pending:${normalizeKey(name)}|class:${normalizeKey(cls)}|dob:${normalizeKey(dob)}|phone:${normalizePhone(phone)}`;
-                    add(key, { source: 'pending', record: p, timestamp: p.timestamp || 0, id: p.id });
+                    const key = `pending:${normalizeKey(name)}|class:${normalizeKey(cls)}|dob:${dob}|phone:${normalizeKey(phone)}`;
+                    if (!groups.has(key)) groups.set(key, []);
+                    groups.get(key).push({ source: 'pending', record: p, timestamp: p.timestamp || 0, id: p.id });
                 });
-                return Array.from(groups.values()).filter(items => items.length > 1);
+
+                const duplicateGroups = [];
+                groups.forEach((items, key) => {
+                    if (items.length < 2) return;
+                    const sorted = items.sort((a,b) => (a.timestamp || 0) - (b.timestamp || 0));
+                    duplicateGroups.push({ key, items: sorted });
+                });
+                return duplicateGroups;
             }
 
             async function analyseRegistrationDuplicates() {
-                const summary = document.getElementById('registrationDuplicateSummary');
-                const tableBody = document.getElementById('registrationDuplicateTableBody');
-                const deleteBtn = document.getElementById('deleteRegistrationDuplicatesBtn');
-                registrationDuplicateCandidates = [];
-                registrationDuplicateGroupsState = [];
-                tableBody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Analyse de tous les Ã©lÃ¨ves...</td></tr>';
-                if (!pendingInscriptionsData.length && typeof loadPendingInscriptions === 'function') {
-                    await loadPendingInscriptions().catch(error => console.error('Error loading pending inscriptions:', error));
+                if (!pendingInscriptionsData.length) {
+                    await loadPendingInscriptions().catch(error => {
+                        console.error('Error loading pending inscriptions before duplicate analysis:', error);
+                    });
                 }
 
+                // Use fuzzy scan across students as primary grouping, fall back to registration/pending groups
+                const studentGroups = scanAllDuplicateGroups(selectedBranch || undefined);
                 let groups = [];
-                try {
-                    const studentGroups = scanAllDuplicateGroups(selectedBranch || undefined);
-                    groups = (studentGroups || []).map(g => ({
-                        source: 'student',
-                        items: g.map(s => ({ source: 'student', record: s, timestamp: s.timestamp || 0, id: s.id }))
-                    }));
-                    if (!groups.length) {
-                        groups = collectRegistrationDuplicateGroups().map(items => ({ source: 'registration', items }));
-                    }
-                } catch (error) {
-                    console.error('Duplicate analysis error:', error);
-                    summary.className = 'alert alert-danger mb-3';
-                    summary.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Erreur pendant l\'analyse des doublons.';
-                    tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">Impossible d\'analyser les doublons.</td></tr>';
-                    return;
+                if (studentGroups && studentGroups.length) {
+                    // transform studentGroups into the same shape used by the UI: items with source 'student'
+                    groups = studentGroups.map((g, gi) => ({ key: `studentGroup:${gi}`, items: g.map(s => ({ source: 'student', record: s, timestamp: s.timestamp || 0, id: s.id })) }));
+                } else {
+                    groups = collectRegistrationDuplicateGroups();
                 }
+                const summary = document.getElementById('registrationDuplicateSummary');
+                const tableBody = document.getElementById('registrationDuplicateTableBody');
+                registrationDuplicateCandidates = [];
 
                 if (!groups.length) {
                     summary.className = 'alert alert-success mb-3';
-                    summary.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Aucun doublon probable dÃ©tectÃ©.</strong> Aucune donnÃ©e n\'a Ã©tÃ© supprimÃ©e.';
-                    tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-success py-4"><i class="fas fa-check-circle me-2"></i>Aucun doublon dÃ©tectÃ©.</td></tr>';
-                    if (deleteBtn) deleteBtn.disabled = true;
+                    summary.innerHTML = '<i class="fas fa-check-circle me-2"></i>Aucun doublon d\'inscription trouvé pour cette branche.';
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                No duplicates detected.
+                            </td>
+                        </tr>
+                    `;
                     updateRegistrationDuplicateSelectionSummary();
                     return;
                 }
 
-                registrationDuplicateGroupsState = groups.map((group, index) => ({ ...group, index, decision: null }));
                 const totalRows = groups.reduce((sum, g) => sum + g.items.length, 0);
+                const autoSelected = groups.reduce((sum, g) => sum + Math.max(0, g.items.length - 1), 0);
                 summary.className = 'alert alert-warning mb-3';
-                summary.innerHTML = `<strong>${groups.length}</strong> groupe(s) de doublons probable(s), <strong>${totalRows}</strong> enregistrements Ã  examiner. <strong>Choisissez l\'Ã©lÃ¨ve correct dans chaque groupe.</strong>`;
+                summary.innerHTML = `<strong>${groups.length}</strong> groupes de doublons trouvés (${totalRows} lignes). Recommandation: ${autoSelected} à supprimer.`;
 
                 const rows = [];
-                registrationDuplicateGroupsState.forEach((group, gi) => {
-                    const first = group.items[0]?.record || {};
-                    rows.push(`<tr class="table-light"><td colspan="9"><strong>GROUPE ${gi + 1}</strong> â€” ${escapeDuplicateHtml(getDuplicateStudentName(first))}<br><small class="text-danger">DÃ©cision obligatoire avant suppression</small></td></tr>`);
+                groups.forEach((group, gi) => {
+                    // If group is from student-based fuzzy scan, show score and class
+                    const first = group.items[0];
+                    const sampleName = (first.record && (first.record.name || first.record.studentName || first.record.nomPrenom || first.record.fullName)) || 'N/A';
+                    rows.push(`<tr class="table-light"><td colspan="9"><strong>Groupe ${gi+1}</strong> - ${sampleName}</td></tr>`);
                     group.items.forEach((it, idx) => {
+                        const keep = idx === 0;
                         const rec = it.record || {};
-                        const studentId = it.id || rec.id || rec.studentId || '';
-                        const leader = group.items[0]?.record || {};
-                        let scoreText = it.source;
-                        if (it.source === 'student' && idx > 0) {
-                            const score = computeStudentDuplicateScore(rec, leader);
-                            scoreText = `${score.score}%`;
-                        } else if (it.source === 'student') {
-                            scoreText = 'RÃ©fÃ©rence';
+                        const rowId = `regdup_${it.source}_${it.id}`;
+                        const studentNameEncoded = encodeURIComponent(rec.name || rec.studentName || rec.nomPrenom || rec.fullName || '');
+                        if (!keep) registrationDuplicateCandidates.push({ source: it.source, id: it.id, record: rec, studentId: rec.id || rec.studentId || '' });
+
+                        // compute score if fuzzy student object
+                        let scoreText = '';
+                        if (it.source === 'student') {
+                            const leader = group.items[0].record || {};
+                            const { score, nameSim, sameClass } = computeStudentDuplicateScore(rec, leader);
+                            scoreText = `${score}%` + (sameClass ? ' (même classe)' : ' (classe différente)');
                         }
-                        const choiceValue = `${it.source}::${studentId}`;
-                        rows.push(`<tr>
-                            <td><input type="radio" class="form-check-input registration-duplicate-choice" name="registrationDupGroup_${gi}" value="${escapeDuplicateHtml(choiceValue)}" data-group="${gi}" onchange="setRegistrationDuplicateDecision(${gi}, this.value)"></td>
-                            <td><span class="badge bg-secondary">Ã€ examiner</span></td>
-                            <td><strong>${escapeDuplicateHtml(getDuplicateStudentName(rec))}</strong><br><small>${escapeDuplicateHtml(rec.reference || rec.codeUnique || rec.referenceId || '')}</small></td>
-                            <td>${escapeDuplicateHtml(scoreText)}</td>
-                            <td>${escapeDuplicateHtml(getDuplicateStudentClass(rec))}</td>
-                            <td>${escapeDuplicateHtml(getDuplicateStudentBirthDate(rec) || 'N/A')}</td>
-                            <td>${escapeDuplicateHtml(rec.parent || rec.chefNomPrenom || rec.parentName || '')}</td>
-                            <td>${escapeDuplicateHtml(getDuplicateStudentPhone(rec))}</td>
-                            <td>${escapeDuplicateHtml(rec.enrollmentDate || rec.paymentDate || rec.createdAt || '')}</td>
-                        </tr>`);
+
+                        rows.push(`
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input registration-duplicate-checkbox" id="${rowId}"
+                                        data-record-id="${it.id}" data-source="${it.source}" data-student-id="${rec.id || rec.studentId || ''}"
+                                        data-student-name="${studentNameEncoded}" data-recommended-delete="${keep ? 'false' : 'true'}" ${keep ? '' : 'checked'} onchange="updateRegistrationDuplicateSelectionSummary()">
+                                </td>
+                                <td>${keep ? '<span class="badge bg-success">GARDER</span>' : '<span class="badge bg-warning text-dark">DOUBLON</span>'}</td>
+                                <td>${rec.name || rec.studentName || rec.nomPrenom || rec.fullName || 'N/A'}</td>
+                                <td>${rec.birthDate || rec.dateNaissance || 'N/A'}</td>
+                                <td>${rec.parent || rec.chefNomPrenom || rec.parentName || ''}</td>
+                                <td>${rec.parentPhone || rec.chefTelephone || ''}</td>
+                                <td>${rec.class || rec.classes || rec.studentClass || ''}</td>
+                                <td>${scoreText || it.source}</td>
+                                <td><button class="btn btn-sm btn-outline-secondary" onclick="console.log('View', '${it.id}')">View</button></td>
+                            </tr>
+                        `);
                     });
-                    rows.push(`<tr><td colspan="9" class="bg-light"><div class="d-flex flex-wrap align-items-center gap-2"><strong>DÃ©cision pour le groupe ${gi + 1} :</strong><select class="form-select form-select-sm registration-duplicate-decision" style="max-width:420px" onchange="setRegistrationDuplicateDecision(${gi}, this.value)"><option value="">-- Choisir l'Ã©lÃ¨ve correct --</option>${group.items.map((it, idx) => { const rec=it.record||{}; const sid=it.id||rec.id||rec.studentId||''; return `<option value="${escapeDuplicateHtml(it.source+'::'+sid)}">Garder : ${escapeDuplicateHtml(getDuplicateStudentName(rec))} ${idx===0?'(recommandÃ© si confirmÃ©)':''}</option>`; }).join('')}<option value="KEEP_ALL">Les deux sont diffÃ©rents â€” ne rien supprimer</option></select></div></td></tr>`);
                 });
+
                 tableBody.innerHTML = rows.join('');
                 updateRegistrationDuplicateSelectionSummary();
             }
 
-            function setRegistrationDuplicateDecision(groupIndex, value) {
-                if (!registrationDuplicateGroupsState[groupIndex]) return;
-                registrationDuplicateGroupsState[groupIndex].decision = value || null;
-                const select = document.querySelector(`.registration-duplicate-decision[onchange="setRegistrationDuplicateDecision(${groupIndex}, this.value)"]`);
-                if (select && select.value !== value) select.value = value || '';
-                document.querySelectorAll(`input[name="registrationDupGroup_${groupIndex}"]`).forEach(r => r.checked = r.value === value);
-                updateRegistrationDuplicateSelectionSummary();
-            }
-
             function selectRecommendedRegistrationDuplicates() {
-                registrationDuplicateGroupsState.forEach((group, gi) => {
-                    if (group.items.length) {
-                        const first = group.items[0];
-                        setRegistrationDuplicateDecision(gi, `${first.source}::${first.id || first.record?.id || first.record?.studentId || ''}`);
-                    }
-                });
+                document.querySelectorAll('.registration-duplicate-checkbox').forEach(cb => cb.checked = cb.dataset.recommendedDelete === 'true');
                 updateRegistrationDuplicateSelectionSummary();
             }
 
             function clearRegistrationDuplicateSelection() {
-                registrationDuplicateGroupsState.forEach(group => group.decision = null);
-                document.querySelectorAll('.registration-duplicate-choice').forEach(r => r.checked = false);
-                document.querySelectorAll('.registration-duplicate-decision').forEach(s => s.value = '');
+                document.querySelectorAll('.registration-duplicate-checkbox').forEach(cb => cb.checked = false);
                 updateRegistrationDuplicateSelectionSummary();
             }
 
             function updateRegistrationDuplicateSelectionSummary() {
-                const groups = registrationDuplicateGroupsState || [];
-                const decided = groups.filter(g => !!g.decision).length;
-                const destructive = groups.filter(g => g.decision && g.decision !== 'KEEP_ALL').length;
+                const checked = Array.from(document.querySelectorAll('.registration-duplicate-checkbox:checked'));
                 const countEl = document.getElementById('registrationDuplicateSelectedCount');
                 const studentsEl = document.getElementById('registrationDuplicateSelectedStudents');
                 const deleteBtn = document.getElementById('deleteRegistrationDuplicatesBtn');
-                if (countEl) countEl.textContent = `${decided}/${groups.length} groupe(s) dÃ©cidÃ©(s) â€” ${destructive} Ã  nettoyer`;
-                if (studentsEl) {
-                    const names = groups.filter(g => g.decision && g.decision !== 'KEEP_ALL').map(g => {
-                        const [source, id] = g.decision.split('::');
-                        const keep = g.items.find(it => it.source === source && String(it.id || it.record?.id || it.record?.studentId || '') === id);
-                        return keep ? getDuplicateStudentName(keep.record) : '';
-                    }).filter(Boolean);
-                    studentsEl.textContent = names.length ? `Ã‰lÃ¨ves conservÃ©s : ${names.join(', ')}` : 'DÃ©cisions : aucune suppression confirmÃ©e';
-                }
-                if (deleteBtn) deleteBtn.disabled = groups.length === 0 || decided !== groups.length || destructive === 0;
-            }
+                if (countEl) countEl.textContent = `${checked.length} sélectionné(s)`;
 
-            async function reassignStudentData(oldStudentId, newStudentId) {
-                if (!oldStudentId || !newStudentId || oldStudentId === newStudentId) return;
-                const refs = [studentFeesRef, feesPaymentsRef, coachingPaymentsRef, transportPaymentsRef, registrationPaymentsRef];
-                for (const ref of refs) {
-                    const snap = await ref.orderByChild('studentId').equalTo(oldStudentId).once('value');
-                    if (!snap.exists()) continue;
-                    const updates = {};
-                    snap.forEach(child => updates[child.key + '/studentId'] = newStudentId);
-                    if (Object.keys(updates).length) await ref.update(updates);
-                }
+                const names = Array.from(new Set(checked.map(cb => decodeURIComponent(cb.dataset.studentName || '').trim()).filter(Boolean)));
+                if (studentsEl) studentsEl.textContent = names.length ? `Selected students: ${names.join(', ')}` : 'Selected students: none';
+                if (deleteBtn) deleteBtn.disabled = checked.length === 0;
             }
 
             async function deleteSelectedRegistrationDuplicates() {
-                const groups = registrationDuplicateGroupsState || [];
-                if (!groups.length || groups.some(g => !g.decision)) {
-                    showToast('Vous devez choisir une dÃ©cision pour chaque groupe.', 'error');
-                    return;
-                }
-                const destructiveGroups = groups.filter(g => g.decision && g.decision !== 'KEEP_ALL');
-                if (!destructiveGroups.length) {
-                    showToast('Aucun groupe n\'a Ã©tÃ© confirmÃ© pour suppression.', 'info');
-                    return;
-                }
-                const preview = destructiveGroups.map((g, i) => {
-                    const [source, id] = g.decision.split('::');
-                    const keep = g.items.find(it => it.source === source && String(it.id || it.record?.id || it.record?.studentId || '') === id);
-                    return `${i + 1}. ${getDuplicateStudentName(keep?.record)}`;
-                }).join('\\n');
-                const confirmed = confirm(`ATTENTION â€” Vous avez choisi les Ã©lÃ¨ves corrects suivants :
+                const checked = Array.from(document.querySelectorAll('.registration-duplicate-checkbox:checked'));
+                if (!checked.length) { showToast('Select duplicate rows to delete.', 'error'); return; }
 
-${preview}
-
-Pour chaque groupe, les autres enregistrements seront nettoyÃ©s. Les paiements liÃ©s Ã  un doublon seront d'abord rattachÃ©s Ã  l'Ã©lÃ¨ve conservÃ©.
-
-Continuer ?`);
-                if (!confirmed) return;
+                const items = checked.map(cb => ({ source: cb.dataset.source, id: cb.dataset.recordId, studentId: cb.dataset.studentId || '' }));
+                const names = Array.from(new Set(checked.map(cb => decodeURIComponent(cb.dataset.studentName || '').trim()).filter(Boolean)));
+                const preview = names.slice(0,5).join(', ');
+                const extra = Math.max(0, names.length - 5);
+                const detailText = preview ? `\nStudents: ${preview}${extra ? ` (+${extra} more)` : ''}` : '';
+                if (!confirm(`Delete ${items.length} selected duplicate record(s)?${detailText}`)) return;
 
                 const deleteBtn = document.getElementById('deleteRegistrationDuplicatesBtn');
-                const originalHtml = deleteBtn?.innerHTML || '';
+                const originalHtml = deleteBtn ? deleteBtn.innerHTML : '';
                 try {
-                    if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Nettoyage sÃ©curisÃ©...'; }
-                    let removed = 0;
-                    let reassigned = 0;
-                    for (const group of destructiveGroups) {
-                        const [keepSource, keepId] = group.decision.split('::');
-                        const keeper = group.items.find(it => it.source === keepSource && String(it.id || it.record?.id || it.record?.studentId || '') === keepId);
-                        if (!keeper) continue;
+                    if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...'; }
 
-                        for (const item of group.items) {
-                            const itemId = item.id || item.record?.id || item.record?.studentId || '';
-                            if (item === keeper || String(itemId) === String(keepId)) continue;
-                            if (group.source === 'student' || item.source === 'student') {
-                                const oldId = itemId;
-                                const newId = keeper.id || keeper.record?.id || keeper.record?.studentId || '';
-                                if (oldId && newId && oldId !== newId) {
-                                    await reassignStudentData(oldId, newId);
-                                    await studentsRef.child(oldId).remove();
-                                    reassigned++;
-                                    removed++;
-                                }
-                            } else if (item.source === 'registration') {
-                                await registrationPaymentsRef.child(itemId).remove();
-                                removed++;
-                            } else if (item.source === 'pending') {
-                                await pendingInscriptionsRef.child(itemId).remove();
-                                removed++;
-                            }
+                    // Delete records or student duplicates
+                    for (const it of items) {
+                        if (it.source === 'registration') {
+                            await registrationPaymentsRef.child(it.id).remove();
+                        } else if (it.source === 'pending') {
+                            await pendingInscriptionsRef.child(it.id).remove();
+                        } else if (it.source === 'student') {
+                            await deleteStudent(it.id);
                         }
                     }
-                    showToast(`${removed} doublon(s) nettoyÃ©(s). ${reassigned} fiche(s) Ã©lÃ¨ve supprimÃ©e(s) aprÃ¨s rattachement des paiements.`, 'success');
-                    registrationDuplicateGroupsState = [];
-                    registrationDuplicateCandidates = [];
-                    try { if (typeof loadRegistration === 'function') await loadRegistration(); } catch (e) { console.warn(e); }
-                    try { if (typeof applyStudentFilters === 'function') applyStudentFilters(); } catch (e) { console.warn(e); }
-                    try { if (typeof loadStudentFees === 'function') loadStudentFees(); } catch (e) { console.warn(e); }
-                    const summary = document.getElementById('registrationDuplicateSummary');
-                    if (summary) { summary.className = 'alert alert-success mb-3'; summary.innerHTML = '<i class="fas fa-check-circle me-2"></i>Nettoyage terminÃ©. Les groupes traitÃ©s ont Ã©tÃ© supprimÃ©s de cette analyse.'; }
-                    const tableBody = document.getElementById('registrationDuplicateTableBody');
-                    if (tableBody) tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-success py-4"><i class="fas fa-check-circle me-2"></i>Nettoyage terminÃ©. Relancez Analyse pour vÃ©rifier.</td></tr>';
-                    updateRegistrationDuplicateSelectionSummary();
+
+                    // For orphan studentIds after registration/pending deletion, remove the student if no registrationPayments remain
+                    const studentIds = Array.from(new Set(items.map(i => i.studentId).filter(Boolean)));
+                    for (const sid of studentIds) {
+                        const snap = await db.ref('registrationPayments').orderByChild('studentId').equalTo(sid).once('value');
+                        if (!snap.exists()) {
+                            await deleteStudent(sid);
+                        }
+                    }
+
+                    showToast(`${items.length} duplicate record(s) deleted successfully.`, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('registrationDuplicateModal'))?.hide();
+                    // refresh data
+                    await loadRegistration();
+                    if (typeof applyStudentFilters === 'function') applyStudentFilters();
                 } catch (error) {
-                    console.error('Error cleaning registration duplicates:', error);
-                    showToast('Erreur pendant le nettoyage des doublons. Aucune autre suppression n\'a Ã©tÃ© tentÃ©e.', 'error');
+                    console.error('Error deleting registration duplicates:', error);
+                    showToast('Error deleting registration duplicates', 'error');
                 } finally {
-                    if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = originalHtml || '<i class="fas fa-trash me-2"></i>Nettoyer les doublons confirmÃ©s'; }
+                    if (deleteBtn) { deleteBtn.disabled = false; deleteBtn.innerHTML = originalHtml; }
                 }
             }
 
