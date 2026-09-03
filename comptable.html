@@ -1534,7 +1534,9 @@
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    </head>
+    
+<style id="export-year-modal-style">.export-year-modal-content{border:0;border-radius:20px;box-shadow:0 18px 60px rgba(0,0,0,.22);overflow:hidden}.export-year-modal-content .modal-header{padding:24px 26px 12px;border:0}.export-year-kicker{font-size:11px;font-weight:800;letter-spacing:1.5px;color:#2563eb;margin-bottom:5px}.export-year-modal-content .modal-title{font-weight:800;font-size:21px}.export-year-subtitle{margin:4px 0 0;color:#64748b;font-size:13px}.export-year-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.export-year-option{border:1px solid #e2e8f0;background:#fff;border-radius:14px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:5px;transition:.18s;cursor:pointer}.export-year-option:hover,.export-year-option.active{border-color:#2563eb;box-shadow:0 5px 18px rgba(37,99,235,.13);transform:translateY(-1px)}.export-year-option span{font-size:22px}.export-year-option strong{font-size:14px;color:#0f172a}.export-year-option small{font-size:11px;color:#64748b}.export-year-modal-content .modal-footer{border:0;padding:14px 26px 22px}@media(max-width:576px){.export-year-grid{grid-template-columns:1fr}}</style>
+</head>
     <body>
         <!-- Toast Container -->
         <div class="toast-container" id="toastContainer"></div>
@@ -3298,6 +3300,7 @@
                                         <option value="2024-2025">2024-2025</option>
                                         <option value="2025-2026">2025-2026</option>
                                         <option value="2026-2027">2026-2027</option>
+                                        <option value="2027-2028">2027-2028</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3 mb-3">
@@ -3739,6 +3742,7 @@
                                     <select class="form-control-modern" id="confirmAcademicYear" required>
                                         <option value="2025-2026">2025-2026</option>
                                         <option value="2026-2027">2026-2027</option>
+                                        <option value="2027-2028">2027-2028</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -7644,14 +7648,18 @@
             // ============================================
             // ANNÉE SCOLAIRE DYNAMIQUE — toujours à jour pour impressions/téléchargements
             // ============================================
+            function getAcademicYearForEnrollmentDate(dateValue) {
+                const date = dateValue instanceof Date ? new Date(dateValue.getTime()) : new Date(dateValue || Date.now());
+                if (Number.isNaN(date.getTime())) return '2026-2027';
+                const ymd = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+                if (ymd < '2025-09-09') return '2024-2025';
+                if (ymd <= '2026-06-01') return '2025-2026';
+                if (ymd <= '2027-07-25') return '2026-2027';
+                return '2027-2028';
+            }
+
             function getCurrentAcademicYearLabel() {
-                if (currentTermConfig && currentTermConfig.academicYear) {
-                    return currentTermConfig.academicYear;
-                }
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = now.getMonth() + 1;
-                return month >= 9 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+                return getAcademicYearForEnrollmentDate(new Date());
             }
 
             // ============================================
@@ -7838,14 +7846,33 @@
 
             
 
+            function showExportAcademicYearModal(years) {
+                return new Promise(resolve => {
+                    const existing = document.getElementById('exportAcademicYearModal');
+                    if (existing) existing.remove();
+                    const options = ['ALL', ...years];
+                    const cards = options.map((year, i) => {
+                        const label = year === 'ALL' ? 'Toutes les années scolaires' : year;
+                        const active = i === 1 || (i === 0 && years.length === 0) ? ' active' : '';
+                        return `<button type="button" class="export-year-option${active}" data-year="${year}"><span>${year === 'ALL' ? '📚' : '🎓'}</span><strong>${label}</strong><small>${year === 'ALL' ? 'Tous les élèves disponibles' : 'Élèves inscrits pour cette année'}</small></button>`;
+                    }).join('');
+                    const modalHtml = `<div class="modal fade" id="exportAcademicYearModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content export-year-modal-content"><div class="modal-header"><div><div class="export-year-kicker">EXPORT REPORT (PDF)</div><h5 class="modal-title">Sélection de l’année scolaire</h5><p class="export-year-subtitle">Choisissez les élèves à inclure dans le rapport PDF.</p></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="export-year-grid">${cards}</div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button><button type="button" class="btn btn-primary" id="confirmExportAcademicYear" disabled>Exporter le rapport</button></div></div></div></div>`;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    const el=document.getElementById('exportAcademicYearModal'), confirm=document.getElementById('confirmExportAcademicYear'); let selected=null;
+                    el.querySelectorAll('.export-year-option').forEach(btn=>btn.addEventListener('click',()=>{el.querySelectorAll('.export-year-option').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selected=btn.dataset.year==='ALL'?(years[0]||'ALL'):btn.dataset.year;confirm.disabled=false;}));
+                    el.addEventListener('hidden.bs.modal',()=>{el.remove();resolve(null)},{once:true});
+                    confirm.addEventListener('click',()=>{bootstrap.Modal.getInstance(el).hide();resolve(selected)},{once:true});
+                    new bootstrap.Modal(el).show();
+                });
+            }
+
             async function exportRegistrationReportPDF() {
                 const JsPDF = resolveJsPDF();
                 if (!JsPDF) { showToast('PDF library non chargée', 'error'); return; }
 
                 try {
-                    // Le rapport est construit UNIQUEMENT ? partir des inscriptions confirmées.
-                    // Un élève actif trouvé dans /students ne suffit pas : cela évite de mélanger
-                    // les anciens élèves avec les élèves réellement inscrits pour l'année choisie.
+                    // Le PDF doit contenir les MÊMES élèves que le tableau "Paiements d'Inscription":
+                    // inscriptions non rejetées (payées ou non) + anciens paiements sans inscription.
                     const [inscSnap, studentsSnap, paymentsSnap] = await Promise.all([
                         pendingInscriptionsRef.once('value'),
                         studentsRef.once('value'),
@@ -7856,30 +7883,34 @@
                     studentsSnap.forEach(ch => { studentsById[ch.key] = { id: ch.key, ...ch.val() }; });
 
                     const paymentsByStudent = {};
+                    const allPayments = [];
                     paymentsSnap.forEach(ch => {
                         const payment = { id: ch.key, ...ch.val() };
-                        if (payment.studentId) paymentsByStudent[payment.studentId] = payment;
+                        allPayments.push(payment);
+                        if (payment.studentId) paymentsByStudent[String(payment.studentId)] = payment;
                     });
 
                     const normalizeReportValue = value => String(value ?? '')
                         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                         .trim().toLowerCase();
-                    const isConfirmedInscription = insc => {
-                        const statut = normalizeReportValue(insc.statut);
-                        const status = normalizeReportValue(insc.status);
-                        return ['confirme', 'confirmed', 'approuve', 'approved'].includes(statut) ||
-                               ['confirme', 'confirmed', 'approuve', 'approved'].includes(status);
+                    const isRejectedInscription = insc => {
+                        const status = normalizeReportValue(insc.statut || insc.status);
+                        return ['rejete', 'rejected'].includes(status);
                     };
                     const normalizeYear = value => normalizeReportValue(value).replace(/\s+/g, '');
 
-                    // Demander l'année AU MOMENT DU TÉLÉCHARGEMENT.
+                    // Construire les années disponibles à partir des inscriptions ET paiements.
                     const academicYears = new Set();
                     inscSnap.forEach(ch => {
                         const insc = ch.val() || {};
-                        if (isConfirmedInscription(insc) && insc.studentId && inscriptionMatchesSelectedBranch(insc)) {
-                            const year = insc.anneeScolaire || insc.academicYear;
-                            if (year) academicYears.add(String(year).trim());
-                        }
+                        if (isRejectedInscription(insc)) return;
+                        if (!inscriptionMatchesSelectedBranch(insc)) return;
+                        const year = insc.anneeAcademique || insc.anneeScolaire || insc.academicYear;
+                        if (year) academicYears.add(String(year).trim());
+                    });
+                    allPayments.forEach(payment => {
+                        if (!registrationRecordMatchesBranch(payment.branch, payment.section, payment.studentClass, selectedBranch)) return;
+                        if (payment.academicYear) academicYears.add(String(payment.academicYear).trim());
                     });
                     Object.values(studentsById).forEach(student => {
                         if (student.academicYear) academicYears.add(String(student.academicYear).trim());
@@ -7888,39 +7919,28 @@
                     const sortedYears = [...academicYears].filter(Boolean).sort((a, b) => b.localeCompare(a));
                     const currentYear = getCurrentAcademicYearLabel();
                     if (!sortedYears.includes(currentYear)) sortedYears.unshift(currentYear);
-                    const yearPrompt = sortedYears.map((year, index) => `${index + 1}. ${year}`).join('\n');
-                    const yearAnswer = window.prompt(
-                        `Sélectionnez l'année académique à afficher dans le rapport :\n\n${yearPrompt}\n\nEntrez le numéro :`,
-                        '1'
-                    );
-                    if (yearAnswer === null) return;
-                    const yearIndex = Number.parseInt(yearAnswer, 10) - 1;
-                    if (!Number.isInteger(yearIndex) || !sortedYears[yearIndex]) {
-                        showToast('Année académique invalide.', 'warning');
-                        return;
-                    }
-                    const selectedAcademicYear = sortedYears[yearIndex];
+                    const selectedAcademicYear = await showExportAcademicYearModal(sortedYears);
+                    if (!selectedAcademicYear) return;
+                    const exportAllYears = selectedAcademicYear === 'ALL';
                     const selectedYearKey = normalizeYear(selectedAcademicYear);
 
                     const rows = [];
                     const seenStudentIds = new Set();
 
-                    // Une ligne = une inscription confirmée + une fiche élève correspondante.
+                    // 1) Toutes les inscriptions non rejetées, même si elles sont encore en attente
+                    // et même si aucun paiement n'existe.
                     inscSnap.forEach(ch => {
                         const insc = { id: ch.key, ...ch.val() };
-                        if (!isConfirmedInscription(insc) || !insc.studentId) return;
+                        if (isRejectedInscription(insc) || !insc.studentId) return;
                         if (!inscriptionMatchesSelectedBranch(insc)) return;
 
-                        const inscriptionYear = insc.anneeScolaire || insc.academicYear;
-                        const student = studentsById[insc.studentId];
-                        if (!student) return;
-                        const studentYear = student.academicYear || inscriptionYear;
-                        const recordYear = inscriptionYear || student.academicYear;
-                        if (normalizeYear(recordYear) !== selectedYearKey) return;
-                        if (seenStudentIds.has(insc.studentId)) return;
+                        const payment = paymentsByStudent[String(insc.studentId)] || null;
+                        const student = studentsById[insc.studentId] || {};
+                        const inscriptionYear = insc.anneeAcademique || insc.anneeScolaire || insc.academicYear;
+                        const recordYear = inscriptionYear || student.academicYear || payment?.academicYear;
+                        if (!exportAllYears && recordYear && normalizeYear(recordYear) !== selectedYearKey) return;
 
-                        const payment = paymentsByStudent[insc.studentId] || {};
-                        const branch = student.branch || mapInscriptionBranchToInternal(insc.branche, insc.section, insc.niveau);
+                        const branch = student.branch || payment?.branch || mapInscriptionBranchToInternal(insc.branche, insc.section, insc.niveau);
                         const address = student.address || [insc.secteur, insc.umurenge, insc.akagari, insc.umudugudu].filter(Boolean).join(', ');
                         const secondParent = student.spouseName || student.secondParent || student.parent2 || student.parent2Name ||
                             insc.conjointNomPrenom || insc.secondParent || insc.parent2 || insc.parent2Name || '';
@@ -7929,22 +7949,52 @@
 
                         rows.push({
                             studentId: insc.studentId,
-                            reference: student.reference || payment.reference || insc.codeUnique || insc.studentId,
-                            name: student.name || student.fullName || insc.nomPrenom || 'N/A',
-                            className: student.classes || student.class || insc.assignedClass || insc.niveau || payment.studentClass || 'N/A',
+                            reference: student.reference || payment?.reference || insc.codeUnique || insc.studentId,
+                            name: student.name || student.fullName || payment?.studentName || insc.nomPrenom || 'N/A',
+                            className: student.classes || student.class || student.classe || payment?.studentClass || insc.classe || insc.niveau || 'N/A',
                             branch: getBranchName(branch),
-                            academicYear: studentYear || selectedAcademicYear,
+                            academicYear: recordYear || selectedAcademicYear,
                             bus: student.transportEnrolled === true || normalizeReportValue(student.transportEnrolled) === 'oui' || normalizeReportValue(insc.transport) === 'oui' ? 'OUI' : 'NON',
                             address: address || 'N/A',
                             parent: student.parent || insc.chefNomPrenom || 'N/A',
                             parentPhone: student.parentPhone || insc.chefTelephone || 'N/A',
                             spouse: secondParent || 'N/A',
-                            spousePhone: secondParentPhone || 'N/A'
+                            spousePhone: secondParentPhone || 'N/A',
+                            registrationStatus: insc.statut || insc.status || 'Enregistré',
+                            unpaid: !payment
                         });
-                        seenStudentIds.add(insc.studentId);
+                        seenStudentIds.add(String(insc.studentId));
                     });
 
-                    // Regroupement visuel : branche, classe, puis nom. Aucun élève hors inscription confirmée.
+                    // 2) Paiements historiques qui n'ont pas d'inscription correspondante.
+                    allPayments.forEach(payment => {
+                        const studentId = payment.studentId ? String(payment.studentId) : '';
+                        if (studentId && seenStudentIds.has(studentId)) return;
+                        if (!registrationRecordMatchesBranch(payment.branch, payment.section, payment.studentClass, selectedBranch)) return;
+                        const student = studentId ? (studentsById[studentId] || {}) : {};
+                        const recordYear = payment.academicYear || student.academicYear;
+                        if (!exportAllYears && recordYear && normalizeYear(recordYear) !== selectedYearKey) return;
+
+                        const branch = student.branch || payment.branch || '';
+                        rows.push({
+                            studentId: payment.studentId || '',
+                            reference: student.reference || payment.reference || payment.studentId || payment.id,
+                            name: student.name || student.fullName || payment.studentName || 'N/A',
+                            className: student.classes || student.class || student.classe || payment.studentClass || 'N/A',
+                            branch: getBranchName(branch),
+                            academicYear: recordYear || selectedAcademicYear,
+                            bus: student.transportEnrolled === true || normalizeReportValue(student.transportEnrolled) === 'oui' ? 'OUI' : 'NON',
+                            address: student.address || 'N/A',
+                            parent: student.parent || 'N/A',
+                            parentPhone: student.parentPhone || 'N/A',
+                            spouse: student.spouseName || student.secondParent || student.parent2 || student.parent2Name || 'N/A',
+                            spousePhone: student.spousePhone || student.secondParentPhone || student.parent2Phone || 'N/A',
+                            registrationStatus: 'Paiement enregistré',
+                            unpaid: false
+                        });
+                        if (studentId) seenStudentIds.add(studentId);
+                    });
+
                     rows.sort((a, b) => String(a.branch).localeCompare(String(b.branch), 'fr') ||
                         String(a.className).localeCompare(String(b.className), 'fr') ||
                         String(a.name).localeCompare(String(b.name), 'fr'));
@@ -7958,22 +8008,20 @@
                     doc.text('RAPPORT DES ÉLÈVES INSCRITS', 14, 13);
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(10);
-                    doc.text(`Branche : ${titleBranch}   |   Année scolaire : ${selectedAcademicYear}   |   Date : ${today}`, 14, 20);
+                    doc.text(`Branche : ${titleBranch}   |   Année scolaire : ${exportAllYears ? 'Toutes les années' : selectedAcademicYear}   |   Date : ${today}`, 14, 20);
                     doc.text(`Total des élèves inscrits : ${rows.length}`, 14, 26);
 
                     const body = rows.map((r, i) => [
-                        i + 1, r.reference, r.name, r.className, r.branch, r.bus,
-                        r.address, r.parent, r.parentPhone, r.spouse, r.spousePhone
+                        i + 1, r.reference, r.name, r.className, r.branch,
+                        r.bus, r.address, r.parent, r.parentPhone, r.spouse, r.spousePhone
                     ]);
 
                     if (body.length) {
                         doc.autoTable({
                             startY: 31,
-                            head: [[
-                                'N?', 'RÉFÉRENCE', 'ÉLÈVE', 'CLASSE', 'BRANCHE', 'BUS',
+                            head: [['N°', 'RÉFÉRENCE', 'ÉLÈVE', 'CLASSE', 'BRANCHE', 'BUS',
                                 'ADRESSE / LIEU DE RÉSIDENCE', 'PARENT / TUTEUR', 'TÉL. PARENT',
-                                '2e PARENT', 'TÉL. 2e PARENT'
-                            ]],
+                                '2e PARENT', 'TÉL. 2e PARENT']],
                             body,
                             styles: { fontSize: 7.2, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
                             headStyles: { fontSize: 7.2, fontStyle: 'bold' },
@@ -7986,7 +8034,7 @@
                             margin: { left: 10, right: 10, top: 31, bottom: 14 },
                             didDrawPage: data => {
                                 doc.setFontSize(7);
-                                doc.text(`Rapport des élèves inscrits à page ${data.pageNumber}`, 10, 203);
+                                doc.text(`Rapport des élèves inscrits - page ${data.pageNumber}`, 10, 203);
                             }
                         });
                     } else {
@@ -8004,9 +8052,9 @@
                     doc.text(`Total : ${rows.length} élève(s)   |   Bus : ${busCount}   |   Sans bus : ${rows.length - busCount}`, 10, y);
 
                     const safeBranch = String(selectedBranch || 'all').replace(/[^a-z0-9_-]/gi, '_');
-                    const safeYear = selectedAcademicYear.replace(/[^0-9-]/g, '_');
+                    const safeYear = (exportAllYears ? 'toutes_les_annees' : selectedAcademicYear).replace(/[^a-z0-9_-]/gi, '_');
                     doc.save(`Rapport_Eleves_Inscrits_${safeBranch}_${safeYear}.pdf`);
-                    showToast(`Rapport PDF téléchargé : ${rows.length} élève(s) ? ${selectedAcademicYear}`, 'success');
+                    showToast(`Rapport PDF téléchargé : ${rows.length} élève(s) - ${selectedAcademicYear}`, 'success');
                 } catch (error) {
                     console.error('Erreur export rapport inscription:', error);
                     showToast('Erreur lors de l\'export du rapport : ' + (error.message || error), 'error');
@@ -8144,7 +8192,7 @@
                 document.getElementById('confirmTransactionRef').value = '';
 
                 // Sélectionne automatiquement l'année scolaire actuellement configurée
-                const currentAcademicYear = getCurrentAcademicYearLabel();
+                const currentAcademicYear = getAcademicYearForEnrollmentDate(insc.dateInscription || insc.timestamp || new Date());
                 const academicYearSelect = document.getElementById('confirmAcademicYear');
                 if (academicYearSelect) {
                     const optionExists = Array.from(academicYearSelect.options).some(opt => opt.value === currentAcademicYear);
@@ -8166,7 +8214,9 @@
                 const insc = pendingInscriptionsData.find(i => i.id === currentConfirmInscriptionId);
                 if (!insc) { showToast('Demande introuvable', 'error'); return; }
 
-                const academicYear = document.getElementById('confirmAcademicYear').value;
+                const academicYear = getAcademicYearForEnrollmentDate(insc.dateInscription || insc.timestamp || new Date());
+                const academicYearSelect = document.getElementById('confirmAcademicYear');
+                if (academicYearSelect) academicYearSelect.value = academicYear;
                 const assignedClass = document.getElementById('confirmAssignedClass').value;
                 const amountPaid = parseFloat(document.getElementById('confirmAmountPaid').value);
                 const paymentMode = document.getElementById('confirmPaymentMode').value;
@@ -16727,14 +16777,16 @@
                     if (snapshot.exists()) {
                         currentTermConfig = snapshot.val();
                         // Populate the form
-                        document.getElementById('termAcademicYear').value = currentTermConfig.academicYear || '';
+                        const calculatedAcademicYear = getAcademicYearForEnrollmentDate(new Date());
+                        currentTermConfig.academicYear = calculatedAcademicYear;
+                        document.getElementById('termAcademicYear').value = calculatedAcademicYear;
                         document.getElementById('termTrimester').value = currentTermConfig.trimester || '';
                         document.getElementById('termStartDate').value = currentTermConfig.startDate || '';
                         document.getElementById('termEndDate').value = currentTermConfig.endDate || '';
                     } else {
                         // Default values
                         currentTermConfig = {
-                            academicYear: '2025-2026',
+                            academicYear: getAcademicYearForEnrollmentDate(new Date()),
                             trimester: '1',
                             startDate: '',
                             endDate: ''
