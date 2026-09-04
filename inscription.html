@@ -255,6 +255,7 @@
             <label data-i18n="section">Section *</label>
             <select id="rSection" required onchange="updateNiveauOptions()">
               <option value="" data-i18n="select_option">Sélectionnez</option>
+              <option value="CRECHE" data-i18n="section_creche">CRECHE</option>
               <option value="MATERNELLE" data-i18n="section_nursery">MATERNELLE</option>
               <option value="PRIMAIRE" data-i18n="section_primary">PRIMAIRE</option>
             </select>
@@ -277,6 +278,13 @@
           </div>
         </div>
         <div id="contactInfo"></div>
+        <div class="field" style="margin-top:.9rem;">
+          <label data-i18n="requested_class">Classe demandÃ©e (selon branche) *</label>
+          <select id="rClass" required disabled>
+            <option value="" data-i18n="choose_branch_first">Choisissez d'abord la branche</option>
+          </select>
+          <small id="classHelp" style="display:block;margin-top:.35rem;color:#64748b;">Les classes sont celles crÃ©Ã©es par le secrÃ©tariat dans Gestion AcadÃ©mique â†’ CrÃ©er une classe.</small>
+        </div>
         <div class="field" style="margin-top:.9rem;">
           <label data-i18n="academic_year">Année académique *</label>
           <select id="rAcademicYear" required>
@@ -386,9 +394,16 @@
       gender_female: "FILLE",
       prev_school: "École de provenance",
       section: "Section *",
+      section_creche: "CRECHE",
       section_nursery: "MATERNELLE",
       section_primary: "PRIMAIRE",
       level: "Niveau *",
+      requested_class: "Classe demandÃ©e (selon branche) *",
+      choose_branch_first: "Choisissez d'abord la branche",
+      no_classes_available: "Aucune classe disponible pour cette branche et ce niveau. Veuillez contacter le secrÃ©tariat.",
+      choose_class: "SÃ©lectionnez une classe",
+      class_loading: "Chargement des classes...",
+      class_help: "Les classes sont celles crÃ©Ã©es par le secrÃ©tariat dans Gestion AcadÃ©mique â†’ CrÃ©er une classe.",
       choose_section_first: "Choisissez d'abord la section",
       branch: "Branche *",
       branch_kacyiru: "KACYIRU",
@@ -608,6 +623,7 @@
       gender_female: "UMUKOBWA",
       prev_school: "Ishuri yavuyemo",
       section: "Icyiciro *",
+      section_creche: "CRECHE",
       section_nursery: "MATERNELLE",
       section_primary: "PRIMAIRE",
       level: "Urwego *",
@@ -986,6 +1002,7 @@
 
   // ========== Registration form logic ==========
   const NIVEAUX = {
+    CRECHE: ['CRECHE'],
     MATERNELLE: ['N1','N2','N3'],
     PRIMAIRE: ['P1','P2','P3','P4','P5']
   };
@@ -1023,6 +1040,7 @@
 
     applyTranslations();
     updateContactInfo();
+    populateRegistrationClasses();
   }
 
   const BRANCH_CONTACTS = {
@@ -1030,6 +1048,72 @@
     gisozi:    { name:'Gisozi',    phone:'0788410242 / 0794116491 / 0796145647', email:'edenfamilyschoolgisozi@gmail.com' },
     kimisagara:{ name:'Kimisagara',phone:'0785892018 / 0791826950', email:'edenfamilygrace@gmail.com' }
   };
+
+  let registrationClasses = [];
+  let registrationClassesListener = null;
+
+  function normalizeClassBranch(value){
+    return (value || '').toString().trim().toLowerCase();
+  }
+
+  function classMatchesRegistration(c, branch, section, niveau){
+    if (!c || normalizeClassBranch(c.branch || c.branche) !== normalizeClassBranch(branch)) return false;
+    const level = (c.level || c.niveau || '').toString().trim().toLowerCase();
+    const sec = (section || '').toString().trim().toLowerCase();
+    const niv = (niveau || '').toString().trim().toLowerCase();
+    // New classes may use the exact level (CrÃ¨che, N1, N2, N3, P1...) or
+    // the section level (Maternelle/Primaire). Support both formats.
+    if (niv && level === niv) return true;
+    if (sec === 'creche' && ['creche','crÃ¨che'].includes(level)) return true;
+    if (sec === 'maternelle' && ['maternelle','nursery'].includes(level)) return true;
+    if (sec === 'primaire' && ['primaire','primary'].includes(level)) return true;
+    // A class name such as N1A/P2B is also matched to the selected level.
+    const name = (c.name || '').toString().trim().toLowerCase();
+    return !!niv && (name === niv || name.startsWith(niv));
+  }
+
+  function populateRegistrationClasses(){
+    const sel = document.getElementById('rClass');
+    if (!sel) return;
+    const branch = document.querySelector('input[name="rBranch"]:checked')?.value || '';
+    const section = document.getElementById('rSection')?.value || '';
+    const niveau = document.getElementById('rNiveau')?.value || '';
+    sel.innerHTML = '';
+    if (!branch) {
+      sel.disabled = true;
+      sel.innerHTML = `<option value="">${t('choose_branch_first')}</option>`;
+      return;
+    }
+    const matches = registrationClasses.filter(c => classMatchesRegistration(c, branch, section, niveau));
+    sel.disabled = false;
+    if (!matches.length) {
+      sel.innerHTML = `<option value="">${t('no_classes_available')}</option>`;
+      return;
+    }
+    sel.innerHTML = `<option value="">${t('choose_class')}</option>`;
+    matches.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    matches.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.name || c.classId || c.id;
+      o.textContent = c.name || c.classId || c.id;
+      o.dataset.classId = c.classId || c.id || '';
+      sel.appendChild(o);
+    });
+  }
+
+  function loadRegistrationClasses(){
+    if (registrationClassesListener) registrationClassesListener.off();
+    registrationClassesListener = db.ref('classes');
+    registrationClassesListener.on('value', snap => {
+      const data = snap.val() || {};
+      registrationClasses = Object.entries(data).map(([id,c]) => ({ ...(c || {}), id: c?.id || id, classId: c?.classId || id }));
+      populateRegistrationClasses();
+    }, err => {
+      console.error('Erreur chargement classes inscription:', err);
+      registrationClasses = [];
+      populateRegistrationClasses();
+    });
+  }
 
   function updateContactInfo(){
     const val = document.querySelector('input[name="rBranch"]:checked')?.value;
@@ -1058,6 +1142,8 @@
     const currentSchoolYear = `${currentYear}-${currentYear + 1}`;
     sel.value = currentSchoolYear;
   }
+
+  loadRegistrationClasses();
 
   function showToast(msg){
     const t = document.getElementById('toast');
@@ -1089,10 +1175,18 @@
     }
 
     const section = document.getElementById('rSection').value;
+    const niveau = document.getElementById('rNiveau').value;
+    const classSelect = document.getElementById('rClass');
+    const requestedClass = classSelect ? classSelect.value : '';
     const branchInput = document.querySelector('input[name="rBranch"]:checked');
     const branch = branchInput ? branchInput.value : '';
     if (section === 'PRIMAIRE' && branch !== 'gisozi') {
       showToast(t('branch_primary_gisozi_only'));
+      return;
+    }
+    if (!requestedClass) {
+      showToast(t('choose_class_error'));
+      classSelect?.focus();
       return;
     }
 
@@ -1113,7 +1207,10 @@
         sexe: genderInput ? genderInput.value : '',
         ecoleProvenance: document.getElementById('rPreviousSchool').value || '',
         section,
-        niveau: document.getElementById('rNiveau').value,
+        niveau,
+        classe: requestedClass,
+        classeDemandee: requestedClass,
+        classeId: classSelect?.selectedOptions?.[0]?.dataset?.classId || '',
         branche: branch,
         anneeAcademique: document.getElementById('rAcademicYear').value,
         transport: document.getElementById('rTransport').checked ? 'OUI' : 'NON',
