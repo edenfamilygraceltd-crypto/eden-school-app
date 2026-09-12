@@ -7701,15 +7701,17 @@
             function computeStudentDuplicateScore(candidate, existing) {
                 let score = 0;
                 const nameSim = nameSimilarity(candidate.name || candidate.fullName || candidate.nomPrenom, existing.name || existing.fullName || existing.nomPrenom);
-                score += nameSim * 0.60;
+                // The name must carry most of the score: real duplicates often have
+                // missing/changed parent fields, while the child's name remains very close.
+                score += nameSim * 0.85;
 
                 if (candidate.birthDate && existing.birthDate) {
-                    if (candidate.birthDate === existing.birthDate) score += 25;
+                    if (candidate.birthDate === existing.birthDate) score += 8;
                 }
 
                 const phoneA = normalizePhone(candidate.parentPhone || candidate.parent || candidate.chefTelephone);
                 const phoneB = normalizePhone(existing.parentPhone || existing.parent || existing.chefTelephone);
-                if (phoneA && phoneB && phoneA === phoneB) score += 15;
+                if (phoneA && phoneB && phoneA === phoneB) score += 7;
 
                 const sameClass = ((candidate.classes || candidate.class || '') + '').toString().trim().toUpperCase() === ((existing.classes || existing.class || '') + '').toString().trim().toUpperCase();
 
@@ -7774,7 +7776,9 @@
                         const nameA = normalizeKey(getDuplicateStudentName(a));
                         const nameB = normalizeKey(getDuplicateStudentName(b));
                         const sameName = nameA && nameA === nameB;
-                        if (score >= 75 || sameName) group.push(b);
+                        // 70% catches realistic spelling/name variations such as
+                        // HUDSON/HADSONNE or IHUMURE/IHUMURU without requiring exact fields.
+                        if (score >= 70 || sameName) group.push(b);
                     }
                     if (group.length > 1) {
                         group.sort((a, b) => (a.timestamp || a.createdAt || 0) - (b.timestamp || b.createdAt || 0));
@@ -14615,15 +14619,70 @@
                         databaseStudents.push({ id: childSnapshot.key, ...childSnapshot.val() });
                     });
                     const branchForScan = selectedBranch || undefined;
-                    const branchStudents = databaseStudents.filter(student => matchesBranchAndLevelForSelection(student, branchForScan));
+                    const duplicateMatchesBranch = (record) => {
+                        const target = normalizeBranchId(branchForScan || '');
+                        if (!target || target === 'all') return true;
+                        const branch = normalizeKey(record?.branch || record?.branche || '');
+                        const section = normalizeKey(record?.section || record?.sectionScolaire || '');
+                        const cls = normalizeKey(getDuplicateStudentClass(record));
+
+                        // Kacyiru data exists in Firebase in several forms, for example:
+                        // "kacyiru", "EDEN FAMILY SCHOOL KACYIRU" and
+                        // "EDEN FAMILY SCHOOL KACYIRU - MATERNELLE".
+                        if (target.includes('kacyiru')) {
+                            if (!branch.includes('kacyiru') && !section.includes('kacyiru')) return false;
+                            return matchesSelectedStudentLevel(record, target);
+                        }
+
+                        if (target.includes('gisozi')) {
+                            if (!branch.includes('gisozi') && !section.includes('gisozi')) return false;
+                            const nursery = section.includes('maternelle') || section.includes('nursery') || /^n[123]/.test(cls);
+                            const primary = section.includes('primaire') || section.includes('primary') || /^p[123456]/.test(cls);
+                            if (target.includes('maternelle')) return nursery;
+                            if (target.includes('primaire')) return primary;
+                        }
+
+                        return branch === target || section === target;
+                    };
+
+                    const registrationSnapshot = await registrationPaymentsRef.once('value');
+                    const databaseRegistrations = [];
+                    registrationSnapshot.forEach(childSnapshot => {
+                        databaseRegistrations.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    });
+
+                    const pendingSnapshot = await pendingInscriptionsRef.once('value');
+                    const databasePending = [];
+                    pendingSnapshot.forEach(childSnapshot => {
+                        const record = { id: childSnapshot.key, ...childSnapshot.val() };
+                        const status = String(record.statut || record.status || '').trim().toLowerCase();
+                        if (!['rejeté', 'rejete', 'rejected'].includes(status)) databasePending.push(record);
+                    });
+
+                    const branchStudents = databaseStudents.filter(duplicateMatchesBranch);
+                    const branchRegistrations = databaseRegistrations.filter(duplicateMatchesBranch);
+                    const branchPending = databasePending.filter(duplicateMatchesBranch);
+
                     const studentGroups = scanAllDuplicateGroupsFromRecords(branchStudents);
-                    groups = (studentGroups || []).map(g => ({
-                        source: 'student',
-                        items: g.map(s => ({ source: 'student', record: s, timestamp: s.timestamp || 0, id: s.id }))
-                    }));
-                    if (!groups.length) {
-                        groups = collectRegistrationDuplicateGroups().map(items => ({ source: 'registration', items }));
-                    }
+                    // Use the same strong duplicate logic for registration payments and
+                    // pending requests too, so duplicates visible in the list are not missed.
+                    const registrationGroups = scanAllDuplicateGroupsFromRecords(branchRegistrations);
+                    const pendingGroups = scanAllDuplicateGroupsFromRecords(branchPending);
+
+                    groups = [
+                        ...(studentGroups || []).map(g => ({
+                            source: 'student',
+                            items: g.map(s => ({ source: 'student', record: s, timestamp: s.timestamp || 0, id: s.id }))
+                        })),
+                        ...(registrationGroups || []).map(g => ({
+                            source: 'registration',
+                            items: g.map(r => ({ source: 'registration', record: r, timestamp: r.timestamp || r.createdAt || 0, id: r.id }))
+                        })),
+                        ...(pendingGroups || []).map(g => ({
+                            source: 'pending',
+                            items: g.map(p => ({ source: 'pending', record: p, timestamp: p.timestamp || p.createdAt || 0, id: p.id }))
+                        }))
+                    ];
                 } catch (error) {
                     console.error('Duplicate analysis error:', error);
                     summary.className = 'alert alert-danger mb-3';
