@@ -1634,6 +1634,10 @@
                         <i class="fas fa-cog"></i>
                         <span data-i18n="settings">Settings</span>
                     </button>
+                    <button class="nav-btn" onclick="showSection('trash', event); loadTrash();">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Corbeille</span>
+                    </button>
                 </div>
             </div>
         </nav>
@@ -3015,6 +3019,29 @@
                 </div>
             </section>
 
+            <!-- Corbeille Section -->
+            <section id="trash" class="section">
+                <div class="d-flex justify-content-between align-items-center mb-4 section-header-responsive">
+                    <div>
+                        <h2 class="fw-bold mb-2"><i class="fas fa-trash-alt me-3 icon-text-primary"></i>Corbeille</h2>
+                        <p class="text-muted mb-0">Les éléments supprimés sont conservés ici. Vous pouvez les restaurer ou les supprimer définitivement.</p>
+                    </div>
+                    <div class="section-actions-wrap d-flex gap-2 align-items-center">
+                        <span id="trashCount" class="badge bg-secondary">0 élément(s)</span>
+                        <button class="btn-modern btn-primary-modern" onclick="loadTrash()"><i class="fas fa-sync-alt me-2"></i>Actualiser</button>
+                        <button class="btn-modern btn-danger" onclick="emptyTrash()"><i class="fas fa-trash-alt me-2"></i>Vider définitivement</button>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead><tr><th>ÉLÉMENT</th><th>SOURCE</th><th>EMPLACEMENT</th><th>SUPPRIMÉ LE</th><th>PAR</th><th>MOTIF</th><th>ACTIONS</th></tr></thead>
+                            <tbody id="trashTableBody"><tr><td colspan="7" class="text-center text-muted py-4">La corbeille est vide.</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <!-- Settings Section -->
             <section id="settings" class="section">
                 <div class="mb-4">
@@ -4095,13 +4122,13 @@
                             <span class="small text-muted align-self-center" id="registrationDuplicateSelectedCount">0 sélectionné(s)</span>
                         </div>
 
-                        <div class="small text-muted mb-2" id="registrationDuplicateSelectedStudents">Élèves sélectionnés : aucun</div>
+                        <div class="small text-muted mb-2" id="registrationDuplicateSelectedStudents">Élèves à supprimer : aucun. <strong>Dans le tableau, cochez directement les élèves que vous voulez effacer.</strong></div>
 
                         <div class="table-responsive">
                             <table class="modern-table">
                                 <thead>
                                     <tr>
-                                        <th>Sélectionner</th>
+                                        <th style="width:70px;text-align:center;">Sélectionner</th>
                                         <th>Statut</th>
                                         <th>Élève</th>
                                         <th>Score</th>
@@ -5455,6 +5482,85 @@
             const transportPaymentsRef = db.ref('transportPayments');
             const registrationPaymentsRef = db.ref('registrationPayments');
             const pendingInscriptionsRef = db.ref('inscriptions-scolaires');
+            const trashRef = db.ref('trash');
+
+            // Corbeille centrale : toute suppression de donnée métier passe d'abord ici.
+            // La donnée reste restaurable jusqu'à une suppression définitive depuis la Corbeille.
+            async function moveToTrash(ref, recordId, options = {}) {
+                if (!ref || !recordId) throw new Error('Identifiant de donnée manquant pour la corbeille.');
+                const snap = await ref.child(recordId).once('value');
+                if (!snap.exists()) return false;
+                const trashItem = {
+                    originalPath: `${ref.toString().split('/').slice(-1)[0]}/${recordId}`,
+                    originalId: String(recordId),
+                    originalData: snap.val(),
+                    deletedAt: Date.now(),
+                    deletedBy: currentUser?.email || currentUser?.name || 'System',
+                    deletedByUid: currentUserUID || '',
+                    reason: options.reason || 'Suppression manuelle',
+                    source: options.source || 'system',
+                    label: options.label || snap.val()?.name || snap.val()?.studentName || snap.val()?.reference || String(recordId)
+                };
+                const trashItemRef = trashRef.push();
+                await trashItemRef.set(trashItem);
+                await ref.child(recordId).remove();
+                return true;
+            }
+
+            async function restoreFromTrash(trashId) {
+                const snap = await trashRef.child(trashId).once('value');
+                if (!snap.exists()) throw new Error('Élément de corbeille introuvable.');
+                const item = snap.val() || {};
+                const path = (item.originalPath || '').split('/').filter(Boolean);
+                if (path.length < 2) throw new Error('Chemin original invalide.');
+                const originalRef = db.ref(path[0]);
+                await originalRef.child(path.slice(1).join('/')).set(item.originalData);
+                await trashRef.child(trashId).remove();
+                return true;
+            }
+
+            async function permanentlyDeleteFromTrash(trashId) {
+                if (!trashId) return;
+                if (!confirm('Supprimer définitivement cet élément de la corbeille ? Cette action est irréversible.')) return;
+                await trashRef.child(trashId).remove();
+            }
+
+            async function emptyTrash() {
+                const snap = await trashRef.once('value');
+                if (!snap.exists()) return;
+                const count = snap.numChildren();
+                if (!confirm(`Vider définitivement la corbeille (${count} élément(s)) ? Cette action est irréversible.`)) return;
+                await trashRef.remove();
+                loadTrash();
+            }
+
+            async function loadTrash() {
+                const body = document.getElementById('trashTableBody');
+                const count = document.getElementById('trashCount');
+                if (!body) return;
+                body.innerHTML = '<tr><td colspan="8" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Chargement de la corbeille...</td></tr>';
+                try {
+                    const snap = await trashRef.once('value');
+                    const rows = [];
+                    snap.forEach(child => rows.push({id: child.key, ...(child.val() || {})}));
+                    rows.sort((a,b) => (b.deletedAt || 0) - (a.deletedAt || 0));
+                    if (count) count.textContent = `${rows.length} élément(s)`;
+                    if (!rows.length) {
+                        body.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-5"><i class="fas fa-trash-alt fa-2x mb-2"></i><br>La corbeille est vide.</td></tr>';
+                        return;
+                    }
+                    body.innerHTML = rows.map(item => {
+                        const data = item.originalData || {};
+                        const label = escapeDuplicateHtml(item.label || data.name || data.studentName || data.reference || item.originalId);
+                        const source = escapeDuplicateHtml(item.source || 'system');
+                        const deleted = item.deletedAt ? new Date(item.deletedAt).toLocaleString('fr-FR') : '—';
+                        return `<tr><td><strong>${label}</strong></td><td>${source}</td><td>${escapeDuplicateHtml(item.originalPath || '')}</td><td>${deleted}</td><td>${escapeDuplicateHtml(item.deletedBy || '')}</td><td>${escapeDuplicateHtml(item.reason || '')}</td><td><button class="btn btn-sm btn-outline-success me-1" onclick="restoreFromTrash('${item.id}').then(loadTrash).catch(e=>showToast(e.message,'error'))"><i class="fas fa-undo"></i> Restaurer</button><button class="btn btn-sm btn-outline-danger" onclick="permanentlyDeleteFromTrash('${item.id}').then(loadTrash).catch(e=>showToast(e.message,'error'))"><i class="fas fa-trash"></i> Définitif</button></td></tr>`;
+                    }).join('');
+                } catch (error) {
+                    console.error('Erreur chargement corbeille:', error);
+                    body.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Impossible de charger la corbeille.</td></tr>';
+                }
+            }
             let pendingInscriptionsData = [];
             let currentConfirmInscriptionId = null;
 
@@ -7450,8 +7556,8 @@
                 if (!confirm('Are you sure you want to delete this transport payment?')) return;
 
                 try {
-                    await transportPaymentsRef.child(paymentId).remove();
-                    showToast('Transport payment deleted successfully!', 'success');
+                    await moveToTrash(transportPaymentsRef, paymentId, {source:'transport', reason:'Suppression d’un paiement de transport'});
+                    showToast('Transport payment moved to trash.', 'success');
                     loadTransport();
                     recalculateExpectedIncome();
                 } catch (error) {
@@ -7464,98 +7570,120 @@
                 const tbody = document.getElementById('registrationTable');
                 if (!tbody) return;
                 tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center py-4">
-                            <div class="text-muted">
-                                <i class="fas fa-spinner fa-pulse fa-2x mb-3"></i>
-                                <p>Loading registration records...</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-
+                    <tr><td colspan="9" class="text-center py-4">
+                        <div class="text-muted"><i class="fas fa-spinner fa-pulse fa-2x mb-3"></i>
+                        <p>Loading registration records...</p></div>
+                    </td></tr>`;
                 try {
-                    // IMPORTANT: A secretary can create an enrolled student in /students and
-                    // /inscriptions-scolaires without creating a /registrationPayments record.
-                    // The old code therefore made those students invisible in this section.
-                    // We now build the list from BOTH sources and merge them by studentId/code.
-                    const [paymentsSnap, inscriptionsSnap] = await Promise.all([
+                    // The registration list must show EVERY enrolled learner belonging
+                    // to the selected branch, including learners who have no payment yet.
+                    // Some older records store the branch only in /students, so /students
+                    // is used as the authoritative fallback for branch, class and name.
+                    const [paymentsSnap, inscriptionsSnap, studentsSnap] = await Promise.all([
                         registrationPaymentsRef.once('value'),
-                        pendingInscriptionsRef.once('value')
+                        pendingInscriptionsRef.once('value'),
+                        studentsRef.once('value')
                     ]);
-
+                    const students = new Map();
+                    studentsSnap.forEach(child => students.set(String(child.key), { id: child.key, ...(child.val() || {}) }));
+                    const payments = [];
                     const paymentByStudent = new Map();
-                    const allPayments = [];
                     paymentsSnap.forEach(child => {
-                        const payment = { id: child.key, ...child.val() };
-                        allPayments.push(payment);
-                        if (payment.studentId) paymentByStudent.set(String(payment.studentId), payment);
+                        const payment = { id: child.key, ...(child.val() || {}) };
+                        payments.push(payment);
+                        const sid = String(payment.studentId || payment.studentID || '');
+                        if (sid) paymentByStudent.set(sid, payment);
                     });
-
                     const records = new Map();
+                    const addRecord = (record, key) => {
+                        if (!key) key = `record:${records.size}`;
+                        const existing = records.get(key);
+                        // Prefer a paid registration when both sources describe the same learner.
+                        if (!existing || (record.amount > 0 && !existing.amount)) records.set(key, record);
+                    };
 
-                    // First: every non-rejected school registration is a registration record,
-                    // even when no payment has been entered yet.
                     inscriptionsSnap.forEach(child => {
-                        const insc = { id: child.key, ...child.val() };
+                        const insc = { id: child.key, ...(child.val() || {}) };
                         const status = String(insc.statut || insc.status || '').trim().toLowerCase();
-                        if (status === 'rejet?' || status === 'rejete' || status === 'rejected') return;
-
-                        const studentId = insc.studentId ? String(insc.studentId) : '';
-                        const payment = studentId ? paymentByStudent.get(studentId) : null;
-                        const branchValue = payment?.branch || insc.branche || insc.branch || '';
-                        const sectionValue = payment?.section || insc.section || '';
-                        const levelValue = payment?.studentClass || insc.classe || insc.niveau || '';
-
+                        if (['rejet?', 'rejete', 'rejected', 'cancelled', 'annule'].includes(status)) return;
+                        const sid = String(insc.studentId || insc.studentID || '');
+                        const student = students.get(sid) || {};
+                        const payment = paymentByStudent.get(sid) || null;
+                        const branchValue = payment?.branch || insc.branche || insc.branch || student.branch || student.branche || '';
+                        const sectionValue = payment?.section || insc.section || student.section || student.sectionName || '';
+                        const levelValue = payment?.studentClass || insc.classe || insc.niveau || student.class || student.classe || student.level || '';
                         if (!registrationRecordMatchesBranch(branchValue, sectionValue, levelValue, selectedBranch)) return;
-
                         const record = {
                             ...(payment || {}),
                             id: payment?.id || `inscription-${child.key}`,
-                            studentId: payment?.studentId || insc.studentId || '',
-                            studentName: payment?.studentName || insc.nomPrenom || insc.name || insc.fullName || 'N/A',
-                            studentClass: payment?.studentClass || insc.classe || insc.niveau || 'N/A',
-                            branch: payment?.branch || insc.branche || insc.branch || '',
-                            academicYear: payment?.academicYear || insc.anneeAcademique || '',
-                            reference: payment?.reference || insc.codeUnique || `INS-${child.key.slice(-8)}`,
+                            studentId: sid || payment?.studentId || '',
+                            studentName: payment?.studentName || insc.nomPrenom || insc.name || insc.fullName || student.name || student.fullName || student.nomPrenom || 'N/A',
+                            studentClass: levelValue || 'N/A',
+                            branch: branchValue,
+                            academicYear: payment?.academicYear || insc.anneeAcademique || student.academicYear || student.anneeAcademique || '',
+                            reference: payment?.reference || insc.codeUnique || student.reference || `INS-${String(child.key).slice(-8)}`,
                             amount: payment?.amount ?? 0,
                             paymentDate: payment?.paymentDate || '',
                             paymentMode: payment?.paymentMode || '',
-                            timestamp: payment?.timestamp || insc.timestamp || 0,
-                            registrationStatus: insc.statut || insc.status || 'Enregistr?',
+                            timestamp: payment?.timestamp || insc.timestamp || student.createdAt || 0,
+                            registrationStatus: insc.statut || insc.status || 'EnregistrÃ©',
                             unpaid: !payment
                         };
-                        const key = studentId || `inscription:${child.key}`;
-                        records.set(key, record);
+                        addRecord(record, sid || `inscription:${child.key}`);
                     });
 
-                    // Second: keep payment records that do not have an inscription record,
-                    // for backward compatibility with older registrations.
-                    allPayments.forEach(payment => {
-                        const branchValue = payment.branch || '';
-                        const levelValue = payment.studentClass || '';
-                        if (!registrationRecordMatchesBranch(branchValue, payment.section || '', levelValue, selectedBranch)) return;
-                        const key = payment.studentId ? String(payment.studentId) : `payment:${payment.id}`;
-                        if (!records.has(key)) records.set(key, { ...payment, unpaid: false });
+                    // Include payment records not linked to an inscription.
+                    payments.forEach(payment => {
+                        const sid = String(payment.studentId || payment.studentID || '');
+                        const student = students.get(sid) || {};
+                        const branchValue = payment.branch || student.branch || student.branche || '';
+                        const sectionValue = payment.section || student.section || '';
+                        const levelValue = payment.studentClass || student.class || student.classe || student.level || '';
+                        if (!registrationRecordMatchesBranch(branchValue, sectionValue, levelValue, selectedBranch)) return;
+                        addRecord({ ...payment,
+                            studentId: sid,
+                            studentName: payment.studentName || student.name || student.fullName || student.nomPrenom || 'N/A',
+                            studentClass: levelValue || 'N/A',
+                            branch: branchValue,
+                            academicYear: payment.academicYear || student.academicYear || student.anneeAcademique || '',
+                            unpaid: false
+                        }, sid || `payment:${payment.id}`);
                     });
 
-                    const payments = Array.from(records.values())
-                        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    // Finally, include every learner stored in /students for this branch.
+                    // This fixes missing learners whose registration record has no branch field.
+                    students.forEach(student => {
+                        const sid = String(student.id || student.studentId || student.studentID || '');
+                        const branchValue = student.branch || student.branche || '';
+                        const sectionValue = student.section || student.sectionName || '';
+                        const levelValue = student.class || student.classe || student.level || student.niveau || '';
+                        if (!sid || !registrationRecordMatchesBranch(branchValue, sectionValue, levelValue, selectedBranch)) return;
+                        const payment = paymentByStudent.get(sid) || null;
+                        if (records.has(sid)) return;
+                        addRecord({
+                            ...(payment || {}),
+                            id: payment?.id || `student-${sid}`,
+                            studentId: sid,
+                            studentName: payment?.studentName || student.name || student.fullName || student.nomPrenom || 'N/A',
+                            studentClass: payment?.studentClass || levelValue || 'N/A',
+                            branch: payment?.branch || branchValue,
+                            academicYear: payment?.academicYear || student.academicYear || student.anneeAcademique || '',
+                            reference: payment?.reference || student.reference || student.codeUnique || `STU-${sid.slice(-8)}`,
+                            amount: payment?.amount ?? 0,
+                            paymentDate: payment?.paymentDate || '',
+                            paymentMode: payment?.paymentMode || '',
+                            timestamp: payment?.timestamp || student.createdAt || 0,
+                            registrationStatus: 'EnregistrÃ©',
+                            unpaid: !payment
+                        }, sid);
+                    });
 
-                    updateRegistrationTable(payments);
+                    updateRegistrationTable(Array.from(records.values()).sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0)));
                 } catch (error) {
                     console.error('Error loading registration records:', error);
                     showToast('Error loading registration records.', 'error');
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="9" class="text-center py-4">
-                                <div class="text-danger">
-                                    <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                                    <p>Unable to load registration records.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
+                    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4"><div class="text-danger">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i><p>Unable to load registration records.</p></div></td></tr>`;
                 }
             }
 
@@ -7567,26 +7695,36 @@
                 const rawSection = (section || '').toString().trim().toLowerCase();
                 const rawClass = (studentClass || '').toString().trim().toLowerCase();
 
-                const aliases = {
-                    kacyiru: ['kacyiru'],
-                    kimisagara: ['kimisagara'],
-                    gisozi_maternelle: ['gisozi_maternelle', 'gisozi nursery', 'gisozi maternelle'],
-                    gisozi_primaire: ['gisozi_primaire', 'gisozi primary', 'gisozi primaire']
+                // Firebase contains both short IDs and full labels such as
+                // "EDEN FAMILY SCHOOL KACYIRU - MATERNELLE". Normalize them
+                // to the real internal branch IDs before comparing.
+                const normalizeBranchId = (value, sectionValue = '', classValue = '') => {
+                    const b = String(value || '').trim().toLowerCase();
+                    const s = String(sectionValue || '').trim().toLowerCase();
+                    const c = String(classValue || '').trim().toLowerCase();
+                    if (b.includes('kacyiru') && (b.includes('maternelle') || b.includes('nursery') || b.includes('creche'))) return b.includes('creche') ? 'kacyiru_creche' : 'kacyiru_maternelle';
+                    if (b.includes('kacyiru')) return 'kacyiru';
+                    if (b.includes('kimisagara')) return 'kimisagara';
+                    if (b.includes('gisozi')) {
+                        if (b.includes('maternelle') || b.includes('nursery')) return 'gisozi_maternelle';
+                        if (b.includes('primaire') || b.includes('primary')) return 'gisozi_primaire';
+                    }
+                    if (b === 'gisozi') {
+                        if (s.includes('maternelle') || s.includes('nursery') || c.startsWith('n')) return 'gisozi_maternelle';
+                        if (s.includes('primaire') || s.includes('primary') || c.startsWith('p')) return 'gisozi_primaire';
+                    }
+                    if (['kacyiru','kacyiru_maternelle','kacyiru_creche','kimisagara','gisozi_maternelle','gisozi_primaire'].includes(b)) return b;
+                    return b;
                 };
 
-                if (aliases[target]?.includes(rawBranch)) return true;
-                if (target === 'kacyiru' && rawBranch.includes('kacyiru')) return true;
-                if (target === 'kimisagara' && rawBranch.includes('kimisagara')) return true;
+                const normalizedTarget = normalizeBranchId(target, rawSection, rawClass);
+                const normalizedRecord = normalizeBranchId(rawBranch, rawSection, rawClass);
+                if (normalizedTarget && normalizedRecord && normalizedTarget === normalizedRecord) return true;
 
-                if (rawBranch === 'gisozi' || rawBranch.includes('gisozi')) {
-                    const nursery = rawSection.includes('maternelle') || rawSection.includes('nursery') || rawClass.startsWith('n');
-                    const primary = rawSection.includes('primaire') || rawSection.includes('primary') || rawClass.startsWith('p');
-                    if (target === 'gisozi_maternelle') return nursery && !primary;
-                    if (target === 'gisozi_primaire') return primary && !nursery;
-                    // Unknown Gisozi section: keep it visible rather than losing a registration.
-                    return target === 'gisozi_maternelle' || target === 'gisozi_primaire';
+                // If the branch field is only "GISOZI", use section/class to resolve it.
+                if (normalizedRecord === 'gisozi_maternelle' || normalizedRecord === 'gisozi_primaire') {
+                    return normalizedTarget === normalizedRecord;
                 }
-
                 return false;
             }
 
@@ -7880,217 +8018,120 @@
                 return new Promise(resolve => {
                     const existing = document.getElementById('exportAcademicYearModal');
                     if (existing) existing.remove();
-                    const options = ['ALL', ...years];
-                    const cards = options.map((year, i) => {
-                        const label = year === 'ALL' ? 'Toutes les années scolaires' : year;
-                        const active = i === 1 || (i === 0 && years.length === 0) ? ' active' : '';
-                        return `<button type="button" class="export-year-option${active}" data-year="${year}"><span>${year === 'ALL' ? '📚' : '🎓'}</span><strong>${label}</strong><small>${year === 'ALL' ? 'Tous les élèves disponibles' : 'Élèves inscrits pour cette année'}</small></button>`;
-                    }).join('');
-                    const modalHtml = `<div class="modal fade" id="exportAcademicYearModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content export-year-modal-content"><div class="modal-header"><div><div class="export-year-kicker">EXPORT REPORT (PDF)</div><h5 class="modal-title">Sélection de l’année scolaire</h5><p class="export-year-subtitle">Choisissez les élèves à inclure dans le rapport PDF.</p></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="export-year-grid">${cards}</div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button><button type="button" class="btn btn-primary" id="confirmExportAcademicYear" disabled>Exporter le rapport</button></div></div></div></div>`;
+                    // Export must be explicitly filtered by BOTH branch and academic year.
+                    // Keep the choices limited to the school years requested by the school.
+                    const yearOptions = ['2025-2026','2026-2027'];
+                    const branchOptions = [
+                        ['kacyiru','EDEN FAMILY SCHOOL KACYIRU'],
+                        ['kacyiru_maternelle','EDEN FAMILY SCHOOL KACYIRU - MATERNELLE'],
+                        ['gisozi_maternelle','GISOZI - MATERNELLE'],
+                        ['gisozi_primaire','GISOZI - PRIMAIRE'],
+                        ['kimisagara','KIMISAGARA']
+                    ];
+                    const modalHtml = `<div class="modal fade" id="exportAcademicYearModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content export-year-modal-content"><div class="modal-header"><div><div class="export-year-kicker">EXPORT REPORT (PDF)</div><h5 class="modal-title">Filtrer l'export des inscriptions</h5><p class="export-year-subtitle">Choisissez obligatoirement la branche et l'année scolaire.</p></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-4"><label class="form-label fw-bold">Branche *</label><select id="exportRegistrationBranch" class="form-control-modern w-100"><option value="">— Sélectionner une branche —</option>${branchOptions.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div><div><label class="form-label fw-bold">Année scolaire *</label><select id="exportRegistrationYear" class="form-control-modern w-100"><option value="">— Sélectionner l'année scolaire —</option>${yearOptions.map(y=>`<option value="${y}">${y}</option>`).join('')}</select></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button><button type="button" class="btn btn-primary" id="confirmExportAcademicYear" disabled>Exporter le rapport</button></div></div></div></div>`;
                     document.body.insertAdjacentHTML('beforeend', modalHtml);
-                    const el=document.getElementById('exportAcademicYearModal'), confirm=document.getElementById('confirmExportAcademicYear'); let selected=null;
-                    el.querySelectorAll('.export-year-option').forEach(btn=>btn.addEventListener('click',()=>{el.querySelectorAll('.export-year-option').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selected=btn.dataset.year==='ALL'?(years[0]||'ALL'):btn.dataset.year;confirm.disabled=false;}));
+                    const el=document.getElementById('exportAcademicYearModal');
+                    const branchSelect=document.getElementById('exportRegistrationBranch');
+                    const yearSelect=document.getElementById('exportRegistrationYear');
+                    const confirm=document.getElementById('confirmExportAcademicYear');
+                    const update=()=>{confirm.disabled=!(branchSelect.value && yearSelect.value);};
+                    branchSelect.addEventListener('change',update); yearSelect.addEventListener('change',update);
                     el.addEventListener('hidden.bs.modal',()=>{el.remove();resolve(null)},{once:true});
-                    confirm.addEventListener('click',()=>{bootstrap.Modal.getInstance(el).hide();resolve(selected)},{once:true});
+                    confirm.addEventListener('click',()=>{const result={branch:branchSelect.value,year:yearSelect.value};bootstrap.Modal.getInstance(el).hide();resolve(result)},{once:true});
                     new bootstrap.Modal(el).show();
                 });
             }
 
-            async function exportRegistrationReportPDF() {
-                const JsPDF = resolveJsPDF();
-                if (!JsPDF) { showToast('PDF library non chargée', 'error'); return; }
-
-                try {
-                    // Le PDF doit contenir les MÊMES élèves que le tableau "Paiements d'Inscription":
-                    // inscriptions non rejetées (payées ou non) + anciens paiements sans inscription.
-                    const [inscSnap, studentsSnap, paymentsSnap] = await Promise.all([
-                        pendingInscriptionsRef.once('value'),
-                        studentsRef.once('value'),
-                        registrationPaymentsRef.once('value')
-                    ]);
-
-                    const studentsById = {};
-                    studentsSnap.forEach(ch => { studentsById[ch.key] = { id: ch.key, ...ch.val() }; });
-
-                    const paymentsByStudent = {};
-                    const allPayments = [];
-                    paymentsSnap.forEach(ch => {
-                        const payment = { id: ch.key, ...ch.val() };
-                        allPayments.push(payment);
-                        if (payment.studentId) paymentsByStudent[String(payment.studentId)] = payment;
-                    });
-
-                    const normalizeReportValue = value => String(value ?? '')
-                        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                        .trim().toLowerCase();
-                    const isRejectedInscription = insc => {
-                        const status = normalizeReportValue(insc.statut || insc.status);
-                        return ['rejete', 'rejected'].includes(status);
-                    };
-                    const normalizeYear = value => normalizeReportValue(value).replace(/\s+/g, '');
-
-                    // Construire les années disponibles à partir des inscriptions ET paiements.
-                    const academicYears = new Set();
-                    inscSnap.forEach(ch => {
-                        const insc = ch.val() || {};
-                        if (isRejectedInscription(insc)) return;
-                        if (!inscriptionMatchesSelectedBranch(insc)) return;
-                        const year = insc.anneeAcademique || insc.anneeScolaire || insc.academicYear;
-                        if (year) academicYears.add(String(year).trim());
-                    });
-                    allPayments.forEach(payment => {
-                        if (!registrationRecordMatchesBranch(payment.branch, payment.section, payment.studentClass, selectedBranch)) return;
-                        if (payment.academicYear) academicYears.add(String(payment.academicYear).trim());
-                    });
-                    Object.values(studentsById).forEach(student => {
-                        if (student.academicYear) academicYears.add(String(student.academicYear).trim());
-                    });
-
-                    const sortedYears = [...academicYears].filter(Boolean).sort((a, b) => b.localeCompare(a));
-                    const currentYear = getCurrentAcademicYearLabel();
-                    if (!sortedYears.includes(currentYear)) sortedYears.unshift(currentYear);
-                    const selectedAcademicYear = await showExportAcademicYearModal(sortedYears);
-                    if (!selectedAcademicYear) return;
-                    const exportAllYears = selectedAcademicYear === 'ALL';
-                    const selectedYearKey = normalizeYear(selectedAcademicYear);
-
-                    const rows = [];
-                    const seenStudentIds = new Set();
-
-                    // 1) Toutes les inscriptions non rejetées, même si elles sont encore en attente
-                    // et même si aucun paiement n'existe.
-                    inscSnap.forEach(ch => {
-                        const insc = { id: ch.key, ...ch.val() };
-                        if (isRejectedInscription(insc) || !insc.studentId) return;
-                        if (!inscriptionMatchesSelectedBranch(insc)) return;
-
-                        const payment = paymentsByStudent[String(insc.studentId)] || null;
-                        const student = studentsById[insc.studentId] || {};
-                        const inscriptionYear = insc.anneeAcademique || insc.anneeScolaire || insc.academicYear;
-                        const recordYear = inscriptionYear || student.academicYear || payment?.academicYear;
-                        if (!exportAllYears && recordYear && normalizeYear(recordYear) !== selectedYearKey) return;
-
-                        const branch = student.branch || payment?.branch || mapInscriptionBranchToInternal(insc.branche, insc.section, insc.niveau);
-                        const address = student.address || [insc.secteur, insc.umurenge, insc.akagari, insc.umudugudu].filter(Boolean).join(', ');
-                        const secondParent = student.spouseName || student.secondParent || student.parent2 || student.parent2Name ||
-                            insc.conjointNomPrenom || insc.secondParent || insc.parent2 || insc.parent2Name || '';
-                        const secondParentPhone = student.spousePhone || student.secondParentPhone || student.parent2Phone ||
-                            insc.conjointTelephone || insc.secondParentPhone || insc.parent2Phone || '';
-
-                        rows.push({
-                            studentId: insc.studentId,
-                            reference: student.reference || payment?.reference || insc.codeUnique || insc.studentId,
-                            name: student.name || student.fullName || payment?.studentName || insc.nomPrenom || 'N/A',
-                            className: student.classes || student.class || student.classe || payment?.studentClass || insc.classe || insc.niveau || 'N/A',
-                            branch: getBranchName(branch),
-                            academicYear: recordYear || selectedAcademicYear,
-                            bus: student.transportEnrolled === true || normalizeReportValue(student.transportEnrolled) === 'oui' || normalizeReportValue(insc.transport) === 'oui' ? 'OUI' : 'NON',
-                            address: address || 'N/A',
-                            parent: student.parent || insc.chefNomPrenom || 'N/A',
-                            parentPhone: student.parentPhone || insc.chefTelephone || 'N/A',
-                            spouse: secondParent || 'N/A',
-                            spousePhone: secondParentPhone || 'N/A',
-                            registrationStatus: insc.statut || insc.status || 'Enregistré',
-                            unpaid: !payment
-                        });
-                        seenStudentIds.add(String(insc.studentId));
-                    });
-
-                    // 2) Paiements historiques qui n'ont pas d'inscription correspondante.
-                    allPayments.forEach(payment => {
-                        const studentId = payment.studentId ? String(payment.studentId) : '';
-                        if (studentId && seenStudentIds.has(studentId)) return;
-                        if (!registrationRecordMatchesBranch(payment.branch, payment.section, payment.studentClass, selectedBranch)) return;
-                        const student = studentId ? (studentsById[studentId] || {}) : {};
-                        const recordYear = payment.academicYear || student.academicYear;
-                        if (!exportAllYears && recordYear && normalizeYear(recordYear) !== selectedYearKey) return;
-
-                        const branch = student.branch || payment.branch || '';
-                        rows.push({
-                            studentId: payment.studentId || '',
-                            reference: student.reference || payment.reference || payment.studentId || payment.id,
-                            name: student.name || student.fullName || payment.studentName || 'N/A',
-                            className: student.classes || student.class || student.classe || payment.studentClass || 'N/A',
-                            branch: getBranchName(branch),
-                            academicYear: recordYear || selectedAcademicYear,
-                            bus: student.transportEnrolled === true || normalizeReportValue(student.transportEnrolled) === 'oui' ? 'OUI' : 'NON',
-                            address: student.address || 'N/A',
-                            parent: student.parent || 'N/A',
-                            parentPhone: student.parentPhone || 'N/A',
-                            spouse: student.spouseName || student.secondParent || student.parent2 || student.parent2Name || 'N/A',
-                            spousePhone: student.spousePhone || student.secondParentPhone || student.parent2Phone || 'N/A',
-                            registrationStatus: 'Paiement enregistré',
-                            unpaid: false
-                        });
-                        if (studentId) seenStudentIds.add(studentId);
-                    });
-
-                    rows.sort((a, b) => String(a.branch).localeCompare(String(b.branch), 'fr') ||
-                        String(a.className).localeCompare(String(b.className), 'fr') ||
-                        String(a.name).localeCompare(String(b.name), 'fr'));
-
-                    const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
-                    const titleBranch = selectedBranch ? getBranchName(selectedBranch) : 'Toutes les branches';
-                    const today = new Date().toLocaleDateString('fr-FR');
-
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(16);
-                    doc.text('RAPPORT DES ÉLÈVES INSCRITS', 14, 13);
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(10);
-                    doc.text(`Branche : ${titleBranch}   |   Année scolaire : ${exportAllYears ? 'Toutes les années' : selectedAcademicYear}   |   Date : ${today}`, 14, 20);
-                    doc.text(`Total des élèves inscrits : ${rows.length}`, 14, 26);
-
-                    const body = rows.map((r, i) => [
-                        i + 1, r.reference, r.name, r.className, r.branch,
-                        r.bus, r.address, r.parent, r.parentPhone, r.spouse, r.spousePhone
-                    ]);
-
-                    if (body.length) {
-                        doc.autoTable({
-                            startY: 31,
-                            head: [['N°', 'RÉFÉRENCE', 'ÉLÈVE', 'CLASSE', 'BRANCHE', 'BUS',
-                                'ADRESSE / LIEU DE RÉSIDENCE', 'PARENT / TUTEUR', 'TÉL. PARENT',
-                                '2e PARENT', 'TÉL. 2e PARENT']],
-                            body,
-                            styles: { fontSize: 7.2, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
-                            headStyles: { fontSize: 7.2, fontStyle: 'bold' },
-                            columnStyles: {
-                                0: { cellWidth: 9 }, 1: { cellWidth: 24 }, 2: { cellWidth: 31 },
-                                3: { cellWidth: 18 }, 4: { cellWidth: 20 }, 5: { cellWidth: 11 },
-                                6: { cellWidth: 42 }, 7: { cellWidth: 28 }, 8: { cellWidth: 25 },
-                                9: { cellWidth: 25 }, 10: { cellWidth: 25 }
-                            },
-                            margin: { left: 10, right: 10, top: 31, bottom: 14 },
-                            didDrawPage: data => {
-                                doc.setFontSize(7);
-                                doc.text(`Rapport des élèves inscrits - page ${data.pageNumber}`, 10, 203);
-                            }
-                        });
-                    } else {
-                        doc.setFontSize(11);
-                        doc.text('Aucun élève inscrit trouvé pour cette année académique.', 14, 38);
+            async function buildCanonicalRegisteredStudents(selectedYear='ALL', exportBranch='ALL') {
+                const [studentsSnap, registrationsSnap, pendingSnap] = await Promise.all([
+                    studentsRef.once('value'), registrationPaymentsRef.once('value'), pendingInscriptionsRef.once('value')
+                ]);
+                const students=[], registrations=[], pending=[];
+                studentsSnap.forEach(ch=>students.push({id:ch.key,...(ch.val()||{})}));
+                registrationsSnap.forEach(ch=>registrations.push({id:ch.key,...(ch.val()||{})}));
+                pendingSnap.forEach(ch=>{const r={id:ch.key,...(ch.val()||{})}; const st=normalizeKey(r.statut||r.status||''); if(!['rejete','rejected'].includes(st)) pending.push(r);});
+                const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+                const normalizeAcademicYear = value => {
+                    const raw = String(value ?? '').trim().replace(/[–—−]/g, '-');
+                    const match = raw.match(/(20\d{2})\s*[-/]\s*(20\d{2})/);
+                    return match ? `${match[1]}-${match[2]}` : raw;
+                };
+                const dateValueOf = r => r?.paymentDate || r?.dateInscription || r?.enrollmentDate || r?.createdAt || r?.timestamp || '';
+                const yearOf=r=>normalizeAcademicYear(r?.academicYear||r?.anneeAcademique||r?.anneeScolaire||r?.schoolYear||'') || normalizeAcademicYear(getAcademicYearForEnrollmentDate(dateValueOf(r)));
+                const branchOf=r=>r?.branch||r?.branche||r?.section||r?.sectionScolaire||'';
+                const canonical=[];
+                const byId=new Map(); const byRef=new Map();
+                const add=(record,source)=>{
+                    const sid=String(record.studentId||record.studentID||'');
+                    const ref=norm(record.reference||record.codeUnique||record.referenceId||'');
+                    let row=sid?byId.get(sid):null;
+                    if(!row && ref) row=byRef.get(ref);
+                    if(!row){
+                        row={studentId:sid||String(record.id||''),sourceRecords:{}}; canonical.push(row);
                     }
+                    row.sourceRecords[source]=record;
+                    if(sid){row.studentId=sid;byId.set(sid,row);}
+                    if(ref)byRef.set(ref,row);
+                    return row;
+                };
+                students.forEach(r=>add(r,'student'));
+                registrations.forEach(r=>add(r,'registration'));
+                pending.forEach(r=>add(r,'pending'));
 
-                    const busCount = rows.filter(r => r.bus === 'OUI').length;
-                    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 42;
-                    const summaryY = finalY + 8;
-                    if (summaryY > 190) doc.addPage();
-                    const y = summaryY > 190 ? 20 : summaryY;
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.text(`Total : ${rows.length} élève(s)   |   Bus : ${busCount}   |   Sans bus : ${rows.length - busCount}`, 10, y);
-
-                    const safeBranch = String(selectedBranch || 'all').replace(/[^a-z0-9_-]/gi, '_');
-                    const safeYear = (exportAllYears ? 'toutes_les_annees' : selectedAcademicYear).replace(/[^a-z0-9_-]/gi, '_');
-                    doc.save(`Rapport_Eleves_Inscrits_${safeBranch}_${safeYear}.pdf`);
-                    showToast(`Rapport PDF téléchargé : ${rows.length} élève(s) - ${selectedAcademicYear}`, 'success');
-                } catch (error) {
-                    console.error('Erreur export rapport inscription:', error);
-                    showToast('Erreur lors de l\'export du rapport : ' + (error.message || error), 'error');
+                // Merge only strong identity matches for records without a shared studentId/reference.
+                for(let i=0;i<canonical.length;i++) for(let j=i+1;j<canonical.length;j++){
+                    const a=canonical[i],b=canonical[j]; if(a===b)continue;
+                    const ar=a.sourceRecords.student||a.sourceRecords.registration||a.sourceRecords.pending||{};
+                    const br=b.sourceRecords.student||b.sourceRecords.registration||b.sourceRecords.pending||{};
+                    const an=norm(getDuplicateStudentName(ar)), bn=norm(getDuplicateStudentName(br));
+                    const ad=norm(getDuplicateStudentBirthDate(ar)), bd=norm(getDuplicateStudentBirthDate(br));
+                    const ap=normalizePhone(getDuplicateStudentPhone(ar)), bp=normalizePhone(getDuplicateStudentPhone(br));
+                    const ac=norm(getDuplicateStudentClass(ar)), bc=norm(getDuplicateStudentClass(br));
+                    if(an && an===bn && ((ad&&bd&&ad===bd)||(ap&&bp&&ap===bp))){
+                        const target=a,other=b; target.sourceRecords={...other.sourceRecords,...target.sourceRecords};
+                        if(!target.studentId)target.studentId=other.studentId; canonical.splice(j,1); j--;
+                    } else if(computeStudentDuplicateScore(ar,br).score>=90 && ac && bc && ac===bc){
+                        const target=a,other=b; target.sourceRecords={...other.sourceRecords,...target.sourceRecords}; canonical.splice(j,1); j--;
+                    }
                 }
+                const selectedKey=norm(selectedYear); const rows=[];
+                canonical.forEach(entity=>{
+                    const student=entity.sourceRecords.student||{}; const payment=entity.sourceRecords.registration||{}; const insc=entity.sourceRecords.pending||{};
+                    const recordYear=yearOf(student)||yearOf(insc)||yearOf(payment);
+                    if(selectedYear!=='ALL' && recordYear && norm(recordYear)!==selectedKey)return;
+                    if(selectedYear!=='ALL' && !recordYear)return;
+                    const branch=student.branch||payment.branch||branchOf(insc)||'';
+                    // Registration PDF export is intentionally independent of the branch
+                    // currently selected in the accountant dashboard.
+                    if(exportBranch !== 'ALL' && exportBranch && !registrationRecordMatchesBranch(branch,student.section||payment.section||insc.section, getDuplicateStudentClass(student)||getDuplicateStudentClass(payment)||getDuplicateStudentClass(insc), exportBranch))return;
+                    const name=student.name||student.fullName||payment.studentName||insc.nomPrenom||insc.name||'';
+                    if(!name)return;
+                    rows.push({studentId:entity.studentId||student.id||'',reference:student.reference||payment.reference||insc.codeUnique||entity.studentId||'',name,className:getExportAssignedClass(student)||'N/A',branch:getBranchName(branch),academicYear:recordYear||selectedYear,bus:(student.transportEnrolled===true||norm(student.transportEnrolled)==='oui'||norm(insc.transport)==='oui')?'OUI':'NON',address:student.address||[insc.secteur,insc.umurenge,insc.akagari,insc.umudugudu].filter(Boolean).join(', ')||'N/A',parent:student.parent||insc.chefNomPrenom||'N/A',parentPhone:student.parentPhone||insc.chefTelephone||'N/A',spouse:student.spouseName||student.secondParent||insc.conjointNomPrenom||insc.secondParent||'N/A',spousePhone:student.spousePhone||student.secondParentPhone||insc.conjointTelephone||insc.secondParentPhone||'N/A',registrationStatus:insc.statut||insc.status||'Enregistré',paymentStatus:payment.id?'Payé / paiement enregistré':'Inscrit — paiement non enregistré'});
+                });
+                rows.sort((a,b)=>String(a.branch).localeCompare(String(b.branch),'fr')||String(a.className).localeCompare(String(b.className),'fr')||String(a.name).localeCompare(String(b.name),'fr'));
+                console.info('[Registration Export] canonical registered students:',rows.length,{selectedYear,selectedBranch});
+                return rows;
             }
 
+            async function exportRegistrationReportPDF() {
+                const JsPDF=resolveJsPDF(); if(!JsPDF){showToast('PDF library non chargée','error');return;}
+                try{
+                    const exportSelection=await showExportAcademicYearModal(['2025-2026','2026-2027']);
+                    if(!exportSelection)return;
+                    const selectedAcademicYear=exportSelection.year;
+                    const selectedExportBranch=exportSelection.branch;
+                    // Export only the selected branch and selected academic year.
+                    const rows=await buildCanonicalRegisteredStudents(selectedAcademicYear,selectedExportBranch);
+                    const doc=new JsPDF({unit:'mm',format:'a4',orientation:'landscape'});
+                    const titleBranch=getBranchName(selectedExportBranch); const today=new Date().toLocaleDateString('fr-FR');
+                    doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('RAPPORT DES ÉLÈVES INSCRITS',14,13);
+                    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(`Branche : ${titleBranch} | Année scolaire : ${selectedAcademicYear} | Date : ${today}`,14,20);doc.text(`Total des élèves inscrits : ${rows.length}`,14,26);
+                    const body=rows.map((r,i)=>[i+1,r.reference,r.name,r.className,r.branch,r.academicYear,r.bus,r.address,r.parent,r.parentPhone,r.spouse,r.spousePhone,r.paymentStatus]);
+                    if(body.length)doc.autoTable({startY:31,head:[['N°','RÉFÉRENCE','ÉLÈVE','CLASSE','BRANCHE','ANNÉE','BUS','ADRESSE / RÉSIDENCE','PARENT / TUTEUR','TÉL. PARENT','2e PARENT','TÉL. 2e PARENT','STATUT PAIEMENT']],body,styles:{fontSize:6.3,cellPadding:1.5,overflow:'linebreak',valign:'middle'},headStyles:{fontSize:6.3,fontStyle:'bold'},margin:{left:8,right:8,top:31,bottom:14},didDrawPage:data=>{doc.setFontSize(7);doc.text(`Rapport des élèves inscrits - page ${data.pageNumber}`,8,203);}});else doc.setFontSize(11),doc.text('Aucun élève inscrit trouvé pour cette sélection.',14,38);
+                    const busCount=rows.filter(r=>r.bus==='OUI').length; const finalY=doc.lastAutoTable?doc.lastAutoTable.finalY:42; const summaryY=finalY+8;if(summaryY>190)doc.addPage();doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(`Total : ${rows.length} élève(s) | Bus : ${busCount} | Sans bus : ${rows.length-busCount}`,8,summaryY>190?20:summaryY);
+                    const safeBranch=String(selectedExportBranch||'branche').replace(/[^a-z0-9_-]/gi,'_');const safeYear=String(selectedAcademicYear).replace(/[^a-z0-9_-]/gi,'_');doc.save(`Rapport_Eleves_Inscrits_${safeBranch}_${safeYear}.pdf`);showToast(`Rapport PDF généré : ${rows.length} élève(s)`, 'success');
+                }catch(error){console.error('Erreur export rapport inscription:',error);showToast("Erreur lors de l’export : "+(error.message||error),'error');}
+            }
             function mapInscriptionBranchToInternal(branche, section, niveau) {
                 const rawBranch = (branche || '').toString().trim().toUpperCase();
                 const rawSection = (section || '').toString().trim().toUpperCase();
@@ -10335,8 +10376,8 @@
                 if (!confirm('Are you sure you want to delete this payroll history record?')) return;
 
                 try {
-                    await payrollHistoryRef.child(recordId).remove();
-                    showToast('Payroll history record deleted successfully!', 'success');
+                    await moveToTrash(payrollHistoryRef, recordId, {source:'payrollHistory', reason:'Suppression d’un historique de payroll'});
+                    showToast('Payroll history record moved to trash.', 'success');
                 } catch (error) {
                     console.error('Error deleting payroll history record:', error);
                     showToast('Error deleting payroll history record', 'error');
@@ -10357,8 +10398,8 @@
                 }
 
                 try {
-                    await Promise.all(branchRecords.map(record => payrollHistoryRef.child(record.id).remove()));
-                    showToast('Payroll history cleared for current branch!', 'success');
+                    await Promise.all(branchRecords.map(record => moveToTrash(payrollHistoryRef, record.id, {source:'payrollHistory', reason:'Suppression groupée de l’historique de payroll'})));
+                    showToast('Payroll history moved to trash for current branch.', 'success');
                 } catch (error) {
                     console.error('Error clearing payroll history:', error);
                     showToast('Error clearing payroll history', 'error');
@@ -10520,8 +10561,8 @@
                     const worker = workers.find(t => t.id === workerId);
                     if (!worker) return;
                     
-                    await worksRef.child(workerId).remove();
-                    showToast('Worker deleted successfully!', 'success');
+                    await moveToTrash(worksRef, workerId, {source:'workers', reason:'Suppression d’un travailleur', label:worker.name || worker.fullName || workerId});
+                    showToast('Worker moved to trash successfully!', 'success');
                     
                     await announcementsRef.push({
                         timestamp: Date.now(),
@@ -10721,8 +10762,8 @@
                 if (!confirm('Are you sure you want to delete this debt?')) return;
                 
                 try {
-                    await debtsRef.child(debtId).remove();
-                    showToast('Debt deleted successfully!', 'success');
+                    await moveToTrash(debtsRef, debtId, {source:'debts', reason:'Suppression d’une dette'});
+                    showToast('Debt moved to trash successfully!', 'success');
                     loadCurrentMonthDebts();
                     
                 } catch (error) {
@@ -12743,17 +12784,16 @@
                     for (const ref of paymentRefs) {
                         const snapshot = await ref.orderByChild('studentId').equalTo(studentId).once('value');
                         if (!snapshot.exists()) continue;
-                        const updates = {};
-                        snapshot.forEach(child => {
-                            updates[child.key] = null;
-                        });
-                        if (Object.keys(updates).length > 0) {
-                            await ref.update(updates);
+                        const linked = [];
+                        snapshot.forEach(child => linked.push(child.key));
+                        for (const key of linked) {
+                            const check = await ref.child(key).once('value');
+                            if (check.exists()) await moveToTrash(ref, key, {source:'student-linked-data', reason:`Suppression de l’élève ${student.name || studentId}`, label:check.val()?.reference || check.val()?.studentName || key});
                         }
                     }
 
-                    await studentsRef.child(studentId).remove();
-                    showToast(currentLanguage === 'fr' ? 'Élève supprimé avec succès !' : 'Student deleted successfully!', 'success');
+                    await moveToTrash(studentsRef, studentId, {source:'students', reason:'Suppression d’un élève', label:student.name || student.fullName || studentId});
+                    showToast(currentLanguage === 'fr' ? 'Élève déplacé dans la corbeille !' : 'Student moved to trash!', 'success');
 
                     try { if (typeof applyStudentFilters === 'function') applyStudentFilters(); } catch (e) { console.warn(e); }
                     try { if (typeof loadStudentFees === 'function') loadStudentFees(); } catch (e) { console.warn(e); }
@@ -12769,56 +12809,14 @@
                 }
             }
 
-            // Export students to Excel
+            // Export ALL registered students to Excel — independent of the accountant's
+            // current branch, class, age, or table filters.
             function exportStudentsExcel() {
                 try {
-                    // Filtrer les élèves par branche
-                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
-                    let levelFilter = null;
-                    if (selectedBranch === 'gisozi_maternelle') {
-                        levelFilter = 'nursery';
-                    } else if (selectedBranch === 'gisozi_primaire') {
-                        levelFilter = 'primary';
-                    }
-                    const branchStudents = students.filter(student => {
-                        if (student.branch !== firebaseBranch) return false;
-                        if (levelFilter && student.level !== levelFilter) return false;
-                        return true;
-                    });
+                    const allStudents = Array.isArray(students) ? [...students] : [];
+                    const filteredStudents = allStudents;
                     
-                    // Appliquer les filtres actuels
-                    const selectedClass = document.getElementById('filterStudentClass').value;
-                    const ageRange = document.getElementById('filterAgeRange').value;
-                    const sortBy = document.getElementById('sortStudents').value;
-                    
-                    let filteredStudents = [...branchStudents];
-                    
-                    // Filtrer par classe si sélectionnée
-                    if (selectedClass) {
-                        filteredStudents = filteredStudents.filter(student => student.class === selectedClass);
-                    }
-                    
-                    // Filtrer par tranche d'âge si sélectionnée
-                    if (ageRange) {
-                        filteredStudents = filteredStudents.filter(student => {
-                            if (!student.birthDate) return false;
-                            const age = calculateAge(student.birthDate);
-                            const [minAge, maxAge] = ageRange.split('-').map(num => {
-                                if (num.endsWith('+')) {
-                                    return parseInt(num);
-                                }
-                                return parseInt(num);
-                            });
-                            
-                            if (ageRange.endsWith('+')) {
-                                return age >= minAge;
-                            } else {
-                                return age >= minAge && age <= maxAge;
-                            }
-                        });
-                    }
-                    
-                    // Préparer les données pour l'export
+                    // Préparer les données pour l'export de TOUS les élèves
                     const exportData = filteredStudents.map((student, index) => {
                         const studentPayments = studentFees.filter(fee => fee.studentId === student.id);
                         const totalPaid = studentPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
@@ -12846,10 +12844,10 @@
                     XLSX.utils.book_append_sheet(wb, ws, 'Students');
                     
                     // Générer le fichier
-                    const fileName = `students_${selectedBranch}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    const fileName = `ALL_STUDENTS_${new Date().toISOString().split('T')[0]}.xlsx`;
                     XLSX.writeFile(wb, fileName);
                     
-                    showToast('Student list exported to Excel successfully!', 'success');
+                    showToast(`Tous les élèves (${filteredStudents.length}) ont été exportés vers Excel.`, 'success');
                 } catch (error) {
                     console.error('Error exporting students Excel:', error);
                     showToast('Error exporting Excel', 'error');
@@ -14168,8 +14166,8 @@
 
             async function deleteFeePayment(paymentId) {
                 try {
-                    await feesPaymentsRef.child(paymentId).remove();
-                    showToast('Fee payment deleted successfully!', 'success');
+                    await moveToTrash(feesPaymentsRef, paymentId, {source:'feesPayments', reason:'Suppression d’un paiement de frais'});
+                    showToast('Fee payment moved to trash successfully!', 'success');
                     loadFees();
                 } catch (error) {
                     console.error('Error deleting fee payment:', error);
@@ -14270,8 +14268,8 @@
             // Delete student fee
             async function deleteStudentFee(feeId) {
                 try {
-                    await studentFeesRef.child(feeId).remove();
-                    showToast('Payment deleted successfully!', 'success');
+                    await moveToTrash(studentFeesRef, feeId, {source:'studentFees', reason:'Suppression d’un paiement élève'});
+                    showToast('Payment moved to trash successfully!', 'success');
                     
                 } catch (error) {
                     console.error('Error deleting payment:', error);
@@ -14502,7 +14500,7 @@
                         deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
                     }
 
-                    await Promise.all(selectedIds.map(id => studentFeesRef.child(id).remove()));
+                    await Promise.all(selectedIds.map(id => moveToTrash(studentFeesRef, id, {source:'duplicate-payments', reason:'Doublon de paiement sélectionné dans le système de détection des doublons'})));
 
                     const removedIds = new Set(selectedIds);
                     studentFees = (studentFees || []).filter(fee => !removedIds.has(fee.id));
@@ -14539,15 +14537,25 @@
             }
 
             function getDuplicateStudentName(rec) {
-                return rec?.name || rec?.fullName || rec?.studentName || rec?.nomPrenom || 'Ã‰lÃ¨ve sans nom';
+                return rec?.name || rec?.fullName || rec?.studentName || rec?.nomPrenom || 'Élève sans nom';
             }
 
             function getDuplicateStudentClass(rec) {
-                return rec?.class || rec?.classes || rec?.studentClass || rec?.niveau || rec?.requestedClass || rec?.classe || '';
+                // For reports and duplicate analysis, always prefer the CLASS ACTUALLY
+                // ASSIGNED after confirmation. Requested class / application level must
+                // never replace the confirmed class.
+                return rec?.assignedClass || rec?.classAssigned || rec?.classeAffectee || rec?.classeAffectée || rec?.assigned_class || rec?.class || rec?.classes || rec?.studentClass || '';
             }
 
             function getDuplicateStudentPhone(rec) {
                 return rec?.parentPhone || rec?.chefTelephone || rec?.parent || '';
+            }
+
+            function getExportAssignedClass(student) {
+                // The registration report must show the class assigned at confirmation,
+                // never the class requested on the application/payment.
+                if (!student) return '';
+                return student.assignedClass || student.classAssigned || student.classeAffectee || student.classeAffectée || student.assigned_class || student.class || student.classes || '';
             }
 
             function getDuplicateStudentBirthDate(rec) {
@@ -14560,14 +14568,14 @@
                 registrationDuplicateCandidates = [];
                 registrationDuplicateGroupsState = [];
                 summary.className = 'alert alert-secondary mb-3';
-                summary.innerHTML = '<i class="fas fa-shield-alt me-2"></i>Le systÃ¨me va rechercher les doublons. <strong>Aucune suppression ne sera faite automatiquement.</strong> Pour chaque groupe, vous devrez choisir l\'Ã©lÃ¨ve correct ou indiquer que les deux sont diffÃ©rents.';
-                tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4"><i class="fas fa-search me-2"></i>Appuyez sur <strong>Analyse</strong> pour dÃ©marrer.</td></tr>';
+                summary.innerHTML = '<i class="fas fa-shield-alt me-2"></i>Le système va rechercher les doublons. <strong>Aucune suppression ne sera faite automatiquement.</strong> Pour chaque groupe, vous devrez choisir l\'élève correct ou indiquer que les deux sont différents.';
+                tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4"><i class="fas fa-search me-2"></i>Appuyez sur <strong>Analyse</strong> pour démarrer.</td></tr>';
                 const countEl = document.getElementById('registrationDuplicateSelectedCount');
                 const studentsEl = document.getElementById('registrationDuplicateSelectedStudents');
                 const deleteBtn = document.getElementById('deleteRegistrationDuplicatesBtn');
-                if (countEl) countEl.textContent = '0 groupe(s) confirmÃ©(s)';
-                if (studentsEl) studentsEl.textContent = 'DÃ©cisions : aucune';
-                if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i>Nettoyer les doublons confirmÃ©s'; }
+                if (countEl) countEl.textContent = '0 groupe(s) confirmé(s)';
+                if (studentsEl) studentsEl.textContent = 'Décisions : aucune';
+                if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i>Nettoyer les doublons confirmés'; }
                 if (!pendingInscriptionsData.length && typeof loadPendingInscriptions === 'function') {
                     loadPendingInscriptions().catch(error => console.error('Error loading pending inscriptions:', error));
                 }
@@ -14576,166 +14584,109 @@
             }
 
             function collectRegistrationDuplicateGroups() {
-                const regs = (registrationPayments || []).filter(r => !selectedBranch || (r.branch || '').toString() === (selectedBranch || '').toString());
-                const pend = (pendingInscriptionsData || []).filter(p => !selectedBranch || inscriptionMatchesSelectedBranch(p));
-                const groups = new Map();
-                const add = (key, item) => { if (!groups.has(key)) groups.set(key, []); groups.get(key).push(item); };
+                // Analyse COMPLETE de la liste /students. Les paiements d'inscription
+                // ne sont jamais considÃ©rÃ©s comme des Ã©lÃ¨ves diffÃ©rents : plusieurs
+                // paiements pour le mÃªme studentId = historique de paiement.
+                const students = Array.isArray(window.__registrationDuplicateStudents)
+                    ? window.__registrationDuplicateStudents.map(s => ({ ...s }))
+                    : [];
 
-                regs.forEach(r => {
-                    const name = r.studentName || r.name || '';
-                    const cls = r.studentClass || r.class || r.classes || '';
-                    const dob = r.studentBirthDate || r.birthDate || r.dateNaissance || '';
-                    const phone = r.parentPhone || r.chefTelephone || '';
-                    const key = r.studentId ? `id:${r.studentId}` : `name:${normalizeKey(name)}|class:${normalizeKey(cls)}|dob:${normalizeKey(dob)}|phone:${normalizePhone(phone)}`;
-                    add(key, { source: 'registration', record: r, timestamp: r.timestamp || 0, id: r.id });
-                });
-                pend.forEach(p => {
-                    const name = p.nomPrenom || p.name || '';
-                    const cls = p.niveau || p.requestedClass || p.classe || p.assignedClass || '';
-                    const dob = p.dateNaissance || '';
-                    const phone = p.chefTelephone || '';
-                    const key = `pending:${normalizeKey(name)}|class:${normalizeKey(cls)}|dob:${normalizeKey(dob)}|phone:${normalizePhone(phone)}`;
-                    add(key, { source: 'pending', record: p, timestamp: p.timestamp || 0, id: p.id });
-                });
-                return Array.from(groups.values()).filter(items => items.length > 1);
+                let branchStudents = students;
+                if (selectedBranch && selectedBranch !== 'all') {
+                    // Doublons = analyse de TOUS les Ã©lÃ¨ves de la branche.
+                    // Ne pas appliquer le filtre de classe du tableau courant.
+                    branchStudents = students.filter(student => registrationRecordMatchesBranch(
+                        student?.branch || student?.branche || '',
+                        student?.section || student?.sectionName || '',
+                        getDuplicateStudentClass(student),
+                        selectedBranch
+                    ));
+                }
+
+                // Le moteur compare les fiches Ã©lÃ¨ves entre elles avec les champs
+                // d'identitÃ© disponibles (nom, naissance, tÃ©lÃ©phone, classe, etc.).
+                const studentGroups = scanAllDuplicateGroupsFromRecords(branchStudents);
+
+                return (studentGroups || [])
+                    .filter(group => Array.isArray(group) && group.length > 1)
+                    .map(group => group.map(student => ({
+                        source: 'student',
+                        id: String(student.id || student.studentId || student.studentID || ''),
+                        record: student,
+                        timestamp: student.timestamp || student.createdAt || 0
+                    })));
             }
 
-            async function analyseRegistrationDuplicates() {
+async function analyseRegistrationDuplicates() {
                 const summary = document.getElementById('registrationDuplicateSummary');
                 const tableBody = document.getElementById('registrationDuplicateTableBody');
                 const deleteBtn = document.getElementById('deleteRegistrationDuplicatesBtn');
                 registrationDuplicateCandidates = [];
                 registrationDuplicateGroupsState = [];
-                tableBody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Analyse de tous les Ã©lÃ¨ves...</td></tr>';
-                if (!pendingInscriptionsData.length && typeof loadPendingInscriptions === 'function') {
-                    await loadPendingInscriptions().catch(error => console.error('Error loading pending inscriptions:', error));
-                }
-
-                let groups = [];
+                tableBody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Analyse complète des inscriptions...</td></tr>';
                 try {
-                    const studentSnapshot = await studentsRef.once('value');
-                    const databaseStudents = [];
-                    studentSnapshot.forEach(childSnapshot => {
-                        databaseStudents.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    const [studentSnapshot, registrationSnapshot, pendingSnapshot] = await Promise.all([
+                        studentsRef.once('value'), registrationPaymentsRef.once('value'), pendingInscriptionsRef.once('value')
+                    ]);
+                    const students = [], registrations = [], pending = [];
+                    studentSnapshot.forEach(ch => students.push({id:ch.key,...(ch.val()||{})}));
+                    registrationSnapshot.forEach(ch => registrations.push({id:ch.key,...(ch.val()||{})}));
+                    pendingSnapshot.forEach(ch => {
+                        const r={id:ch.key,...(ch.val()||{})};
+                        const status=normalizeKey(r.statut||r.status||'');
+                        if(!['rejete','rejected'].includes(status)) pending.push(r);
                     });
-                    const branchForScan = selectedBranch || undefined;
-                    const duplicateMatchesBranch = (record) => {
-                        const target = normalizeBranchId(branchForScan || '');
-                        if (!target || target === 'all') return true;
-                        const branch = normalizeKey(record?.branch || record?.branche || '');
-                        const section = normalizeKey(record?.section || record?.sectionScolaire || '');
-                        const cls = normalizeKey(getDuplicateStudentClass(record));
-
-                        // Kacyiru data exists in Firebase in several forms, for example:
-                        // "kacyiru", "EDEN FAMILY SCHOOL KACYIRU" and
-                        // "EDEN FAMILY SCHOOL KACYIRU - MATERNELLE".
-                        if (target.includes('kacyiru')) {
-                            if (!branch.includes('kacyiru') && !section.includes('kacyiru')) return false;
-                            return matchesSelectedStudentLevel(record, target);
-                        }
-
-                        if (target.includes('gisozi')) {
-                            if (!branch.includes('gisozi') && !section.includes('gisozi')) return false;
-                            const nursery = section.includes('maternelle') || section.includes('nursery') || /^n[123]/.test(cls);
-                            const primary = section.includes('primaire') || section.includes('primary') || /^p[123456]/.test(cls);
-                            if (target.includes('maternelle')) return nursery;
-                            if (target.includes('primaire')) return primary;
-                        }
-
-                        return branch === target || section === target;
-                    };
-
-                    const registrationSnapshot = await registrationPaymentsRef.once('value');
-                    const databaseRegistrations = [];
-                    registrationSnapshot.forEach(childSnapshot => {
-                        databaseRegistrations.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    window.__registrationDuplicateStudents = students;
+                    const groups = collectRegistrationDuplicateGroups();
+                    window.__registrationDuplicateStudents = [];
+                    if (!groups.length) {
+                        summary.className='alert alert-success mb-3';
+                        summary.innerHTML='<i class="fas fa-check-circle me-2"></i><strong>Aucun doublon probable détecté.</strong> Les paiements multiples du même élève ne sont pas considérés comme des doublons.';
+                        tableBody.innerHTML='<tr><td colspan="9" class="text-center text-success py-4">Aucun doublon détecté.</td></tr>';
+                        if(deleteBtn) deleteBtn.disabled=true;
+                        updateRegistrationDuplicateSelectionSummary();
+                        return;
+                    }
+                    registrationDuplicateGroupsState=groups.map((items,index)=>({source:'mixed',items,index,decision:null,deleteIds:new Set()}));
+                    const totalRows=groups.reduce((n,g)=>n+g.length,0);
+                    summary.className='alert alert-warning mb-3';
+                    summary.innerHTML=`<strong>${groups.length}</strong> groupe(s) de doublons probable(s), <strong>${totalRows}</strong> enregistrements à vérifier. <strong>Aucune suppression automatique.</strong>`;
+                    const rows=[];
+                    registrationDuplicateGroupsState.forEach((group,gi)=>{
+                        const first=group.items[0]?.record||{};
+                        rows.push(`<tr class="table-light"><td colspan="9"><strong>GROUPE ${gi+1}</strong> — ${escapeDuplicateHtml(getDuplicateStudentName(first))}<br><small class="text-danger"><i class="fas fa-check-square me-1"></i>Cochez les élèves que vous voulez <strong>EFFACER</strong>. L'élève non coché sera conservé. Vous devez toujours garder au moins un élève.</small></td></tr>`);
+                        const studentItems = group.items.filter(it => it.source === 'student');
+                        group.items.forEach((it,idx)=>{
+                            const rec=it.record||{}; const sid=it.id||rec.id||rec.studentId||'';
+                            const score=idx===0?'Référence':`${computeStudentDuplicateScore(rec,first).score}%`;
+                            const sourceLabel=it.source==='student'?'Élève':it.source==='registration'?'Paiement inscription':'Demande inscription';
+                            const value=`${it.source}::${sid}`;
+                            const selector=it.source==='student' ? `<label style="display:flex;align-items:center;justify-content:center;gap:6px;min-width:52px;cursor:pointer;"><input type="checkbox" class="form-check-input registration-duplicate-delete" value="${escapeDuplicateHtml(sid)}" data-group="${gi}" onchange="toggleRegistrationDuplicateDelete(${gi}, this.value, this.checked)" title="Cochez pour EFFACER cet élève" aria-label="Effacer cet élève" style="appearance:auto !important;-webkit-appearance:checkbox !important;display:inline-block !important;width:24px;height:24px;margin:0;cursor:pointer;accent-color:#dc3545;"><span style="font-size:10px;font-weight:700;color:#dc3545;">EFFACER</span></label>` : '<span class="text-muted">—</span>';
+                            rows.push(`<tr><td>${selector}</td><td><span class="badge bg-secondary">${sourceLabel}</span></td><td><strong>${escapeDuplicateHtml(getDuplicateStudentName(rec))}</strong><br><small>${escapeDuplicateHtml(rec.reference||rec.codeUnique||rec.referenceId||'')}</small></td><td>${escapeDuplicateHtml(score)}</td><td>${escapeDuplicateHtml(getDuplicateStudentClass(rec))}</td><td>${escapeDuplicateHtml(getDuplicateStudentBirthDate(rec)||'N/A')}</td><td>${escapeDuplicateHtml(rec.parent||rec.chefNomPrenom||rec.parentName||'')}</td><td>${escapeDuplicateHtml(getDuplicateStudentPhone(rec))}</td><td>${escapeDuplicateHtml(rec.enrollmentDate||rec.paymentDate||rec.createdAt||'')}</td></tr>`);
+                        });
+                        rows.push(`<tr><td colspan="9" class="bg-light"><strong>Suppression — groupe ${gi+1} :</strong> <span class="text-muted">les élèves cochés seront envoyés dans la Corbeille. Laissez au moins une fiche élève non cochée.</span></td></tr>`);
                     });
-
-                    const pendingSnapshot = await pendingInscriptionsRef.once('value');
-                    const databasePending = [];
-                    pendingSnapshot.forEach(childSnapshot => {
-                        const record = { id: childSnapshot.key, ...childSnapshot.val() };
-                        const status = String(record.statut || record.status || '').trim().toLowerCase();
-                        if (!['rejeté', 'rejete', 'rejected'].includes(status)) databasePending.push(record);
-                    });
-
-                    const branchStudents = databaseStudents.filter(duplicateMatchesBranch);
-                    const branchRegistrations = databaseRegistrations.filter(duplicateMatchesBranch);
-                    const branchPending = databasePending.filter(duplicateMatchesBranch);
-
-                    const studentGroups = scanAllDuplicateGroupsFromRecords(branchStudents);
-                    // Use the same strong duplicate logic for registration payments and
-                    // pending requests too, so duplicates visible in the list are not missed.
-                    const registrationGroups = scanAllDuplicateGroupsFromRecords(branchRegistrations);
-                    const pendingGroups = scanAllDuplicateGroupsFromRecords(branchPending);
-
-                    groups = [
-                        ...(studentGroups || []).map(g => ({
-                            source: 'student',
-                            items: g.map(s => ({ source: 'student', record: s, timestamp: s.timestamp || 0, id: s.id }))
-                        })),
-                        ...(registrationGroups || []).map(g => ({
-                            source: 'registration',
-                            items: g.map(r => ({ source: 'registration', record: r, timestamp: r.timestamp || r.createdAt || 0, id: r.id }))
-                        })),
-                        ...(pendingGroups || []).map(g => ({
-                            source: 'pending',
-                            items: g.map(p => ({ source: 'pending', record: p, timestamp: p.timestamp || p.createdAt || 0, id: p.id }))
-                        }))
-                    ];
-                } catch (error) {
-                    console.error('Duplicate analysis error:', error);
-                    summary.className = 'alert alert-danger mb-3';
-                    summary.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Erreur pendant l\'analyse des doublons.';
-                    tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">Impossible d\'analyser les doublons.</td></tr>';
-                    return;
-                }
-
-                if (!groups.length) {
-                    summary.className = 'alert alert-success mb-3';
-                    summary.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Aucun doublon probable dÃ©tectÃ©.</strong> Aucune donnÃ©e n\'a Ã©tÃ© supprimÃ©e.';
-                    tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-success py-4"><i class="fas fa-check-circle me-2"></i>Aucun doublon dÃ©tectÃ©.</td></tr>';
-                    if (deleteBtn) deleteBtn.disabled = true;
+                    tableBody.innerHTML=rows.join('');
                     updateRegistrationDuplicateSelectionSummary();
-                    return;
-                }
+                } catch(error) {
+                    console.error('Duplicate analysis error:',error);
+                    summary.className='alert alert-danger mb-3'; summary.textContent="Erreur pendant l’analyse des doublons.";
+                    tableBody.innerHTML='<tr><td colspan="9" class="text-center text-danger py-4">Impossible d’analyser les doublons.</td></tr>';
+                    if(deleteBtn) deleteBtn.disabled=true;
+                } finally { window.__registrationDuplicateStudents=[]; }
+            }
 
-                registrationDuplicateGroupsState = groups.map((group, index) => ({ ...group, index, decision: null }));
-                const totalRows = groups.reduce((sum, g) => sum + g.items.length, 0);
-                summary.className = 'alert alert-warning mb-3';
-                summary.innerHTML = `<strong>${groups.length}</strong> groupe(s) de doublons probable(s), <strong>${totalRows}</strong> enregistrements Ã  examiner. <strong>Choisissez l\'Ã©lÃ¨ve correct dans chaque groupe.</strong>`;
-
-                const rows = [];
-                registrationDuplicateGroupsState.forEach((group, gi) => {
-                    const first = group.items[0]?.record || {};
-                    rows.push(`<tr class="table-light"><td colspan="9"><strong>GROUPE ${gi + 1}</strong> â€” ${escapeDuplicateHtml(getDuplicateStudentName(first))}<br><small class="text-danger">DÃ©cision obligatoire avant suppression</small></td></tr>`);
-                    group.items.forEach((it, idx) => {
-                        const rec = it.record || {};
-                        const studentId = it.id || rec.id || rec.studentId || '';
-                        const leader = group.items[0]?.record || {};
-                        let scoreText = it.source;
-                        if (it.source === 'student' && idx > 0) {
-                            const score = computeStudentDuplicateScore(rec, leader);
-                            scoreText = `${score.score}%`;
-                        } else if (it.source === 'student') {
-                            scoreText = 'RÃ©fÃ©rence';
-                        }
-                        const choiceValue = `${it.source}::${studentId}`;
-                        rows.push(`<tr>
-                            <td><input type="radio" class="form-check-input registration-duplicate-choice" name="registrationDupGroup_${gi}" value="${escapeDuplicateHtml(choiceValue)}" data-group="${gi}" onchange="setRegistrationDuplicateDecision(${gi}, this.value)"></td>
-                            <td><span class="badge bg-secondary">Ã€ examiner</span></td>
-                            <td><strong>${escapeDuplicateHtml(getDuplicateStudentName(rec))}</strong><br><small>${escapeDuplicateHtml(rec.reference || rec.codeUnique || rec.referenceId || '')}</small></td>
-                            <td>${escapeDuplicateHtml(scoreText)}</td>
-                            <td>${escapeDuplicateHtml(getDuplicateStudentClass(rec))}</td>
-                            <td>${escapeDuplicateHtml(getDuplicateStudentBirthDate(rec) || 'N/A')}</td>
-                            <td>${escapeDuplicateHtml(rec.parent || rec.chefNomPrenom || rec.parentName || '')}</td>
-                            <td>${escapeDuplicateHtml(getDuplicateStudentPhone(rec))}</td>
-                            <td>${escapeDuplicateHtml(rec.enrollmentDate || rec.paymentDate || rec.createdAt || '')}</td>
-                        </tr>`);
-                    });
-                    rows.push(`<tr><td colspan="9" class="bg-light"><div class="d-flex flex-wrap align-items-center gap-2"><strong>DÃ©cision pour le groupe ${gi + 1} :</strong><select class="form-select form-select-sm registration-duplicate-decision" style="max-width:420px" onchange="setRegistrationDuplicateDecision(${gi}, this.value)"><option value="">-- Choisir l'Ã©lÃ¨ve correct --</option>${group.items.map((it, idx) => { const rec=it.record||{}; const sid=it.id||rec.id||rec.studentId||''; return `<option value="${escapeDuplicateHtml(it.source+'::'+sid)}">Garder : ${escapeDuplicateHtml(getDuplicateStudentName(rec))} ${idx===0?'(recommandÃ© si confirmÃ©)':''}</option>`; }).join('')}<option value="KEEP_ALL">Les deux sont diffÃ©rents â€” ne rien supprimer</option></select></div></td></tr>`);
-                });
-                tableBody.innerHTML = rows.join('');
+function toggleRegistrationDuplicateDelete(groupIndex, studentId, checked) {
+                const group = registrationDuplicateGroupsState[groupIndex];
+                if (!group) return;
+                if (!group.deleteIds) group.deleteIds = new Set();
+                const id = String(studentId || '');
+                if (!id) return;
+                if (checked) group.deleteIds.add(id); else group.deleteIds.delete(id);
+                // Keep the old decision field synchronized for compatibility with existing code.
+                const students = group.items.filter(it => it.source === 'student');
+                const remaining = students.filter(it => !group.deleteIds.has(String(it.id || it.record?.id || it.record?.studentId || '')));
+                group.decision = remaining.length === 1 ? `student::${remaining[0].id || remaining[0].record?.id || ''}` : (group.deleteIds.size ? 'DELETE_SELECTED' : null);
                 updateRegistrationDuplicateSelectionSummary();
             }
 
@@ -14749,39 +14700,45 @@
             }
 
             function selectRecommendedRegistrationDuplicates() {
-                registrationDuplicateGroupsState.forEach((group, gi) => {
-                    if (group.items.length) {
-                        const first = group.items[0];
-                        setRegistrationDuplicateDecision(gi, `${first.source}::${first.id || first.record?.id || first.record?.studentId || ''}`);
-                    }
+                registrationDuplicateGroupsState.forEach(group => {
+                    const students = group.items.filter(it => it.source === 'student');
+                    if (students.length <= 1) return;
+                    if (!group.deleteIds) group.deleteIds = new Set();
+                    // Recommended: keep the first/reference student and select all other copies.
+                    students.slice(1).forEach(it => group.deleteIds.add(String(it.id || it.record?.id || it.record?.studentId || '')));
+                    group.decision = 'DELETE_SELECTED';
+                });
+                document.querySelectorAll('.registration-duplicate-delete').forEach(cb => {
+                    const gi = Number(cb.dataset.group);
+                    const group = registrationDuplicateGroupsState[gi];
+                    cb.checked = !!group?.deleteIds?.has(String(cb.value));
                 });
                 updateRegistrationDuplicateSelectionSummary();
             }
 
             function clearRegistrationDuplicateSelection() {
-                registrationDuplicateGroupsState.forEach(group => group.decision = null);
-                document.querySelectorAll('.registration-duplicate-choice').forEach(r => r.checked = false);
-                document.querySelectorAll('.registration-duplicate-decision').forEach(s => s.value = '');
+                registrationDuplicateGroupsState.forEach(group => { group.decision = null; group.deleteIds = new Set(); });
+                document.querySelectorAll('.registration-duplicate-delete').forEach(cb => cb.checked = false);
                 updateRegistrationDuplicateSelectionSummary();
             }
 
             function updateRegistrationDuplicateSelectionSummary() {
                 const groups = registrationDuplicateGroupsState || [];
-                const decided = groups.filter(g => !!g.decision).length;
-                const destructive = groups.filter(g => g.decision && g.decision !== 'KEEP_ALL').length;
+                const selected = groups.flatMap(g => Array.from(g.deleteIds || []));
+                const invalid = groups.some(g => {
+                    const students = g.items.filter(it => it.source === 'student');
+                    return (g.deleteIds?.size || 0) >= students.length;
+                });
                 const countEl = document.getElementById('registrationDuplicateSelectedCount');
                 const studentsEl = document.getElementById('registrationDuplicateSelectedStudents');
                 const deleteBtn = document.getElementById('deleteRegistrationDuplicatesBtn');
-                if (countEl) countEl.textContent = `${decided}/${groups.length} groupe(s) dÃ©cidÃ©(s) â€” ${destructive} Ã  nettoyer`;
+                if (countEl) countEl.textContent = `${selected.length} élève(s) sélectionné(s) pour suppression`;
                 if (studentsEl) {
-                    const names = groups.filter(g => g.decision && g.decision !== 'KEEP_ALL').map(g => {
-                        const [source, id] = g.decision.split('::');
-                        const keep = g.items.find(it => it.source === source && String(it.id || it.record?.id || it.record?.studentId || '') === id);
-                        return keep ? getDuplicateStudentName(keep.record) : '';
-                    }).filter(Boolean);
-                    studentsEl.textContent = names.length ? `Ã‰lÃ¨ves conservÃ©s : ${names.join(', ')}` : 'DÃ©cisions : aucune suppression confirmÃ©e';
+                    const names = groups.flatMap(g => g.items.filter(it => it.source === 'student' && (g.deleteIds || new Set()).has(String(it.id || it.record?.id || it.record?.studentId || ''))).map(it => getDuplicateStudentName(it.record))).filter(Boolean);
+                    studentsEl.textContent = names.length ? `À supprimer : ${names.join(', ')}` : 'À supprimer : aucun élève sélectionné';
+                    if (invalid) studentsEl.textContent += ' — ERREUR : gardez au moins un élève par groupe.';
                 }
-                if (deleteBtn) deleteBtn.disabled = groups.length === 0 || decided !== groups.length || destructive === 0;
+                if (deleteBtn) deleteBtn.disabled = selected.length === 0 || invalid;
             }
 
             async function reassignStudentData(oldStudentId, newStudentId) {
@@ -14798,80 +14755,49 @@
 
             async function deleteSelectedRegistrationDuplicates() {
                 const groups = registrationDuplicateGroupsState || [];
-                if (!groups.length || groups.some(g => !g.decision)) {
-                    showToast('Vous devez choisir une dÃ©cision pour chaque groupe.', 'error');
-                    return;
-                }
-                const destructiveGroups = groups.filter(g => g.decision && g.decision !== 'KEEP_ALL');
-                if (!destructiveGroups.length) {
-                    showToast('Aucun groupe n\'a Ã©tÃ© confirmÃ© pour suppression.', 'info');
-                    return;
-                }
-                const preview = destructiveGroups.map((g, i) => {
-                    const [source, id] = g.decision.split('::');
-                    const keep = g.items.find(it => it.source === source && String(it.id || it.record?.id || it.record?.studentId || '') === id);
-                    return `${i + 1}. ${getDuplicateStudentName(keep?.record)}`;
-                }).join('\\n');
-                const confirmed = confirm(`ATTENTION â€” Vous avez choisi les Ã©lÃ¨ves corrects suivants :
-
-${preview}
-
-Pour chaque groupe, les autres enregistrements seront nettoyÃ©s. Les paiements liÃ©s Ã  un doublon seront d'abord rattachÃ©s Ã  l'Ã©lÃ¨ve conservÃ©.
-
-Continuer ?`);
+                const selectedGroups = groups.filter(g => (g.deleteIds?.size || 0) > 0);
+                if (!selectedGroups.length) { showToast('Cochez au moins un élève à EFFACER.', 'error'); return; }
+                const invalid = selectedGroups.find(g => {
+                    const students = g.items.filter(it => it.source === 'student');
+                    return !students.length || (g.deleteIds.size >= students.length);
+                });
+                if (invalid) { showToast('Vous devez laisser au moins un élève dans chaque groupe.', 'error'); return; }
+                const totalSelected = selectedGroups.reduce((n,g)=>n+g.deleteIds.size,0);
+                const confirmed = confirm(`Confirmer la suppression de ${totalSelected} élève(s) sélectionné(s) ? Les élèves seront envoyés dans la Corbeille et pourront être restaurés. Les paiements et leur historique seront conservés.`);
                 if (!confirmed) return;
-
-                const deleteBtn = document.getElementById('deleteRegistrationDuplicatesBtn');
-                const originalHtml = deleteBtn?.innerHTML || '';
+                const deleteBtn=document.getElementById('deleteRegistrationDuplicatesBtn'); const originalHtml=deleteBtn?.innerHTML||'';
                 try {
-                    if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Nettoyage sÃ©curisÃ©...'; }
-                    let removed = 0;
-                    let reassigned = 0;
-                    for (const group of destructiveGroups) {
-                        const [keepSource, keepId] = group.decision.split('::');
-                        const keeper = group.items.find(it => it.source === keepSource && String(it.id || it.record?.id || it.record?.studentId || '') === keepId);
-                        if (!keeper) continue;
-
-                        for (const item of group.items) {
-                            const itemId = item.id || item.record?.id || item.record?.studentId || '';
-                            if (item === keeper || String(itemId) === String(keepId)) continue;
-                            if (group.source === 'student' || item.source === 'student') {
-                                const oldId = itemId;
-                                const newId = keeper.id || keeper.record?.id || keeper.record?.studentId || '';
-                                if (oldId && newId && oldId !== newId) {
-                                    await reassignStudentData(oldId, newId);
-                                    await studentsRef.child(oldId).remove();
-                                    reassigned++;
-                                    removed++;
-                                }
-                            } else if (item.source === 'registration') {
-                                await registrationPaymentsRef.child(itemId).remove();
-                                removed++;
-                            } else if (item.source === 'pending') {
-                                await pendingInscriptionsRef.child(itemId).remove();
-                                removed++;
+                    if(deleteBtn){deleteBtn.disabled=true;deleteBtn.innerHTML='<i class="fas fa-spinner fa-spin me-2"></i>Suppression sécurisée...';}
+                    let removedStudents=0, reassigned=0, removedPending=0;
+                    for(const group of selectedGroups){
+                        const students=group.items.filter(it=>it.source==='student');
+                        const keeper=students.find(it=>!group.deleteIds.has(String(it.id||it.record?.id||it.record?.studentId||'')));
+                        if(!keeper) continue;
+                        const keeperId=String(keeper.id||keeper.record?.id||'');
+                        for(const item of group.items){
+                            const itemId=String(item.id||item.record?.id||item.record?.studentId||'');
+                            if(item.source==='student' && group.deleteIds.has(itemId) && itemId!==keeperId){
+                                await reassignStudentData(itemId,keeperId);
+                                await moveToTrash(studentsRef,itemId,{source:'registration-duplicates',reason:`Doublon d'inscription — élève conservé : ${getDuplicateStudentName(keeper.record)}`,label:getDuplicateStudentName(item.record)});
+                                removedStudents++; reassigned++;
+                            } else if(item.source==='pending' && keeperId){
+                                await moveToTrash(pendingInscriptionsRef,itemId,{source:'registration-duplicates',reason:`Demande d'inscription en double — élève conservé : ${getDuplicateStudentName(keeper.record)}`,label:getDuplicateStudentName(item.record)});
+                                removedPending++;
                             }
                         }
                     }
-                    showToast(`${removed} doublon(s) nettoyÃ©(s). ${reassigned} fiche(s) Ã©lÃ¨ve supprimÃ©e(s) aprÃ¨s rattachement des paiements.`, 'success');
-                    registrationDuplicateGroupsState = [];
-                    registrationDuplicateCandidates = [];
-                    try { if (typeof loadRegistration === 'function') await loadRegistration(); } catch (e) { console.warn(e); }
-                    try { if (typeof applyStudentFilters === 'function') applyStudentFilters(); } catch (e) { console.warn(e); }
-                    try { if (typeof loadStudentFees === 'function') loadStudentFees(); } catch (e) { console.warn(e); }
-                    const summary = document.getElementById('registrationDuplicateSummary');
-                    if (summary) { summary.className = 'alert alert-success mb-3'; summary.innerHTML = '<i class="fas fa-check-circle me-2"></i>Nettoyage terminÃ©. Les groupes traitÃ©s ont Ã©tÃ© supprimÃ©s de cette analyse.'; }
-                    const tableBody = document.getElementById('registrationDuplicateTableBody');
-                    if (tableBody) tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-success py-4"><i class="fas fa-check-circle me-2"></i>Nettoyage terminÃ©. Relancez Analyse pour vÃ©rifier.</td></tr>';
+                    showToast(`${removedStudents} élève(s) supprimé(s) et placé(s) dans la Corbeille. ${reassigned} historique(s) financier(s) rattaché(s). ${removedPending} demande(s) en double placée(s) dans la Corbeille.`, 'success');
+                    registrationDuplicateGroupsState=[]; registrationDuplicateCandidates=[];
+                    if(typeof loadRegistration==='function') await loadRegistration();
+                    if(typeof applyStudentFilters==='function') applyStudentFilters();
+                    const summary=document.getElementById('registrationDuplicateSummary');
+                    if(summary){summary.className='alert alert-success mb-3';summary.innerHTML="<i class=\"fas fa-check-circle me-2\"></i>Suppression terminée. Les élèves sélectionnés sont dans la Corbeille. L’historique des paiements est conservé.";}
+                    const tableBody=document.getElementById('registrationDuplicateTableBody');
+                    if(tableBody)tableBody.innerHTML='<tr><td colspan="9" class="text-center text-success py-4">Suppression terminée. Relancez Analyse pour vérifier.</td></tr>';
                     updateRegistrationDuplicateSelectionSummary();
-                } catch (error) {
-                    console.error('Error cleaning registration duplicates:', error);
-                    showToast('Erreur pendant le nettoyage des doublons. Aucune autre suppression n\'a Ã©tÃ© tentÃ©e.', 'error');
-                } finally {
-                    if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = originalHtml || '<i class="fas fa-trash me-2"></i>Nettoyer les doublons confirmÃ©s'; }
-                }
+                } catch(error){ console.error('Error cleaning registration duplicates:',error); showToast('Erreur pendant la suppression sécurisée : '+(error.message||error),'error'); }
+                finally{if(deleteBtn){deleteBtn.disabled=true;deleteBtn.innerHTML=originalHtml||'<i class="fas fa-trash me-2"></i>Supprimer les Doublons Sélectionnés';}}
             }
-
             // Update daily report table with automatic calculation
             function updateDailyReportTable() {
                 const date = document.getElementById('dailyReportDate').value;
@@ -15542,7 +15468,7 @@ Continuer ?`);
                 if (!confirm('Are you sure you want to delete this expense?')) return;
                 
                 try {
-                    await dailyExpensesRef.child(expenseId).remove();
+                    await moveToTrash(dailyExpensesRef, expenseId, {source:'dailyExpenses', reason:'Suppression d’une dépense journalière'});
                     
                     const date = document.getElementById('dailyReportDate').value;
                     await loadExpensesForDate(date);
@@ -19038,8 +18964,8 @@ Continuer ?`);
                 if (!confirm('Are you sure you want to delete this coaching payment?')) return;
                 
                 try {
-                    await coachingPaymentsRef.child(paymentId).remove();
-                    showToast('Coaching payment deleted successfully!', 'success');
+                    await moveToTrash(coachingPaymentsRef, paymentId, {source:'coachingPayments', reason:'Suppression d’un paiement de coaching'});
+                    showToast('Coaching payment moved to trash successfully!', 'success');
                     loadCoaching();
                     recalculateExpectedIncome();
                 } catch (error) {
@@ -20511,4 +20437,4 @@ Continuer ?`);
 
         </script>
     </body>
-    </html>
+    </html> 
