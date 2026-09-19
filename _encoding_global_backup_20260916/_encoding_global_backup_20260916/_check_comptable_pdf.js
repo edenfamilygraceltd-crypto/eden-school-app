@@ -1,0 +1,15136 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+            // Firebase Configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyApUFNELOfgIe7rWEek9GLS9EIphNW09-A",
+                authDomain: "edensmart-app.firebaseapp.com",
+                databaseURL: "https://edensmart-app-default-rtdb.firebaseio.com",
+                projectId: "edensmart-app",
+                storageBucket: "edensmart-app.firebasestorage.app",
+                messagingSenderId: "1093120876724",
+                appId: "1:1093120876724:web:bc37448cadd18d651c77e1",
+                measurementId: "G-1FL70PZZSW"
+            };
+
+            // Apply translations to elements marked with data-i18n
+            function applyTranslations(lang) {
+                if (!translations[lang]) return;
+                const t = translations[lang];
+
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (key && t[key]) {
+                        el.textContent = t[key];
+                    }
+                });
+
+                document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                    const key = el.getAttribute('data-i18n-placeholder');
+                    if (key && t[key]) {
+                        el.setAttribute('placeholder', t[key]);
+                    }
+                });
+
+                document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                    const key = el.getAttribute('data-i18n-title');
+                    if (key && t[key]) {
+                        el.setAttribute('title', t[key]);
+                    }
+                });
+
+                const globalSearch = document.getElementById('globalSearch');
+                if (globalSearch) {
+                    globalSearch.setAttribute('placeholder', t.searchPayment || t.searchStudent || 'Search...');
+                }
+
+                const langSpan = document.getElementById('languageText');
+                if (langSpan) langSpan.textContent = (lang === 'fr') ? 'FR' : 'EN';
+
+                document.title = lang === 'fr'
+                    ? 'EdenSmart - Gestion Financière'
+                    : 'EdenSmart - Financial Management';
+
+                document.documentElement.lang = lang;
+
+                localStorage.setItem('edenLanguage', lang);
+                currentLanguage = lang;
+            }
+
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.database();
+            const storage = firebase.storage();
+
+            // Isoler la session par onglet pour éviter le "kick" entre utilisateurs
+            auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch((err) => {
+                console.warn('setPersistence(Session) impossible:', err);
+            });
+
+            // Variable pour stocker l'utilisateur courant
+            let currentUser = null;
+            let currentUserUID = null;
+
+            // Check authentication
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUserUID = user.uid;
+                    console.log('User logged in:', user.uid);
+                    // Charger les données utilisateur depuis la collection "users"
+                    loadCurrentUserFromDatabase(user.uid);
+                } else {
+                    console.log('No user logged in - redirecting to Auth.html');
+                    window.location.href = 'Auth.html';
+                }
+            });
+
+            // Charger les informations actuelles de l'utilisateur depuis la collection "users"
+            async function loadCurrentUserFromDatabase(uid) {
+                try {
+                    const snapshot = await db.ref(`users/${uid}`).once('value');
+                    if (snapshot.exists()) {
+                        currentUser = {
+                            uid: uid,
+                            ...snapshot.val()
+                        };
+                        currentUserName = currentUser.name || currentUser.email || "User";
+                        updateUIWithUserInfo();
+                        console.log('User loaded from database:', currentUser);
+                    } else {
+                        // Créer un profil utilisateur par défaut si inexistant
+                        currentUser = {
+                            uid: uid,
+                            name: auth.currentUser?.displayName || "User",
+                            email: auth.currentUser?.email || "user@edensmart.com",
+                            role: "comptable",
+                            branch: "kacyiru",
+                            createdAt: Date.now()
+                        };
+                        currentUserName = currentUser.name;
+                        updateUIWithUserInfo();
+                        console.log('Default user profile created:', currentUser);
+                    }
+                    loadAllData();
+                } catch (error) {
+                    console.error('Error loading user:', error);
+                    currentUser = {
+                        name: "User",
+                        email: auth.currentUser?.email || "user@edensmart.com",
+                        role: "comptable",
+                        branch: "kacyiru"
+                    };
+                    currentUserName = "User";
+                    updateUIWithUserInfo();
+                    loadAllData();
+                }
+            }
+
+            // Mettre à jour l'interface avec les informations de l'utilisateur
+            function updateUIWithUserInfo() {
+                if (!currentUser) return;
+                
+                document.getElementById('userName').textContent = currentUser.name || "User";
+                document.getElementById('userRole').textContent = getRoleLabel(currentUser.role);
+                document.getElementById('preparedBy').textContent = currentUser.name;
+                document.getElementById('reportPreparedBy').value = currentUser.name;
+                document.getElementById('accountantName').value = currentUser.name;
+                document.getElementById('accountantTitle').value = getRoleLabel(currentUser.role);
+                document.getElementById('accountantEmail').value = currentUser.email || '';
+                const accountCredsNewEmailEl = document.getElementById('accountCredsNewEmail');
+                if (accountCredsNewEmailEl) accountCredsNewEmailEl.value = currentUser.email || '';
+
+                applyBranchAccessControl();
+                
+                // Sélectionner la branche de l'utilisateur
+                const defaultBranch = getDefaultBranchForCurrentUser();
+                if (defaultBranch) {
+                    selectedBranch = defaultBranch;
+                    selectBranch(defaultBranch);
+                }
+            }
+
+            // Obtenir le label du rôle
+            function getRoleLabel(role) {
+                const roleLabels = {
+                    'comptable': 'Chief Accountant',
+                    'comptable_principal': 'Chief Accountant',
+                    'comptable_secondaire': 'Junior Accountant',
+                    'directeur': 'Director',
+                    'secretaire': 'Secretary',
+                    'enseignant': 'Teacher',
+                    'admin': 'Administrator'
+                };
+                return roleLabels[role] || 'User';
+            }
+
+            function getWorkerTypeLabel(type) {
+                const typeLabels = {
+                    'enseignant': 'Teacher',
+                    'staff': 'Staff',
+                    'comptable': 'Accountant',
+                    'directeur': 'Director',
+                    'secretaire': 'Secretary',
+                    'chauffeure': 'Driver',
+                    'tantine': 'Nanny',
+                    'gardien': 'Guard'
+                };
+                return typeLabels[type] || (type || 'Other');
+            }
+
+            function getWorkerTypeBadgeClass(type) {
+                const badgeClasses = {
+                    'enseignant': 'badge bg-success',
+                    'staff': 'badge bg-info',
+                    'comptable': 'badge bg-primary',
+                    'directeur': 'badge bg-dark',
+                    'secretaire': 'badge bg-purple',
+                    'chauffeure': 'badge bg-warning text-dark',
+                    'tantine': 'badge bg-pink',
+                    'gardien': 'badge bg-secondary'
+                };
+                return badgeClasses[type] || 'badge bg-secondary';
+            }
+
+            // Références Firebase
+            const usersRef = db.ref('users');
+            const teachersRef = db.ref('teachers');
+            const worksRef = db.ref('works'); // Pour la gestion des travailleurs
+            const studentFeesRef = db.ref('studentFees');
+            const payrollRef = db.ref('payroll');
+            const reportsRef = db.ref('reports');
+            const activitiesRef = db.ref('activities');
+            const announcementsRef = db.ref('announcements');
+            const debtsRef = db.ref('debts');
+            const studentsRef = db.ref('students');
+            const dailyReportsRef = db.ref('dailyReports');
+            const weeklyReportsRef = db.ref('weeklyReports');
+            const monthlyReportsRef = db.ref('monthlyReports');
+            const payrollHistoryRef = db.ref('payrollHistory');
+            const reportHistoryRef = db.ref('reportHistory');
+            const feeConfigRef = db.ref('feesConfiguration');
+            const dailyExpensesRef = db.ref('dailyExpenses');
+            const receiptsRef = db.ref('receipts');
+            const rolesRef = db.ref('roles');
+            const settingsRef = db.ref('settings');
+            const termConfigRef = db.ref('settings/termConfig');
+            const openingBalancesRef = db.ref('openingBalances');
+            const closingBalancesRef = db.ref('closingBalances');
+            const coachingPaymentsRef = db.ref('coachingPayments');
+            const feesPaymentsRef = db.ref('feesPayments');
+            const transportPaymentsRef = db.ref('transportPayments');
+            const registrationPaymentsRef = db.ref('registrationPayments');
+            const pendingInscriptionsRef = db.ref('inscriptions-scolaires');
+            let pendingInscriptionsData = [];
+            let currentConfirmInscriptionId = null;
+
+            // Variables globales
+            let users = [];
+            let teachers = []; // Données des enseignants pour bulletins, etc.
+            let workers = []; // Données des travailleurs pour Workers Management
+            let studentFees = [];
+            let coachingPayments = [];
+            let transportPayments = [];
+            let registrationPayments = [];
+            let feesPayments = [];
+            let payrollData = [];
+            let announcements = [];
+            let debts = [];
+            let students = [];
+            let dailyReports = [];
+            let weeklyReports = [];
+            let monthlyReports = [];
+            let payrollHistory = [];
+            let reportHistory = [];
+            let feeConfigurations = [];
+            let openingBalances = {};
+            let closingBalances = {};
+            let dailyExpenses = [];
+            let duplicatePaymentCandidates = [];
+            let currentTeacherId = null;
+            let currentStudentFeeId = null;
+            let currentStudentId = null;
+            let currentUserName = "User";
+            let realPayrollChart = null;
+            let weeklyChart = null;
+            let monthlyChart = null;
+            let currentLanguage = localStorage.getItem('edenLanguage') || 'en';
+            let selectedBranch = 'kacyiru';
+            let currentViewStudentId = null;
+            let currentTermConfig = null;
+            let branchClassesCache = {};
+
+            // ============================================================
+            // UTILITAIRES FIREBASE PAR BRANCHE
+            // ============================================================
+            function branchRef(collection, forceBranch) {
+                const branch = forceBranch || selectedBranch;
+                return db.ref(`branches/${branch}/${collection}`);
+            }
+
+            function globalRef(collection) {
+                return db.ref(`global/${collection}`);
+            }
+
+            function makeKey(prefix, branch, period) {
+                const safeBranch = (branch || '').toString().replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+                const safePeriod = (period || '').toString().replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+                return `${prefix}_${safeBranch}_${safePeriod}`;
+            }
+
+            // ============================================================
+            // SCRIPTS DE MIGRATION (à exécuter UNE SEULE FOIS si nécessaire)
+            // ============================================================
+            async function migrateStudentsToBranches() {
+                const snapshot = await db.ref('students').once('value');
+                if (!snapshot.exists()) return console.log('Aucun étudiant à migrer');
+
+                const updates = {};
+                snapshot.forEach(child => {
+                    const student = child.val();
+                    const branch = student.branch || 'kacyiru';
+                    updates[`branches/${branch}/students/${child.key}`] = student;
+                    // updates[`students/${child.key}`] = null;
+                });
+
+                await db.ref().update(updates);
+                console.log('Migration students terminée');
+            }
+
+            async function migrateWorkersToBranches() {
+                const snapshot = await db.ref('works').once('value');
+                if (!snapshot.exists()) return console.log('Aucun worker à migrer');
+
+                const updates = {};
+                snapshot.forEach(child => {
+                    const worker = child.val();
+                    const branch = worker.branch || 'kacyiru';
+                    updates[`branches/${branch}/workers/${child.key}`] = {
+                        ...worker,
+                        migratedAt: Date.now()
+                    };
+                });
+
+                await db.ref().update(updates);
+                console.log('Migration workers terminée');
+            }
+
+            async function migratePaymentsToBranches() {
+                const collections = {
+                    studentFees: 'fees',
+                    coachingPayments: 'coaching',
+                    transportPayments: 'transport',
+                    registrationPayments: 'registration'
+                };
+
+                for (const [oldPath, newName] of Object.entries(collections)) {
+                    const snapshot = await db.ref(oldPath).once('value');
+                    if (!snapshot.exists()) continue;
+
+                    const updates = {};
+                    snapshot.forEach(child => {
+                        const payment = child.val();
+                        const branch = payment.branch || 'kacyiru';
+                        updates[`branches/${branch}/payments/${newName}/${child.key}`] = payment;
+                    });
+
+                    await db.ref().update(updates);
+                    console.log(`Migration ${oldPath} terminée`);
+                }
+            }
+
+            async function migrateReportsToBranches() {
+                const reportTypes = ['dailyReports', 'weeklyReports', 'monthlyReports'];
+
+                for (const reportType of reportTypes) {
+                    const snapshot = await db.ref(reportType).once('value');
+                    if (!snapshot.exists()) continue;
+
+                    const updates = {};
+                    snapshot.forEach(child => {
+                        const report = child.val();
+                        const branch = report.branch || 'kacyiru';
+                        updates[`branches/${branch}/reports/${reportType}/${child.key}`] = report;
+                    });
+
+                    await db.ref().update(updates);
+                    console.log(`Migration ${reportType} terminée`);
+                }
+            }
+
+            async function initClassesInFirebase() {
+                const classesByBranch = {
+                    kacyiru: [
+                        'N1A','N1B','N1C','N2A','N2B','N2C','N3A','N3B',
+                        'P1A','P1B','P2A','P2B','P3A','P3B','P4A','P4B','P5A','P5B','P6A','P6B'
+                    ],
+                    kimisagara: [
+                        'N1A','N1B','N2A','N2B','N3A',
+                        'P1A','P1B','P2A','P2B','P3A','P3B','P4','P5','P6'
+                    ],
+                    gisozi_maternelle: ['N1A','N1B','N1C','N2A','N2B','N2C','N3A','N3B','N3C'],
+                    gisozi_primaire: ['P1A','P1B','P2A','P2B','P3A','P3B','P4A','P4B','P5','P6']
+                };
+
+                const updates = {};
+                for (const [branch, classes] of Object.entries(classesByBranch)) {
+                    classes.forEach(cls => {
+                        updates[`branches/${branch}/classes/${cls}`] = {
+                            name: cls,
+                            level: cls.startsWith('N') ? 'nursery' : 'primary',
+                            active: true,
+                            createdAt: Date.now()
+                        };
+                    });
+                }
+
+                await db.ref().update(updates);
+                console.log('Classes initialisées dans Firebase');
+            }
+
+            function downloadRegistrationForm(studentId) {
+                const student = students.find(s => s.id === studentId || s.reference === studentId);
+                if (!student) {
+                    showToast('Student not found for registration form.', 'error');
+                    return;
+                }
+            
+                const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+            
+                // Header
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(16);
+                doc.text('FORMULAIRE D\'INSCRIPTION SCOLAIRE', pageWidth / 2, 20, { align: 'center' });
+                doc.setFontSize(14);
+                doc.text('EDEN FAMILY SCHOOL', pageWidth / 2, 30, { align: 'center' });
+                doc.setFontSize(12);
+                doc.text('MATERNELLE (N1, N2, N3) ET PRIMAIRE(P1, P2, P3, P4)', pageWidth / 2, 40, { align: 'center' });
+                doc.setFontSize(10);
+                doc.text('BRANCHE DE KACYIRU, GISOZI, KIMISAGARA', pageWidth / 2, 48, { align: 'center' });
+            
+                // School logos (colored rectangles)
+                doc.setFillColor(46, 139, 87); // Green
+                doc.rect(10, 10, 20, 15, 'F'); // Left logo
+                doc.rect(pageWidth - 30, 10, 20, 15, 'F'); // Right logo
+            
+                let cursorY = 60;
+            
+                // SECTION — INFORMATION DE L'ENFANT
+                doc.setLineWidth(0.5);
+                doc.rect(10, cursorY, pageWidth - 20, 80); // Bordered box
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('INFORMATION DES BASES DE L\'ENFANT', 15, cursorY + 8);
+                cursorY += 15;
+            
+                // Fields with boxes
+                const fields = [
+                    ['Nom-prénom:', student.name || '', 'Sexe:', student.gender === 'GARCON' ? 'GARÇON' : 'FILLE'],
+                    ['École de provenance:', student.previousSchool || '', 'Date de naissance:', student.birthDate ? new Date(student.birthDate).toLocaleDateString('fr-FR') : ''],
+                    ['Année scolaire:', getCurrentAcademicYearLabel(), '', ''],
+                    ['Classe:', student.class || '', 'Classe affectée:', student.class || '']
+                ];
+            
+                fields.forEach(([label1, value1, label2, value2]) => {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(10);
+                    doc.text(label1, 15, cursorY);
+                    doc.rect(50, cursorY - 5, 60, 8);
+                    doc.text(value1, 52, cursorY + 2);
+                    if (label2) {
+                        doc.text(label2, 120, cursorY);
+                        doc.rect(155, cursorY - 5, 40, 8);
+                        doc.text(value2, 157, cursorY + 2);
+                    }
+                    cursorY += 10;
+                });
+            
+                // Branche checkboxes
+                doc.text('Branche:', 15, cursorY);
+                const branches = ['KACYIRU', 'GISOZI', 'KIMISAGARA'];
+                branches.forEach((branch, index) => {
+                    const branchX = 50 + index * 50;
+                    doc.rect(branchX, cursorY - 5, 5, 5); // Checkbox
+                    if (getBranchName(student.branch).includes(branch)) {
+                        doc.text('✓', branchX + 1, cursorY + 1); // Checkmark
+                    }
+                    doc.text(branch, branchX + 8, cursorY);
+                });
+                cursorY += 10;
+            
+                // Transport bus checkbox
+                doc.text('Transport bus:', 15, cursorY);
+                doc.rect(50, cursorY - 5, 5, 5);
+                if (student.transportEnrolled) {
+                    doc.text('✓', 51, cursorY + 1);
+                }
+                cursorY += 20;
+            
+                // SECTION — CHEF DE FAMILLE (left)
+                doc.rect(10, cursorY, (pageWidth - 30) / 2, 40);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('CHEF DE FAMILLE', 15, cursorY + 8);
+                cursorY += 15;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text('Nom-prénom:', 15, cursorY);
+                doc.rect(50, cursorY - 5, 60, 8);
+                doc.text(student.parent || '', 52, cursorY + 2);
+                cursorY += 10;
+                doc.text('Numéro de Téléphone:', 15, cursorY);
+                doc.rect(50, cursorY - 5, 60, 8);
+                doc.text(student.parentPhone || '', 52, cursorY + 2);
+                cursorY += 10;
+                doc.text('Numéro de la pièce d\'identité:', 15, cursorY);
+                doc.rect(50, cursorY - 5, 60, 8);
+                doc.text(student.parentID || '', 52, cursorY + 2);
+            
+                // SECTION — LA CONJOINT(E) (right, same Y)
+                const rightSectionX = 10 + (pageWidth - 30) / 2 + 10;
+                let rightY = cursorY - 25;
+                doc.rect(rightSectionX, rightY, (pageWidth - 30) / 2, 40);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('LA CONJOINT(E)', rightSectionX + 5, rightY + 8);
+                rightY += 15;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text('Nom-prénom:', rightSectionX + 5, rightY);
+                doc.rect(rightSectionX + 40, rightY - 5, 60, 8);
+                doc.text(student.spouseName || '', rightSectionX + 42, rightY + 2);
+                rightY += 10;
+                doc.text('Numéro de Téléphone:', rightSectionX + 5, rightY);
+                doc.rect(rightSectionX + 40, rightY - 5, 60, 8);
+                doc.text(student.spousePhone || '', rightSectionX + 42, rightY + 2);
+                rightY += 10;
+                doc.text('Numéro de la pièce d\'identité:', rightSectionX + 5, rightY);
+                doc.rect(rightSectionX + 40, rightY - 5, 60, 8);
+                doc.text(student.spouseID || '', rightSectionX + 42, rightY + 2);
+            
+                cursorY += 20;
+            
+                // SECTION — ADRESSE
+                doc.rect(10, cursorY, pageWidth - 20, 20);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('ADRESSE', 15, cursorY + 8);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text(student.address || '', 50, cursorY + 12);
+                cursorY += 30;
+            
+                // SCHOOL AUTHORITIES
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(12);
+                doc.text('numéro des autoritaires scolaire :DIRECTEUR: 0788883842', 15, cursorY);
+                cursorY += 8;
+                doc.text('COMPTABLE: 0792570074', 15, cursorY);
+                cursorY += 20;
+            
+                // FOOTER — Signature boxes
+                const boxWidth = 60;
+                const boxHeight = 25;
+                const leftX = 20;
+                const rightX = pageWidth - 20 - boxWidth;
+                doc.rect(leftX, cursorY, boxWidth, boxHeight);
+                doc.rect(rightX, cursorY, boxWidth, boxHeight);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text('AUTORITÉ SCOLAIRE', leftX + boxWidth / 2, cursorY + 8, { align: 'center' });
+                doc.text('PARENT', rightX + boxWidth / 2, cursorY + 8, { align: 'center' });
+                doc.text('SIGNATURE', pageWidth / 2, cursorY + boxHeight + 10, { align: 'center' });
+            
+                const fileName = `Registration_Form_${student.reference || studentId}.pdf`;
+                doc.save(fileName);
+                showToast('Registration form downloaded!', 'success');
+            }        let currentRegisteredStudentId = null;
+            let currentRegisteredStudentData = null;
+
+            // Fonction helper pour obtenir la branche Firebase pour les travailleurs
+            function getFirebaseBranchForWorkers(selected) {
+                const normalized = (selected || '').toString().trim().toLowerCase();
+                if (['gisozi_maternelle', 'gisozi_primaire'].includes(normalized)) {
+                    return 'gisozi';
+                }
+                if (['kacyiru_maternelle', 'kacyiru_creche'].includes(normalized)) {
+                    return 'kacyiru';
+                }
+                return normalized;
+            }
+
+            function getAllowedBranchesForCurrentUser() {
+                const rawBranch = (currentUser?.branch || currentUser?.branche || '').toString().trim().toLowerCase();
+                if (!rawBranch) {
+                    return ['kacyiru', 'kimisagara', 'gisozi_maternelle', 'gisozi_primaire'];
+                }
+
+                if (rawBranch === 'kacyiru' && (currentUser?.role || '').toString().trim().toLowerCase() === 'comptable') {
+                    return ['kacyiru', 'gisozi_maternelle', 'gisozi_primaire'];
+                }
+
+                if (['gisozi', 'gisozi_maternelle', 'gisozi_primaire'].includes(rawBranch)) {
+                    return ['gisozi_maternelle', 'gisozi_primaire'];
+                }
+
+                return [rawBranch];
+            }
+
+            function isBranchAllowedForCurrentUser(branchId) {
+                return getAllowedBranchesForCurrentUser().includes(branchId);
+            }
+
+            function getDefaultBranchForCurrentUser() {
+                const rawBranch = (currentUser?.branch || currentUser?.branche || '').toString().trim().toLowerCase();
+                if (rawBranch === 'gisozi_primaire' || rawBranch === 'gisozi_maternelle') {
+                    return rawBranch;
+                }
+                if (rawBranch === 'gisozi') {
+                    return 'gisozi_maternelle';
+                }
+                return rawBranch || 'kacyiru';
+            }
+
+            function applyBranchAccessControl() {
+                const cards = {
+                    kacyiru: document.getElementById('branchKacyiru'),
+                    kimisagara: document.getElementById('branchKimisagara'),
+                    gisozi_maternelle: document.getElementById('branchGisozi_maternelle'),
+                    gisozi_primaire: document.getElementById('branchGisozi_primaire')
+                };
+
+                const allowed = new Set(getAllowedBranchesForCurrentUser());
+                Object.entries(cards).forEach(([branchId, element]) => {
+                    if (!element) return;
+                    element.classList.toggle('disabled', !allowed.has(branchId));
+                });
+            }
+
+            function normalizeStudentBranch(branchId) {
+                if (!branchId) return 'kacyiru';
+                const normalized = branchId.toString().trim().toLowerCase();
+                if (['gisozi_maternelle', 'gisozi_primaire', 'kacyiru', 'kacyiru_maternelle', 'kacyiru_creche', 'kimisagara', 'gisozi'].includes(normalized)) {
+                    return normalized;
+                }
+                return normalized;
+            }
+
+            function getSelectedStudentLevel(branchId) {
+                if (branchId === 'gisozi_maternelle') return 'Maternelle';
+                if (branchId === 'gisozi_primaire') return 'Primaire';
+                return null;
+            }
+
+            function matchesSelectedStudentLevel(student, branchId) {
+                const selectedLevel = getSelectedStudentLevel(branchId);
+                if (!selectedLevel) return true;
+
+                const studentClass = (student.classes || student.class || student.classe || '').toString().trim().toUpperCase();
+                const studentLevel = (student.level || student.degre || '').toString().trim().toLowerCase();
+                const normalizedLevel = studentLevel === 'maternelle' ? 'nursery' : studentLevel === 'primaire' ? 'primary' : studentLevel;
+                const inferredLevel = studentClass.startsWith('N') ? 'nursery' : studentClass.startsWith('P') ? 'primary' : '';
+                const levelToCheck = normalizedLevel || inferredLevel;
+
+                if (selectedLevel === 'Maternelle') {
+                    return ['maternelle', 'nursery'].includes(levelToCheck);
+                }
+
+                if (selectedLevel === 'Primaire') {
+                    return ['primaire', 'primary'].includes(levelToCheck);
+                }
+
+                return true;
+            }
+
+            function normalizeBranchId(branchId) {
+                return (branchId || '').toString().trim().toLowerCase();
+            }
+
+            function matchesBranchAndLevelForSelection(student, branchSel) {
+                if (!student) return false;
+                const activeBranch = normalizeBranchId(branchSel || selectedBranch);
+                const studentBranch = normalizeBranchId(student.branch || student.branche);
+                const firebaseBranch = getFirebaseBranchForWorkers(activeBranch);
+                if (studentBranch !== firebaseBranch && studentBranch !== activeBranch) return false;
+                return matchesSelectedStudentLevel(student, activeBranch);
+            }
+
+            function matchesPaymentBranchAndLevelForSelection(payment, branchSel) {
+                if (!payment) return false;
+
+                const activeBranch = normalizeBranchId(branchSel || selectedBranch);
+                const firebaseBranch = getFirebaseBranchForWorkers(activeBranch);
+                const student = students.find(s => s.id === payment.studentId);
+
+                if (student) {
+                    return matchesBranchAndLevelForSelection(student, activeBranch);
+                }
+
+                if (payment.branch !== firebaseBranch && payment.branch !== activeBranch) return false;
+
+                const selectedLevel = getSelectedStudentLevel(activeBranch);
+                return !selectedLevel;
+            }
+
+            // ============================================
+            // CORRESPONDANCE ROBUSTE DE BRANCHE POUR L'INSCRIPTION
+            // Gère les anciennes valeurs génériques ('gisozi', 'kacyiru') 
+            // en plus des valeurs précises ('gisozi_maternelle', etc.)
+            // ============================================
+            function registrationPaymentMatchesBranch(payment, targetBranch) {
+                if (!payment) return false;
+
+                const target = (targetBranch || '').toString().trim().toLowerCase();
+
+                // 1. Priorité : si on a le studentId, on se fie à la branche ACTUELLE de l'élève
+                //    (plus fiable que la branche figée au moment du paiement)
+                if (payment.studentId) {
+                    const student = students.find(s => s.id === payment.studentId);
+                    if (student) {
+                        return matchesBranchAndLevelForSelection(student, target);
+                    }
+                }
+
+                // 2. Repli : comparer directement la branche stockée sur le paiement
+                const paymentBranch = (payment.branch || '').toString().trim().toLowerCase();
+                if (paymentBranch === target) return true;
+
+                // 3. Gestion des anciennes valeurs génériques (avant la séparation Maternelle/Primaire)
+                if (paymentBranch === 'gisozi' && (target === 'gisozi_maternelle' || target === 'gisozi_primaire')) {
+                    // On essaie de deviner la section via la classe de l'élève
+                    const cls = (payment.studentClass || '').toString().trim().toUpperCase();
+                    if (cls.startsWith('N')) return target === 'gisozi_maternelle';
+                    if (cls.startsWith('P')) return target === 'gisozi_primaire';
+                    // Classe inconnue : on l'affiche quand même (mieux vaut visible que perdu)
+                    return true;
+                }
+
+                if (paymentBranch === 'kacyiru' && ['kacyiru', 'kacyiru_maternelle', 'kacyiru_creche'].includes(target)) {
+                    return true;
+                }
+
+                return false;
+            }
+
+            async function loadBranchClasses(branchId) {
+                const activeBranch = branchId || selectedBranch;
+                try {
+                    const classesSnap = await db.ref(`branches/${activeBranch}/classes`).once('value');
+                    let classNames = [];
+
+                    if (classesSnap.exists()) {
+                        classesSnap.forEach(child => {
+                            const val = child.val();
+                            const isActive = (typeof val === 'object') ? val.active !== false : true;
+                            if (!isActive) return;
+                            const name = (typeof val === 'object') ? (val.name || child.key) : child.key;
+                            if (name) classNames.push(name.toString().trim());
+                        });
+                    }
+
+                    classNames = [...new Set(classNames)].filter(Boolean).sort((a, b) => a.localeCompare(b, 'fr'));
+                    branchClassesCache[activeBranch] = classNames;
+                    return classNames;
+                } catch (error) {
+                    console.error('Error loading branch classes:', error);
+                    branchClassesCache[activeBranch] = [];
+                    return [];
+                }
+            }
+
+            function getBranchClasses(branchId) {
+                const activeBranch = branchId || selectedBranch;
+                const cached = branchClassesCache[activeBranch] || [];
+                if (cached.length > 0) return cached;
+
+                const fallbackClasses = extractUniqueClasses(getStudentsForCurrentBranch(activeBranch));
+                branchClassesCache[activeBranch] = fallbackClasses;
+                return fallbackClasses;
+            }
+
+            function getLevelFromClassName(className, branchId) {
+                const normalizedClass = (className || '').toString().trim().toUpperCase();
+                if (normalizedClass.startsWith('N')) return 'Maternelle';
+                if (normalizedClass.startsWith('P')) return 'Primaire';
+                return getSelectedStudentLevel(branchId) || '';
+            }
+
+            // Fonction utilitaire pour enregistrer les activités
+            async function logActivity(action, description, type = 'general', relatedData = {}) {
+                try {
+                    if (!currentUser) return;
+                    
+                    const activity = {
+                        timestamp: Date.now(),
+                        action: action,
+                        description: description,
+                        type: type,
+                        userId: currentUserUID,
+                        userName: currentUser.name,
+                        userRole: currentUser.role,
+                        userBranch: currentUser.branch,
+                        ...relatedData
+                    };
+                    
+                    await activitiesRef.push(activity);
+                    console.log('Activity recorded:', action);
+                } catch (error) {
+                    console.error('Error recording activity:', error);
+                }
+            }
+
+            // Translations
+            const translations = {
+                fr: {
+                    dashboard: 'Tableau de bord',
+                    workers: 'Gestion Travailleurs',
+                    payroll: 'Générer Payroll',
+                    payments: 'Paiements',
+                    students: 'Élèves',
+                    coaching: 'Coaching',
+                    transport: 'Transport',
+                    registration: 'Inscription',
+                    reports: 'Rapports Financiers',
+                    settings: 'Paramètres',
+                    financialDashboard: 'Tableau de bord financier',
+                    payrollGeneration: 'Génération du Payroll',
+                    totalWorkers: 'Total Travailleurs',
+                    monthlyPayroll: 'Payroll du mois',
+                    bankPayments: 'Paiements Banque',
+                    studentPayments: 'Paiements Élèves',
+                    studentPaymentsTitle: 'Paiements des Élèves',
+                    workerManagement: 'Gestion des travailleurs',
+                    addWorker: 'Ajouter un travailleur',
+                    addDebt: 'Ajouter une dette',
+                    generatePayroll: 'Générer la paie',
+                    savePayroll: 'Enregistrer Payroll',
+                    generateSalaryTable: 'Générer Tableau Salaires',
+                    currentDebts: 'Dettes en cours du mois',
+                    studentManagement: 'Gestion des élèves',
+                    addStudent: 'Ajouter un élève',
+                    searchStudent: 'Rechercher un élève...',
+                    financialReports: 'Rapports financiers',
+                    daily: 'Journalier',
+                    weekly: 'Hebdomadaire',
+                    monthly: 'Mensuel',
+                    systemSettings: 'Paramètres système',
+                    accountantInfo: 'Informations comptable',
+                    systemConfigDesc: 'Configuration et préférences du système',
+                    logout: 'Déconnexion',
+                    noAnnouncements: "Pas d'annonces du directeur ou secrétaire",
+                    loadingAnnouncements: 'Chargement des annonces...',
+                    currency: 'Devise',
+                    fiscalYear: 'Année fiscale',
+                    totalStudents: 'Total Élèves',
+                    realPayrollStats: 'Statistiques réelles du payroll',
+                    announcements: 'Annonces Directeur/Secrétaire',
+                    noWorkersFound: 'Aucun travailleur trouvé',
+                    newPayment: 'Nouveau Paiement',
+                    checkDuplicates: 'Vérifier Doublons',
+                    exportExcel: 'Exporter Excel',
+                    exportPDF: 'Exporter PDF',
+                    schoolFeesConfig: 'Configuration Frais Scolaires',
+                    configureStudent: 'Configurer Élève',
+                    configureMultiple: 'Configurer Plusieurs',
+                    amountConfigured: 'MONTANT / RWF',
+                    dateConfigured: 'DATE CONFIGURÉE',
+                    registrationPayments: "Paiements d'Inscription",
+                    newRegistration: 'Nouvelle Inscription',
+                    refresh: 'Rafraîchir',
+                    ref: 'RÉF',
+                    branch: 'BRANCHE',
+                    coachingConfig: 'Configuration Coaching',
+                    assignedTeacher: 'ENSEIGNANT ASSIGNÉ',
+                    monthlyAmount: 'MONTANT MENSUEL / RWF',
+                    transportConfig: 'Configuration Transport',
+                    studentsManagement: 'Gestion des Élèves',
+                    searchPayment: 'Rechercher un paiement...',
+                    allClasses: 'Toutes les classes',
+                    importFile: 'Importer fichier',
+                    filterByClass: 'Filtrer par Classe',
+                    filterByAge: 'Filtrer par Âge',
+                    sortBy: 'Trier par',
+                    nameAZ: 'Nom (A-Z)',
+                    nameZA: 'Nom (Z-A)',
+                    classAZ: 'Classe (A-Z)',
+                    classZA: 'Classe (Z-A)',
+                    ageAsc: 'Âge (Croissant)',
+                    ageDesc: 'Âge (Décroissant)',
+                    dateAsc: 'Date Ajout (Ancien)',
+                    dateDesc: 'Date Ajout (Récent)',
+                    sortAlphabetically: 'Trier Alphabétiquement',
+                    birthDate: 'DATE NAISSANCE',
+                    age: 'ÂGE',
+                    totalPaid: 'TOTAL PAYÉ',
+                    noStudentsFound: 'Aucun élève trouvé',
+                    searchFilters: 'Filtres de recherche',
+                    financialReports: 'Rapports Financiers',
+                    dailyReport: 'Rapport Financier Journalier',
+                    weeklyReport: 'Rapport Financier Hebdomadaire',
+                    monthlyReport: 'Rapport Financier Mensuel',
+                    reportHistory: 'Historique des Rapports',
+                    openingBalance: 'Solde Ouverture',
+                    income: 'ENTRÉES',
+                    expenses: 'DÉPENSES',
+                    totalExpenses: 'Total Dépenses',
+                    closingBalance: 'Solde Clôture',
+                    difference: 'Différence',
+                    justification: 'Justification',
+                    addExpense: 'Ajouter une Dépense',
+                    expenseJustification: 'Justification de la dépense *',
+                    expenseAmount: 'Montant (RWF) *',
+                    add: 'Ajouter',
+                    addedExpenses: 'Dépenses Ajoutées (Modifier / Supprimer)',
+                    reportActions: 'Actions du Rapport',
+                    generalObservations: 'Observations Générales',
+                    saveReport: 'Enregistrer le Rapport',
+                    today: "Aujourd'hui",
+                    yesterday: 'Hier',
+                    fullNameLabel: 'Nom Complet',
+                    titlePosition: 'Titre/Poste',
+                    accountSecurity: 'Sécurité du Compte',
+                    newLoginEmail: 'Nouvel email de connexion',
+                    currentPassword: 'Mot de passe actuel',
+                    newPassword: 'Nouveau mot de passe',
+                    confirmPassword: 'Confirmer le nouveau mot de passe',
+                    save: 'Enregistrer',
+                    reset: 'Réinitialiser',
+                    selectedBranch: 'Branche sélectionnée',
+                    date: 'Date',
+                    january: 'Janvier',
+                    february: 'Février',
+                    march: 'Mars',
+                    april: 'Avril',
+                    may: 'Mai',
+                    june: 'Juin',
+                    july: 'Juillet',
+                    august: 'Août',
+                    september: 'Septembre',
+                    october: 'Octobre',
+                    november: 'Novembre',
+                    december: 'Décembre',
+                    cancel: 'Annuler',
+                    delete: 'Supprimer',
+                    edit: 'Modifier',
+                    view: 'Voir',
+                    close: 'Fermer',
+                    loading: 'Chargement...',
+                    noData: 'Aucune donnée',
+                    success: 'Succès',
+                    error: 'Erreur',
+                    information: 'Information',
+                    years: 'ans',
+                    to: 'à',
+                    from: 'De',
+                    week: 'Semaine',
+                    previousWeek: 'Semaine précédente',
+                    nextWeek: 'Semaine suivante',
+                    previousMonth: 'Mois précédent',
+                    nextMonth: 'Mois suivant',
+                    weeklyTotal: 'TOTAL HEBDOMADAIRE',
+                    monthlyTotal: 'TOTAL MENSUEL',
+                    generate: 'Générer',
+                    update: 'Mettre à jour',
+                    import: 'Importer',
+                    export: 'Exporter',
+                    print: 'Imprimer',
+                    download: 'Télécharger'
+                },
+                en: {
+                    dashboard: 'Dashboard',
+                    workers: 'Workers Management',
+                    payroll: 'Generate Payroll',
+                    payments: 'Payments',
+                    students: 'Students',
+                    coaching: 'Coaching',
+                    transport: 'Transport',
+                    registration: 'Inscription',
+                    reports: 'Financial Reports',
+                    settings: 'Settings',
+                    financialDashboard: 'Financial Dashboard',
+                    payrollGeneration: 'Payroll Generation',
+                    totalWorkers: 'Total Workers',
+                    monthlyPayroll: 'Monthly Payroll',
+                    bankPayments: 'Bank Payments',
+                    studentPayments: 'Student Payments',
+                    studentPaymentsTitle: 'Student Payments',
+                    workerManagement: 'Workers Management',
+                    addWorker: 'Add Worker',
+                    addDebt: 'Add Debt',
+                    generatePayroll: 'Generate Payroll',
+                    savePayroll: 'Save Payroll',
+                    generateSalaryTable: 'Generate Salary Table',
+                    currentDebts: 'Current Debts for This Month',
+                    studentManagement: 'Students Management',
+                    addStudent: 'Add Student',
+                    searchStudent: 'Search a student...',
+                    financialReports: 'Financial Reports',
+                    daily: 'Daily',
+                    weekly: 'Weekly',
+                    monthly: 'Monthly',
+                    systemSettings: 'System Settings',
+                    accountantInfo: 'Accountant Information',
+                    systemConfigDesc: 'System configuration and preferences',
+                    logout: 'Logout',
+                    noAnnouncements: 'No announcements from director or secretary',
+                    loadingAnnouncements: 'Loading announcements...',
+                    currency: 'Currency',
+                    fiscalYear: 'Fiscal Year',
+                    totalStudents: 'Total Students',
+                    realPayrollStats: 'Real Payroll Statistics',
+                    announcements: 'Director/Secretary Announcements',
+                    noWorkersFound: 'No workers found',
+                    newPayment: 'New Payment',
+                    checkDuplicates: 'Check Duplicates',
+                    exportExcel: 'Export Excel',
+                    exportPDF: 'Export PDF',
+                    schoolFeesConfig: 'School Fees Configuration',
+                    configureStudent: 'Configure Student',
+                    configureMultiple: 'Configure Multiple',
+                    amountConfigured: 'AMOUNT / RWF',
+                    dateConfigured: 'DATE CONFIGURED',
+                    registrationPayments: 'Registration Payments',
+                    newRegistration: 'New Registration',
+                    refresh: 'Refresh',
+                    ref: 'REF',
+                    branch: 'BRANCH',
+                    coachingConfig: 'Coaching Configuration',
+                    assignedTeacher: 'ASSIGNED TEACHER',
+                    monthlyAmount: 'MONTHLY AMOUNT / RWF',
+                    transportConfig: 'Transport Configuration',
+                    studentsManagement: 'Students Management',
+                    searchPayment: 'Search payment...',
+                    allClasses: 'All classes',
+                    importFile: 'Import file',
+                    filterByClass: 'Filter by Class',
+                    filterByAge: 'Filter by Age Range',
+                    sortBy: 'Sort by',
+                    nameAZ: 'Name (A-Z)',
+                    nameZA: 'Name (Z-A)',
+                    classAZ: 'Class (A-Z)',
+                    classZA: 'Class (Z-A)',
+                    ageAsc: 'Age (Ascending)',
+                    ageDesc: 'Age (Descending)',
+                    dateAsc: 'Added Date (Oldest)',
+                    dateDesc: 'Added Date (Newest)',
+                    sortAlphabetically: 'Sort Alphabetically',
+                    birthDate: 'BIRTH DATE',
+                    age: 'AGE',
+                    totalPaid: 'TOTAL PAID',
+                    noStudentsFound: 'No students found',
+                    searchFilters: 'Search Filters',
+                    financialReports: 'Financial Reports',
+                    dailyReport: 'Daily Financial Report',
+                    weeklyReport: 'Weekly Financial Report',
+                    monthlyReport: 'Monthly Financial Report',
+                    reportHistory: 'Report History',
+                    openingBalance: 'Opening Balance',
+                    income: 'INCOME',
+                    expenses: 'EXPENSES',
+                    totalExpenses: 'Total Expenses',
+                    closingBalance: 'Closing Balance',
+                    difference: 'Difference',
+                    justification: 'Justification',
+                    addExpense: 'Add an Expense',
+                    expenseJustification: 'Expense Justification *',
+                    expenseAmount: 'Amount (RWF) *',
+                    add: 'Add',
+                    addedExpenses: 'Added Expenses (Edit / Delete)',
+                    reportActions: 'Report Actions',
+                    generalObservations: 'General Observations',
+                    saveReport: 'Save Report',
+                    today: 'Today',
+                    yesterday: 'Yesterday',
+                    fullNameLabel: 'Full Name',
+                    titlePosition: 'Title/Position',
+                    accountSecurity: 'Account Security',
+                    newLoginEmail: 'New login email',
+                    currentPassword: 'Current password',
+                    newPassword: 'New password',
+                    confirmPassword: 'Confirm new password',
+                    save: 'Save',
+                    reset: 'Reset',
+                    selectedBranch: 'Selected Branch',
+                    date: 'Date',
+                    january: 'January',
+                    february: 'February',
+                    march: 'March',
+                    april: 'April',
+                    may: 'May',
+                    june: 'June',
+                    july: 'July',
+                    august: 'August',
+                    september: 'September',
+                    october: 'October',
+                    november: 'November',
+                    december: 'December',
+                    cancel: 'Cancel',
+                    delete: 'Delete',
+                    edit: 'Edit',
+                    view: 'View',
+                    close: 'Close',
+                    loading: 'Loading...',
+                    noData: 'No data',
+                    success: 'Success',
+                    error: 'Error',
+                    information: 'Information',
+                    years: 'years',
+                    to: 'to',
+                    from: 'From',
+                    week: 'Week',
+                    previousWeek: 'Previous Week',
+                    nextWeek: 'Next Week',
+                    previousMonth: 'Previous Month',
+                    nextMonth: 'Next Month',
+                    weeklyTotal: 'WEEKLY TOTAL',
+                    monthlyTotal: 'MONTHLY TOTAL',
+                    generate: 'Generate',
+                    update: 'Update',
+                    import: 'Import',
+                    export: 'Export',
+                    print: 'Print',
+                    download: 'Download'
+                }
+            };
+
+            function t(key) {
+                return (translations[currentLanguage] && translations[currentLanguage][key])
+                    ? translations[currentLanguage][key]
+                    : (translations.en[key] || key);
+            }
+
+            // Initialize
+            document.addEventListener('DOMContentLoaded', function() {
+                updateDateTime();
+                setInterval(updateDateTime, 60000);
+                updateCurrentPeriod();
+                loadBranchClasses(selectedBranch);
+                
+                document.getElementById('userRole').textContent = "Chief Accountant";
+                
+                setupFirebaseListeners();
+                initializeCharts();
+                selectBranch('kacyiru'); // Sélectionner la branche par défaut
+                
+                // Load configurations
+                loadTermConfig();
+                loadOpeningBalanceReports();
+                
+                // Générer une référence pour le nouvel élève
+                generateStudentReference();
+                // Apply initial translations
+                const savedLanguage = localStorage.getItem('edenLanguage') || currentLanguage || 'en';
+                currentLanguage = savedLanguage;
+                applyTranslations(currentLanguage);
+
+                // Language toggle handler
+                const langBtn = document.getElementById('languageToggle');
+                if (langBtn) {
+                    langBtn.addEventListener('click', function () {
+                        currentLanguage = (currentLanguage === 'fr') ? 'en' : 'fr';
+                        applyTranslations(currentLanguage);
+                        showToast(
+                            currentLanguage === 'fr' ? 'Langue changée en Français' : 'Language changed to English',
+                            'success'
+                        );
+                    });
+                }
+
+                // Fee configuration change handlers
+                document.getElementById('feeQuarter').addEventListener('change', loadFeeConfiguration);
+                document.getElementById('feeYear').addEventListener('change', loadFeeConfiguration);
+
+                // Student payment type change handler
+                document.getElementById('studentPaymentType').addEventListener('change', async () => {
+                    await populatePaymentAmount();
+                    updateStudentPaymentTypeRequirements();
+                            document.getElementById('studentPaymentType').addEventListener('change', function() {
+                                const isTransport = this.value === 'transport';
+                                const branchRow = document.getElementById('transportPaymentBranchRow');
+                                if (branchRow) branchRow.style.display = isTransport ? '' : 'none';
+                                if (isTransport) {
+                                    // Reset branch to current branch
+                                    const sel = document.getElementById('transportPaymentBranch');
+                                    if (sel) sel.value = selectedBranch;
+                                    populateStudentClassFilter();
+                                    loadStudentsByClass();
+                                }
+                            }, true);
+                });
+                document.getElementById('studentPaymentMode').addEventListener('change', updateStudentPaymentPayerField);
+                document.getElementById('studentPaymentDate').addEventListener('change', updateStudentPaymentRemainingBalance);
+                document.getElementById('studentCoachingMonth').addEventListener('change', handleStudentCoachingMonthChange);
+            });
+
+            function getPaidMonthsForStudentByType(studentId, paymentType, excludeFeeId = null) {
+                return new Set((studentFees || [])
+                    .filter(payment => payment.studentId === studentId)
+                    .filter(payment => payment.paymentType === paymentType)
+                    .filter(payment => isPaymentInCurrentTerm(payment))
+                    .filter(payment => !excludeFeeId || payment.id !== excludeFeeId)
+                    .map(payment => payment.paymentMonth || getYearMonthValue(payment.paymentDate))
+                    .filter(Boolean));
+            }
+
+            function populateStudentCoachingMonths(selectedMonth = '') {
+                const studentId = document.getElementById('studentSelect').value;
+                const select = document.getElementById('studentCoachingMonth');
+                const paymentType = document.getElementById('studentPaymentType').value;
+                if (!select) return;
+
+                const isTransportMultiSelect = paymentType === 'transport' && !currentStudentFeeId;
+                select.innerHTML = isTransportMultiSelect ? '' : '<option value="">Select month</option>';
+                const termMonths = getCurrentTermMonths();
+                const paidMonths = studentId ? getPaidMonthsForStudentByType(studentId, paymentType, currentStudentFeeId) : new Set();
+                const selectedMonthValues = Array.isArray(selectedMonth)
+                    ? selectedMonth
+                    : (selectedMonth ? [selectedMonth] : []);
+
+                termMonths.forEach((monthValue, idx) => {
+                    const monthDate = new Date(`${monthValue}-01`);
+                    const monthLabel = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    const isPaid = paidMonths.has(monthValue);
+                    const isSelected = selectedMonthValues.includes(monthValue);
+
+                    const opt = document.createElement('option');
+                    opt.value = monthValue;
+                    opt.textContent = `Month ${idx + 1} - ${monthLabel}${isPaid && !isSelected ? ' [PAID]' : ''}`;
+                    opt.disabled = isPaid && !isSelected;
+                    if (isSelected) {
+                        opt.selected = true;
+                    }
+                    select.appendChild(opt);
+                });
+            }
+
+            function getSelectedStudentPaymentMonths() {
+                const monthSelect = document.getElementById('studentCoachingMonth');
+                if (!monthSelect) return [];
+
+                if (monthSelect.multiple) {
+                    return Array.from(monthSelect.selectedOptions || [])
+                        .map(option => option.value)
+                        .filter(Boolean);
+                }
+
+                return monthSelect.value ? [monthSelect.value] : [];
+            }
+
+            function handleStudentCoachingMonthChange() {
+                const paymentType = document.getElementById('studentPaymentType').value;
+                if (!['coaching', 'transport'].includes(paymentType)) return;
+                updateStudentPaymentRemainingBalance();
+            }
+
+            function updateStudentPaymentTypeRequirements(selectedMonth = '') {
+                const paymentType = document.getElementById('studentPaymentType').value;
+                const monthRow = document.getElementById('studentCoachingMonthRow');
+                const monthSelect = document.getElementById('studentCoachingMonth');
+                const paymentDate = document.getElementById('studentPaymentDate');
+                const monthLabel = document.getElementById('studentPaymentMonthLabel');
+                const monthHint = document.getElementById('studentPaymentMonthHint');
+
+                if (paymentType === 'coaching' || paymentType === 'transport') {
+                    monthRow.style.display = 'flex';
+                    monthSelect.required = true;
+                    paymentDate.readOnly = false;
+                    const transportMultiEnabled = paymentType === 'transport' && !currentStudentFeeId;
+                    monthSelect.multiple = transportMultiEnabled;
+                    monthSelect.size = transportMultiEnabled ? 3 : 1;
+                    if (monthLabel) {
+                        monthLabel.textContent = paymentType === 'coaching' ? 'Coaching Month *' : 'Transport Month *';
+                    }
+                    if (monthHint) {
+                        monthHint.textContent = paymentType === 'coaching'
+                            ? 'Choose one coaching month in this trimester (Month 1, Month 2, Month 3). Payment Date remains the real date paid.'
+                            : 'You can select one or multiple transport months in this trimester (Month 1, Month 2, Month 3).';
+                    }
+                    populateStudentCoachingMonths(selectedMonth);
+                    if (selectedMonth && !Array.isArray(selectedMonth)) {
+                        monthSelect.value = selectedMonth;
+                    }
+                } else {
+                    monthRow.style.display = 'none';
+                    monthSelect.required = false;
+                    monthSelect.multiple = false;
+                    monthSelect.size = 1;
+                    monthSelect.value = '';
+                    paymentDate.readOnly = false;
+                }
+            }
+
+            // Update the payer field based on payment mode
+            function updateStudentPaymentPayerField() {
+                const paymentMode = document.getElementById('studentPaymentMode').value;
+                const payerField = document.getElementById('studentParentDisplay');
+                const selectedStudent = students.find(s => s.id === document.getElementById('studentSelect').value);
+
+                if (paymentMode === 'momo') {
+                    payerField.value = 'Momo';
+                    payerField.readOnly = true;
+                    document.getElementById('studentParentHint').textContent = 'Payment is made by Mobile Money.';
+                } else {
+                    payerField.readOnly = false;
+                    payerField.value = (selectedStudent && selectedStudent.parent) ? selectedStudent.parent : '';
+                    document.getElementById('studentParentHint').textContent = 'Enter the depositor name for cash or the parent/guardian name if not found in the database.';
+                }
+            }
+
+            // Setup Firebase listeners
+            function setupFirebaseListeners() {
+                // Écouter les changements d'annonces
+                announcementsRef.orderByChild('timestamp').limitToLast(10).on('value', (snapshot) => {
+                    announcements = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const announcement = childSnapshot.val();
+                        announcements.push({
+                            id: childSnapshot.key,
+                            ...announcement
+                        });
+                    });
+                    announcements.sort((a, b) => b.timestamp - a.timestamp);
+                    updateFilteredAnnouncements();
+                });
+
+                // Écouter les changements de travailleurs
+                teachersRef.on('value', (snapshot) => {
+                    teachers = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const teacher = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        teachers.push(teacher);
+                    });
+                    updateStats();
+                    // refresh dropdowns that depend on teachers
+                    populatePayrollTeacherDropdown();
+                });
+
+                // Écouter les changements de dettes
+                debtsRef.on('value', (snapshot) => {
+                    debts = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const debt = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        debts.push(debt);
+                    });
+                    if (document.getElementById('teachers').classList.contains('active')) {
+                        loadCurrentMonthDebts();
+                    }
+                });
+
+                // Écouter les changements de travailleurs (works collection)
+                worksRef.on('value', (snapshot) => {
+                    workers = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const worker = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        workers.push(worker);
+                    });
+                    if (document.getElementById('teachers').classList.contains('active')) {
+                        loadWorkers();
+                    }
+                    updateDebtWorkerSelect();
+                });
+
+                // Écouter les changements d'élèves
+                studentsRef.on('value', (snapshot) => {
+                    students = [];
+                    snapshot.forEach((childSnapshot) => {
+                        students.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    });
+                    loadBranchClasses(selectedBranch);
+                    updateStats();
+                    populateClassFilter();
+                    populateStudentPaymentsClassFilter();
+                    if (document.getElementById('fees')?.classList.contains('active')) {
+                        loadFeesSection();
+                    }
+                    if (document.getElementById('transport')?.classList.contains('active')) {
+                        loadTransportSection();
+                    }
+                    if (document.getElementById('coaching')?.classList.contains('active')) {
+                        loadCoachingSection();
+                    }
+                    recalculateExpectedIncome();
+                });
+
+                // Écouter les changements de paiements élèves
+                studentFeesRef.on('value', (snapshot) => {
+                    studentFees = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const fee = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        studentFees.push(fee);
+                    });
+                    updateStats();
+                    populateStudentPaymentsClassFilter();
+                    if (document.getElementById('student-fees').classList.contains('active')) {
+                        loadStudentFees();
+                    }
+                    if (document.getElementById('students').classList.contains('active')) {
+                        applyStudentFilters();
+                    }
+                    
+                    // Si la section rapports est active, mettre à jour le tableau
+                    if (document.getElementById('reports').classList.contains('active')) {
+                        updateDailyReportTable();
+                        // Mettre à jour les rapports hebdo/mensuel si actifs
+                        if (document.querySelector('.weekly-report-section')?.style.display === 'block') {
+                            loadWeeklyReport();
+                        }
+                        if (document.querySelector('.monthly-report-section')?.style.display === 'block') {
+                            loadMonthlyReport();
+                        }
+                    }
+                    recalculateExpectedIncome();
+                });
+
+                // Écouter les configurations de frais
+                feeConfigRef.on('value', (snapshot) => {
+                    feeConfigurations = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const config = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        feeConfigurations.push(config);
+                    });
+                    recalculateExpectedIncome();
+                });
+
+                // Realtime listeners to update expected income automatically
+                studentFeesRef.on('value', recalculateExpectedIncome);
+                feesPaymentsRef.on('value', recalculateExpectedIncome);
+                coachingPaymentsRef.on('value', recalculateExpectedIncome);
+                transportPaymentsRef.on('value', recalculateExpectedIncome);
+                registrationPaymentsRef.on('value', recalculateExpectedIncome);
+                termConfigRef.on('value', (snapshot) => {
+                    currentTermConfig = snapshot.exists() ? snapshot.val() : currentTermConfig;
+                    window.currentTermConfig = currentTermConfig;
+                    recalculateExpectedIncome();
+                });
+
+                openingBalancesRef.on('value', (snapshot) => {
+                    openingBalances = snapshot.exists() ? snapshot.val() : {};
+                    if (document.getElementById('reports')?.classList.contains('active')) {
+                        updateDailyReportTable();
+                    }
+                });
+
+                closingBalancesRef.on('value', (snapshot) => {
+                    closingBalances = snapshot.exists() ? snapshot.val() : {};
+                    if (document.getElementById('reports')?.classList.contains('active')) {
+                        updateDailyReportTable();
+                    }
+                });
+
+                coachingPaymentsRef.on('value', (snapshot) => {
+                    coachingPayments = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const payment = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        coachingPayments.push(payment);
+                    });
+                    refreshReportsIfActive();
+                });
+
+                transportPaymentsRef.on('value', (snapshot) => {
+                    transportPayments = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const payment = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        transportPayments.push(payment);
+                    });
+                    if (document.getElementById('transport')?.classList.contains('active')) {
+                        loadTransport();
+                    }
+                    recalculateExpectedIncome();
+                    refreshReportsIfActive();
+                });
+
+                registrationPaymentsRef.on('value', (snapshot) => {
+                    registrationPayments = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const payment = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        registrationPayments.push(payment);
+                });
+                    recalculateExpectedIncome();
+                    if (document.getElementById("registration")?.classList.contains("active")) {
+                        loadRegistration();
+                    }
+                });
+
+                // Keep registration report synchronized with Secretary enrollments.
+                pendingInscriptionsRef.on("value", () => {
+                    if (document.getElementById("registration")?.classList.contains("active")) {
+                        loadRegistration();
+                    }
+                });
+
+                // Écouter l'historique des payrolls
+                payrollHistoryRef.on('value', (snapshot) => {
+                    payrollHistory = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const payroll = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        payrollHistory.push(payroll);
+                    });
+                    payrollHistory.sort((a, b) => b.timestamp - a.timestamp);
+                    // mettre à jour l'affichage si la section historique est ouverte
+                    if (document.querySelector('.payroll-history-section')?.style.display === 'block') {
+                        loadPayrollHistory();
+                    }
+                });
+
+                // Écouter l'historique des rapports
+                reportHistoryRef.on('value', (snapshot) => {
+                    reportHistory = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const report = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        reportHistory.push(report);
+                    });
+                    reportHistory.sort((a, b) => b.timestamp - a.timestamp);
+                    // Mettre à jour la table d'historique si affichée
+                    if (document.getElementById('reports').classList.contains('active')) {
+                        loadReportHistory();
+                    }
+                });
+
+                // Écouter les dépenses journalières
+                dailyExpensesRef.on('value', (snapshot) => {
+                    dailyExpenses = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const expense = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        dailyExpenses.push(expense);
+                    });
+                    if (document.getElementById('reports').classList.contains('active')) {
+                        updateExpensesList();
+                        updateDailyReportTable();
+                        if (document.querySelector('.weekly-report-section')?.style.display === 'block') {
+                            loadWeeklyReport();
+                        }
+                        if (document.querySelector('.monthly-report-section')?.style.display === 'block') {
+                            loadMonthlyReport();
+                        }
+                    }
+                });
+                
+                // Charger les paramètres du système
+                settingsRef.on('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        const settings = snapshot.val();
+                        if (settings.overtimeRate) document.getElementById('overtimeRate').value = settings.overtimeRate;
+                        if (settings.socialRate) document.getElementById('socialRate').value = settings.socialRate;
+                        if (settings.paymentDay) document.getElementById('paymentDay').value = settings.paymentDay;
+                        if (settings.currency) document.getElementById('currency').value = settings.currency;
+                        refreshPayrollPaymentDayPreview();
+                    }
+                });
+                
+                // Écouter les changements dans la collection "users" pour mettre à jour les informations du comptable courant
+                if (currentUserUID) {
+                    usersRef.child(currentUserUID).on('value', (snapshot) => {
+                        if (snapshot.exists()) {
+                            currentUser = {
+                                uid: currentUserUID,
+                                ...snapshot.val()
+                            };
+                            currentUserName = currentUser.name;
+                            updateUIWithUserInfo();
+                            console.log('User information updated:', currentUser);
+                        }
+                    });
+                }
+                
+                // Écouter les changements dans la collection "users" pour charger tous les utilisateurs (pour les listes)
+                usersRef.on('value', (snapshot) => {
+                    users = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const user = {
+                            uid: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        users.push(user);
+                    });
+                    console.log(`${users.length} users loaded from 'users' collection`);
+                });
+                
+                // Observer pour charger automatiquement le rapport quand la section est active
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                            const reportsSection = document.getElementById('reports');
+                            if (reportsSection.classList.contains('active')) {
+                                // Définir la date d'aujourd'hui par défaut
+                                const today = new Date().toISOString().split('T')[0];
+                                document.getElementById('dailyReportDate').value = today;
+                                
+                                // Charger le rapport après un délai
+                                setTimeout(() => {
+                                    loadDailyReport();
+                                    loadReportHistory();
+                                }, 300);
+                            }
+                        }
+                    });
+                });
+                
+                observer.observe(document.getElementById('reports'), {
+                    attributes: true
+                });
+            }
+
+            // Update date and time
+            function updateDateTime() {
+                const now = new Date();
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+                document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            }
+
+            // Navigation
+            function showSection(sectionId, event) {
+                const currentSection = document.querySelector('.section.active');
+                if (currentSection) {
+                    currentSection.classList.remove('active');
+                }
+                
+                setTimeout(() => {
+                    document.querySelectorAll('.section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    const targetSection = document.getElementById(sectionId);
+                    if (targetSection) {
+                        targetSection.classList.add('active');
+                        if (sectionId === 'transport') {
+                            loadTransportSection();
+                        }
+                    } else {
+                        console.warn(`Section '${sectionId}' does not exist.`);
+                    }
+                    
+                    document.querySelectorAll('.nav-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // Déterminer quel bouton activer - soit via l'événement, soit en cherchant par data-section
+                    if (event && event.target) {
+                        const navBtn = event.target.closest('.nav-btn');
+                        if (navBtn) {
+                            navBtn.classList.add('active');
+                        }
+                    } else {
+                        // Fallback: chercher le bouton en parcourant les onclick
+                        const navBtns = document.querySelectorAll('.nav-btn');
+                        for (const btn of navBtns) {
+                            const onclickAttr = btn.getAttribute('onclick');
+                            if (onclickAttr && onclickAttr.includes(`showSection('${sectionId}')`)) {
+                                btn.classList.add('active');
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (sectionId === 'teachers') {
+                        loadWorkers();
+                        loadCurrentMonthDebts();
+                    } else if (sectionId === 'payroll') {
+                        loadPayroll();
+                        populatePayrollTeacherDropdown();
+                        loadCurrentMonthDebts();
+                    } else if (sectionId === 'student-fees') {
+                        loadStudentFees();
+                    } else if (sectionId === 'fees') {
+                        loadFeesSection();
+                    } else if (sectionId === 'coaching') {
+                        loadCoachingSection();
+                    } else if (sectionId === 'transport') {
+                        loadTransportSection();
+                    } else if (sectionId === 'registration') {
+                        // Petite temporisation pour laisser les listeners Firebase (students, etc.) 
+                        // finir leur premier chargement avant de filtrer par branche
+                        setTimeout(() => {
+                            loadRegistration();
+                            loadPendingInscriptions();
+                        }, 100);
+                    } else if (sectionId === 'students') {
+                        applyStudentFilters();
+                    } else if (sectionId === 'settings') {
+                        loadFeeConfiguration();
+                    } else if (sectionId === 'reports') {
+                        showDailyReport();
+                        loadReportHistory();
+                    }
+                }, 300);
+            }
+
+            // Load all initial data
+            async function loadAllData() {
+                console.log('Starting data load...');
+                try {
+                    await Promise.all([
+                        loadWorkers(),
+                        loadStudentFees(),
+                        loadCurrentMonthDebts(),
+                        updateFilteredAnnouncements()
+                    ]);
+                    
+                    // Ajouter un petit délai pour s'assurer que les listeners ont chargé les données
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Appeler applyStudentFilters après le délai
+                    await applyStudentFilters();
+                    // Populate class filter
+                    populateClassFilter();
+                    
+                    console.log('Data loaded successfully');
+                    updateStats();
+                    updateRealPayrollChart();
+                    recalculateExpectedIncome();
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                }
+            }
+
+            // Update stats from Firebase
+            function updateStats() {
+                // Fonction helper pour obtenir la branche Firebase pour les travailleurs
+                function getFirebaseBranchForWorkers(selected) {
+                    if (selected === 'gisozi_maternelle' || selected === 'gisozi_primaire') {
+                        return 'gisozi';
+                    }
+                    return selected;
+                }
+                
+                // Filtrer les travailleurs par branche sélectionnée - use workers array from worksRef
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const branchWorkers = workers.filter(worker => worker.branch === firebaseBranch);
+                document.getElementById('totalTeachers').textContent = branchWorkers.length;
+                
+                const currentMonth = new Date().getMonth() + 1;
+                const currentYear = new Date().getFullYear();
+                
+                // Calculer le payroll pour la branche sélectionnée
+                const monthlyPayroll = branchWorkers.reduce((total, worker) => {
+                    if (worker.salary) {
+                        return total + parseFloat(worker.salary);
+                    }
+                    return total;
+                }, 0);
+                document.getElementById('monthlyPayroll').textContent = formatCurrencyRWF(monthlyPayroll);
+                
+                const bankWorkers = branchWorkers.filter(w => w.paymentMode === 'bank').length;
+                document.getElementById('bankPayments').textContent = bankWorkers;
+                
+                // Filtrer les paiements élèves par branche (utilise 'gisozi' et filtre par level)
+                let studentBranchFilter = firebaseBranch; // 'gisozi' pour les deux sections Gisozi
+                
+                const branchStudentFees = studentFees.filter(fee => {
+                    const student = students.find(s => s.id === fee.studentId);
+                    if (!student) return false;
+                    if (student.branch !== studentBranchFilter) return false;
+                    if (!matchesSelectedStudentLevel(student, selectedBranch)) return false;
+                    return true;
+                });
+                document.getElementById('studentPayments').textContent = branchStudentFees.length;
+                
+                const totalStudents = students.filter(s => {
+                    if (s.branch !== studentBranchFilter) return false;
+                    if (!matchesSelectedStudentLevel(s, selectedBranch)) return false;
+                    return true;
+                }).length;
+                document.getElementById('totalStudents').textContent = totalStudents;
+            }
+
+            // Update filtered announcements (only director and secretary)
+            function updateFilteredAnnouncements() {
+                const container = document.getElementById('filteredAnnouncementsList');
+                container.innerHTML = '';
+                
+                const filtered = announcements.filter(announcement => 
+                    announcement.author === 'directeur' || announcement.author === 'secretaire'
+                );
+                
+                if (filtered.length === 0) {
+                    container.innerHTML = `
+                        <div class="list-group-item border-0 px-0 py-2">
+                            <p class="mb-0">No announcements from director or secretary</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                filtered.slice(0, 5).forEach(announcement => {
+                    const date = new Date(announcement.timestamp);
+                    const authorBadge = announcement.author === 'directeur' ? 
+                        '<span class="announcement-type-badge">Director</span>' : 
+                        '<span class="announcement-type-badge" style="background: #6c757d;">Secretary</span>';
+                    
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item border-0 px-0 py-2';
+                    item.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <small class="text-muted">${date.toLocaleDateString('en-US')}</small>
+                            ${authorBadge}
+                        </div>
+                        <p class="mb-0 mt-1">${announcement.message}</p>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+
+            // Format currency in RWF
+            function formatCurrencyRWF(amount) {
+                if (isNaN(amount)) amount = 0;
+                return new Intl.NumberFormat('en-RW', {
+                    style: 'currency',
+                    currency: 'RWF',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount);
+            }
+
+            function loadCoaching() {
+                console.warn('loadCoaching() is not implemented yet.');
+            }
+
+            async function loadTransport() {
+                try {
+                    const filterClass = document.getElementById('filterTransportClass').value;
+                    const filterMonth = document.getElementById('filterTransportMonth').value;
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+
+                    const snapshot = await transportPaymentsRef.orderByChild('branch').equalTo(firebaseBranch).once('value');
+                    let transportPaymentsData = [];
+                    snapshot.forEach((childSnapshot) => {
+                        transportPaymentsData.push({
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        });
+                    });
+
+                    if (filterClass) {
+                        transportPaymentsData = transportPaymentsData.filter(payment => {
+                            const student = students.find(s => s.id === payment.studentId);
+                            return student && student.classe === filterClass;
+                        });
+                    }
+
+                    if (filterMonth) {
+                        transportPaymentsData = transportPaymentsData.filter(payment => {
+                            const paymentDate = new Date(payment.paymentDate);
+                            const [year, month] = filterMonth.split('-').map(Number);
+                            return paymentDate.getFullYear() === year && paymentDate.getMonth() + 1 === month;
+                        });
+                    }
+
+                    renderTransportTable(transportPaymentsData);
+                    populateTransportClassFilter();
+                    recalculateExpectedIncome();
+                } catch (error) {
+                    console.error('Error loading transport:', error);
+                    showToast('Error loading transport payments', 'error');
+                }
+            }
+
+            function renderTransportTable(payments) {
+                const tbody = document.getElementById('transportTableBody');
+                tbody.innerHTML = '';
+
+                if (!payments || payments.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-bus fa-2x mb-3"></i>
+                                    <p>No transport payments found</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                payments.forEach((payment, index) => {
+                    const student = students.find(s => s.id === payment.studentId);
+                    const paymentDate = payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString('en-US') : 'N/A';
+                    const monthlyFee = student?.transportMonthlyFee || 0;
+                    const paidThisTrimester = payments
+                        .filter(p => p.studentId === payment.studentId && p.trimester === currentTermConfig?.trimestre)
+                        .reduce((sum, p) => sum + (p.amount || 0), 0);
+                    const expectedTotal = monthlyFee * 3;
+                    const remainingBalance = Math.max(0, expectedTotal - paidThisTrimester);
+
+                    const balanceBadge = remainingBalance > 0
+                        ? `<span style="color:#dc143c;">${formatCurrencyRWF(remainingBalance)}</span>`
+                        : '<span class="badge bg-success">PAID</span>';
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'animate-fade-in';
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${student?.fullName || student?.name || 'N/A'}</strong></td>
+                        <td>${student?.classe || 'N/A'}</td>
+                        <td><span class="badge badge-transport">Transport</span></td>
+                        <td>${formatCurrencyRWF(payment.amount || 0)}</td>
+                        <td>${paymentDate}</td>
+                        <td>${payment.paymentMode ? payment.paymentMode.charAt(0).toUpperCase() + payment.paymentMode.slice(1) : 'N/A'}</td>
+                        <td>${balanceBadge}</td>
+                        <td>${payment.receivedBy || 'N/A'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editTransportPayment('${payment.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTransportPayment('${payment.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            function showTransportModal() {
+                document.getElementById('transportPaymentForm').reset();
+                document.getElementById('transportStudentInfoDiv').style.display = 'none';
+                document.getElementById('transportCustomAmountDiv').style.display = 'none';
+                document.getElementById('transportCustomDate').style.display = 'none';
+
+                populateTransportClassFilter();
+                populateTransportPaymentDates();
+
+                if (currentUserName) {
+                    document.getElementById('transportReceivedBy').value = currentUserName;
+                }
+
+                const modal = new bootstrap.Modal(document.getElementById('transportModal'));
+                modal.show();
+            }
+
+            function showTransportHistory() {
+                alert('Transport history view - to be implemented');
+            }
+
+            function exportTransportExcel() {
+                alert('Export transport to Excel - to be implemented');
+            }
+
+            function exportTransportPDF() {
+                alert('Export transport to PDF - to be implemented');
+            }
+
+            function populateTransportClassFilter() {
+                const branchStudents = getStudentsForCurrentBranch();
+                const uniqueClasses = extractUniqueClasses(branchStudents);
+
+                const filterSelect = document.getElementById('filterTransportClass');
+                const modalSelect  = document.getElementById('transportClassFilter');
+
+                if (filterSelect) {
+                    const currentValue = filterSelect.value;
+                    filterSelect.innerHTML = '<option value="">Toutes les classes / All classes</option>';
+                    buildClassOptionGroups(filterSelect, uniqueClasses);
+                    filterSelect.value = currentValue;
+                }
+
+                if (modalSelect) {
+                    modalSelect.innerHTML = '<option value="">Sélectionner une classe / Select a class</option>';
+                    buildClassOptionGroups(modalSelect, uniqueClasses);
+                }
+            }
+
+            function loadTransportStudentsByClass() {
+                const selectedClass = document.getElementById('transportClassFilter').value;
+                const branchStudents = getStudentsForCurrentBranch();
+                const classStudents = branchStudents.filter(s =>
+                    (s.classes || s.class || s.classe || '').toString().trim() === selectedClass
+                );
+
+                const select = document.getElementById('transportStudentSelect');
+                select.innerHTML = '<option value="">Select a student</option>';
+
+                classStudents.forEach(student => {
+                    const opt = document.createElement('option');
+                    opt.value = student.id;
+                    opt.textContent = `${student.reference || ''} - ${student.fullName || student.name}`;
+                    select.appendChild(opt);
+                });
+            }
+
+            function loadTransportStudentDetails() {
+                const studentId = document.getElementById('transportStudentSelect').value;
+                const student = students.find(s => s.id === studentId);
+
+                if (!student) {
+                    document.getElementById('transportStudentInfoDiv').style.display = 'none';
+                    return;
+                }
+
+                document.getElementById('transportStudentRef').value = student.reference || '';
+                document.getElementById('transportStudentClass').value = student.classe || '';
+                document.getElementById('transportStudentInfoDiv').style.display = 'block';
+                populateTransportPaymentDates(studentId);
+                updateTransportBalancePreview();
+            }
+
+            function getYearMonthValue(dateValue) {
+                if (!dateValue) return '';
+                const value = String(dateValue);
+                const match = value.match(/^(\d{4})-(\d{2})/);
+                return match ? `${match[1]}-${match[2]}` : '';
+            }
+
+            function getCurrentTermMonths() {
+                if (!currentTermConfig || !currentTermConfig.startDate) {
+                    return [];
+                }
+
+                const startDate = new Date(currentTermConfig.startDate);
+                if (isNaN(startDate)) {
+                    return [];
+                }
+
+                const months = [];
+                for (let i = 0; i < 3; i++) {
+                    const monthDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+                    const y = monthDate.getFullYear();
+                    const m = String(monthDate.getMonth() + 1).padStart(2, '0');
+                    months.push(`${y}-${m}`);
+                }
+
+                return months;
+            }
+
+            function getPaidTransportMonthsForStudent(studentId) {
+                const currentTrimester = String(currentTermConfig?.trimestre || '');
+                const currentAcademicYear = String(currentTermConfig?.academicYear || '');
+
+                return new Set((transportPayments || [])
+                    .filter(payment => payment.studentId === studentId)
+                    .filter(payment => String(payment.trimester || '') === currentTrimester)
+                    .filter(payment => String(payment.academicYear || '') === currentAcademicYear)
+                    .map(payment => getYearMonthValue(payment.paymentDate))
+                    .filter(Boolean));
+            }
+
+            function populateTransportPaymentDates(studentId = '') {
+                const select = document.getElementById('transportPaymentDateType');
+                select.innerHTML = '';
+
+                const termMonths = getCurrentTermMonths();
+                const paidMonths = studentId ? getPaidTransportMonthsForStudent(studentId) : new Set();
+                let selectedSet = false;
+
+                termMonths.forEach(monthValue => {
+                    const monthDate = new Date(`${monthValue}-01`);
+                    const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    const isPaid = paidMonths.has(monthValue);
+
+                    const opt = document.createElement('option');
+                    opt.value = monthValue;
+                    opt.textContent = `${isPaid ? '[PAID]' : '[OPEN]'} ${monthName}`;
+                    opt.disabled = isPaid;
+
+                    if (!selectedSet && !isPaid) {
+                        opt.selected = true;
+                        selectedSet = true;
+                    }
+
+                    select.appendChild(opt);
+                });
+
+                const otherOpt = document.createElement('option');
+                otherOpt.value = 'other';
+                otherOpt.textContent = 'Other';
+                if (!selectedSet) {
+                    otherOpt.selected = true;
+                }
+                select.appendChild(otherOpt);
+
+                handleTransportDateChange();
+            }
+
+            function handleTransportDateChange() {
+                const selectedValue = document.getElementById('transportPaymentDateType').value;
+                const customDate = document.getElementById('transportCustomDate');
+                if (selectedValue === 'other') {
+                    customDate.style.display = 'block';
+                    customDate.required = true;
+                } else {
+                    customDate.style.display = 'none';
+                    customDate.required = false;
+                }
+            }
+
+            function setTransportAmount(amount, buttonElement) {
+                document.getElementById('transportAmount').value = amount;
+                if (buttonElement) {
+                    document.querySelectorAll('#transportModal .btn-outline-primary').forEach(btn => btn.classList.remove('active'));
+                    buttonElement.classList.add('active');
+                }
+                document.getElementById('transportCustomAmountDiv').style.display = 'none';
+                updateTransportBalancePreview();
+            }
+
+            function toggleTransportCustomAmount(buttonElement) {
+                const customDiv = document.getElementById('transportCustomAmountDiv');
+                if (customDiv.style.display === 'none') {
+                    customDiv.style.display = 'block';
+                    document.querySelectorAll('#transportModal .btn-outline-primary').forEach(btn => btn.classList.remove('active'));
+                } else {
+                    customDiv.style.display = 'none';
+                    document.getElementById('transportCustomAmount').value = '';
+                    document.getElementById('transportAmount').value = '';
+                }
+            }
+
+            function updateTransportBalancePreview() {
+                const studentId = document.getElementById('transportStudentSelect').value;
+                const student = students.find(s => s.id === studentId);
+                const amount = parseFloat(document.getElementById('transportAmount').value) || parseFloat(document.getElementById('transportCustomAmount').value) || 0;
+
+                if (!student) return;
+
+                const monthlyFee = student.transportMonthlyFee || 0;
+                const expectedTotal = monthlyFee * 3;
+                const paidThisTrimester = (window.transportPayments || [])
+                    .filter(p => p.studentId === studentId && p.trimester === currentTermConfig?.trimestre)
+                    .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+                const remainingAfterPayment = Math.max(0, expectedTotal - paidThisTrimester - amount);
+
+                document.getElementById('transportConfiguredFee').textContent = formatCurrencyRWF(monthlyFee);
+                document.getElementById('transportTotalPaid').textContent = formatCurrencyRWF(paidThisTrimester);
+                document.getElementById('transportRemainingPreview').textContent = remainingAfterPayment > 0
+                    ? formatCurrencyRWF(remainingAfterPayment)
+                    : 'FULLY PAID';
+                document.getElementById('transportRemainingPreview').style.color = remainingAfterPayment > 0 ? '#dc143c' : '#28a745';
+            }
+
+            async function saveTransportPayment() {
+                const studentId = document.getElementById('transportStudentSelect').value;
+                const classId = document.getElementById('transportClassFilter').value;
+                const amount = parseFloat(document.getElementById('transportAmount').value) || parseFloat(document.getElementById('transportCustomAmount').value);
+                const paymentDateType = document.getElementById('transportPaymentDateType').value;
+                const paymentDate = paymentDateType === 'other'
+                    ? document.getElementById('transportCustomDate').value
+                    : paymentDateType;
+                const paymentMode = document.getElementById('transportPaymentMode').value;
+                const transactionRef = document.getElementById('transportTransactionRef').value;
+                const notes = document.getElementById('transportNotes').value;
+
+                if (!studentId || !classId || !amount || !paymentDate || !paymentMode) {
+                    showToast('Please fill all required fields', 'error');
+                    return;
+                }
+
+                if (paymentDateType !== 'other') {
+                    const monthAlreadyPaid = (transportPayments || []).some(payment => {
+                        return payment.studentId === studentId
+                            && String(payment.trimester || '') === String(currentTermConfig?.trimestre || '')
+                            && String(payment.academicYear || '') === String(currentTermConfig?.academicYear || '')
+                            && getYearMonthValue(payment.paymentDate) === paymentDateType;
+                    });
+
+                    if (monthAlreadyPaid) {
+                        showToast('This transport month is already paid for this student.', 'error');
+                        return;
+                    }
+                }
+
+                try {
+                    const student = students.find(s => s.id === studentId);
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+
+                    const paymentData = {
+                        studentId,
+                        studentName: student?.fullName || student?.name,
+                        studentClass: student?.classe,
+                        amount,
+                        paymentDate,
+                        paymentMode,
+                        transactionRef,
+                        notes,
+                        receivedBy: currentUserName,
+                        branch: firebaseBranch,
+                        type: 'transport',
+                        trimester: currentTermConfig?.trimestre,
+                        academicYear: currentTermConfig?.academicYear,
+                        timestamp: Date.now()
+                    };
+
+                    await transportPaymentsRef.push(paymentData);
+
+                    await studentsRef.child(studentId).update({
+                        transportEnrolled: true,
+                        transportMonthlyFee: amount
+                    });
+
+                    showToast('Transport payment saved successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('transportModal')).hide();
+                    await logActivity('ADD_TRANSPORT', `Transport payment recorded for ${student?.name}: ${formatCurrencyRWF(amount)}`, 'transport_added', {
+                        studentId,
+                        studentName: student?.name,
+                        amount
+                    });
+
+                    loadTransport();
+                    recalculateExpectedIncome();
+                } catch (error) {
+                    console.error('Error saving transport payment:', error);
+                    showToast('Error saving transport payment', 'error');
+                }
+            }
+
+            function editTransportPayment(paymentId) {
+                alert('Edit transport payment - to be implemented');
+            }
+
+            async function deleteTransportPayment(paymentId) {
+                if (!confirm('Are you sure you want to delete this transport payment?')) return;
+
+                try {
+                    await transportPaymentsRef.child(paymentId).remove();
+                    showToast('Transport payment deleted successfully!', 'success');
+                    loadTransport();
+                    recalculateExpectedIncome();
+                } catch (error) {
+                    console.error('Error deleting transport payment:', error);
+                    showToast('Error deleting transport payment', 'error');
+                }
+            }
+
+            async function loadRegistration() {
+                const tbody = document.getElementById('registrationTable');
+                if (!tbody) return;
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-spinner fa-pulse fa-2x mb-3"></i>
+                                <p>Loading registration records...</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+                try {
+                    // IMPORTANT: A secretary can create an enrolled student in /students and
+                    // /inscriptions-scolaires without creating a /registrationPayments record.
+                    // The old code therefore made those students invisible in this section.
+                    // We now build the list from BOTH sources and merge them by studentId/code.
+                    const [paymentsSnap, inscriptionsSnap] = await Promise.all([
+                        registrationPaymentsRef.once('value'),
+                        pendingInscriptionsRef.once('value')
+                    ]);
+
+                    const paymentByStudent = new Map();
+                    const allPayments = [];
+                    paymentsSnap.forEach(child => {
+                        const payment = { id: child.key, ...child.val() };
+                        allPayments.push(payment);
+                        if (payment.studentId) paymentByStudent.set(String(payment.studentId), payment);
+                    });
+
+                    const records = new Map();
+
+                    // First: every non-rejected school registration is a registration record,
+                    // even when no payment has been entered yet.
+                    inscriptionsSnap.forEach(child => {
+                        const insc = { id: child.key, ...child.val() };
+                        const status = String(insc.statut || insc.status || '').trim().toLowerCase();
+                        if (status === 'rejet?' || status === 'rejete' || status === 'rejected') return;
+
+                        const studentId = insc.studentId ? String(insc.studentId) : '';
+                        const payment = studentId ? paymentByStudent.get(studentId) : null;
+                        const branchValue = payment?.branch || insc.branche || insc.branch || '';
+                        const sectionValue = payment?.section || insc.section || '';
+                        const levelValue = payment?.studentClass || insc.classe || insc.niveau || '';
+
+                        if (!registrationRecordMatchesBranch(branchValue, sectionValue, levelValue, selectedBranch)) return;
+
+                        const record = {
+                            ...(payment || {}),
+                            id: payment?.id || `inscription-${child.key}`,
+                            studentId: payment?.studentId || insc.studentId || '',
+                            studentName: payment?.studentName || insc.nomPrenom || insc.name || insc.fullName || 'N/A',
+                            studentClass: payment?.studentClass || insc.classe || insc.niveau || 'N/A',
+                            branch: payment?.branch || insc.branche || insc.branch || '',
+                            academicYear: payment?.academicYear || insc.anneeAcademique || '',
+                            reference: payment?.reference || insc.codeUnique || `INS-${child.key.slice(-8)}`,
+                            amount: payment?.amount ?? 0,
+                            paymentDate: payment?.paymentDate || '',
+                            paymentMode: payment?.paymentMode || '',
+                            timestamp: payment?.timestamp || insc.timestamp || 0,
+                            registrationStatus: insc.statut || insc.status || 'Enregistr?',
+                            unpaid: !payment
+                        };
+                        const key = studentId || `inscription:${child.key}`;
+                        records.set(key, record);
+                    });
+
+                    // Second: keep payment records that do not have an inscription record,
+                    // for backward compatibility with older registrations.
+                    allPayments.forEach(payment => {
+                        const branchValue = payment.branch || '';
+                        const levelValue = payment.studentClass || '';
+                        if (!registrationRecordMatchesBranch(branchValue, payment.section || '', levelValue, selectedBranch)) return;
+                        const key = payment.studentId ? String(payment.studentId) : `payment:${payment.id}`;
+                        if (!records.has(key)) records.set(key, { ...payment, unpaid: false });
+                    });
+
+                    const payments = Array.from(records.values())
+                        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+                    updateRegistrationTable(payments);
+                } catch (error) {
+                    console.error('Error loading registration records:', error);
+                    showToast('Error loading registration records.', 'error');
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <div class="text-danger">
+                                    <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                                    <p>Unable to load registration records.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+
+            function registrationRecordMatchesBranch(branch, section, studentClass, targetBranch) {
+                const target = (targetBranch || '').toString().trim().toLowerCase();
+                if (!target || target === 'all') return true;
+
+                const rawBranch = (branch || '').toString().trim().toLowerCase();
+                const rawSection = (section || '').toString().trim().toLowerCase();
+                const rawClass = (studentClass || '').toString().trim().toLowerCase();
+
+                const aliases = {
+                    kacyiru: ['kacyiru'],
+                    kimisagara: ['kimisagara'],
+                    gisozi_maternelle: ['gisozi_maternelle', 'gisozi nursery', 'gisozi maternelle'],
+                    gisozi_primaire: ['gisozi_primaire', 'gisozi primary', 'gisozi primaire']
+                };
+
+                if (aliases[target]?.includes(rawBranch)) return true;
+                if (target === 'kacyiru' && rawBranch.includes('kacyiru')) return true;
+                if (target === 'kimisagara' && rawBranch.includes('kimisagara')) return true;
+
+                if (rawBranch === 'gisozi' || rawBranch.includes('gisozi')) {
+                    const nursery = rawSection.includes('maternelle') || rawSection.includes('nursery') || rawClass.startsWith('n');
+                    const primary = rawSection.includes('primaire') || rawSection.includes('primary') || rawClass.startsWith('p');
+                    if (target === 'gisozi_maternelle') return nursery && !primary;
+                    if (target === 'gisozi_primaire') return primary && !nursery;
+                    // Unknown Gisozi section: keep it visible rather than losing a registration.
+                    return target === 'gisozi_maternelle' || target === 'gisozi_primaire';
+                }
+
+                return false;
+            }
+
+            function updateRegistrationTable(payments) {
+                const tbody = document.getElementById('registrationTable');
+                if (!payments || payments.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-file-invoice fa-2x mb-3"></i>
+                                    <p>No registration payments found for this branch.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                payments.forEach((payment, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${payment.reference || payment.studentId || 'N/A'}</strong></td>
+                        <td>${payment.studentName || 'N/A'}</td>
+                        <td>${payment.studentClass || 'N/A'}</td>
+                        <td>${payment.unpaid ? '<span class="badge bg-warning text-dark">NON PAY?</span>' : formatCurrencyRWF(payment.amount || 0)}</td>
+                        <td>${payment.paymentDate || '?'}</td>
+                        <td>${payment.unpaid ? '<span class="badge bg-secondary">En attente</span>' : (payment.paymentMode ? payment.paymentMode.toString().replace(/\b(momo)\b/i, 'Mobile Money') : '?')}</td>
+                        <td>${getBranchName(payment.branch)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" title="Admission Letter" onclick="openEditBeforeDownloadModal('${payment.studentId}', 'letter')">
+                                <i class="fas fa-file-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" title="Registration Form" onclick="openEditBeforeDownloadModal('${payment.studentId}', 'form')">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            ${payment.studentId ? `
+                            <button class="btn btn-sm btn-outline-info me-1" title="Edit Student" onclick="editStudent('${payment.studentId}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger me-1" title="Delete Student" onclick="deleteStudentPrompt('${payment.studentId}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            ` : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Normalize string for duplicate detection
+            function normalizeKey(s) {
+                if (!s) return '';
+                return s.toString().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[^a-z0-9]/g, '').trim();
+            }
+
+            // ============================================
+            // ANNÉE SCOLAIRE DYNAMIQUE — toujours à jour pour impressions/téléchargements
+            // ============================================
+            function getAcademicYearForEnrollmentDate(dateValue) {
+                const date = dateValue instanceof Date ? new Date(dateValue.getTime()) : new Date(dateValue || Date.now());
+                if (Number.isNaN(date.getTime())) return '2026-2027';
+                const ymd = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+                if (ymd < '2025-09-09') return '2024-2025';
+                if (ymd <= '2026-06-01') return '2025-2026';
+                if (ymd <= '2027-07-25') return '2026-2027';
+                return '2027-2028';
+            }
+
+            function getCurrentAcademicYearLabel() {
+                return getAcademicYearForEnrollmentDate(new Date());
+            }
+
+            // ============================================
+            // FUZZY DUPLICATE DETECTION HELPERS
+            // ============================================
+            function levenshteinDistance(a, b) {
+                a = a || ''; b = b || '';
+                const matrix = Array.from({ length: a.length + 1 }, (_, i) =>
+                    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+                );
+                for (let i = 1; i <= a.length; i++) {
+                    for (let j = 1; j <= b.length; j++) {
+                        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j - 1] + cost
+                        );
+                    }
+                }
+                return matrix[a.length][b.length];
+            }
+
+            function nameSimilarity(nameA, nameB) {
+                const a = normalizeKey(nameA);
+                const b = normalizeKey(nameB);
+                if (!a || !b) return 0;
+                if (a === b) return 100;
+                const maxLen = Math.max(a.length, b.length);
+                const distance = levenshteinDistance(a, b);
+                return Math.round((1 - distance / maxLen) * 100);
+            }
+
+            function normalizePhone(phone) {
+                if (!phone) return '';
+                return phone.toString().replace(/\D/g, '').replace(/^250/, '').slice(-9);
+            }
+
+            function computeStudentDuplicateScore(candidate, existing) {
+                let score = 0;
+                const nameSim = nameSimilarity(candidate.name || candidate.fullName || candidate.nomPrenom, existing.name || existing.fullName || existing.nomPrenom);
+                score += nameSim * 0.60;
+
+                if (candidate.birthDate && existing.birthDate) {
+                    if (candidate.birthDate === existing.birthDate) score += 25;
+                }
+
+                const phoneA = normalizePhone(candidate.parentPhone || candidate.parent || candidate.chefTelephone);
+                const phoneB = normalizePhone(existing.parentPhone || existing.parent || existing.chefTelephone);
+                if (phoneA && phoneB && phoneA === phoneB) score += 15;
+
+                const sameClass = ((candidate.classes || candidate.class || '') + '').toString().trim().toUpperCase() === ((existing.classes || existing.class || '') + '').toString().trim().toUpperCase();
+
+                return { score: Math.round(score), nameSim, sameClass };
+            }
+
+            function findPotentialDuplicateStudents(candidateData, branch, excludeId = null) {
+                const branchStudents = getStudentsForCurrentBranch(branch).filter(s => s.id !== excludeId);
+                const matches = [];
+                branchStudents.forEach(existing => {
+                    const { score, nameSim, sameClass } = computeStudentDuplicateScore(candidateData, existing);
+                    if (score >= 50) matches.push({ student: existing, score, nameSim, sameClass });
+                });
+                return matches.sort((a, b) => b.score - a.score);
+            }
+
+            function scanAllDuplicateGroups(branch) {
+                const branchStudents = getStudentsForCurrentBranch(branch).map(s => ({ ...s }));
+                const visited = new Set();
+                const groups = [];
+
+                branchStudents.forEach((studentA, i) => {
+                    if (visited.has(studentA.id)) return;
+                    const group = [studentA];
+                    visited.add(studentA.id);
+
+                    branchStudents.forEach((studentB, j) => {
+                        if (i === j || visited.has(studentB.id)) return;
+                        const { score } = computeStudentDuplicateScore(studentA, studentB);
+                        if (score >= 75) {
+                            group.push(studentB);
+                            visited.add(studentB.id);
+                        }
+                    });
+
+                    if (group.length > 1) {
+                        group.sort((a, b) => {
+                            const paymentsA = (studentFees || []).filter(f => f.studentId === a.id).length;
+                            const paymentsB = (studentFees || []).filter(f => f.studentId === b.id).length;
+                            if (paymentsA !== paymentsB) return paymentsB - paymentsA;
+                            return (a.timestamp || 0) - (b.timestamp || 0);
+                        });
+                        groups.push(group);
+                    }
+                });
+
+                return groups;
+            }
+
+            async function detectRegistrationDuplicates() {
+                const container = document.getElementById('duplicatesContainer');
+                const section = document.getElementById('duplicatesSection');
+                container.innerHTML = '<div class="text-muted"><i class="fas fa-spinner fa-pulse me-2"></i>Scanning for duplicates...</div>';
+                section.style.display = 'block';
+                try {
+                    const regSnap = await db.ref('registrationPayments').orderByChild('branch').equalTo(selectedBranch).once('value');
+                    const regs = [];
+                    regSnap.forEach(ch => regs.push({ id: ch.key, ...ch.val() }));
+
+                    const pendSnap = await pendingInscriptionsRef.once('value');
+                    const pendings = [];
+                    pendSnap.forEach(ch => pendings.push({ id: ch.key, ...ch.val() }));
+                    const pendingsForBranch = pendings.filter(insc => inscriptionMatchesSelectedBranch(insc));
+
+                    const map = {};
+
+                    // Group by studentId when available, otherwise by name+class+birthdate+phone
+                    regs.forEach(r => {
+                        const sid = r.studentId || '';
+                        const name = r.studentName || r.name || '';
+                        const cls = r.studentClass || r.class || r.classes || '';
+                        const dob = r.studentBirthDate || r.birthDate || r.dateNaissance || '';
+                        const phone = r.parentPhone || r.chefTelephone || r.transactionRef || '';
+                        const key = sid ? `id:${sid}` : `name:${normalizeKey(name)}|class:${normalizeKey(cls)}|dob:${dob}|phone:${normalizeKey(phone)}`;
+                        map[key] = map[key] || [];
+                        map[key].push({ source: 'registration', record: r });
+                    });
+
+                    // Group pendings by normalized name+class+dob+phone
+                    pendingsForBranch.forEach(p => {
+                        const name = p.nomPrenom || p.name || '';
+                        const cls = p.niveau || p.requestedClass || p.classe || p.assignedClass || '';
+                        const dob = p.dateNaissance || '';
+                        const phone = p.chefTelephone || '';
+                        const key = `pending:${normalizeKey(name)}|class:${normalizeKey(cls)}|dob:${dob}|phone:${normalizeKey(phone)}`;
+                        map[key] = map[key] || [];
+                        map[key].push({ source: 'pending', record: p });
+                    });
+
+                    const duplicates = Object.values(map).filter(group => group.length > 1);
+
+                    if (!duplicates || duplicates.length === 0) {
+                        container.innerHTML = '<div class="text-success">Aucun doublon détecté pour cette branche.</div>';
+                        return;
+                    }
+
+                    // Render duplicates
+                    let html = '<div class="table-responsive"><table class="modern-table"><thead><tr><th>Group</th><th>Source</th><th>Reference / Code</th><th>Name</th><th>Birth / Date</th><th>Phone</th><th>Details</th></tr></thead><tbody>';
+                    duplicates.forEach((group, gi) => {
+                        group.forEach(item => {
+                            const rec = item.record || {};
+                            const source = item.source === 'registration' ? 'Registration Payment' : 'Pending Request';
+                            const ref = rec.reference || rec.codeUnique || rec.id || '';
+                            const name = rec.studentName || rec.nomPrenom || rec.name || '';
+                            const dob = rec.birthDate || rec.dateNaissance || rec.paymentDate || '';
+                            const phone = rec.parentPhone || rec.chefTelephone || rec.transactionRef || '';
+                            const details = JSON.stringify(rec).slice(0, 200);
+                            html += `<tr><td>#${gi + 1}</td><td>${source}</td><td>${ref}</td><td>${name}</td><td>${dob}</td><td>${phone}</td><td><small>${details}</small></td></tr>`;
+                        });
+                    });
+                    html += '</tbody></table></div>';
+                    html += '<div class="mt-2"><button class="btn-modern btn-export-pdf" onclick="exportDuplicatesPDF()"><i class="fas fa-file-pdf me-2"></i>Export Duplicates (PDF)</button></div>';
+                    container.innerHTML = html;
+                } catch (error) {
+                    console.error('Error detecting duplicates:', error);
+                    container.innerHTML = '<div class="text-danger">Erreur lors de la détection des doublons.</div>';
+                }
+            }
+
+            function exportDuplicatesPDF() {
+                const container = document.getElementById('duplicatesContainer');
+                const table = container.querySelector('table');
+                if (!table) { showToast('No duplicates to export', 'info'); return; }
+                const JsPDF = resolveJsPDF();
+                if (!JsPDF) { showToast('PDF library not loaded', 'error'); return; }
+                const doc = new JsPDF({ unit: 'mm', format: 'a4' });
+                doc.setFontSize(14);
+                doc.text('Potential Duplicate Registrations - ' + (selectedBranch || 'All'), 14, 20);
+                doc.autoTable({ html: table, startY: 28 });
+                const fileName = `Duplicates_${selectedBranch || 'all'}_${new Date().toISOString().slice(0,10)}.pdf`;
+                doc.save(fileName);
+                showToast('Duplicates exported as PDF', 'success');
+            }
+
+            
+
+            function showExportAcademicYearModal(years) {
+                return new Promise(resolve => {
+                    const existing = document.getElementById('exportAcademicYearModal');
+                    if (existing) existing.remove();
+                    const options = ['ALL', ...years];
+                    const cards = options.map((year, i) => {
+                        const label = year === 'ALL' ? 'Toutes les années scolaires' : year;
+                        const active = i === 1 || (i === 0 && years.length === 0) ? ' active' : '';
+                        return `<button type="button" class="export-year-option${active}" data-year="${year}"><span>${year === 'ALL' ? '📚' : '🎓'}</span><strong>${label}</strong><small>${year === 'ALL' ? 'Tous les élèves disponibles' : 'Élèves inscrits pour cette année'}</small></button>`;
+                    }).join('');
+                    const modalHtml = `<div class="modal fade" id="exportAcademicYearModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content export-year-modal-content"><div class="modal-header"><div><div class="export-year-kicker">EXPORT REPORT (PDF)</div><h5 class="modal-title">Sélection de l’année scolaire</h5><p class="export-year-subtitle">Choisissez les élèves à inclure dans le rapport PDF.</p></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="export-year-grid">${cards}</div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button><button type="button" class="btn btn-primary" id="confirmExportAcademicYear" disabled>Exporter le rapport</button></div></div></div></div>`;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    const el=document.getElementById('exportAcademicYearModal'), confirm=document.getElementById('confirmExportAcademicYear'); let selected=null;
+                    el.querySelectorAll('.export-year-option').forEach(btn=>btn.addEventListener('click',()=>{el.querySelectorAll('.export-year-option').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selected=btn.dataset.year==='ALL'?(years[0]||'ALL'):btn.dataset.year;confirm.disabled=false;}));
+                    el.addEventListener('hidden.bs.modal',()=>{el.remove();resolve(null)},{once:true});
+                    confirm.addEventListener('click',()=>{bootstrap.Modal.getInstance(el).hide();resolve(selected)},{once:true});
+                    new bootstrap.Modal(el).show();
+                });
+            }
+
+            async function exportRegistrationReportPDF() {
+                const JsPDF = resolveJsPDF();
+                if (!JsPDF) { showToast('PDF library non chargée', 'error'); return; }
+
+                try {
+                    // Le PDF doit contenir les MÊMES élèves que le tableau "Paiements d'Inscription":
+                    // inscriptions non rejetées (payées ou non) + anciens paiements sans inscription.
+                    const [inscSnap, studentsSnap, paymentsSnap] = await Promise.all([
+                        pendingInscriptionsRef.once('value'),
+                        studentsRef.once('value'),
+                        registrationPaymentsRef.once('value')
+                    ]);
+
+                    const studentsById = {};
+                    studentsSnap.forEach(ch => { studentsById[ch.key] = { id: ch.key, ...ch.val() }; });
+
+                    const paymentsByStudent = {};
+                    const allPayments = [];
+                    paymentsSnap.forEach(ch => {
+                        const payment = { id: ch.key, ...ch.val() };
+                        allPayments.push(payment);
+                        if (payment.studentId) paymentsByStudent[String(payment.studentId)] = payment;
+                    });
+
+                    const normalizeReportValue = value => String(value ?? '')
+                        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                        .trim().toLowerCase();
+                    const isRejectedInscription = insc => {
+                        const status = normalizeReportValue(insc.statut || insc.status);
+                        return ['rejete', 'rejected'].includes(status);
+                    };
+                    const normalizeYear = value => normalizeReportValue(value).replace(/\s+/g, '');
+
+                    // Construire les années disponibles à partir des inscriptions ET paiements.
+                    const academicYears = new Set();
+                    inscSnap.forEach(ch => {
+                        const insc = ch.val() || {};
+                        if (isRejectedInscription(insc)) return;
+                        if (!inscriptionMatchesSelectedBranch(insc)) return;
+                        const year = insc.anneeAcademique || insc.anneeScolaire || insc.academicYear;
+                        if (year) academicYears.add(String(year).trim());
+                    });
+                    allPayments.forEach(payment => {
+                        if (!registrationRecordMatchesBranch(payment.branch, payment.section, payment.studentClass, selectedBranch)) return;
+                        if (payment.academicYear) academicYears.add(String(payment.academicYear).trim());
+                    });
+                    Object.values(studentsById).forEach(student => {
+                        if (student.academicYear) academicYears.add(String(student.academicYear).trim());
+                    });
+
+                    const sortedYears = [...academicYears].filter(Boolean).sort((a, b) => b.localeCompare(a));
+                    const currentYear = getCurrentAcademicYearLabel();
+                    if (!sortedYears.includes(currentYear)) sortedYears.unshift(currentYear);
+                    const selectedAcademicYear = await showExportAcademicYearModal(sortedYears);
+                    if (!selectedAcademicYear) return;
+                    const exportAllYears = selectedAcademicYear === 'ALL';
+                    const selectedYearKey = normalizeYear(selectedAcademicYear);
+
+                    const rows = [];
+                    const seenStudentIds = new Set();
+
+                    // 1) Toutes les inscriptions non rejetées, même si elles sont encore en attente
+                    // et même si aucun paiement n'existe.
+                    inscSnap.forEach(ch => {
+                        const insc = { id: ch.key, ...ch.val() };
+                        if (isRejectedInscription(insc) || !insc.studentId) return;
+                        if (!inscriptionMatchesSelectedBranch(insc)) return;
+
+                        const payment = paymentsByStudent[String(insc.studentId)] || null;
+                        const student = studentsById[insc.studentId] || {};
+                        const inscriptionYear = insc.anneeAcademique || insc.anneeScolaire || insc.academicYear;
+                        const recordYear = inscriptionYear || student.academicYear || payment?.academicYear;
+                        if (!exportAllYears && recordYear && normalizeYear(recordYear) !== selectedYearKey) return;
+
+                        const branch = student.branch || payment?.branch || mapInscriptionBranchToInternal(insc.branche, insc.section, insc.niveau);
+                        const address = student.address || [insc.secteur, insc.umurenge, insc.akagari, insc.umudugudu].filter(Boolean).join(', ');
+                        const secondParent = student.spouseName || student.secondParent || student.parent2 || student.parent2Name ||
+                            insc.conjointNomPrenom || insc.secondParent || insc.parent2 || insc.parent2Name || '';
+                        const secondParentPhone = student.spousePhone || student.secondParentPhone || student.parent2Phone ||
+                            insc.conjointTelephone || insc.secondParentPhone || insc.parent2Phone || '';
+
+                        rows.push({
+                            studentId: insc.studentId,
+                            reference: student.reference || payment?.reference || insc.codeUnique || insc.studentId,
+                            name: student.name || student.fullName || payment?.studentName || insc.nomPrenom || 'N/A',
+                            className: student.classes || student.class || student.classe || payment?.studentClass || insc.classe || insc.niveau || 'N/A',
+                            branch: getBranchName(branch),
+                            academicYear: recordYear || selectedAcademicYear,
+                            bus: student.transportEnrolled === true || normalizeReportValue(student.transportEnrolled) === 'oui' || normalizeReportValue(insc.transport) === 'oui' ? 'OUI' : 'NON',
+                            address: address || 'N/A',
+                            parent: student.parent || insc.chefNomPrenom || 'N/A',
+                            parentPhone: student.parentPhone || insc.chefTelephone || 'N/A',
+                            spouse: secondParent || 'N/A',
+                            spousePhone: secondParentPhone || 'N/A',
+                            registrationStatus: insc.statut || insc.status || 'Enregistré',
+                            unpaid: !payment
+                        });
+                        seenStudentIds.add(String(insc.studentId));
+                    });
+
+                    // 2) Paiements historiques qui n'ont pas d'inscription correspondante.
+                    allPayments.forEach(payment => {
+                        const studentId = payment.studentId ? String(payment.studentId) : '';
+                        if (studentId && seenStudentIds.has(studentId)) return;
+                        if (!registrationRecordMatchesBranch(payment.branch, payment.section, payment.studentClass, selectedBranch)) return;
+                        const student = studentId ? (studentsById[studentId] || {}) : {};
+                        const recordYear = payment.academicYear || student.academicYear;
+                        if (!exportAllYears && recordYear && normalizeYear(recordYear) !== selectedYearKey) return;
+
+                        const branch = student.branch || payment.branch || '';
+                        rows.push({
+                            studentId: payment.studentId || '',
+                            reference: student.reference || payment.reference || payment.studentId || payment.id,
+                            name: student.name || student.fullName || payment.studentName || 'N/A',
+                            className: student.classes || student.class || student.classe || payment.studentClass || 'N/A',
+                            branch: getBranchName(branch),
+                            academicYear: recordYear || selectedAcademicYear,
+                            bus: student.transportEnrolled === true || normalizeReportValue(student.transportEnrolled) === 'oui' ? 'OUI' : 'NON',
+                            address: student.address || 'N/A',
+                            parent: student.parent || 'N/A',
+                            parentPhone: student.parentPhone || 'N/A',
+                            spouse: student.spouseName || student.secondParent || student.parent2 || student.parent2Name || 'N/A',
+                            spousePhone: student.spousePhone || student.secondParentPhone || student.parent2Phone || 'N/A',
+                            registrationStatus: 'Paiement enregistré',
+                            unpaid: false
+                        });
+                        if (studentId) seenStudentIds.add(studentId);
+                    });
+
+                    rows.sort((a, b) => String(a.branch).localeCompare(String(b.branch), 'fr') ||
+                        String(a.className).localeCompare(String(b.className), 'fr') ||
+                        String(a.name).localeCompare(String(b.name), 'fr'));
+
+                    const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+                    const titleBranch = selectedBranch ? getBranchName(selectedBranch) : 'Toutes les branches';
+                    const today = new Date().toLocaleDateString('fr-FR');
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(16);
+                    doc.text('RAPPORT DES ÉLÈVES INSCRITS', 14, 13);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(10);
+                    doc.text(`Branche : ${titleBranch}   |   Année scolaire : ${exportAllYears ? 'Toutes les années' : selectedAcademicYear}   |   Date : ${today}`, 14, 20);
+                    doc.text(`Total des élèves inscrits : ${rows.length}`, 14, 26);
+
+                    const body = rows.map((r, i) => [
+                        i + 1, r.reference, r.name, r.className, r.branch,
+                        r.bus, r.address, r.parent, r.parentPhone, r.spouse, r.spousePhone
+                    ]);
+
+                    if (body.length) {
+                        doc.autoTable({
+                            startY: 31,
+                            head: [['N°', 'RÉFÉRENCE', 'ÉLÈVE', 'CLASSE', 'BRANCHE', 'BUS',
+                                'ADRESSE / LIEU DE RÉSIDENCE', 'PARENT / TUTEUR', 'TÉL. PARENT',
+                                '2e PARENT', 'TÉL. 2e PARENT']],
+                            body,
+                            styles: { fontSize: 7.2, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
+                            headStyles: { fontSize: 7.2, fontStyle: 'bold' },
+                            columnStyles: {
+                                0: { cellWidth: 9 }, 1: { cellWidth: 24 }, 2: { cellWidth: 31 },
+                                3: { cellWidth: 18 }, 4: { cellWidth: 20 }, 5: { cellWidth: 11 },
+                                6: { cellWidth: 42 }, 7: { cellWidth: 28 }, 8: { cellWidth: 25 },
+                                9: { cellWidth: 25 }, 10: { cellWidth: 25 }
+                            },
+                            margin: { left: 10, right: 10, top: 31, bottom: 14 },
+                            didDrawPage: data => {
+                                doc.setFontSize(7);
+                                doc.text(`Rapport des élèves inscrits - page ${data.pageNumber}`, 10, 203);
+                            }
+                        });
+                    } else {
+                        doc.setFontSize(11);
+                        doc.text('Aucun élève inscrit trouvé pour cette année académique.', 14, 38);
+                    }
+
+                    const busCount = rows.filter(r => r.bus === 'OUI').length;
+                    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 42;
+                    const summaryY = finalY + 8;
+                    if (summaryY > 190) doc.addPage();
+                    const y = summaryY > 190 ? 20 : summaryY;
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.text(`Total : ${rows.length} élève(s)   |   Bus : ${busCount}   |   Sans bus : ${rows.length - busCount}`, 10, y);
+
+                    const safeBranch = String(selectedBranch || 'all').replace(/[^a-z0-9_-]/gi, '_');
+                    const safeYear = (exportAllYears ? 'toutes_les_annees' : selectedAcademicYear).replace(/[^a-z0-9_-]/gi, '_');
+                    doc.save(`Rapport_Eleves_Inscrits_${safeBranch}_${safeYear}.pdf`);
+                    showToast(`Rapport PDF téléchargé : ${rows.length} élève(s) - ${selectedAcademicYear}`, 'success');
+                } catch (error) {
+                    console.error('Erreur export rapport inscription:', error);
+                    showToast('Erreur lors de l\'export du rapport : ' + (error.message || error), 'error');
+                }
+            }
+
+            function mapInscriptionBranchToInternal(branche, section, niveau) {
+                const rawBranch = (branche || '').toString().trim().toUpperCase();
+                const rawSection = (section || '').toString().trim().toUpperCase();
+                const rawNiveau = (niveau || '').toString().trim().toUpperCase();
+
+                // Normalize both short keys and full branch labels saved in Firebase.
+                if (rawBranch.includes('KACYIRU')) return 'kacyiru';
+                if (rawBranch.includes('KIMISAGARA')) return 'kimisagara';
+                if (rawBranch.includes('GISOZI')) {
+                    const resolvedSection = rawSection || (rawNiveau.startsWith('N') ? 'MATERNELLE' : rawNiveau.startsWith('P') ? 'PRIMAIRE' : '');
+                    return resolvedSection === 'PRIMAIRE' ? 'gisozi_primaire' : 'gisozi_maternelle';
+                }
+                if (rawBranch === 'GISOZI_MATERNELLE') return 'gisozi_maternelle';
+                if (rawBranch === 'GISOZI_PRIMAIRE') return 'gisozi_primaire';
+
+                if (!rawBranch) {
+                    if (rawSection === 'PRIMAIRE') return 'gisozi_primaire';
+                    if (rawSection === 'MATERNELLE') return 'gisozi_maternelle';
+                    if (rawNiveau.startsWith('N')) return 'gisozi_maternelle';
+                    if (rawNiveau.startsWith('P')) return 'gisozi_primaire';
+                }
+
+                return branche || 'kacyiru';
+            }
+
+            function getInscriptionBranchLabel(branche, section) {
+                const labels = { KACYIRU: 'Kacyiru', GISOZI: 'Gisozi', KIMISAGARA: 'Kimisagara' };
+                const base = labels[(branche || '').toUpperCase()] || branche || 'N/A';
+                if ((branche || '').toUpperCase() === 'GISOZI' && section) {
+                    return base + ' (' + section + ')';
+                }
+                return base;
+            }
+
+            function inscriptionMatchesSelectedBranch(insc) {
+                const internalBranch = mapInscriptionBranchToInternal(insc.branche || insc.branch, insc.section, insc.niveau);
+                return internalBranch === selectedBranch;
+            }
+
+            async function loadPendingInscriptions() {
+                const tbody = document.getElementById('pendingInscriptionsTable');
+                if (!tbody) return;
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">Chargement...</td></tr>';
+                try {
+                    const snapshot = await pendingInscriptionsRef.once('value');
+                    pendingInscriptionsData = [];
+                    snapshot.forEach(child => {
+                        const data = { id: child.key, ...child.val() };
+                        const statutValue = data.statut;
+                        const statusValue = data.status;
+                        const isConfirmed = statutValue === 'Confirmé' || statusValue === 'approuve';
+                        const isRejected = statutValue === 'Rejeté' || statusValue === 'rejete';
+                        const isPending = statutValue === 'En attente' || statutValue === 'En attente de validation' || statusValue === 'en_attente' || statusValue === 'pending' || statusValue === 'en_attente_de_validation' || (statutValue === undefined && statusValue === undefined);
+
+                        if (isConfirmed || isRejected) return;
+                        if (!isPending) return;
+
+                        pendingInscriptionsData.push(data);
+                    });
+                    pendingInscriptionsData = pendingInscriptionsData.filter(inscriptionMatchesSelectedBranch);
+                    pendingInscriptionsData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    renderPendingInscriptions();
+                } catch (error) {
+                    console.error('Erreur chargement inscriptions en attente:', error);
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">Erreur de chargement</td></tr>';
+                }
+            }
+
+            function renderPendingInscriptions() {
+                const tbody = document.getElementById('pendingInscriptionsTable');
+                if (!tbody) return;
+                if (pendingInscriptionsData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted"><i class="fas fa-check-circle me-2"></i>Aucune demande en attente</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                pendingInscriptionsData.forEach((insc, index) => {
+                    const dateStr = insc.dateInscription ? new Date(insc.dateInscription).toLocaleDateString('fr-FR') : 'N/A';
+                    const branchLabel = getInscriptionBranchLabel(insc.branche, insc.section);
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${insc.codeUnique || 'N/A'}</strong></td>
+                        <td>${insc.nomPrenom || 'N/A'}</td>
+                        <td>${insc.dateNaissance ? new Date(insc.dateNaissance).toLocaleDateString('fr-FR') : 'N/A'}</td>
+                        <td>${insc.chefNomPrenom || 'N/A'}</td>
+                        <td>${insc.chefTelephone || 'N/A'}</td>
+                        <td><span class="badge bg-secondary">${branchLabel}</span></td>
+                        <td>${dateStr}</td>
+                        <td>
+                            <button class="btn btn-sm btn-success me-1" onclick="openConfirmInscriptionModal('${insc.id}')">
+                                <i class="fas fa-check me-1"></i>Confirmer
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="rejectPendingInscription('${insc.id}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            function openConfirmInscriptionModal(inscriptionId) {
+                const insc = pendingInscriptionsData.find(i => i.id === inscriptionId);
+                if (!insc) { showToast('Demande introuvable', 'error'); return; }
+                currentConfirmInscriptionId = inscriptionId;
+
+                document.getElementById('confirmInscriptionSummary').innerHTML = `
+                    <strong>${insc.nomPrenom}</strong> — Né(e) le ${insc.dateNaissance ? new Date(insc.dateNaissance).toLocaleDateString('fr-FR') : 'N/A'}<br>
+                    Chef de famille: ${insc.chefNomPrenom || 'N/A'} (${insc.chefTelephone || 'N/A'})<br>
+                    Branche demandée: ${getInscriptionBranchLabel(insc.branche, insc.section)} | Section: ${insc.section || 'N/A'}
+                `;
+
+                const branch = mapInscriptionBranchToInternal(insc.branche, insc.section);
+                const classSelect = document.getElementById('confirmAssignedClass');
+                classSelect.innerHTML = '<option value="">Chargement des classes...</option>';
+                getRegistrationClassesForBranch(branch).then(classes => {
+                    classSelect.innerHTML = '<option value="">Sélectionner une classe</option>';
+                    classes.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c;
+                        opt.textContent = c;
+                        classSelect.appendChild(opt);
+                    });
+                });
+
+                document.getElementById('confirmAmountPaid').value = '';
+                document.getElementById('confirmPaymentMode').value = 'cash';
+                document.getElementById('confirmTransactionRef').value = '';
+
+                // Sélectionne automatiquement l'année scolaire actuellement configurée
+                const currentAcademicYear = getAcademicYearForEnrollmentDate(insc.dateInscription || insc.timestamp || new Date());
+                const academicYearSelect = document.getElementById('confirmAcademicYear');
+                if (academicYearSelect) {
+                    const optionExists = Array.from(academicYearSelect.options).some(opt => opt.value === currentAcademicYear);
+                    if (!optionExists) {
+                        const opt = document.createElement('option');
+                        opt.value = currentAcademicYear;
+                        opt.textContent = currentAcademicYear;
+                        academicYearSelect.appendChild(opt);
+                    }
+                    academicYearSelect.value = currentAcademicYear;
+                }
+
+                const modal = new bootstrap.Modal(document.getElementById('confirmInscriptionModal'));
+                modal.show();
+            }
+
+            async function confirmInscriptionRegistration() {
+                if (!currentConfirmInscriptionId) return;
+                const insc = pendingInscriptionsData.find(i => i.id === currentConfirmInscriptionId);
+                if (!insc) { showToast('Demande introuvable', 'error'); return; }
+
+                const academicYear = getAcademicYearForEnrollmentDate(insc.dateInscription || insc.timestamp || new Date());
+                const academicYearSelect = document.getElementById('confirmAcademicYear');
+                if (academicYearSelect) academicYearSelect.value = academicYear;
+                const assignedClass = document.getElementById('confirmAssignedClass').value;
+                const amountPaid = parseFloat(document.getElementById('confirmAmountPaid').value);
+                const paymentMode = document.getElementById('confirmPaymentMode').value;
+                const transactionRef = document.getElementById('confirmTransactionRef').value.trim();
+
+                if (!assignedClass) { showToast('Veuillez sélectionner une classe', 'error'); return; }
+                if (!amountPaid || amountPaid <= 0) { showToast('Veuillez saisir le montant payé', 'error'); return; }
+
+                const saveBtn = document.getElementById('confirmInscriptionSaveBtn');
+                const originalHtml = saveBtn.innerHTML;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enregistrement...';
+
+                try {
+                    const branch = mapInscriptionBranchToInternal(insc.branche, insc.section);
+                    const generatedUID = generateStudentUID(branch, assignedClass, insc.nomPrenom);
+                    const studentLevel = getLevelFromClassName(assignedClass, branch);
+
+                    const studentData = {
+                        reference: generatedUID,
+                        name: insc.nomPrenom,
+                        birthDate: insc.dateNaissance || '',
+                        gender: insc.sexe === 'FILLE' ? 'FILLE' : 'GARCON',
+                        previousSchool: insc.ecoleProvenance || '',
+                        class: assignedClass,
+                        classes: assignedClass,
+                        branch: normalizeStudentBranch(branch),
+                        level: studentLevel,
+                        degre: studentLevel,
+                        parent: insc.chefNomPrenom || '',
+                        parentPhone: insc.chefTelephone || '',
+                        parentID: insc.chefPieceIdentite || '',
+                        address: [insc.secteur, insc.umurenge, insc.akagari, insc.umudugudu].filter(Boolean).join(', '),
+                        transportEnrolled: insc.transport === 'OUI',
+                        transportMonthlyFee: 0,
+                        status: 'active',
+                        timestamp: Date.now(),
+                        createdBy: currentUserName,
+                        academicYear: academicYear,
+                        fromInscriptionRequest: currentConfirmInscriptionId
+                    };
+
+                    // ✅ VÉRIFICATION ANTI-DOUBLON pour confirmation d'inscription (création nouvelle fiche)
+                    const duplicates = findPotentialDuplicateStudents(studentData, studentData.branch);
+                    if (duplicates.length > 0) {
+                        const top = duplicates[0];
+                        const existingClass = top.student.classes || top.student.class || 'N/A';
+                        const existingDate = top.student.timestamp
+                            ? new Date(top.student.timestamp).toLocaleDateString('fr-FR')
+                            : 'date inconnue';
+
+                        const message = `⚠️ Élève similaire déjà inscrit (${top.score}% de correspondance) :\n\n` +
+                            `${top.student.name || top.student.fullName || top.student.nomPrenom} — Classe ${existingClass} — inscrit le ${existingDate}\n\n` +
+                            `Voulez-vous quand même créer une NOUVELLE fiche pour cet élève ?`;
+
+                        if (!confirm(message)) {
+                            showToast('Confirmation annulée — doublon évité.', 'info');
+                            saveBtn.disabled = false;
+                            saveBtn.innerHTML = originalHtml;
+                            return;
+                        }
+                    }
+                    const newStudentRef = await studentsRef.push(studentData);
+                    const newStudentKey = newStudentRef.key;
+
+                    const registrationPayment = {
+                        studentId: newStudentKey,
+                        studentName: studentData.name,
+                        studentClass: studentData.class,
+                        reference: `REG-${generatedUID}`,
+                        amount: amountPaid,
+                        paymentMode: paymentMode,
+                        paymentDate: new Date().toISOString().split('T')[0],
+                        transactionRef: transactionRef,
+                        receivedBy: currentUserName,
+                        branch: studentData.branch,
+                        academicYear: academicYear,
+                        timestamp: Date.now(),
+                        type: 'registration'
+                    };
+                    await registrationPaymentsRef.push(registrationPayment);
+
+                    await pendingInscriptionsRef.child(currentConfirmInscriptionId).update({
+                        statut: 'Confirmé',
+                        status: 'approuve',
+                        confirmedBy: currentUserName,
+                        confirmedAt: Date.now(),
+                        studentId: newStudentKey
+                    });
+
+                    showToast('Inscription confirmée ! ID: ' + generatedUID, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('confirmInscriptionModal')).hide();
+
+                    loadPendingInscriptions();
+                    loadRegistration();
+                    if (typeof applyStudentFilters === 'function') applyStudentFilters();
+                    if (typeof recalculateExpectedIncome === 'function') recalculateExpectedIncome();
+
+                    setTimeout(() => {
+                        if (confirm('Télécharger la lettre d\'admission maintenant ?')) {
+                            downloadAdmissionLetter(newStudentKey);
+                        }
+                    }, 400);
+
+                } catch (error) {
+                    console.error('Erreur confirmation inscription:', error);
+                    showToast('Erreur lors de la confirmation: ' + error.message, 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalHtml;
+                }
+            }
+
+            async function rejectPendingInscription(inscriptionId) {
+                if (!confirm('Rejeter cette demande d\'inscription ?')) return;
+                try {
+                    await pendingInscriptionsRef.child(inscriptionId).update({
+                        statut: 'Rejeté',
+                        status: 'rejete',
+                        rejectedBy: currentUserName,
+                        rejectedAt: Date.now()
+                    });
+                    showToast('Demande rejetée', 'info');
+                    loadPendingInscriptions();
+                } catch (error) {
+                    console.error(error);
+                    showToast('Erreur lors du rejet', 'error');
+                }
+            }
+
+            async function migrateInscriptionsFieldNames() {
+                const snapshot = await db.ref('inscriptions-scolaires').once('value');
+                const updates = {};
+                let migratedCount = 0;
+
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    const key = child.key;
+                    const patch = {};
+
+                    if (data.status !== undefined && data.statut === undefined) {
+                        if (data.status === 'en_attente') patch.statut = 'En attente';
+                        if (data.status === 'approuve') patch.statut = 'Confirmé';
+                        if (data.status === 'rejete') patch.statut = 'Rejeté';
+                    }
+                    if (data.chefDeFamille !== undefined && data.chefNomPrenom === undefined) {
+                        patch.chefNomPrenom = data.chefDeFamille;
+                    }
+                    if (data.reference !== undefined && data.codeUnique === undefined) {
+                        patch.codeUnique = data.reference;
+                    }
+                    if (typeof data.transport === 'boolean') {
+                        patch.transport = data.transport ? 'OUI' : 'NON';
+                    }
+
+                    if (Object.keys(patch).length > 0) {
+                        updates[`inscriptions-scolaires/${key}`] = patch;
+                        migratedCount += 1;
+                    }
+                });
+
+                if (Object.keys(updates).length > 0) {
+                    await db.ref().update(updates);
+                }
+                console.log(`migrateInscriptionsFieldNames: ${migratedCount} enregistrements migrés.`);
+            }
+
+            function getSelectedPayrollMonthYear() {
+                const monthSelect = document.getElementById('payrollMonth');
+                const yearInput = document.getElementById('payrollYear');
+                const now = new Date();
+                const monthValue = monthSelect ? parseInt(monthSelect.value || `${now.getMonth() + 1}`, 10) : (now.getMonth() + 1);
+                const yearValue = yearInput ? parseInt(yearInput.value || `${now.getFullYear()}`, 10) : now.getFullYear();
+                const monthLabel = monthSelect && monthSelect.selectedIndex >= 0
+                    ? monthSelect.options[monthSelect.selectedIndex].text
+                    : new Date(yearValue, monthValue - 1, 1).toLocaleDateString('en-US', { month: 'long' });
+                return { monthValue, yearValue, monthLabel };
+            }
+
+            function getConfiguredPaymentDateLabel() {
+                const paymentDaySelect = document.getElementById('paymentDay');
+                if (!paymentDaySelect) return 'N/A';
+
+                const { monthValue, yearValue } = getSelectedPayrollMonthYear();
+                const selectedDay = (paymentDaySelect.value || '').toString();
+                let configuredDate;
+
+                if (selectedDay === '30') {
+                    configuredDate = new Date(yearValue, monthValue, 0);
+                    while (configuredDate.getDay() === 0 || configuredDate.getDay() === 6) {
+                        configuredDate.setDate(configuredDate.getDate() - 1);
+                    }
+                } else {
+                    const maxDay = new Date(yearValue, monthValue, 0).getDate();
+                    const day = Math.max(1, Math.min(parseInt(selectedDay || '25', 10), maxDay));
+                    configuredDate = new Date(yearValue, monthValue - 1, day);
+                }
+
+                return configuredDate.toLocaleDateString('en-US', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
+
+            function refreshPayrollPaymentDayPreview() {
+                const fixedDateInput = document.getElementById('paymentDayFixedDate');
+                if (!fixedDateInput) return;
+                fixedDateInput.value = getConfiguredPaymentDateLabel();
+            }
+
+            // Update current period
+            function updateCurrentPeriod() {
+                const monthSelect = document.getElementById('payrollMonth');
+                const month = monthSelect.options[monthSelect.selectedIndex].text;
+                const year = document.getElementById('payrollYear').value;
+                document.getElementById('currentPeriod').textContent = `${month} ${year}`;
+                refreshPayrollPaymentDayPreview();
+            }
+
+            // Sélectionner une branche
+            function selectBranch(branchId) {
+                if (!isBranchAllowedForCurrentUser(branchId)) {
+                    showToast('Vous pouvez uniquement voir les informations de votre branche.', 'error');
+                    return;
+                }
+
+                selectedBranch = branchId;
+                document.getElementById('selectedBranch').value = branchId;
+                
+                // Mettre à jour l'interface
+                document.querySelectorAll('.branch-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                document.getElementById('branch' + branchId.charAt(0).toUpperCase() + branchId.slice(1)).classList.add('selected');
+                
+                // Mettre à jour le texte affiché
+                const branchNames = {
+                    kacyiru: 'EDEN FAMILY SCHOOL KACYIRU',
+                    kimisagara: 'EDEN FAMILY SCHOOL KIMISAGARA',
+                    gisozi_maternelle: 'EDEN FAMILY SCHOOL GISOZI NURSERY',
+                    gisozi_primaire: 'EDEN FAMILY SCHOOL GISOZI PRIMARY'
+                };
+                document.getElementById('currentBranchText').textContent = branchNames[branchId];
+                document.getElementById('feeBranch').value = branchNames[branchId];
+                
+                // Load fee configuration for the selected branch
+                loadFeeConfiguration();
+                
+                // Apply branch fee rules
+                applyBranchFeeRules(branchId, document.getElementById('feeQuarter').value);
+                
+                // Mettre à jour les statistiques
+                updateStats();
+                // refresh payroll teacher dropdown for new branch
+                populatePayrollTeacherDropdown();
+                // update class filter for new branch
+                loadBranchClasses(branchId).finally(() => {
+                    populateClassFilter();
+                    populateFeeClassFilter();
+                    populateStudentPaymentsClassFilter();
+                    populateStudentClassFilter();
+                    populateFeesClassFilter();
+                    populateTransportClassFilter();
+                    populateCoachingClassFilter();
+                });
+                
+                // Calculate expected income for new branch
+                recalculateExpectedIncome();
+                
+                // Filtrer les élèves par branche si la section étudiants est active
+                if (document.getElementById('students').classList.contains('active')) {
+                    applyStudentFilters();
+                }
+
+                if (document.getElementById('registration').classList.contains('active')) {
+                    setTimeout(() => {
+                        loadRegistration();
+                        loadPendingInscriptions();
+                    }, 50);
+                }
+                
+                // Load opening balance reports for new branch
+                loadOpeningBalanceReports();
+                
+                showToast(`Branch ${branchNames[branchId]} selected`, 'success');
+            }
+
+            // Load workers
+            function loadWorkers() {
+                try {
+                    const tbody = document.getElementById('workersTable');
+                    tbody.innerHTML = '';
+                    
+                    // Use the workers array populated from worksRef listener
+                    if (!workers || workers.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-users fa-2x mb-3"></i>
+                                        <p>No workers found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+                    
+                    // Filtrer par branche sélectionnée
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                    const branchWorkers = workers.filter(worker => worker.branch === firebaseBranch);
+                    branchWorkers.sort((a, b) => parseInt(a.no) - parseInt(b.no));
+                    
+                    if (branchWorkers.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-users fa-2x mb-3"></i>
+                                        <p>No workers found in this branch</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+                    
+                    branchWorkers.forEach((worker, index) => {
+                        const branchLocalNo = index + 1;
+                        const badgeClass = worker.paymentMode === 'bank' ? 'badge-bank' :
+                                        worker.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash';
+                        const paymentText = worker.paymentMode === 'bank' ? 'Bank' :
+                                        worker.paymentMode === 'momo' ? 'Mobile Money' : 'Cash';
+                        
+                        const typeBadge = getWorkerTypeBadgeClass(worker.type);
+                        const typeText = getWorkerTypeLabel(worker.type);
+                        
+                        const workerDebts = debts.filter(d => d.workerId === worker.id && d.status === 'pending');
+                        const totalDebt = workerDebts.reduce((sum, debt) => sum + (debt.amount || 0), 0);
+                        
+                        const tr = document.createElement('tr');
+                        tr.className = 'animate-fade-in';
+                        tr.innerHTML = `
+                            <td>${branchLocalNo}</td>
+                            <td><strong>${worker.name}</strong></td>
+                            <td><span class="${typeBadge}">${typeText}</span></td>
+                            <td>${worker.phone || ''}</td>
+                            <td><span class="${badgeClass}">${paymentText}</span></td>
+                            <td>${formatCurrencyRWF(worker.salary || 0)}</td>
+                            <td>
+                                ${totalDebt > 0 ? 
+                                    `<span class="debt-badge" onclick="showDebtDetails('${worker.id}')">${formatCurrencyRWF(totalDebt)}</span>` : 
+                                    'None'}
+                            </td>
+                            <td><span class="badge bg-success">${worker.status || 'active'}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editWorker('${worker.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info me-1" onclick="addDebtForWorker('${worker.id}')">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteWorkerPrompt('${worker.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    
+                } catch (error) {
+                    console.error('Error loading workers:', error);
+                    showToast('Error loading workers', 'error');
+                }
+            }
+
+            // Filter workers
+            function filterWorkers(type) {
+                // Filtrer d'abord par branche
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const branchTeachers = teachers.filter(teacher => teacher.branch === firebaseBranch);
+                
+                // Puis par type
+                const filtered = type === 'all' 
+                    ? branchTeachers 
+                    : branchTeachers.filter(teacher => teacher.type === type);
+                filtered.sort((a, b) => parseInt(a.no || 0) - parseInt(b.no || 0));
+                
+                const tbody = document.getElementById('workersTable');
+                tbody.innerHTML = '';
+                
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-users fa-2x mb-3"></i>
+                                    <p>No workers found</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                filtered.forEach((teacher, index) => {
+                    const branchLocalNo = index + 1;
+                    const badgeClass = teacher.paymentMode === 'bank' ? 'badge-bank' :
+                                    teacher.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash';
+                    const paymentText = teacher.paymentMode === 'bank' ? 'Bank' :
+                                    teacher.paymentMode === 'momo' ? 'Mobile Money' : 'Cash';
+                    
+                    const typeBadge = teacher.type === 'enseignant' ? 'badge bg-success' :
+                                    teacher.type === 'staff' ? 'badge bg-info' : 'badge bg-secondary';
+                    const typeText = teacher.type === 'enseignant' ? 'Teacher' :
+                                teacher.type === 'staff' ? 'Staff' : 'Other';
+                    
+                    const workerDebts = debts.filter(d => d.workerId === teacher.id && d.status === 'pending');
+                    const totalDebt = workerDebts.reduce((sum, debt) => sum + (debt.amount || 0), 0);
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = 'animate-fade-in';
+                    tr.innerHTML = `
+                        <td>${branchLocalNo}</td>
+                        <td><strong>${teacher.name}</strong></td>
+                        <td><span class="${typeBadge}">${typeText}</span></td>
+                        <td>${teacher.phone || ''}</td>
+                        <td><span class="${badgeClass}">${paymentText}</span></td>
+                        <td>${formatCurrencyRWF(teacher.salary || 0)}</td>
+                        <td>
+                            ${totalDebt > 0 ? 
+                                `<span class="debt-badge" onclick="showDebtDetails('${teacher.id}')">${formatCurrencyRWF(totalDebt)}</span>` : 
+                                'None'}
+                        </td>
+                        <td><span class="badge bg-success">${teacher.status || 'active'}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editWorker('${teacher.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info me-1" onclick="addDebtForWorker('${teacher.id}')">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteWorkerPrompt('${teacher.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Load current month debts
+            async function loadCurrentMonthDebts() {
+                try {
+                    const tbody = document.getElementById('currentMonthDebtsTable');
+                    tbody.innerHTML = '';
+                    
+                    const currentMonth = new Date().getMonth() + 1;
+                    const currentYear = new Date().getFullYear();
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                    const combinedDebts = [
+                        ...(debts || []),
+                        ...getInjectedPayrollDebts(firebaseBranch)
+                    ];
+                    
+                    const monthDebts = combinedDebts.filter(debt => {
+                        if (debt.status !== 'pending') return false;
+                        const debtDate = new Date(debt.date);
+                        return debtDate.getMonth() + 1 === currentMonth && 
+                            debtDate.getFullYear() === currentYear;
+                    });
+                    
+                    if (monthDebts.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-money-bill-wave fa-2x mb-3"></i>
+                                        <p>No debts for this month</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+                    
+                    monthDebts.forEach((debt, index) => {
+                        const worker = workers.find(t => t.id === debt.workerId);
+                        if (!worker || worker.branch !== firebaseBranch) return;
+                        
+                        const tr = document.createElement('tr');
+                        tr.className = 'animate-fade-in';
+                        tr.innerHTML = `
+                            <td>${worker ? worker.name : 'Unknown'}</td>
+                            <td>${worker ? getWorkerTypeLabel(worker.type) : ''}</td>
+                            <td><strong class="text-danger">${formatCurrencyRWF(debt.amount)}</strong></td>
+                            <td>${new Date(debt.date).toLocaleDateString('en-US')}</td>
+                            <td>${debt.reason}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-success me-1" onclick="markDebtPaid('${debt.id}')">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteDebt('${debt.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    
+                } catch (error) {
+                    console.error('Error loading debts:', error);
+                }
+            }
+            
+            function getPreviousDate(date) {
+                const d = new Date(date);
+                d.setDate(d.getDate() - 1);
+                return d.toISOString().split('T')[0];
+            }
+
+            function getOpeningBalanceValue(date, firebaseBranch, fallback = 0) {
+                // 1. Chercher d'abord une Opening Balance directe
+                const firebaseValue = openingBalances?.[firebaseBranch]?.[date];
+                if (firebaseValue !== undefined && firebaseValue !== null && firebaseValue !== '') {
+                    const parsed = parseFloat(firebaseValue);
+                    return Number.isFinite(parsed) ? parsed : fallback;
+                }
+
+                const localValue = parseFloat(localStorage.getItem(`openingBalance_${date}_${firebaseBranch}`));
+                if (Number.isFinite(localValue)) return localValue;
+                
+                // 2. Si pas d'Opening Balance direct, chercher le Closing Balance du jour précédent
+                const previousDate = getPreviousDate(date);
+                const closingBalancePrevDay = closingBalances?.[firebaseBranch]?.[previousDate];
+                if (closingBalancePrevDay !== undefined && closingBalancePrevDay !== null && closingBalancePrevDay !== '') {
+                    const parsed = parseFloat(closingBalancePrevDay);
+                    return Number.isFinite(parsed) ? parsed : fallback;
+                }
+                
+                return fallback;
+            }
+
+            function getInjectedPayrollDebts(firebaseBranch) {
+                const normalizedBranch = (firebaseBranch || '').toString().trim().toLowerCase();
+                const targetWorker = (workers || []).find(worker => {
+                    const workerBranch = (worker.branch || '').toString().trim().toLowerCase();
+                    const workerName = (worker.name || '').toString().trim().toLowerCase();
+                    return workerBranch === normalizedBranch && workerName === 'shimiyeimana leandre';
+                });
+
+                if (!targetWorker) return [];
+
+                return [
+                    {
+                        id: 'manual_shimi_debt_1',
+                        workerId: targetWorker.id,
+                        workerName: targetWorker.name,
+                        amount: 25000,
+                        reason: 'contrevansion',
+                        date: '2026-04-22',
+                        status: 'pending',
+                        source: 'manual'
+                    },
+                    {
+                        id: 'manual_shimi_debt_2',
+                        workerId: targetWorker.id,
+                        workerName: targetWorker.name,
+                        amount: 20000,
+                        reason: 'avance sur salaire',
+                        date: '2026-04-22',
+                        status: 'pending',
+                        source: 'manual'
+                    }
+                ];
+            }
+
+            function getPreviousDateString(dateString) {
+                const baseDate = new Date(`${dateString}T00:00:00`);
+                if (isNaN(baseDate)) return null;
+                baseDate.setDate(baseDate.getDate() - 1);
+                return baseDate.toISOString().split('T')[0];
+            }
+
+            function getAutoOpeningBalanceFromYesterday(date, firebaseBranch) {
+                const previousDate = getPreviousDateString(date);
+                if (!previousDate) return 0;
+
+                const previousStudentPayments = studentFees.filter(fee => {
+                    const paymentDate = getPaymentDateString(fee);
+                    if (!paymentDate || paymentDate !== previousDate) return false;
+                    return matchesPaymentBranchAndLevelForSelection(fee, selectedBranch);
+                });
+
+                const previousTransportPayments = (transportPayments || []).filter(payment => {
+                    const paymentDate = getPaymentDateString(payment);
+                    if (!paymentDate || paymentDate !== previousDate) return false;
+                    return matchesPaymentBranchAndLevelForSelection(payment, selectedBranch);
+                });
+
+                const previousFees = previousStudentPayments
+                    .filter(p => p.paymentType === 'fees')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const previousCoaching = previousStudentPayments
+                    .filter(p => p.paymentType === 'coaching')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const previousTransportFromStudentFees = previousStudentPayments
+                    .filter(p => p.paymentType === 'transport')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const previousTransportFromPayments = previousTransportPayments
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const previousTransport = previousTransportFromStudentFees + previousTransportFromPayments;
+                const previousUniform = previousStudentPayments
+                    .filter(p => p.paymentType === 'uniforme')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const previousOther = previousStudentPayments
+                    .filter(p => !['fees', 'transport', 'coaching', 'uniforme'].includes(p.paymentType || ''))
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+                const previousExpenses = dailyExpenses
+                    .filter(exp => exp.date === previousDate && exp.branch === firebaseBranch)
+                    .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+
+                const previousOpening = getOpeningBalanceValue(previousDate, firebaseBranch, 0);
+                const previousIncome = previousFees + previousTransport + previousCoaching + previousUniform + previousOther;
+                return previousOpening + previousIncome - previousExpenses;
+            }
+
+            function makeCompositeKey(prefix, branch, period) {
+                const safeBranch = (branch || 'unknown').toString().trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+                const safePeriod = (period || Date.now().toString()).toString().trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+                return `${prefix}_${safeBranch}_${safePeriod}`;
+            }
+
+            function setIfAbsentWithTransaction(ref, data) {
+                return new Promise((resolve, reject) => {
+                    ref.transaction(
+                        (current) => {
+                            if (current === null) return data;
+                            return;
+                        },
+                        (error, committed, snapshot) => {
+                            if (error) {
+                                reject(error);
+                                return;
+                            }
+                            resolve({ committed, snapshot });
+                        },
+                        false
+                    );
+                });
+            }
+
+            // payroll utilities
+            async function generateMonthlyPayroll() {
+                const month = document.getElementById('payrollMonth').value;
+                const year = document.getElementById('payrollYear').value;
+                const monthName = document.getElementById('payrollMonth').selectedOptions[0].text;
+                const period = `${monthName} ${year}`;
+                
+                // Filtrer les travailleurs par branche
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const branchWorkers = workers.filter(w => w.branch === firebaseBranch);
+                
+                if (branchWorkers.length === 0) {
+                    showToast(currentLanguage === 'fr' ? 'Aucun travailleur dans cette branche' : 'No workers in this branch', 'error');
+                    return;
+                }
+                
+                // Calculer les dettes pour chaque travailleur (en attente)
+                const debtsByWorker = {};
+                const allPendingDebts = [
+                    ...(debts || []).filter(d => d.status === 'pending'),
+                    ...getInjectedPayrollDebts(firebaseBranch)
+                ];
+                allPendingDebts.forEach(d => {
+                    if (!debtsByWorker[d.workerId]) debtsByWorker[d.workerId] = 0;
+                    debtsByWorker[d.workerId] += d.amount || 0;
+                });
+                
+                // Construire les données du payroll
+                const payrollEntries = [];
+                let nextNo = 1;
+                
+                branchWorkers.forEach(worker => {
+                    const debt = debtsByWorker[worker.id] || 0;
+                    const netSalary = Math.max(0, (worker.salary || 0) - debt);
+                    const paymentDestination = worker.paymentMode === 'bank'
+                        ? `${worker.bankName || 'Bank'} | ${worker.name || ''}`
+                        : worker.paymentMode === 'momo'
+                            ? `${worker.momoOperator || 'MoMo'} ${worker.momoNumber || worker.phone || ''} | ${worker.name || ''}`
+                            : `${worker.phone || ''} | ${worker.name || ''}`;
+                    const cardName = worker.paymentMode === 'bank'
+                        ? (worker.accountHolderName || '')
+                        : worker.paymentMode === 'momo'
+                            ? (worker.momoRegisteredName || '')
+                            : '';
+                    payrollEntries.push({
+                        no: worker.no,
+                        name: worker.name,
+                        type: worker.type,
+                        phone: worker.phone,
+                        cardName,
+                        paymentMode: worker.paymentMode,
+                        paymentDestination,
+                        baseSalary: worker.salary || 0,
+                        debts: debt,
+                        netSalary: netSalary,
+                        status: 'pending',
+                        workerId: worker.id
+                    });
+                    nextNo = Math.max(nextNo, (parseInt(worker.no) || 0) + 1);
+                });
+                
+                // Ajouter les directeurs et comptables depuis authorityContacts
+                const branchInfo = getBranchDirectorInfo(firebaseBranch);
+                const authorityContacts = Array.isArray(branchInfo?.authorityContacts) ? branchInfo.authorityContacts : [];
+                
+                authorityContacts.forEach(contact => {
+                    // Ignorer le directeur général spécifique pour le payroll
+                    const ignoreAuthorityName = 'NYIRIMBUTO Josephe';
+                    if (contact.name && contact.name.trim().toLowerCase() === ignoreAuthorityName.toLowerCase()) {
+                        return;
+                    }
+
+                    // Chercher si ce contact existe déjà dans les travailleurs
+                    let existingWorker = workers.find(w => 
+                        w.name && w.name.trim().toLowerCase() === contact.name?.trim().toLowerCase()
+                    );
+                    
+                    if (existingWorker && existingWorker.branch === firebaseBranch) {
+                        // Vérifier si ce travailleur n'est pas déjà dans le payroll
+                        const alreadyAdded = payrollEntries.some(e => e.workerId === existingWorker.id);
+                        if (!alreadyAdded) {
+                            // Ajouter le travailleur existant
+                            const debt = debtsByWorker[existingWorker.id] || 0;
+                            const netSalary = Math.max(0, (existingWorker.salary || 0) - debt);
+                            payrollEntries.push({
+                                no: existingWorker.no || nextNo++,
+                                name: existingWorker.name,
+                                type: contact.label || existingWorker.type,
+                                phone: existingWorker.phone,
+                                cardName: existingWorker.accountHolderName || '',
+                                paymentMode: existingWorker.paymentMode || 'bank',
+                                paymentDestination: `${existingWorker.bankName || 'Bank'} | ${existingWorker.name || ''}`,
+                                baseSalary: existingWorker.salary || 0,
+                                debts: debt,
+                                netSalary: netSalary,
+                                status: 'pending',
+                                workerId: existingWorker.id
+                            });
+                        }
+                    } else if (contact.name && !existingWorker) {
+                        // Ajouter comme nouveau travailleur (directeur/comptable) sans salaire
+                        const authorityId = `authority-${(contact.label || 'authority').replace(/\s+/g, '_').toLowerCase()}-${(contact.name || '').replace(/\s+/g, '_').toLowerCase()}`;
+                        payrollEntries.push({
+                            no: nextNo++,
+                            name: contact.name,
+                            type: contact.label,
+                            phone: contact.phone || '',
+                            cardName: '',
+                            paymentMode: 'bank',
+                            paymentDestination: contact.phone || '',
+                            baseSalary: 0,
+                            debts: 0,
+                            netSalary: 0,
+                            status: 'pending',
+                            workerId: authorityId
+                        });
+                    }
+                });
+                
+                // Stocker globalement pour accès par d'autres fonctions
+                window.currentPayrollEntries = payrollEntries;
+                window.currentPayrollPeriod = period;
+                const generatedAt = Date.now();
+                window.currentPayrollGeneratedAt = generatedAt;
+                
+                // Enregistrer dans l'historique Firebase
+                const payrollRecord = {
+                    period: period,
+                    month: month,
+                    year: year,
+                    branch: firebaseBranch,
+                    entries: payrollEntries,
+                    totalPayroll: payrollEntries.reduce((sum, e) => sum + e.netSalary, 0),
+                    generatedBy: currentUserName,
+                    timestamp: generatedAt,
+                    status: 'generated'
+                };
+                
+                try {
+                    const payrollKey = makeCompositeKey('payroll', firebaseBranch, `${year}_${month}`);
+                    const result = await setIfAbsentWithTransaction(payrollHistoryRef.child(payrollKey), payrollRecord);
+                    if (!result.committed) {
+                        showToast(currentLanguage === 'fr' ? 'Payroll déjà généré pour cette branche et cette période' : 'Payroll already generated for this branch and period', 'error');
+                        return;
+                    }
+                    showToast(currentLanguage === 'fr' ? 'Payroll généré avec succès !' : 'Payroll generated successfully!', 'success');
+                    
+                    // Afficher dans le tableau
+                    displayPayrollTable(payrollEntries, period);
+                    
+                    // Mettre à jour l'historique
+                    loadPayrollHistory();
+                } catch (error) {
+                    console.error('Error generating payroll:', error);
+                    showToast(currentLanguage === 'fr' ? 'Erreur lors de la génération du payroll' : 'Error generating payroll', 'error');
+                }
+            }
+            
+            // Générer le payroll SEULEMENT pour les employés payés par banque
+            async function generateBankPayrollOnly() {
+                const month = document.getElementById('payrollMonth').value;
+                const year = document.getElementById('payrollYear').value;
+                const monthName = document.getElementById('payrollMonth').selectedOptions[0].text;
+                const period = `${monthName} ${year} (Bank Only)`;
+                
+                // Filtrer les travailleurs par branche ET par mode de paiement (bank)
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const bankWorkers = workers.filter(w => w.branch === firebaseBranch && w.paymentMode === 'bank');
+                
+                if (bankWorkers.length === 0) {
+                    showToast('No bank-paid workers in this branch', 'error');
+                    return;
+                }
+                
+                // Calculer les dettes pour chaque travailleur (en attente)
+                const debtsByWorker = {};
+                const allPendingDebts = [
+                    ...(debts || []).filter(d => d.status === 'pending'),
+                    ...getInjectedPayrollDebts(firebaseBranch)
+                ];
+                allPendingDebts.forEach(d => {
+                    if (!debtsByWorker[d.workerId]) debtsByWorker[d.workerId] = 0;
+                    debtsByWorker[d.workerId] += d.amount || 0;
+                });
+                
+                // Construire les données du payroll (Banque seulement)
+                const payrollEntries = [];
+                let nextNo = 1;
+                
+                bankWorkers.forEach(worker => {
+                    const debt = debtsByWorker[worker.id] || 0;
+                    const netSalary = Math.max(0, (worker.salary || 0) - debt);
+                    const paymentDestination = `${worker.bankName || 'Bank'} | ${worker.name || ''}`;
+                    payrollEntries.push({
+                        no: worker.no,
+                        name: worker.name,
+                        type: worker.type,
+                        phone: worker.phone,
+                        cardName: worker.accountHolderName || '',
+                        paymentMode: worker.paymentMode,
+                        paymentDestination,
+                        baseSalary: worker.salary || 0,
+                        debts: debt,
+                        netSalary: netSalary,
+                        status: 'pending',
+                        workerId: worker.id
+                    });
+                    nextNo = Math.max(nextNo, (parseInt(worker.no) || 0) + 1);
+                });
+                
+                // Ajouter les directeurs et comptables depuis authorityContacts (banque seulement)
+                const branchInfo = getBranchDirectorInfo(firebaseBranch);
+                const authorityContacts = Array.isArray(branchInfo?.authorityContacts) ? branchInfo.authorityContacts : [];
+                
+                authorityContacts.forEach(contact => {
+                    // Chercher si ce contact existe déjà dans les travailleurs
+                    let existingWorker = workers.find(w => 
+                        w.name && w.name.trim().toLowerCase() === contact.name?.trim().toLowerCase()
+                    );
+                    
+                    if (existingWorker && existingWorker.branch === firebaseBranch && existingWorker.paymentMode === 'bank') {
+                        // Vérifier si ce travailleur n'est pas déjà dans le payroll
+                        const alreadyAdded = payrollEntries.some(e => e.workerId === existingWorker.id);
+                        if (!alreadyAdded) {
+                            // Ajouter le travailleur existant
+                            const debt = debtsByWorker[existingWorker.id] || 0;
+                            const netSalary = Math.max(0, (existingWorker.salary || 0) - debt);
+                            payrollEntries.push({
+                                no: existingWorker.no || nextNo++,
+                                name: existingWorker.name,
+                                type: contact.label || existingWorker.type,
+                                phone: existingWorker.phone,
+                                cardName: existingWorker.accountHolderName || '',
+                                paymentMode: existingWorker.paymentMode,
+                                paymentDestination: `${existingWorker.bankName || 'Bank'} | ${existingWorker.name || ''}`,
+                                baseSalary: existingWorker.salary || 0,
+                                debts: debt,
+                                netSalary: netSalary,
+                                status: 'pending',
+                                workerId: existingWorker.id
+                            });
+                        }
+                    } else if (contact.name && !existingWorker) {
+                        // Ajouter comme nouveau travailleur (directeur/comptable) sans salaire - banque par défaut
+                        const authorityId = `authority-${(contact.label || 'authority').replace(/\s+/g, '_').toLowerCase()}-${(contact.name || '').replace(/\s+/g, '_').toLowerCase()}`;
+                        payrollEntries.push({
+                            no: nextNo++,
+                            name: contact.name,
+                            type: contact.label,
+                            phone: contact.phone || '',
+                            cardName: '',
+                            paymentMode: 'bank',
+                            paymentDestination: contact.phone || '',
+                            baseSalary: 0,
+                            debts: 0,
+                            netSalary: 0,
+                            status: 'pending',
+                            workerId: authorityId
+                        });
+                    }
+                });
+                
+                // Stocker globalement pour accès par d'autres fonctions
+                window.currentPayrollEntries = payrollEntries;
+                window.currentPayrollPeriod = period;
+                const generatedAt = Date.now();
+                window.currentPayrollGeneratedAt = generatedAt;
+                
+                // Enregistrer dans l'historique Firebase
+                const payrollRecord = {
+                    period: period,
+                    month: month,
+                    year: year,
+                    branch: firebaseBranch,
+                    entries: payrollEntries,
+                    totalPayroll: payrollEntries.reduce((sum, e) => sum + e.netSalary, 0),
+                    generatedBy: currentUserName,
+                    timestamp: generatedAt,
+                    status: 'generated',
+                    bankOnly: true
+                };
+                
+                try {
+                    const payrollKey = makeCompositeKey('payroll_bank', firebaseBranch, `${year}_${month}`);
+                    const result = await setIfAbsentWithTransaction(payrollHistoryRef.child(payrollKey), payrollRecord);
+                    if (!result.committed) {
+                        showToast('Bank payroll already generated for this branch and period', 'error');
+                        return;
+                    }
+                    showToast(`Payroll (Bank only) generated successfully! ${bankWorkers.length} employee(s)`, 'success');
+                    
+                    // Afficher dans le tableau
+                    displayPayrollTable(payrollEntries, period);
+                    
+                    // Mettre à jour l'historique
+                    loadPayrollHistory();
+                } catch (error) {
+                    console.error('Error generating bank payroll:', error);
+                    showToast('Error generating bank payroll', 'error');
+                }
+            }
+            
+            // Load payroll section - initialize UI
+            function loadPayroll() {
+                try {
+                    updateCurrentPeriod();
+                    populatePayrollTeacherDropdown();
+                } catch (error) {
+                    console.error('Error loading payroll section:', error);
+                    showToast('Error loading payroll section', 'error');
+                }
+            }
+            
+            function displayPayrollTable(entries, period) {
+                const tbody = document.getElementById('payrollTable');
+                tbody.innerHTML = '';
+                
+                const visibleEntries = (entries || []).filter(entry => entry.status !== 'removed');
+                if (visibleEntries.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="11" class="text-center">No data</td></tr>';
+                    document.getElementById('currentPeriod').textContent = period;
+                    return;
+                }
+                
+                document.getElementById('currentPeriod').textContent = period;
+                
+                visibleEntries.forEach((entry, index) => {
+                    const badgeClass = entry.paymentMode === 'bank' ? 'badge-bank' :
+                                    entry.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash';
+                    const paymentText = entry.paymentMode === 'bank' ? 'Bank' :
+                                    entry.paymentMode === 'momo' ? 'Mobile Money' : 'Cash';
+                    const paymentDetails = (entry.paymentDestination || '').toString().trim();
+                    
+                    const typeBadge = getWorkerTypeBadgeClass(entry.type);
+                    const typeText = getWorkerTypeLabel(entry.type);
+                    
+                    const tr = document.createElement('tr');
+                    const actionButtons = [];
+                    const statusLabel = entry.status === 'delayed' ?
+                        `<span class="badge bg-secondary">Delayed</span>` :
+                        `<span class="badge bg-warning">Pending</span>`;
+
+                    if (entry.status !== 'removed') {
+                        if (entry.status === 'delayed') {
+                            actionButtons.push(`<button class="btn btn-sm btn-outline-success me-1" onclick="resumePayrollEntry('${entry.workerId}')">Resume</button>`);
+                        } else {
+                            actionButtons.push(`<button class="btn btn-sm btn-outline-warning me-1" onclick="delayPayrollEntry('${entry.workerId}')">Retarder</button>`);
+                        }
+                        actionButtons.push(`<button class="btn btn-sm btn-outline-danger" onclick="removePayrollEntry('${entry.workerId}')">Retirer</button>`);
+                    }
+
+                    tr.innerHTML = `
+                        <td>${entry.no}</td>
+                        <td><strong>${entry.name}</strong></td>
+                        <td><span class="${typeBadge}">${typeText}</span></td>
+                        <td>${entry.phone || ''}</td>
+                        <td>${entry.cardName ? `<span class="fw-semibold">${entry.cardName}</span>` : '<span class="text-muted">—</span>'}</td>
+                        <td>
+                            <span class="${badgeClass}">${paymentText}</span>
+                            ${paymentDetails ? `<div class="small text-muted mt-1">${paymentDetails}</div>` : ''}
+                        </td>
+                        <td>${formatCurrencyRWF(entry.baseSalary)}</td>
+                        <td>${entry.debts > 0 ? formatCurrencyRWF(entry.debts) : '0 RWF'}</td>
+                        <td>${formatCurrencyRWF(entry.netSalary)}</td>
+                        <td>${statusLabel}</td>
+                        <td>${actionButtons.join('')}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                // Mettre à jour le total
+                const total = visibleEntries.reduce((sum, e) => sum + e.netSalary, 0);
+                document.getElementById('totalPayrollAmount').textContent = `Total: ${formatCurrencyRWF(total)}`;
+            }
+            
+            function delayPayrollEntry(workerId) {
+                if (!window.currentPayrollEntries) return;
+                const entry = window.currentPayrollEntries.find(e => e.workerId === workerId);
+                if (!entry) return;
+                entry.status = 'delayed';
+                displayPayrollTable(window.currentPayrollEntries, window.currentPayrollPeriod || document.getElementById('currentPeriod').textContent);
+            }
+            
+            function resumePayrollEntry(workerId) {
+                if (!window.currentPayrollEntries) return;
+                const entry = window.currentPayrollEntries.find(e => e.workerId === workerId);
+                if (!entry) return;
+                entry.status = 'pending';
+                displayPayrollTable(window.currentPayrollEntries, window.currentPayrollPeriod || document.getElementById('currentPeriod').textContent);
+            }
+            
+            function removePayrollEntry(workerId) {
+                if (!window.currentPayrollEntries) return;
+                const entry = window.currentPayrollEntries.find(e => e.workerId === workerId);
+                if (!entry) return;
+                entry.status = 'removed';
+                displayPayrollTable(window.currentPayrollEntries, window.currentPayrollPeriod || document.getElementById('currentPeriod').textContent);
+            }
+
+            async function savePayroll() {
+                if (!window.currentPayrollEntries || window.currentPayrollEntries.length === 0) {
+                    showToast('Please generate the payroll before saving', 'error');
+                    return;
+                }
+
+                const period = window.currentPayrollPeriod || document.getElementById('currentPeriod')?.textContent || '';
+                const month = document.getElementById('payrollMonth')?.value || '';
+                const year = document.getElementById('payrollYear')?.value || '';
+                const branch = getFirebaseBranchForWorkers(selectedBranch);
+                const entries = window.currentPayrollEntries.filter(e => e.status !== 'removed');
+                const totalPayroll = entries.reduce((sum, e) => sum + (e.netSalary || 0), 0);
+
+                const payrollData = {
+                    period,
+                    month,
+                    year,
+                    branch,
+                    entries,
+                    totalPayroll,
+                    savedBy: currentUserName || '',
+                    savedAt: Date.now(),
+                    status: 'saved'
+                };
+
+                try {
+                    const payrollKey = makeCompositeKey('saved_payroll', branch, `${year}_${month}`);
+                    const result = await setIfAbsentWithTransaction(payrollRef.child(payrollKey), payrollData);
+                    if (!result.committed) {
+                        showToast('Payroll already saved for this branch and period', 'error');
+                        return;
+                    }
+                    showToast('Payroll saved successfully!', 'success');
+                } catch (error) {
+                    console.error('Error saving payroll:', error);
+                    showToast('Error saving payroll', 'error');
+                }
+            }
+            
+            function generateSalaryTableExcel() {
+                // legacy compatibility: call new PDF generator
+                generateTeacherSalaryPDF();
+            }
+            
+            function showTeacherSalaryPreview() {
+                const sel = document.getElementById('payrollTeacherSelect');
+                const workerName = sel ? sel.value : '';
+                if (!workerName) {
+                    showToast('Please choose a worker', 'error');
+                    return;
+                }
+                
+                // Chercher dans les données de payroll stockées
+                let entry = null;
+                if (window.currentPayrollEntries && window.currentPayrollEntries.length > 0) {
+                    entry = window.currentPayrollEntries.find(e => 
+                        e.name.trim().toLowerCase() === workerName.trim().toLowerCase()
+                    );
+                }
+                
+                // Fallback: chercher dans le tableau HTML
+                if (!entry) {
+                    let selectedRow = null;
+                    const tbody = document.getElementById('payrollTable');
+                    if (tbody) {
+                        tbody.querySelectorAll('tr').forEach(tr => {
+                            const nameCell = tr.cells[1];
+                            if (nameCell && nameCell.innerText.trim().toLowerCase() === workerName.trim().toLowerCase()) {
+                                selectedRow = tr;
+                            }
+                        });
+                    }
+                    
+                    if (!selectedRow) {
+                        showToast('Worker not found: first generate the monthly payroll', 'error');
+                        return;
+                    }
+                    
+                    // Créer une entrée depuis le tableau HTML
+                    const cells = selectedRow.cells;
+                    entry = {
+                        no: cells[0]?.innerText || '',
+                        name: workerName,
+                        type: cells[2]?.innerText || '',
+                        phone: cells[3]?.innerText || '',
+                        cardName: cells[4]?.innerText || '',
+                        baseSalary: cells[6]?.innerText || '',
+                        debts: cells[7]?.innerText || '',
+                        netSalary: cells[8]?.innerText || ''
+                    };
+                }
+
+                const preview = document.getElementById('teacherPayrollPreview');
+                const currentPeriodLabel = window.currentPayrollPeriod || document.getElementById('currentPeriod')?.textContent || 'N/A';
+                const configuredPaymentDate = getConfiguredPaymentDateLabel();
+                const generatedDate = new Date(window.currentPayrollGeneratedAt || Date.now()).toLocaleDateString('en-US');
+                preview.innerHTML = `
+                    <h4>Salary Table – ${entry.name}</h4>
+                    <div class="mb-2 small text-muted">
+                        <div><strong>Month:</strong> <span id="salaryMetaMonth">${currentPeriodLabel}</span></div>
+                        <div><strong>Configured Payment Date:</strong> <span id="salaryMetaConfiguredDate">${configuredPaymentDate}</span></div>
+                        <div><strong>Generated Date:</strong> <span id="salaryMetaGeneratedDate">${generatedDate}</span></div>
+                    </div>
+                    <table class="table table-bordered">
+                        <thead><tr><th>NO</th><th>Worker Name</th><th>Position/Subject</th><th>Phone</th><th>Account / MoMo Name</th><th>Salary (FRW)</th><th>Debt</th><th>Paid</th><th>Debt Settled</th><th>Signature</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td>${entry.no}</td><td>${entry.name}</td><td>${entry.type}</td><td>${entry.phone || '—'}</td><td>${entry.cardName || '—'}</td><td>${entry.baseSalary}</td><td>${entry.debts}</td>
+                                <td><input type="checkbox" id="chkPaid"></td>
+                                <td><input type="checkbox" id="chkDebtCleared"></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button class="btn-modern btn-payroll-success" onclick="downloadTeacherSalaryPDF()">Download PDF</button>
+                `;
+            }
+
+            function downloadTeacherSalaryPDF() {
+                const preview = document.getElementById('teacherPayrollPreview');
+                if (!preview || !preview.querySelector('table')) {
+                    showToast('No table to print', 'error');
+                    return;
+                }
+                const row = preview.querySelector('tbody tr');
+                const no = row.cells[0].innerText;
+                const name = row.cells[1].innerText;
+                const post = row.cells[2].innerText;
+                const phone = row.cells[3].innerText;
+                const cardName = row.cells[4].innerText;
+                const salary = row.cells[5].innerText;
+                const debt = row.cells[6].innerText;
+                const monthLabel = (document.getElementById('salaryMetaMonth')?.textContent || '').trim() || (window.currentPayrollPeriod || 'N/A');
+                const configuredDateLabel = (document.getElementById('salaryMetaConfiguredDate')?.textContent || '').trim() || getConfiguredPaymentDateLabel();
+                const generatedDateLabel = (document.getElementById('salaryMetaGeneratedDate')?.textContent || '').trim() || new Date().toLocaleDateString('en-US');
+                const paidChecked = document.getElementById('chkPaid').checked;
+                const debtCleared = document.getElementById('chkDebtCleared').checked;
+                const paidMark = paidChecked ? '☑' : '☐';
+                const debtMark = debtCleared ? '☑' : '☐';
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape' });
+                doc.setFontSize(16);
+                doc.text(`Salary Table – ${name}`, 14, 20);
+                doc.setFontSize(12);
+                doc.text(`Month: ${monthLabel}`, 14, 30);
+                doc.text(`Configured Payment Date: ${configuredDateLabel}`, 14, 36);
+                doc.text(`Generated Date: ${generatedDateLabel}`, 14, 42);
+                doc.autoTable({
+                    head: [[
+                        'NO', 'Worker Name', 'Position/Subject', 'Phone',
+                        'Account / MoMo Name', 'Salary (FRW)', 'Debt', 'Paid', 'Debt Settled', 'Signature'
+                    ]],
+                    body: [[
+                        no, name, post, phone, cardName, salary, debt, paidMark, debtMark, ''
+                    ]],
+                    startY: 50,
+                    theme: 'grid',
+                    headStyles: { fillColor: [46, 139, 87] }
+                });
+                const finalY = doc.lastAutoTable.finalY + 20;
+                doc.text('ACCOUNTANT\'S SIGNATURE: ............................................... ,.............................', 14, finalY);
+                doc.text('DIRECTOR\'S SIGNATURE: ....................................................... ,.............................', 14, finalY + 10);
+                doc.text('DIRECTEUR GÉNÉRAL SIGNATURE: ....................................................... ,.............................', 14, finalY + 20);
+                doc.save(`salary_table_${name}_${new Date().toISOString().split('T')[0]}.pdf`);
+                showToast('PDF downloaded successfully!', 'success');
+            }
+
+            function generateTeacherSalaryPDF() {
+                const sel = document.getElementById('payrollTeacherSelect');
+                const workerName = sel ? sel.value : '';
+                if (!workerName) {
+                    showToast('Please choose a worker', 'error');
+                    return;
+                }
+                const tbody = document.getElementById('payrollTable');
+                if (!tbody || tbody.rows.length === 0) {
+                    showToast('Payroll table is empty: first generate the monthly payroll', 'error');
+                    return;
+                }
+                // try to locate the worker in the currently displayed table
+                let found = false;
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    const nameCell = tr.cells[1];
+                    if (nameCell && nameCell.innerText.trim().toLowerCase() === workerName.toLowerCase()) {
+                        found = true;
+                    }
+                });
+                if (!found) {
+                    showToast('Worker not found in payroll table: check branch or selected month', 'error');
+                    return;
+                }
+                // show preview and immediately download PDF
+                showTeacherSalaryPreview();
+                downloadTeacherSalaryPDF();
+            }
+            
+            // Filter payroll table by payment mode and status
+            function filterPayroll() {
+                try {
+                    const paymentModeFilter = document.getElementById('filterPaymentMode')?.value || 'all';
+                    const statusFilter = document.getElementById('filterStatus')?.value || 'all';
+                    const tbody = document.getElementById('payrollTable');
+                    
+                    if (!tbody) {
+                        console.error('Payroll table not found');
+                        return;
+                    }
+                    
+                    let visibleCount = 0;
+                    tbody.querySelectorAll('tr').forEach(row => {
+                        // Get payment mode from the badge (5th column, index 4)
+                        const paymentModeCell = row.cells[4];
+                        const paymentMode = paymentModeCell?.innerText.toLowerCase().trim();
+                        
+                        // Get status from the badge (8th column, index 7)
+                        const statusCell = row.cells[7];
+                        const status = statusCell?.innerText.toLowerCase().trim();
+                        
+                        // Check if row matches filters
+                        let matchesPaymentMode = paymentModeFilter === 'all';
+                        let matchesStatus = statusFilter === 'all';
+                        
+                        if (paymentModeFilter !== 'all') {
+                            matchesPaymentMode = paymentMode?.includes(paymentModeFilter);
+                        }
+                        
+                        if (statusFilter !== 'all') {
+                            matchesStatus = status?.includes(statusFilter);
+                        }
+                        
+                        // Show or hide row based on filters
+                        if (matchesPaymentMode && matchesStatus) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                    
+                    // Show message if no results
+                    if (visibleCount === 0) {
+                        const noResultsRow = tbody.querySelector('tr.no-results');
+                        if (!noResultsRow) {
+                            const tr = document.createElement('tr');
+                            tr.className = 'no-results';
+                            tr.innerHTML = '<td colspan="9" class="text-center text-muted py-3">No records match the selected filters</td>';
+                            tbody.appendChild(tr);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error filtering payroll:', error);
+                    showToast('Error filtering payroll', 'error');
+                }
+            }
+            
+            async function exportPayrollPDF() {
+                try {
+                    // Vérifier que jsPDF est disponible
+                    if (!window.jspdf) {
+                        showToast('PDF library not loaded. Refreshing page...', 'error');
+                        location.reload();
+                        return;
+                    }
+
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    
+                    // Vérifier qu'il y a des données à exporter
+                    const payrollTable = document.getElementById('payrollTable');
+                    if (!payrollTable) {
+                        showToast('No payroll table found. Generate payroll first.', 'error');
+                        return;
+                    }
+
+                    const rows = [];
+                    const tableRows = payrollTable.querySelectorAll('tr');
+                    
+                    if (tableRows.length === 0) {
+                        showToast('No data to export. Generate payroll first.', 'error');
+                        return;
+                    }
+
+                    tableRows.forEach((row, index) => {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 7) {
+                            rows.push([
+                                cells[0]?.innerText || '',     // NO
+                                cells[1]?.innerText || '',     // NAMES
+                                cells[2]?.innerText || '',     // TYPE
+                                cells[3]?.innerText || '',     // PAYMENT MODE
+                                cells[4]?.innerText || '',     // BASE SALARY
+                                cells[5]?.innerText || '',     // DEBTS
+                                cells[6]?.innerText || ''      // NET SALARY
+                            ]);
+                        }
+                    });
+                    
+                    if (rows.length === 0) {
+                        showToast('No data to export', 'error');
+                        return;
+                    }
+
+                    const periodText = document.getElementById('currentPeriod')?.innerText || 'Payroll';
+                    
+                    doc.setFontSize(16);
+                    doc.text('Payroll - ' + periodText, 14, 20);
+                    
+                    doc.setFontSize(10);
+                    doc.text('Generated: ' + new Date().toLocaleDateString('en-US'), 14, 28);
+                    
+                    // Calculer les totaux
+                    let totalBaseSalary = 0;
+                    let totalDebts = 0;
+                    let totalNetSalary = 0;
+                    
+                    rows.forEach(row => {
+                        const baseSalary = parseFloat(row[4]?.replace(/[^\d.-]/g, '') || 0);
+                        const debts = parseFloat(row[5]?.replace(/[^\d.-]/g, '') || 0);
+                        const netSalary = parseFloat(row[6]?.replace(/[^\d.-]/g, '') || 0);
+                        
+                        totalBaseSalary += baseSalary;
+                        totalDebts += debts;
+                        totalNetSalary += netSalary;
+                    });
+                    
+                    // Ajouter une ligne de total
+                    const totalsRow = [
+                        '',
+                        'TOTAL',
+                        '',
+                        '',
+                        totalBaseSalary.toLocaleString('en-US', { style: 'currency', currency: 'RWF' }),
+                        totalDebts.toLocaleString('en-US', { style: 'currency', currency: 'RWF' }),
+                        totalNetSalary.toLocaleString('en-US', { style: 'currency', currency: 'RWF' })
+                    ];
+                    
+                    rows.push(totalsRow);
+                    
+                    doc.autoTable({
+                        head: [['NO', 'NAMES', 'TYPE', 'PAYMENT MODE', 'BASE SALARY', 'DEBTS', 'NET SALARY']],
+                        body: rows,
+                        startY: 35,
+                        theme: 'striped',
+                        headStyles: { 
+                            fillColor: [46, 139, 87],
+                            textColor: [255, 255, 255],
+                            fontStyle: 'bold'
+                        },
+                        bodyStyles: {
+                            textColor: [0, 0, 0]
+                        },
+                        alternateRowStyles: {
+                            fillColor: [240, 240, 240]
+                        },
+                        didDrawCell: function(data) {
+                            if (data.row.index === data.table.body.length - 1) {
+                                data.cell.styles.fontStyle = 'bold';
+                                data.cell.styles.fillColor = [200, 230, 201];
+                            }
+                        }
+                    });
+                    
+                    const finalY = doc.lastAutoTable.finalY + 20;
+                    doc.setFontSize(10);
+                    doc.text('Accountant\'s signature: _________________________', 14, finalY);
+                    doc.text('Director\'s signature: _________________________', 14, finalY + 10);
+                    doc.text('Directeur Général signature: _________________________', 14, finalY + 20);
+                    
+                    const fileName = `payroll_${periodText.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+                    doc.save(fileName);
+                    showToast('PDF exported successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting PDF:', error);
+                    showToast('Error exporting PDF: ' + error.message, 'error');
+                }
+            }
+            
+            // Export Student Fees to Excel
+            function exportStudentFeesExcel() {
+                try {
+                    const selectedDateFrom = (document.getElementById('filterDateFrom')?.value || '').trim();
+                    const selectedDateTo = (document.getElementById('filterDateTo')?.value || '').trim();
+                    if (selectedDateFrom && selectedDateTo && selectedDateFrom > selectedDateTo) {
+                        showToast('Start date cannot be after end date', 'error');
+                        return;
+                    }
+
+                    const branchFees = getFilteredStudentFeesForCurrentSelection();
+                    
+                    // Prepare export data with all payments
+                    const exportData = [];
+                    let totalAmount = 0;
+                    
+                    branchFees.forEach((fee, index) => {
+                        const student = students.find(s => s.id === fee.studentId);
+                        const amount = parseFloat(fee.amount) || 0;
+                        totalAmount += amount;
+                        
+                        exportData.push({
+                            'NO': index + 1,
+                            'DATE': fee.paymentDate ? new Date(fee.paymentDate).toLocaleDateString('en-US') : '',
+                            'STUDENT NAME': student?.fullName || student?.name || 'N/A',
+                            'STUDENT REFERENCE': fee.reference || student?.reference || 'N/A',
+                            'PAYMENT TYPE': fee.paymentType || '',
+                            'AMOUNT': amount,
+                            'PAYMENT MODE': fee.paymentMode || '',
+                            'RECEIVED BY': fee.receiver || '',
+                            'BRANCH': getBranchName(student?.branch)
+                        });
+                    });
+                    
+                    // Add total row
+                    exportData.push({
+                        'NO': '',
+                        'DATE': '',
+                        'STUDENT NAME': 'TOTAL PAID',
+                        'STUDENT REFERENCE': '',
+                        'PAYMENT TYPE': '',
+                        'AMOUNT': totalAmount,
+                        'PAYMENT MODE': '',
+                        'RECEIVED BY': '',
+                        'BRANCH': ''
+                    });
+                    
+                    // Create Excel workbook
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet(exportData);
+                    
+                    // Set column widths
+                    ws['!cols'] = [
+                        { wch: 5 },   // NO
+                        { wch: 12 },  // DATE
+                        { wch: 20 },  // STUDENT NAME
+                        { wch: 15 },  // STUDENT REFERENCE
+                        { wch: 15 },  // PAYMENT TYPE
+                        { wch: 12 },  // AMOUNT
+                        { wch: 15 },  // PAYMENT MODE
+                        { wch: 15 },  // RECEIVED BY
+                        { wch: 20 }   // BRANCH
+                    ];
+                    
+                    XLSX.utils.book_append_sheet(wb, ws, 'Student Fees');
+                    
+                    const fileName = `student_fees_${selectedBranch}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    
+                    showToast('Student fees exported to Excel successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting student fees Excel:', error);
+                    showToast('Error exporting Excel: ' + error.message, 'error');
+                }
+            }
+            
+            // Export Student Fees to PDF
+            function exportStudentFeesPDF() {
+                try {
+                    const selectedDateFrom = (document.getElementById('filterDateFrom')?.value || '').trim();
+                    const selectedDateTo = (document.getElementById('filterDateTo')?.value || '').trim();
+                    if (selectedDateFrom && selectedDateTo && selectedDateFrom > selectedDateTo) {
+                        showToast('Start date cannot be after end date', 'error');
+                        return;
+                    }
+
+                    const branchFees = getFilteredStudentFeesForCurrentSelection();
+                    
+                    if (branchFees.length === 0) {
+                        showToast('No student fees to export', 'error');
+                        return;
+                    }
+                    
+                    // Prepare data for PDF table
+                    const rows = [];
+                    let totalAmount = 0;
+                    
+                    branchFees.forEach((fee, index) => {
+                        const student = students.find(s => s.id === fee.studentId);
+                        const amount = parseFloat(fee.amount) || 0;
+                        totalAmount += amount;
+                        
+                        rows.push([
+                            index + 1,
+                            fee.paymentDate ? new Date(fee.paymentDate).toLocaleDateString('en-US') : '',
+                            student?.fullName || student?.name || 'N/A',
+                            fee.paymentType || '',
+                            amount.toLocaleString('en-US', { style: 'currency', currency: 'RWF' }),
+                            fee.paymentMode || '',
+                            fee.receiver || ''
+                        ]);
+                    });
+                    
+                    // Add total row
+                    rows.push([
+                        '',
+                        '',
+                        'TOTAL PAID',
+                        '',
+                        totalAmount.toLocaleString('en-US', { style: 'currency', currency: 'RWF' }),
+                        '',
+                        ''
+                    ]);
+                    
+                    // Create PDF
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+                    
+                    doc.setFontSize(16);
+                    doc.text('Student Fees Report', 20, 15);
+                    
+                    doc.setFontSize(10);
+                    doc.text(`Branch: ${getBranchName(selectedBranch)}`, 20, 22);
+                    doc.text(`Generated: ${new Date().toLocaleDateString('en-US')}`, 20, 28);
+                    
+                    doc.autoTable({
+                        head: [['NO', 'DATE', 'STUDENT NAME', 'PAYMENT TYPE', 'AMOUNT', 'PAYMENT MODE', 'RECEIVED BY']],
+                        body: rows,
+                        startY: 35,
+                        theme: 'striped',
+                        headStyles: { 
+                            fillColor: [46, 139, 87],
+                            textColor: [255, 255, 255],
+                            fontStyle: 'bold'
+                        },
+                        bodyStyles: {
+                            textColor: [0, 0, 0]
+                        },
+                        alternateRowStyles: {
+                            fillColor: [240, 240, 240]
+                        },
+                        didDrawCell: function(data) {
+                            if (data.row.index === data.table.body.length - 1) {
+                                data.cell.styles.fontStyle = 'bold';
+                                data.cell.styles.fillColor = [200, 230, 201];
+                            }
+                        }
+                    });
+                    
+                    const finalY = doc.lastAutoTable.finalY + 15;
+                    doc.setFontSize(10);
+                    doc.text('Accountant\'s signature: _________________________', 20, finalY);
+                    doc.text('Director\'s signature: _________________________', 140, finalY);
+                    
+                    const fileName = `student_fees_${selectedBranch}_${new Date().toISOString().split('T')[0]}.pdf`;
+                    doc.save(fileName);
+                    
+                    showToast('PDF exported successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting student fees PDF:', error);
+                    showToast('Error exporting PDF: ' + error.message, 'error');
+                }
+            }
+
+            function showStudentHistoryModal() {
+                const periodType = document.getElementById('studentHistoryPeriodType');
+                periodType.value = 'week';
+                const paymentType = document.getElementById('studentHistoryPaymentType');
+                if (paymentType) {
+                    paymentType.value = 'all';
+                }
+                const paymentMode = document.getElementById('studentHistoryPaymentMode');
+                if (paymentMode) {
+                    paymentMode.value = 'all';
+                }
+                updateStudentHistoryPeriodInput();
+                clearStudentHistoryPreview();
+                const modal = new bootstrap.Modal(document.getElementById('studentHistoryModal'));
+                modal.show();
+            }
+
+            function clearStudentHistoryPreview() {
+                const previewContainer = document.getElementById('studentHistoryPreviewContainer');
+                const previewSummary = document.getElementById('studentHistoryPreviewSummary');
+                const previewBody = document.getElementById('studentHistoryPreviewBody');
+                if (previewContainer) previewContainer.style.display = 'none';
+                if (previewSummary) previewSummary.textContent = '';
+                if (previewBody) previewBody.innerHTML = '';
+            }
+
+            function renderStudentHistoryPreview(historyFees, periodType, periodValue, paymentType, paymentMode) {
+                const previewContainer = document.getElementById('studentHistoryPreviewContainer');
+                const previewSummary = document.getElementById('studentHistoryPreviewSummary');
+                const previewBody = document.getElementById('studentHistoryPreviewBody');
+                if (!previewContainer || !previewSummary || !previewBody) return;
+
+                previewBody.innerHTML = '';
+
+                if (!historyFees || historyFees.length === 0) {
+                    previewContainer.style.display = 'block';
+                    previewSummary.textContent = 'Aucune ligne trouvée pour les filtres sélectionnés.';
+                    previewBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No data</td></tr>';
+                    return;
+                }
+
+                let totalAmount = 0;
+                historyFees.slice(0, 150).forEach(fee => {
+                    const amount = parseFloat(fee.amount) || 0;
+                    totalAmount += amount;
+                    const student = students.find(s => s.id === fee.studentId);
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${fee.paymentDate ? new Date(fee.paymentDate).toLocaleDateString('en-US') : ''}</td>
+                        <td>${student?.fullName || student?.name || fee.studentName || 'N/A'}</td>
+                        <td>${fee.paymentType || ''}</td>
+                        <td>${formatCurrencyRWF(amount)}</td>
+                        <td>${(fee.paymentMode || '').toString()}</td>
+                        <td>${fee.source || ''}</td>
+                    `;
+                    previewBody.appendChild(tr);
+                });
+
+                const periodText = periodType === 'day'
+                    ? `Jour ${periodValue}`
+                    : (periodType === 'week' ? `Semaine ${periodValue}` : `Mois ${periodValue}`);
+
+                previewSummary.textContent = `Periode: ${periodText} | Type: ${paymentType} | Mode: ${paymentMode} | Lignes: ${historyFees.length} | Total: ${formatCurrencyRWF(totalAmount)}`;
+                previewContainer.style.display = 'block';
+            }
+
+            function previewStudentFeesHistory() {
+                const periodType = document.getElementById('studentHistoryPeriodType').value;
+                const periodValue = document.getElementById('studentHistoryPeriod').value;
+                const paymentType = document.getElementById('studentHistoryPaymentType')?.value || 'all';
+                const paymentMode = document.getElementById('studentHistoryPaymentMode')?.value || 'all';
+
+                if (!periodValue) {
+                    showToast('Selectionnez une periode.', 'error');
+                    return;
+                }
+
+                const historyFees = getStudentFeesHistory(periodType, periodValue, paymentType, paymentMode);
+                renderStudentHistoryPreview(historyFees, periodType, periodValue, paymentType, paymentMode);
+            }
+
+            function updateStudentHistoryPeriodInput() {
+                const periodType = document.getElementById('studentHistoryPeriodType').value;
+                const periodLabel = document.getElementById('studentHistoryPeriodLabel');
+                const periodInput = document.getElementById('studentHistoryPeriod');
+
+                if (periodType === 'day') {
+                    periodInput.type = 'date';
+                    periodLabel.textContent = 'Jour';
+                } else if (periodType === 'month') {
+                    periodInput.type = 'month';
+                    periodLabel.textContent = 'Mois';
+                } else {
+                    periodInput.type = 'week';
+                    periodLabel.textContent = 'Semaine';
+                }
+                periodInput.value = '';
+            }
+
+            function exportStudentFeesHistory(format) {
+                const periodType = document.getElementById('studentHistoryPeriodType').value;
+                const periodValue = document.getElementById('studentHistoryPeriod').value;
+                const paymentType = document.getElementById('studentHistoryPaymentType')?.value || 'all';
+                const paymentMode = document.getElementById('studentHistoryPaymentMode')?.value || 'all';
+                if (!periodValue) {
+                    showToast('Sélectionnez une période.', 'error');
+                    return;
+                }
+
+                const historyFees = getStudentFeesHistory(periodType, periodValue, paymentType, paymentMode);
+                if (historyFees.length === 0) {
+                    showToast('Aucun historique trouvé pour cette période.', 'error');
+                    return;
+                }
+
+                if (format === 'excel') {
+                    exportStudentFeesHistoryExcel(historyFees, periodType, periodValue, paymentType, paymentMode);
+                } else {
+                    exportStudentFeesHistoryPDF(historyFees, periodType, periodValue, paymentType, paymentMode);
+                }
+            }
+
+            function getStudentFeesHistory(periodType, periodValue, paymentType = 'all', paymentMode = 'all') {
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                let levelFilter = null;
+                if (selectedBranch === 'gisozi_maternelle') {
+                    levelFilter = 'nursery';
+                } else if (selectedBranch === 'gisozi_primaire') {
+                    levelFilter = 'primary';
+                }
+
+                const normalizePaymentMode = (mode) => {
+                    const normalized = (mode || '').toString().trim().toLowerCase();
+                    if (normalized.includes('momo') || normalized.includes('mobile')) return 'momo';
+                    if (normalized.includes('cash')) return 'cash';
+                    if (normalized.includes('bank')) return 'bank';
+                    return normalized;
+                };
+
+                const matchesPaymentModeSelection = (modeValue) => {
+                    const normalizedMode = normalizePaymentMode(modeValue);
+                    if (paymentMode === 'all') {
+                        return ['bank', 'momo', 'cash'].includes(normalizedMode);
+                    }
+                    if (paymentMode === 'cash_momo') {
+                        return normalizedMode === 'cash' || normalizedMode === 'momo';
+                    }
+                    return normalizedMode === paymentMode;
+                };
+
+                let startDate = null;
+                let endDate = null;
+                if (periodType === 'week') {
+                    const range = getWeekDateRange(periodValue);
+                    startDate = range.start;
+                    endDate = range.end;
+                }
+
+                const matchesPeriod = (dateValue) => {
+                    const date = new Date(dateValue);
+                    if (isNaN(date)) return false;
+
+                    if (periodType === 'day') {
+                        const targetDay = (periodValue || '').toString().trim();
+                        const rawDate = (dateValue || '').toString().trim();
+                        const paymentDay = rawDate.length >= 10
+                            ? rawDate.substring(0, 10)
+                            : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                        return paymentDay === targetDay;
+                    }
+
+                    if (periodType === 'month') {
+                        const [year, month] = periodValue.split('-').map(Number);
+                        return date.getFullYear() === year && date.getMonth() + 1 === month;
+                    }
+
+                    return date >= startDate && date <= endDate;
+                };
+
+                const regularPayments = studentFees.filter(fee => {
+                    const student = students.find(s => s.id === fee.studentId);
+                    if (!student) return false;
+                    if (student.branch !== firebaseBranch) return false;
+                    if (levelFilter && student.level !== levelFilter) return false;
+                    if (paymentType !== 'all' && (fee.paymentType || '') !== paymentType) return false;
+                    if (!matchesPaymentModeSelection(fee.paymentMode)) return false;
+                    return matchesPeriod(fee.paymentDate);
+                }).map(fee => {
+                    const student = students.find(s => s.id === fee.studentId);
+                    return {
+                        ...fee,
+                        studentClass: student?.classes || student?.class || student?.classe || '',
+                        reference: fee.reference || student?.reference || 'N/A',
+                        paymentType: fee.paymentType || '',
+                        receivedBy: fee.receivedBy || fee.receiver || '',
+                        transactionRef: fee.transactionRef || fee.reference || '',
+                        source: 'studentFees'
+                    };
+                });
+
+                const includeTransport = paymentType === 'all' || paymentType === 'transport';
+                const transportHistory = includeTransport
+                    ? transportPayments.filter(payment => {
+                        const student = students.find(s => s.id === payment.studentId);
+                        if (!student) return false;
+                        if (student.branch !== firebaseBranch) return false;
+                        if (levelFilter && student.level !== levelFilter) return false;
+                        if (!matchesPaymentModeSelection(payment.paymentMode)) return false;
+                        return matchesPeriod(payment.paymentDate);
+                    }).map(payment => {
+                        const student = students.find(s => s.id === payment.studentId);
+                        return {
+                            ...payment,
+                            studentClass: student?.classes || student?.class || student?.classe || '',
+                            reference: student?.reference || 'N/A',
+                            paymentType: 'transport',
+                            receivedBy: payment.receivedBy || payment.receiver || '',
+                            transactionRef: payment.transactionRef || '',
+                            source: 'transportPayments'
+                        };
+                    })
+                    : [];
+
+                return [...regularPayments, ...transportHistory]
+                    .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+            }
+
+            function getWeekDateRange(weekString) {
+                const [yearPart, weekPart] = weekString.split('-W');
+                const year = Number(yearPart);
+                const week = Number(weekPart);
+                const simple = new Date(year, 0, 4);
+                const dayOfWeek = simple.getDay() || 7;
+                const isoWeekStart = new Date(simple);
+                isoWeekStart.setDate(simple.getDate() + (week - 1) * 7 - (dayOfWeek - 1));
+                const weekStart = new Date(isoWeekStart);
+                const weekEnd = new Date(isoWeekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                return { start: weekStart, end: weekEnd };
+            }
+
+            function exportStudentFeesHistoryExcel(historyFees, periodType, periodValue, paymentType = 'all', paymentMode = 'all') {
+                try {
+                    const exportData = [];
+                    let totalAmount = 0;
+
+                    historyFees.forEach((fee, index) => {
+                        const student = students.find(s => s.id === fee.studentId);
+                        const amount = parseFloat(fee.amount) || 0;
+                        totalAmount += amount;
+                        exportData.push({
+                            'NO': index + 1,
+                            'DATE': fee.paymentDate ? new Date(fee.paymentDate).toLocaleDateString('en-US') : '',
+                            'STUDENT NAME': student?.fullName || student?.name || 'N/A',
+                            'CLASS': fee.studentClass || student?.classes || student?.class || student?.classe || '',
+                            'REFERENCE': fee.reference || student?.reference || 'N/A',
+                            'PAYMENT TYPE': fee.paymentType || '',
+                            'AMOUNT': amount,
+                            'PAYMENT MODE': fee.paymentMode || '',
+                            'TRANSACTION REF': fee.transactionRef || fee.reference || '',
+                            'NOTES': fee.notes || '',
+                            'RECEIVED BY': fee.receivedBy || fee.receiver || '',
+                            'SOURCE': fee.source || 'studentFees'
+                        });
+                    });
+
+                    exportData.push({
+                        'NO': '',
+                        'DATE': '',
+                        'STUDENT NAME': 'TOTAL PAID',
+                        'CLASS': '',
+                        'REFERENCE': '',
+                        'PAYMENT TYPE': '',
+                        'AMOUNT': totalAmount,
+                        'PAYMENT MODE': '',
+                        'TRANSACTION REF': '',
+                        'NOTES': '',
+                        'RECEIVED BY': '',
+                        'SOURCE': ''
+                    });
+
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet(exportData);
+                    ws['!cols'] = [
+                        { wch: 5 },
+                        { wch: 12 },
+                        { wch: 20 },
+                        { wch: 12 },
+                        { wch: 18 },
+                        { wch: 15 },
+                        { wch: 12 },
+                        { wch: 15 },
+                        { wch: 18 },
+                        { wch: 24 },
+                        { wch: 20 },
+                        { wch: 16 }
+                    ];
+                    XLSX.utils.book_append_sheet(wb, ws, 'History');
+
+                    const fileName = `student_fees_history_${selectedBranch}_${paymentType}_${paymentMode}_${periodType}_${periodValue}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    showToast('Historique téléchargé en Excel avec succès !', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('studentHistoryModal')).hide();
+                } catch (error) {
+                    console.error('Error exporting student history Excel:', error);
+                    showToast('Erreur lors du téléchargement Excel : ' + error.message, 'error');
+                }
+            }
+
+            function exportStudentFeesHistoryPDF(historyFees, periodType, periodValue, paymentType = 'all', paymentMode = 'all') {
+                try {
+                    const rows = [];
+                    let totalAmount = 0;
+                    historyFees.forEach((fee, index) => {
+                        const student = students.find(s => s.id === fee.studentId);
+                        const amount = parseFloat(fee.amount) || 0;
+                        totalAmount += amount;
+                        rows.push([
+                            index + 1,
+                            fee.paymentDate ? new Date(fee.paymentDate).toLocaleDateString('en-US') : '',
+                            student?.fullName || student?.name || 'N/A',
+                            fee.studentClass || student?.classes || student?.class || student?.classe || '',
+                            fee.paymentType || '',
+                            amount.toLocaleString('en-US', { style: 'currency', currency: 'RWF' }),
+                            fee.paymentMode || '',
+                            fee.transactionRef || fee.reference || '',
+                            fee.notes || '',
+                            fee.receivedBy || fee.receiver || '',
+                            fee.source || 'studentFees'
+                        ]);
+                    });
+
+                    rows.push(['', '', 'TOTAL PAID', '', '', totalAmount.toLocaleString('en-US', { style: 'currency', currency: 'RWF' }), '', '', '', '', '']);
+
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF('l', 'mm', 'a4');
+                    doc.setFontSize(16);
+                    doc.text('Student Fees History', 20, 15);
+                    doc.setFontSize(10);
+                    const periodText = periodType === 'week'
+                        ? 'Week ' + periodValue
+                        : (periodType === 'month' ? 'Month ' + periodValue : 'Day ' + periodValue);
+                    doc.text(`Branch: ${getBranchName(selectedBranch)}`, 20, 22);
+                    doc.text(`Period: ${periodText}`, 20, 28);
+                    doc.text(`Type: ${paymentType}`, 20, 34);
+                    doc.text(`Mode: ${paymentMode}`, 20, 40);
+                    doc.text(`Generated: ${new Date().toLocaleDateString('en-US')}`, 20, 46);
+
+                    doc.autoTable({
+                        head: [['NO', 'DATE', 'STUDENT NAME', 'CLASS', 'PAYMENT TYPE', 'AMOUNT', 'PAYMENT MODE', 'TRANSACTION REF', 'NOTES', 'RECEIVED BY', 'SOURCE']],
+                        body: rows,
+                        startY: 52,
+                        theme: 'striped',
+                        headStyles: {
+                            fillColor: [46, 139, 87],
+                            textColor: [255, 255, 255],
+                            fontStyle: 'bold'
+                        },
+                        bodyStyles: {
+                            textColor: [0, 0, 0]
+                        },
+                        alternateRowStyles: {
+                            fillColor: [240, 240, 240]
+                        },
+                        didDrawCell: function(data) {
+                            if (data.row.index === data.table.body.length - 1) {
+                                data.cell.styles.fontStyle = 'bold';
+                                data.cell.styles.fillColor = [200, 230, 201];
+                            }
+                        }
+                    });
+
+                    const fileName = `student_fees_history_${selectedBranch}_${paymentType}_${paymentMode}_${periodType}_${periodValue}_${new Date().toISOString().split('T')[0]}.pdf`;
+                    doc.save(fileName);
+                    showToast('Historique téléchargé en PDF avec succès !', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('studentHistoryModal')).hide();
+                } catch (error) {
+                    console.error('Error exporting student history PDF:', error);
+                    showToast('Erreur lors du téléchargement PDF : ' + error.message, 'error');
+                }
+            }
+            
+            let payrollHistoryChart = null;
+            
+            function showPayrollHistory() {
+                const section = document.querySelector('.payroll-history-section');
+                section.style.display = 'block';
+                loadPayrollHistory();
+            }
+            
+            function hidePayrollHistory() {
+                document.querySelector('.payroll-history-section').style.display = 'none';
+            }
+            
+            async function loadPayrollHistory() {
+                const tbody = document.getElementById('payrollHistoryTable');
+                tbody.innerHTML = '';
+                
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const branchHistory = payrollHistory.filter(h => h.branch === firebaseBranch);
+                
+                if (branchHistory.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No history</td></tr>';
+                    return;
+                }
+                
+                branchHistory.sort((a, b) => b.timestamp - a.timestamp);
+                
+                branchHistory.forEach(record => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${record.period}</td>
+                        <td>${record.entries?.length || 0}</td>
+                        <td>${formatCurrencyRWF(record.totalPayroll || 0)}</td>
+                        <td><span class="badge bg-success">${record.status}</span></td>
+                        <td>${record.generatedBy}</td>
+                        <td>${new Date(record.timestamp).toLocaleDateString('en-US')}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewPayrollDetails('${record.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePayrollHistoryRecord('${record.id}')" title="Delete record">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                updatePayrollHistoryChart(branchHistory);
+            }
+            
+            function updatePayrollHistoryChart(history) {
+                const ctx = document.getElementById('payrollHistoryChart')?.getContext('2d');
+                if (!ctx) return;
+                
+                if (payrollHistoryChart) payrollHistoryChart.destroy();
+                
+                const recent = history.slice(0, 6).reverse();
+                const labels = recent.map(h => h.period);
+                const data = recent.map(h => h.totalPayroll || 0);
+                
+                payrollHistoryChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total Payroll (RWF)',
+                            data: data,
+                            borderColor: 'rgba(46, 139, 87, 1)',
+                            backgroundColor: 'rgba(46, 139, 87, 0.2)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => formatCurrencyRWF(value)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function viewPayrollDetails(recordId) {
+                const record = payrollHistory.find(r => r.id === recordId);
+                if (record) {
+                    displayPayrollTable(record.entries, record.period);
+                    hidePayrollHistory(); // Optionnel : fermer l'historique après sélection
+                }
+            }
+
+            async function deletePayrollHistoryRecord(recordId) {
+                if (!recordId) return;
+                if (!confirm('Are you sure you want to delete this payroll history record?')) return;
+
+                try {
+                    await payrollHistoryRef.child(recordId).remove();
+                    showToast('Payroll history record deleted successfully!', 'success');
+                } catch (error) {
+                    console.error('Error deleting payroll history record:', error);
+                    showToast('Error deleting payroll history record', 'error');
+                }
+            }
+
+            async function clearPayrollHistoryForCurrentBranch() {
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const branchRecords = payrollHistory.filter(h => h.branch === firebaseBranch);
+
+                if (branchRecords.length === 0) {
+                    showToast('No payroll history to clear for this branch', 'info');
+                    return;
+                }
+
+                if (!confirm(`Are you sure you want to delete all payroll history for this branch? (${branchRecords.length} record(s))`)) {
+                    return;
+                }
+
+                try {
+                    await Promise.all(branchRecords.map(record => payrollHistoryRef.child(record.id).remove()));
+                    showToast('Payroll history cleared for current branch!', 'success');
+                } catch (error) {
+                    console.error('Error clearing payroll history:', error);
+                    showToast('Error clearing payroll history', 'error');
+                }
+            }
+
+            // Show worker modal
+            function showWorkerModal() {
+                document.getElementById('workerForm').reset();
+                currentTeacherId = null;
+                document.getElementById('workerHireDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('workerBranch').value = selectedBranch;
+                document.getElementById('deleteWorkerBtn').style.display = 'none';
+                const modal = new bootstrap.Modal(document.getElementById('workerModal'));
+                modal.show();
+            }
+
+            // Toggle payment info
+            function togglePaymentInfo() {
+                const mode = document.getElementById('workerPaymentMode').value;
+                
+                document.getElementById('bankInfo').classList.add('d-none');
+                document.getElementById('momoInfo').classList.add('d-none');
+                
+                if (mode === 'bank') {
+                    document.getElementById('bankInfo').classList.remove('d-none');
+                } else if (mode === 'momo') {
+                    document.getElementById('momoInfo').classList.remove('d-none');
+                }
+            }
+
+            // Save worker
+            function resetWorkerForm() {
+                document.getElementById('workerForm').reset();
+                currentTeacherId = null;
+                document.getElementById('deleteWorkerBtn').style.display = 'none';
+                document.getElementById('bankInfo').classList.add('d-none');
+                document.getElementById('momoInfo').classList.add('d-none');
+                document.getElementById('workerHireDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('workerBranch').value = selectedBranch;
+            }
+
+            async function saveWorker() {
+                const form = document.getElementById('workerForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const selectedWorkerBranch = document.getElementById('workerBranch').value;
+                const normalizedWorkerBranch = getFirebaseBranchForWorkers(selectedWorkerBranch);
+                
+                const workerData = {
+                    no: document.getElementById('workerNo').value,
+                    name: document.getElementById('workerName').value,
+                    type: document.getElementById('workerType').value,
+                    phone: document.getElementById('workerPhone').value,
+                    salary: parseFloat(document.getElementById('workerSalary').value),
+                    paymentMode: document.getElementById('workerPaymentMode').value,
+                    accountNo: document.getElementById('workerAccountNo').value || '',
+                    bankName: document.getElementById('workerBankName').value || '',
+                    accountHolderName: document.getElementById('workerAccountHolderName').value || '',
+                    momoOperator: document.getElementById('workerMomoOperator').value || '',
+                    momoNumber: document.getElementById('workerMomoNumber').value || '',
+                    momoRegisteredName: document.getElementById('workerMomoRegisteredName').value || '',
+                    status: 'active',
+                    hireDate: document.getElementById('workerHireDate').value || '',
+                    branch: normalizedWorkerBranch,
+                    timestamp: Date.now(),
+                    createdBy: currentUserName
+                };
+                
+                try {
+                    if (currentTeacherId) {
+                        await worksRef.child(currentTeacherId).update(workerData);
+                        showToast(currentLanguage === 'fr' ? 'Travailleur mis à jour avec succès !' : 'Worker updated successfully!', 'success');
+                        
+                        await logActivity('UPDATE_WORKER', `Worker ${workerData.name} updated`, 'worker_update', {
+                            workerId: currentTeacherId,
+                            workerName: workerData.name,
+                            workerType: workerData.type
+                        });
+                    } else {
+                        const existingSnapshot = await worksRef
+                            .orderByChild('no')
+                            .equalTo(workerData.no)
+                            .once('value');
+                        
+                        if (existingSnapshot.exists()) {
+                            showToast(currentLanguage === 'fr' ? 'Ce numéro de travailleur existe déjà !' : 'This worker number already exists!', 'error');
+                            return;
+                        }
+                        
+                        await worksRef.push(workerData);
+                        showToast(currentLanguage === 'fr' ? 'Travailleur ajouté avec succès !' : 'Worker added successfully!', 'success');
+                        
+                        await logActivity('ADD_WORKER', `New worker added: ${workerData.name}`, 'worker_add', {
+                            workerName: workerData.name,
+                            workerType: workerData.type,
+                            workerNo: workerData.no
+                        });
+                    }
+                    
+                    bootstrap.Modal.getInstance(document.getElementById('workerModal')).hide();
+                    resetWorkerForm();
+                    
+                } catch (error) {
+                    console.error('Error saving worker:', error);
+                    showToast((currentLanguage === 'fr' ? 'Erreur lors de l\'enregistrement : ' : 'Error saving: ') + error.message, 'error');
+                }
+            }
+
+            // Edit worker
+            function editWorker(id) {
+                const worker = workers.find(t => t.id === id);
+                if (!worker) return;
+                
+                currentTeacherId = id;
+                
+                document.getElementById('workerNo').value = worker.no || '';
+                document.getElementById('workerName').value = worker.name || '';
+                document.getElementById('workerType').value = worker.type || '';
+                document.getElementById('workerPhone').value = worker.phone || '';
+                document.getElementById('workerSalary').value = worker.salary || '';
+                document.getElementById('workerPaymentMode').value = worker.paymentMode || '';
+                document.getElementById('workerAccountNo').value = worker.accountNo || '';
+                document.getElementById('workerBankName').value = worker.bankName || '';
+                document.getElementById('workerAccountHolderName').value = worker.accountHolderName || '';
+                document.getElementById('workerMomoOperator').value = worker.momoOperator || '';
+                document.getElementById('workerMomoNumber').value = worker.momoNumber || '';
+                document.getElementById('workerMomoRegisteredName').value = worker.momoRegisteredName || '';
+                document.getElementById('workerHireDate').value = worker.hireDate || '';
+                document.getElementById('workerBranch').value = worker.branch === 'gisozi'
+                    ? (selectedBranch === 'gisozi_primaire' ? 'gisozi_primaire' : 'gisozi_maternelle')
+                    : (worker.branch || selectedBranch);
+                
+                // Afficher le bouton supprimer en mode édition
+                document.getElementById('deleteWorkerBtn').style.display = 'block';
+                
+                togglePaymentInfo();
+                
+                const modal = new bootstrap.Modal(document.getElementById('workerModal'));
+                modal.show();
+            }
+
+            // Prompt for worker deletion
+            function deleteWorkerPrompt(workerId) {
+                const worker = workers.find(t => t.id === workerId);
+                if (!worker) return;
+                
+                if (confirm(`Are you sure you want to delete worker ${worker.name}?`)) {
+                    deleteWorker(workerId);
+                }
+            }
+
+            // Delete worker
+            async function deleteWorker(workerId) {
+                try {
+                    const worker = workers.find(t => t.id === workerId);
+                    if (!worker) return;
+                    
+                    await worksRef.child(workerId).remove();
+                    showToast('Worker deleted successfully!', 'success');
+                    
+                    await announcementsRef.push({
+                        timestamp: Date.now(),
+                        message: `Worker ${worker.name} deleted`,
+                        author: 'system',
+                        type: 'worker_delete'
+                    });
+                    
+                    // Fermer le modal si ouvert
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('workerModal'));
+                    if (modal) modal.hide();
+                    
+                } catch (error) {
+                    console.error('Error deleting worker:', error);
+                    showToast('Error deleting worker', 'error');
+                }
+            }
+
+            // Add debt for worker
+            function addDebtForWorker(workerId) {
+                currentTeacherId = workerId;
+                showDebtModal();
+            }
+
+            // Show debt modal
+            function showDebtModal() {
+                updateDebtWorkerSelect();
+                document.getElementById('debtForm').reset();
+                document.getElementById('debtDate').value = new Date().toISOString().split('T')[0];
+                
+                if (currentTeacherId) {
+                    document.getElementById('debtWorker').value = currentTeacherId;
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('debtModal'));
+                modal.show();
+            }
+
+            // Update debt worker select
+            function updateDebtWorkerSelect() {
+                const select = document.getElementById('debtWorker');
+                select.innerHTML = '<option value="">Select a worker</option>';
+                
+                // Filtrer par branche
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const branchWorkers = workers.filter(worker => worker.branch === firebaseBranch);
+                branchWorkers.sort((a, b) => parseInt(a.no || 0) - parseInt(b.no || 0));
+                
+                branchWorkers.forEach((worker, index) => {
+                    const branchLocalNo = index + 1;
+                    const option = document.createElement('option');
+                    option.value = worker.id;
+                    option.textContent = `${branchLocalNo} - ${worker.name} (${getWorkerTypeLabel(worker.type)})`;
+                    select.appendChild(option);
+                });
+            }
+
+            // Populate teacher dropdown used in payroll generator
+            function populatePayrollTeacherDropdown() {
+                const sel = document.getElementById('payrollTeacherSelect');
+                if (!sel) return;
+                sel.innerHTML = '<option value="">-- Choose --</option>';
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                
+                // Ajouter les travailleurs réguliers
+                const branchWorkers = workers
+                    .filter(worker => worker.branch === firebaseBranch)
+                    .sort((a, b) => parseInt(a.no || 0) - parseInt(b.no || 0));
+
+                branchWorkers.forEach((w, index) => {
+                    const typeLabel = getWorkerTypeLabel(w.type);
+                    const option = document.createElement('option');
+                    option.value = w.name || '';
+                    option.textContent = `${index + 1}. ${w.name || ''} (${typeLabel})`;
+                    sel.appendChild(option);
+                });
+                
+                // Ajouter les directeurs et comptables depuis authorityContacts
+                const branchInfo = getBranchDirectorInfo(firebaseBranch);
+                const authorityContacts = Array.isArray(branchInfo?.authorityContacts) ? branchInfo.authorityContacts : [];
+                
+                let authorityStartIndex = branchWorkers.length;
+                authorityContacts.forEach((contact, idx) => {
+                    const ignoreAuthorityName = 'NYIRIMBUTO Josephe';
+                    if (contact.name && contact.name.trim().toLowerCase() === ignoreAuthorityName.toLowerCase()) {
+                        return;
+                    }
+
+                    if (contact.name) {
+                        // Vérifier que ce directeur n'est pas déjà dans les travailleurs
+                        const alreadyExists = branchWorkers.some(w => 
+                            w.name && w.name.trim().toLowerCase() === contact.name.trim().toLowerCase()
+                        );
+                        
+                        if (!alreadyExists) {
+                            const option = document.createElement('option');
+                            option.value = contact.name;
+                            option.textContent = `${authorityStartIndex + idx + 1}. ${contact.name} (${contact.label})`;
+                            sel.appendChild(option);
+                        }
+                    }
+                });
+            }
+
+            // Save debt
+            async function saveDebt() {
+                const form = document.getElementById('debtForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                
+                const workerId = document.getElementById('debtWorker').value;
+                const worker = workers.find(t => t.id === workerId);
+                
+                if (!worker) {
+                    showToast('Please select a worker', 'error');
+                    return;
+                }
+                
+                const debtData = {
+                    workerId: workerId,
+                    workerName: worker.name,
+                    amount: parseFloat(document.getElementById('debtAmount').value),
+                    reason: document.getElementById('debtReason').value,
+                    date: document.getElementById('debtDate').value,
+                    status: document.getElementById('debtStatus').value,
+                    timestamp: Date.now(),
+                    addedBy: currentUserName
+                };
+                
+                try {
+                    await debtsRef.push(debtData);
+                    showToast('Debt recorded successfully!', 'success');
+                    
+                    await logActivity('ADD_DEBT', `Debt recorded for ${worker.name}: ${formatCurrencyRWF(debtData.amount)}`, 'debt_added', {
+                        workerId: workerId,
+                        workerName: worker.name,
+                        amount: debtData.amount,
+                        reason: debtData.reason
+                    });
+                    
+                    bootstrap.Modal.getInstance(document.getElementById('debtModal')).hide();
+                    loadCurrentMonthDebts();
+                    
+                } catch (error) {
+                    console.error('Error saving debt:', error);
+                    showToast('Error saving debt', 'error');
+                }
+            }
+
+            // Show debt details
+            function showDebtDetails(workerId) {
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const workerDebts = [
+                    ...(debts || []),
+                    ...getInjectedPayrollDebts(firebaseBranch)
+                ].filter(d => d.workerId === workerId && d.status === 'pending');
+                const worker = workers.find(t => t.id === workerId);
+                
+                if (workerDebts.length === 0) {
+                    showToast('No debts for this worker', 'info');
+                    return;
+                }
+                
+                let details = `Debts for ${worker.name}:\n\n`;
+                workerDebts.forEach((debt, index) => {
+                    details += `${index + 1}. ${formatCurrencyRWF(debt.amount)} - ${debt.reason} (${new Date(debt.date).toLocaleDateString('en-US')})\n`;
+                });
+                
+                const total = workerDebts.reduce((sum, debt) => sum + (debt.amount || 0), 0);
+                details += `\nTotal: ${formatCurrencyRWF(total)}`;
+                
+                alert(details);
+            }
+
+            // Mark debt as paid
+            async function markDebtPaid(debtId) {
+                try {
+                    await debtsRef.child(debtId).update({
+                        status: 'paid',
+                        paidDate: new Date().toISOString().split('T')[0],
+                        paidBy: currentUserName
+                    });
+                    
+                    showToast('Debt marked as paid!', 'success');
+                    loadCurrentMonthDebts();
+                    
+                } catch (error) {
+                    console.error('Error updating debt:', error);
+                    showToast('Error updating debt', 'error');
+                }
+            }
+
+            // Delete debt
+            async function deleteDebt(debtId) {
+                if (!confirm('Are you sure you want to delete this debt?')) return;
+                
+                try {
+                    await debtsRef.child(debtId).remove();
+                    showToast('Debt deleted successfully!', 'success');
+                    loadCurrentMonthDebts();
+                    
+                } catch (error) {
+                    console.error('Error deleting debt:', error);
+                    showToast('Error deleting debt', 'error');
+                }
+            }
+
+            // Load students with filters
+            async function applyStudentFilters() {
+                try {
+                    const selectedClass = document.getElementById('filterStudentClass').value;
+                    const ageRange = document.getElementById('filterAgeRange').value;
+                    const sortBy = document.getElementById('sortStudents').value;
+
+                    // Base: all students from database matching current selected branch/level
+                    let filteredStudents = getStudentsForCurrentBranch();
+                    
+                    // Filtrer par classe si sélectionnée
+                    if (selectedClass) {
+                        filteredStudents = filteredStudents.filter(student => {
+                            const studentClass = (student.classes || student.class || student.classe || '').toString().trim();
+                            return studentClass === selectedClass;
+                        });
+                    }
+                    
+                    // Filtrer par tranche d'âge si sélectionnée
+                    if (ageRange) {
+                        filteredStudents = filteredStudents.filter(student => {
+                            if (!student.birthDate) return false;
+                            const birthDate = new Date(student.birthDate);
+                            const today = new Date();
+                            let age = today.getFullYear() - birthDate.getFullYear();
+                            const monthDiff = today.getMonth() - birthDate.getMonth();
+                            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                                age--;
+                            }
+                            
+                            const [minAge, maxAge] = ageRange.split('-').map(num => {
+                                if (num.endsWith('+')) {
+                                    return parseInt(num);
+                                }
+                                return parseInt(num);
+                            });
+                            
+                            if (ageRange.endsWith('+')) {
+                                return age >= minAge;
+                            } else {
+                                return age >= minAge && age <= maxAge;
+                            }
+                        });
+                    }
+                    
+                    // Filtrer les entrées invalides
+                    filteredStudents = filteredStudents.filter(s => s && typeof s === 'object');
+                    
+                    // Trier les élèves
+                    filteredStudents.sort((a, b) => {
+                        switch(sortBy) {
+                            case 'name_asc':
+                                const nameA_asc = (a?.name || a?.fullName || a?.firstName || '').toString().trim();
+                                const nameB_asc = (b?.name || b?.fullName || b?.firstName || '').toString().trim();
+                                return nameA_asc.localeCompare(nameB_asc, 'fr');
+                            case 'name_desc':
+                                const nameA_desc = (a?.name || a?.fullName || a?.firstName || '').toString().trim();
+                                const nameB_desc = (b?.name || b?.fullName || b?.firstName || '').toString().trim();
+                                return nameB_desc.localeCompare(nameA_desc, 'fr');
+                            case 'class_asc':
+                                const classA_asc = (a?.classes || a?.classe || a?.class || '').toString().trim();
+                                const classB_asc = (b?.classes || b?.classe || b?.class || '').toString().trim();
+                                return classA_asc.localeCompare(classB_asc, 'fr');
+                            case 'class_desc':
+                                const classA_desc = (a?.classes || a?.classe || a?.class || '').toString().trim();
+                                const classB_desc = (b?.classes || b?.classe || b?.class || '').toString().trim();
+                                return classB_desc.localeCompare(classA_desc, 'fr');
+                            case 'age_asc':
+                                return calculateAge(a?.birthDate) - calculateAge(b?.birthDate);
+                            case 'age_desc':
+                                return calculateAge(b?.birthDate) - calculateAge(a?.birthDate);
+                            case 'date_asc':
+                                return (a?.timestamp || 0) - (b?.timestamp || 0);
+                            case 'date_desc':
+                                return (b?.timestamp || 0) - (a?.timestamp || 0);
+                            default:
+                                // Tri par défaut : classe puis nom
+                                const nameA = (a?.name || a?.fullName || a?.firstName || '').toString().trim();
+                                const nameB = (b?.name || b?.fullName || b?.firstName || '').toString().trim();
+                                const classA = (a?.classes || a?.classe || a?.class || '').toString().trim();
+                                const classB = (b?.classes || b?.classe || b?.class || '').toString().trim();
+                                if (classA !== classB) return classA.localeCompare(classB, 'fr');
+                                return nameA.localeCompare(nameB, 'fr');
+                        }
+                    });
+                    
+                    updateStudentsTable(filteredStudents);
+                    
+                } catch (error) {
+                    console.error('Error filtering students:', error);
+                    showToast('Error filtering students', 'error');
+                }
+            }
+
+            // Calculer l'âge à partir de la date de naissance
+            function calculateAge(birthDate) {
+                if (!birthDate) return 0;
+                const birth = new Date(birthDate);
+                const today = new Date();
+                let age = today.getFullYear() - birth.getFullYear();
+                const monthDiff = today.getMonth() - birth.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                    age--;
+                }
+                return age;
+            }
+
+            // Mettre à jour le tableau des élèves
+            function updateStudentsTable(filteredStudents) {
+                const tbody = document.getElementById('studentsTable');
+                tbody.innerHTML = '';
+                
+                if (filteredStudents.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-child fa-2x mb-3"></i>
+                                    <p>No students found with these criteria</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                filteredStudents.forEach((student, index) => {
+                    // Calculer le total payé par cet élève
+                    const studentPayments = studentFees.filter(fee => fee.studentId === student.id);
+                    const totalPaid = studentPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+                    
+                    // Calculer l'âge
+                    const age = calculateAge(student.birthDate);
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = 'animate-fade-in';
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${student.reference || 'N/A'}</strong></td>
+                        <td>${student.name || student.fullName}</td>
+                        <td>${student.classes || student.class || ''}</td>
+                        <td>${student.birthDate ? new Date(student.birthDate).toLocaleDateString('en-US') : ''}</td>
+                        <td>${age} years</td>
+                        <td>${formatCurrencyRWF(totalPaid)}</td>
+                        <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="viewStudentDetail('${student.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info me-1" onclick="editStudent('${student.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger me-1" onclick="deleteStudentPrompt('${student.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary me-1" title="Admission Letter" onclick="downloadAdmissionLetter('${student.id}')">
+                                <i class="fas fa-file-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" title="Registration Form" onclick="downloadRegistrationForm('${student.id}')">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // ─── SHARED CLASS-FILTER HELPER ────────────────────────────────────────────
+            /**
+             * Returns students from the global `students` array that belong to the
+             * currently selected branch + level (handles gisozi_maternelle / gisozi_primaire split).
+             * Uses the branchSel parameter (defaults to global selectedBranch).
+             */
+            function getStudentsForCurrentBranch(branchSel) {
+                const branch = branchSel || selectedBranch;
+                return students.filter(s => matchesBranchAndLevelForSelection(s, branch));
+            }
+
+            /**
+             * Builds grouped <option> elements inside `select`.
+             * Groups are MATERNELLE (N*), PRIMAIRE (P*), AUTRES.
+             * @param {HTMLSelectElement} select  – target select element
+             * @param {string[]} classList        – sorted array of unique class names
+             */
+            function buildClassOptionGroups(select, classList) {
+                const maternelleClasses = classList.filter(c => /^N/i.test(c));
+                const primaireClasses   = classList.filter(c => /^P/i.test(c));
+                const otherClasses      = classList.filter(c => !/^[NP]/i.test(c));
+
+                const addOptgroup = (label, classes) => {
+                    if (classes.length === 0) return;
+                    const grp = document.createElement('optgroup');
+                    grp.label = label;
+                    classes.forEach(cls => {
+                        const opt = document.createElement('option');
+                        opt.value = cls;
+                        opt.textContent = cls;
+                        grp.appendChild(opt);
+                    });
+                    select.appendChild(grp);
+                };
+
+                addOptgroup('MATERNELLE (NURSERY)', maternelleClasses);
+                addOptgroup('PRIMAIRE (PRIMARY)',   primaireClasses);
+                addOptgroup('AUTRES',               otherClasses);
+            }
+
+            /**
+             * Extracts unique, sorted, non-empty class names from a student list.
+             * Reads s.classes || s.class || s.classe.
+             */
+            function extractUniqueClasses(studentList) {
+                return [...new Set(
+                    studentList.map(s => (s.classes || s.class || s.classe || '').toString().trim())
+                )].filter(c => c !== '').sort();
+            }
+            // ────────────────────────────────────────────────────────────────────────────
+
+            // Populate class filter dynamically based on students in selected branch + section
+            function populateClassFilter() {
+                const select = document.getElementById('filterStudentClass');
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Toutes les classes / All classes</option>';
+
+                const classList = getBranchClasses(selectedBranch);
+                buildClassOptionGroups(select, classList);
+
+                if (currentValue && Array.from(select.options).some(o => o.value === currentValue)) {
+                    select.value = currentValue;
+                }
+            }
+
+            // Populate class filter for student-fees section
+            function populateFeeClassFilter() {
+                const select = document.getElementById('filterClass');
+                if (!select) return;
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">All classes</option>';
+
+                const classList = getBranchClasses(selectedBranch);
+                buildClassOptionGroups(select, classList);
+
+                if (currentValue && Array.from(select.options).some(o => o.value === currentValue)) {
+                    select.value = currentValue;
+                }
+            }
+
+            // Déclenché quand branch ou section change dans la section students
+            function onStudentBranchSectionChange() {
+                populateClassFilter();
+                applyStudentFilters();
+            }
+
+            // Déclenché quand branch ou section change dans la section student-fees
+            function onFeesBranchSectionChange() {
+                populateFeeClassFilter();
+                loadStudentFees();
+            }
+
+            // Load students from database (actualiser)
+            function loadStudentsFromDatabase() {
+                applyStudentFilters();
+                showToast('Student list refreshed', 'success');
+            }
+
+            // Search student
+            function searchStudent() {
+                const query = document.getElementById('searchStudent').value.toLowerCase().trim();
+                if (!query) {
+                    applyStudentFilters();
+                    return;
+                }
+                
+                // Filtrer par branche d'abord
+                const activeBranch = normalizeBranchId(selectedBranch);
+                const firebaseBranch = getFirebaseBranchForWorkers(activeBranch);
+                let levelFilter = null;
+                if (activeBranch === 'gisozi_maternelle') {
+                    levelFilter = 'nursery';
+                } else if (activeBranch === 'gisozi_primaire') {
+                    levelFilter = 'primary';
+                }
+                const branchStudents = students.filter(student => {
+                    const studentBranch = normalizeBranchId(student.branch || student.branche);
+                    if (studentBranch !== firebaseBranch && studentBranch !== activeBranch) return false;
+                    if (levelFilter && (student.level || '').toString().trim().toLowerCase() !== levelFilter) return false;
+                    return true;
+                });
+                
+                const found = branchStudents.filter(s => {
+                    const studentClass = (s.classes || s.class || '').toString().toLowerCase();
+                    return s.name.toLowerCase().includes(query) || 
+                        (s.fullName && s.fullName.toLowerCase().includes(query)) || 
+                        (s.reference && s.reference.toLowerCase().includes(query)) ||
+                        (studentClass && studentClass.includes(query)) ||
+                        (s.parent && s.parent.toLowerCase().includes(query));
+                });
+                
+                updateStudentsTable(found);
+            }
+
+            // View student detail in modal
+            async function viewStudentDetail(studentId) {
+                const student = students.find(s => s.id === studentId);
+                if (!student) return;
+                
+                currentViewStudentId = studentId;
+                
+                // Calculer l'âge
+                const age = calculateAge(student.birthDate);
+                
+                const paymentSummary = getStudentPaymentSummary(studentId);
+                const studentPayments = paymentSummary ? paymentSummary.paymentsInTerm : [];
+                const remainingBalance = paymentSummary ? paymentSummary.remaining : 0;
+                const lastPayment = studentPayments.length > 0 ? new Date(getPaymentDateString(studentPayments[0])) : null;
+                
+                // Remplir les informations
+                document.getElementById('detailFullName').textContent = student.name || student.fullName;
+                document.getElementById('detailReference').textContent = student.reference || 'N/A';
+                document.getElementById('detailClass').textContent = student.classes || student.class || 'Not specified';
+                document.getElementById('detailBirthDate').textContent = student.birthDate ? 
+                    new Date(student.birthDate).toLocaleDateString('en-US') : 'Not specified';
+                document.getElementById('detailAge').textContent = `${age} years`;
+                document.getElementById('detailParent').textContent = student.parent || 'Not specified';
+                document.getElementById('detailParentPhone').textContent = student.parentPhone || 'Not specified';
+                document.getElementById('detailBranch').textContent = getBranchName(student.branch);
+                document.getElementById('detailRegistrationDate').textContent = student.timestamp ? 
+                    new Date(student.timestamp).toLocaleDateString('en-US') : 'Not specified';
+                
+                document.getElementById('detailConfiguredAmount').textContent = getStudentConfiguredAmountBreakdown(student);
+                document.getElementById('detailTotalPaid').textContent = getStudentPaidAmountBreakdown(studentPayments);
+                document.getElementById('detailRemainingBalance').textContent = formatCurrencyRWF(remainingBalance);
+                
+                document.getElementById('detailPaymentCount').textContent = studentPayments.length;
+                document.getElementById('detailLastPayment').textContent = lastPayment ? 
+                    lastPayment.toLocaleDateString('en-US') : 'No payments in current term';
+                
+                // Remplir le tableau des paiements
+                const tbody = document.getElementById('detailPaymentsTable');
+                tbody.innerHTML = '';
+                
+                if (studentPayments.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center py-3">
+                                <div class="text-muted">
+                                    <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
+                                    <p>No payments recorded in current term</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    studentPayments.forEach(payment => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${new Date(getPaymentDateString(payment)).toLocaleDateString('en-US')}</td>
+                            <td><span class="badge-fees">${getPaymentTypeText(payment.paymentType)}</span></td>
+                            <td><strong>${formatCurrencyRWF(payment.amount)}</strong></td>
+                            <td><span class="badge ${payment.paymentMode === 'bank' ? 'badge-bank' : payment.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash'}">
+                                ${payment.paymentMode === 'bank' ? 'Bank' : payment.paymentMode === 'momo' ? 'Mobile Money' : 'Cash'}
+                            </span></td>
+                            <td>${payment.receivedBy || 'N/A'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('studentDetailModal'));
+                modal.show();
+            }
+
+            function downloadStudentPaymentInfo(studentId) {
+                try {
+                    const summary = getStudentPaymentSummary(studentId);
+                    if (!summary) {
+                        showToast('Student not found', 'error');
+                        return;
+                    }
+
+                    const student = summary.student;
+                    const classLabel = student.classes || student.class || student.classe || 'N/A';
+                    const termLabel = currentTermConfig
+                        ? `${formatTermPeriodLabel(currentTermConfig.trimester)} ${currentTermConfig.academicYear || ''}`.trim()
+                        : 'Current term';
+
+                    const summaryRows = [
+                        { Field: 'Student Name', Value: student.fullName || student.name || 'N/A' },
+                        { Field: 'Reference', Value: student.reference || 'N/A' },
+                        { Field: 'Class', Value: classLabel },
+                        { Field: 'Branch', Value: getBranchName(selectedBranch) },
+                        { Field: 'Term', Value: termLabel },
+                        { Field: 'Configured Amount', Value: summary.configuredAmount },
+                        { Field: 'Total Paid', Value: summary.totalPaid },
+                        { Field: 'Remaining', Value: summary.remaining }
+                    ];
+
+                    const paymentRows = summary.paymentsInTerm.map((payment, index) => ({
+                        NO: index + 1,
+                        DATE: getPaymentDateString(payment) || '',
+                        TYPE: getPaymentTypeText(payment.paymentType),
+                        AMOUNT: parseFloat(payment.amount) || 0,
+                        MODE: payment.paymentMode || 'N/A',
+                        REFERENCE: payment.reference || 'N/A',
+                        RECEIVED_BY: payment.receivedBy || 'N/A'
+                    }));
+
+                    if (window.XLSX && XLSX.utils) {
+                        const wb = XLSX.utils.book_new();
+                        const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+                        const wsPayments = XLSX.utils.json_to_sheet(paymentRows.length ? paymentRows : [{ NO: '', DATE: '', TYPE: 'No payments', AMOUNT: 0, MODE: '', REFERENCE: '', RECEIVED_BY: '' }]);
+                        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+                        XLSX.utils.book_append_sheet(wb, wsPayments, 'Payments');
+
+                        const safeName = (student.fullName || student.name || 'student').replace(/[^a-zA-Z0-9_-]/g, '_');
+                        const fileName = `student_payment_info_${safeName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                        XLSX.writeFile(wb, fileName);
+                    } else {
+                        const payload = {
+                            generatedAt: new Date().toISOString(),
+                            term: termLabel,
+                            student: {
+                                name: student.fullName || student.name || 'N/A',
+                                reference: student.reference || 'N/A',
+                                class: classLabel,
+                                branch: getBranchName(selectedBranch)
+                            },
+                            configuredAmount: summary.configuredAmount,
+                            totalPaid: summary.totalPaid,
+                            remaining: summary.remaining,
+                            payments: paymentRows
+                        };
+
+                        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        const safeName = (student.fullName || student.name || 'student').replace(/[^a-zA-Z0-9_-]/g, '_');
+                        a.href = url;
+                        a.download = `student_payment_info_${safeName}_${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }
+
+                    showToast('Student payment info downloaded successfully!', 'success');
+                } catch (error) {
+                    console.error('Error downloading student payment info:', error);
+                    showToast('Error downloading student payment info', 'error');
+                }
+            }
+
+            function resolveDocumentBranch(student) {
+                const studentBranch = String(student?.branch || student?.branche || '').trim().toLowerCase();
+                const currentBranch = String(selectedBranch || currentUser?.branch || '').trim().toLowerCase();
+                const allowedBranches = getAllowedBranchesForCurrentUser();
+
+                const validBranches = ['kacyiru', 'kacyiru_maternelle', 'kacyiru_creche', 'kimisagara', 'gisozi_maternelle', 'gisozi_primaire'];
+
+                if (studentBranch && validBranches.includes(studentBranch)) {
+                    return studentBranch;
+                }
+
+                if (studentBranch === 'gisozi') {
+                    return 'gisozi_maternelle';
+                }
+                if (studentBranch === 'kacyiru') {
+                    return 'kacyiru_maternelle';
+                }
+
+                if (currentBranch && validBranches.includes(currentBranch) && allowedBranches.includes(currentBranch)) {
+                    return currentBranch;
+                }
+
+                if (currentBranch === 'gisozi') {
+                    return 'gisozi_maternelle';
+                }
+                if (currentBranch === 'kacyiru') {
+                    return 'kacyiru_maternelle';
+                }
+
+                return studentBranch || currentBranch || 'kacyiru';
+            }
+
+            // Get branch name from ID
+            function getBranchName(branchId) {
+                const branchNames = {
+                    kacyiru: 'EDEN FAMILY SCHOOL KACYIRU',
+                    kacyiru_maternelle: 'EDEN FAMILY SCHOOL KACYIRU - MATERNELLE',
+                    kacyiru_creche: 'EDEN FAMILY SCHOOL KACYIRU - CRÈCHE',
+                    kimisagara: 'EDEN FAMILY SCHOOL KIMISAGARA',
+                    gisozi_maternelle: 'EDEN FAMILY SCHOOL GISOZI NURSERY',
+                    gisozi_primaire: 'EDEN FAMILY SCHOOL GISOZI PRIMARY',
+                    gisozi: 'EDEN FAMILY SCHOOL GISOZI'
+                };
+                return branchNames[branchId] || branchId;
+            }
+
+            // Get branch-specific director and school information
+            function getBranchDirectorInfo(branchId) {
+                const branchInfo = {
+                    kacyiru: {
+                        branchName: 'EDEN FAMILY SCHOOL KACYIRU',
+                        director: 'TUMBWE Serge',
+                        directorTitle: 'Directeur',
+                        directorPhone: '0791639766',
+                        accountant: 'Accountant',
+                        accountantPhone: '',
+                        dgName: 'NYIRIMBUTO Josephe',
+                        dgPhone: '0788883842',
+                        authorityContacts: [
+                            { label: 'Directeur', name: 'TUMBWE Serge', phone: '0791639766' },
+                            { label: 'Comptable', useAccountantName: true, fallbackName: 'Comptable', phone: '0792570074' },
+                            { label: 'DG', name: 'NYIRIMBUTO Josephe', phone: '0788883842' }
+                        ],
+                        address: 'Kacyiru, Kigali, Rwanda',
+                        colorRGB: [0, 100, 150],
+                        colorHex: '#006496'
+                    },
+                    kacyiru_maternelle: {
+                        branchName: 'EDEN FAMILY SCHOOL KACYIRU - MATERNELLE',
+                        director: 'TUMBWE Serge',
+                        directorTitle: 'Directeur',
+                        directorPhone: '0791639766',
+                        accountant: 'Accountant',
+                        accountantPhone: '',
+                        dgName: 'NYIRIMBUTO Josephe',
+                        dgPhone: '0788883842',
+                        authorityContacts: [
+                            { label: 'Directeur', name: 'TUMBWE Serge', phone: '0791639766' },
+                            { label: 'Comptable', useAccountantName: true, fallbackName: 'Comptable', phone: '0792570074' },
+                            { label: 'DG', name: 'NYIRIMBUTO Josephe', phone: '0788883842' }
+                        ],
+                        address: 'Kacyiru, Kigali, Rwanda',
+                        colorRGB: [0, 100, 150],
+                        colorHex: '#006496'
+                    },
+                    kacyiru_creche: {
+                        branchName: 'EDEN FAMILY SCHOOL KACYIRU - CRÈCHE',
+                        director: 'TUMBWE Serge',
+                        directorTitle: 'Directeur',
+                        directorPhone: '0791639766',
+                        accountant: 'Accountant',
+                        accountantPhone: '',
+                        dgName: 'NYIRIMBUTO Josephe',
+                        dgPhone: '0788883842',
+                        authorityContacts: [
+                            { label: 'Directeur', name: 'TUMBWE Serge', phone: '0791639766' },
+                            { label: 'Comptable', useAccountantName: true, fallbackName: 'Comptable', phone: '0792570074' },
+                            { label: 'DG', name: 'NYIRIMBUTO Josephe', phone: '0788883842' }
+                        ],
+                        address: 'Kacyiru, Kigali, Rwanda',
+                        colorRGB: [0, 100, 150],
+                        colorHex: '#006496'
+                    },
+                    kimisagara: {
+                        branchName: 'EDEN FAMILY SCHOOL KIMISAGARA',
+                        director: 'Masudi Iddi',
+                        directorTitle: 'Responsable',
+                        directorPhone: '0791826950',
+                        accountant: 'Accountant',
+                        accountantPhone: '0785892018',
+                        dgName: 'NYIRIMBUTO Josephe',
+                        dgPhone: '0788883842',
+                        authorityContacts: [
+                            { label: 'Comptable', useAccountantName: true, fallbackName: 'Comptable', phone: '0785892018' },
+                            { label: 'Responsable', name: 'Masudi Idi', phone: '0791826950' },
+                            { label: 'DG', name: 'NYIRIMBUTO Josephe', phone: '0788883842' }
+                        ],
+                        address: 'Kimisagara, Kigali, Rwanda',
+                        colorRGB: [51, 153, 102],
+                        colorHex: '#339966'
+                    },
+                    gisozi_maternelle: {
+                        branchName: 'EDEN FAMILY SCHOOL GISOZI - MATERNELLE',
+                        director: 'YANKURIJE Stephanie',
+                        directorTitle: 'Directrice',
+                        directorPhone: '0788410242 / 0794116491',
+                        accountant: 'Accountant',
+                        accountantPhone: '',
+                        dosName: 'NIYIBIZI Jean de Dieu',
+                        dosPhone: '0796145647',
+                        nurseryResponsibleName: 'Responsable maternelle',
+                        nurseryResponsiblePhone: '0781518935',
+                        dgName: 'NYIRIMBUTO Josephe',
+                        dgPhone: '0788883842',
+                        authorityContacts: [
+                            { label: 'Directrice', name: 'YANKURIJE Stephanie', phone: '0788410242 / 0794116491' },
+                            { label: 'Responsable maternelle', name: '', phone: '0781518935' },
+                            { label: 'DOS', name: 'NIYIBIZI Jean de Dieu', phone: '0796145647' },
+                            { label: 'DG', name: 'NYIRIMBUTO Josephe', phone: '0788883842' }
+                        ],
+                        address: 'Gisozi, Kigali, Rwanda',
+                        colorRGB: [255, 107, 107],
+                        colorHex: '#FF6B6B'
+                    },
+                    gisozi_primaire: {
+                        branchName: 'EDEN FAMILY SCHOOL GISOZI - PRIMAIRE',
+                        director: 'YANKURIJE Stephanie',
+                        directorTitle: 'Directrice',
+                        directorPhone: '0788410242 / 0794116491',
+                        accountant: 'Accountant',
+                        accountantPhone: '0792570074',
+                        dosName: 'NIYIBIZI Jean de Dieu',
+                        dosPhone: '0796145647',
+                        dgName: 'NYIRIMBUTO Josephe',
+                        dgPhone: '0788883842',
+                        authorityContacts: [
+                            { label: 'Directrice', name: 'YANKURIJE Stephanie', phone: '0788410242 / 0794116491' },
+                            { label: 'DOS', name: 'NIYIBIZI Jean de Dieu', phone: '0796145647' },
+                            { label: 'DG', name: 'NYIRIMBUTO Josephe', phone: '0788883842' }
+                        ],
+                        address: 'Gisozi, Kigali, Rwanda',
+                        colorRGB: [100, 150, 200],
+                        colorHex: '#6496C8'
+                    }
+                };
+                return branchInfo[branchId] || branchInfo.kacyiru;
+            }
+
+            function getBranchAuthorityLines(branchInfo, accountantFullName) {
+                const contacts = Array.isArray(branchInfo?.authorityContacts) ? branchInfo.authorityContacts : [];
+                return contacts.map(contact => {
+                    const displayName = contact.useAccountantName
+                        ? (accountantFullName || contact.fallbackName || branchInfo.accountant || '')
+                        : (contact.name || '');
+
+                    if (displayName && contact.phone) {
+                        return `${contact.label}: ${displayName} (${contact.phone})`;
+                    }
+                    if (displayName) {
+                        return `${contact.label}: ${displayName}`;
+                    }
+                    if (contact.phone) {
+                        return `${contact.label}: ${contact.phone}`;
+                    }
+                    return `${contact.label}`;
+                }).filter(Boolean);
+            }
+
+            // Edit student from detail modal
+            function editStudentFromDetail() {
+                if (currentViewStudentId) {
+                    bootstrap.Modal.getInstance(document.getElementById('studentDetailModal')).hide();
+                    editStudent(currentViewStudentId);
+                }
+            }
+
+            // Add payment from detail modal
+            function addPaymentFromDetail() {
+                if (currentViewStudentId) {
+                    bootstrap.Modal.getInstance(document.getElementById('studentDetailModal')).hide();
+                    showStudentFeeModal();
+                    // Pré-remplir avec l'élève sélectionné
+                    setTimeout(() => {
+                        const student = students.find(s => s.id === currentViewStudentId);
+                        if (student) {
+                            document.getElementById('studentClassFilter').value = student.class;
+                            loadStudentsByClass();
+                            setTimeout(() => {
+                                document.getElementById('studentSelect').value = currentViewStudentId;
+                                loadStudentDetails();
+                            }, 500);
+                        }
+                    }, 300);
+                }
+            }
+
+            // Sort students alphabetically
+            function sortAlphabetically() {
+                document.getElementById('sortStudents').value = 'name_asc';
+                applyStudentFilters();
+                showToast('Students sorted alphabetically', 'success');
+            }
+
+            // Get payment type text
+            function getPaymentTypeText(type) {
+                const types = {
+                    'fees': 'Fees',
+                    'coaching': 'Coaching',
+                    'transport': 'Transport',
+                    'uniforme': 'Uniform',
+                    'lunch': 'Lunch',
+                    'breakfast': 'Breakfast',
+                    'material': 'Materials',
+                    'insurance': 'Insurance',
+                    'other': 'Other',
+                    'autre': 'Other'
+                };
+                return types[type] || type;
+            }
+
+            // Show registration modal
+            function showStudentModal() {
+                document.getElementById('registrationForm').reset();
+                currentStudentId = null;
+                currentRegisteredStudentId = null;
+                currentRegisteredStudentData = null;
+
+                const titleEl = document.getElementById('registrationModalTitle');
+                const subtitleEl = document.getElementById('registrationModalSubtitle');
+                const saveBtn = document.getElementById('registrationSaveBtn');
+                if (titleEl) titleEl.textContent = "FORMULAIRE D'INSCRIPTION SCOLAIRE";
+                if (subtitleEl) subtitleEl.textContent = 'Design moderne, mêmes fonctions';
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<i class="fas fa-user-check me-2"></i>Register & Generate ID';
+                }
+
+                document.getElementById('regChildFullName').value = '';
+                document.getElementById('regChildBirthDate').value = '';
+                document.getElementById('regRequestedClass').innerHTML = '';
+                document.getElementById('regAssignedClass').value = '';
+                document.getElementById('regPreviousSchool').value = '';
+                document.getElementById('regTransportBus').checked = false;
+                document.getElementById('regTransportBusFee').value = '';
+                document.getElementById('regTransportCustomFee').value = '';
+                document.getElementById('regTransportFeeGroup').style.display = 'none';
+                document.getElementById('regTransportCustomFeeGroup').style.display = 'none';
+                document.getElementById('regParentName').value = '';
+                document.getElementById('regParentPhone').value = '';
+                document.getElementById('regParentID').value = '';
+                document.getElementById('regSpouseName').value = '';
+                document.getElementById('regSpousePhone').value = '';
+                document.getElementById('regSpouseID').value = '';
+                document.getElementById('regAddress').value = '';
+                document.getElementById('regFeeAmount').value = '';
+                document.getElementById('regPaymentMode').value = 'cash';
+                document.getElementById('regTransactionRef').value = '';
+                document.getElementById('regNotes').value = '';
+                document.getElementById('downloadAdmissionLetterBtn').style.display = 'none';
+                document.getElementById('downloadRegistrationFormBtn').style.display = 'none';
+                document.getElementById('deleteRegisteredStudentBtn').style.display = 'none';
+
+                // Initialize class dropdown - will be populated when branch is selected
+                document.getElementById('regRequestedClass').innerHTML = '<option value="">Sélectionner d\'abord une branche</option>';
+                document.getElementById('regRequestedClass').disabled = true;
+                const sectionGroup = document.getElementById('regBranchSectionGroup');
+                if (sectionGroup) sectionGroup.style.display = 'none';
+                document.querySelectorAll('input[name="regBranchSection"]').forEach(el => el.checked = false);
+                
+                const modal = new bootstrap.Modal(document.getElementById('registrationFormModal'));
+                modal.show();
+            }
+
+            function resolveRegistrationBranchValue(student) {
+                const branch = String(student?.branch || student?.branche || selectedBranch || '').trim().toLowerCase();
+                if (branch.startsWith('kacyiru')) return 'kacyiru';
+                if (branch.startsWith('gisozi')) return 'gisozi';
+                if (branch === 'kimisagara') return 'kimisagara';
+                return 'kacyiru';
+            }
+
+            function getRegistrationSectionForBranch(branchValue) {
+                if (!branchValue) return '';
+                const normalized = branchValue.toString().trim().toLowerCase();
+                if (['gisozi_maternelle', 'gisozi_primaire', 'kacyiru_maternelle', 'kacyiru_creche'].includes(normalized)) {
+                    return normalized;
+                }
+                if (normalized === 'gisozi') return 'gisozi_maternelle';
+                if (normalized === 'kacyiru') return 'kacyiru_maternelle';
+                return '';
+            }
+
+            async function handleBranchSelection(branchValue) {
+                const sectionGroup = document.getElementById('regBranchSectionGroup');
+                const classSelect = document.getElementById('regRequestedClass');
+                if (!classSelect) return;
+
+                // Hide all section labels and uncheck radios, then show only branch-specific sections
+                document.querySelectorAll('.reg-branch-section').forEach(label => {
+                    try { label.style.display = 'none'; } catch (e) {}
+                    const inp = label.querySelector('input[name="regBranchSection"]');
+                    if (inp) inp.checked = false;
+                });
+
+                if (branchValue === 'gisozi' || branchValue === 'kacyiru') {
+                    if (sectionGroup) sectionGroup.style.display = 'block';
+
+                    if (branchValue === 'gisozi') {
+                        // show only gisozi sections (maternelle + primaire)
+                        document.querySelectorAll('.gisozi-section').forEach(el => el.style.display = '');
+                    }
+                    if (branchValue === 'kacyiru') {
+                        // show only kacyiru sections (maternelle + creche)
+                        document.querySelectorAll('.kacyiru-section').forEach(el => el.style.display = '');
+                    }
+
+                    classSelect.innerHTML = '<option value="">Sélectionner d\'abord une section</option>';
+                    classSelect.disabled = true;
+                    return;
+                }
+
+                if (sectionGroup) sectionGroup.style.display = 'none';
+                await populateRegistrationClassesByBranch(branchValue);
+                if (typeof applyBranchFeeRules === 'function') {
+                    applyBranchFeeRules(branchValue, '1');
+                }
+            }
+
+            async function handleBranchSectionChange() {
+                const selectedSection = document.querySelector('input[name="regBranchSection"]:checked');
+                if (!selectedSection) return;
+                const branchKey = selectedSection.value;
+                await populateRegistrationClassesByBranch(branchKey);
+                if (typeof applyBranchFeeRules === 'function') {
+                    applyBranchFeeRules(branchKey, '1');
+                }
+            }
+
+            async function openStudentEditModal(student) {
+                showStudentModal();
+
+                const titleEl = document.getElementById('registrationModalTitle');
+                const subtitleEl = document.getElementById('registrationModalSubtitle');
+                const saveBtn = document.getElementById('registrationSaveBtn');
+                if (titleEl) titleEl.textContent = 'MODIFIER ÉLÈVE';
+                if (subtitleEl) subtitleEl.textContent = 'Mise à jour rapide avec le formulaire d\'inscription';
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Mettre à jour l\'élève';
+                }
+
+                currentStudentId = student.id;
+                currentRegisteredStudentId = student.id;
+                currentRegisteredStudentData = student;
+
+                const fullName = student.name || student.fullName || '';
+                const studentClass = (student.class || student.classes || student.classe || '').toString().trim();
+
+                document.getElementById('regChildFullName').value = fullName;
+                document.getElementById('regChildBirthDate').value = student.birthDate || '';
+
+                const genderRaw = (student.gender || student.sexe || '').toString().toLowerCase();
+                const genderValue = genderRaw.includes('f') ? 'fille' : 'garcon';
+                const genderRadio = document.querySelector(`input[name="regChildGender"][value="${genderValue}"]`);
+                if (genderRadio) genderRadio.checked = true;
+
+                document.getElementById('regPreviousSchool').value = student.previousSchool || student.ecoleProvenance || '';
+
+                const branchValue = resolveRegistrationBranchValue(student);
+                const branchRadio = document.querySelector(`input[name="regBranch"][value="${branchValue}"]`);
+                if (branchRadio) branchRadio.checked = true;
+
+                const sectionGroup = document.getElementById('regBranchSectionGroup');
+                const sectionValue = getRegistrationSectionForBranch(student?.branch || student?.branche || branchValue);
+                if (sectionGroup) {
+                    sectionGroup.style.display = (branchValue === 'gisozi' || branchValue === 'kacyiru') ? 'block' : 'none';
+                    document.querySelectorAll('input[name="regBranchSection"]').forEach(el => {
+                        el.checked = false;
+                        el.style.display = 'none';
+                    });
+
+                    if (branchValue === 'gisozi') {
+                        document.querySelectorAll('.gisozi-section').forEach(el => el.style.display = '');
+                    } else if (branchValue === 'kacyiru') {
+                        document.querySelectorAll('.kacyiru-section').forEach(el => el.style.display = '');
+                    }
+                }
+
+                if (sectionValue) {
+                    const sectionRadio = document.querySelector(`input[name="regBranchSection"][value="${sectionValue}"]`);
+                    if (sectionRadio) sectionRadio.checked = true;
+                    await populateRegistrationClassesByBranch(sectionValue);
+                    if (typeof applyBranchFeeRules === 'function') {
+                        applyBranchFeeRules(sectionValue, '1');
+                    }
+                } else {
+                    await populateRegistrationClassesByBranch(branchValue);
+                    if (typeof applyBranchFeeRules === 'function') {
+                        applyBranchFeeRules(branchValue, '1');
+                    }
+                }
+
+                const classSelect = document.getElementById('regRequestedClass');
+                if (studentClass) {
+                    if (!Array.from(classSelect.options).some(option => option.value === studentClass)) {
+                        const option = document.createElement('option');
+                        option.value = studentClass;
+                        option.textContent = `${studentClass} (actuelle)`;
+                        classSelect.appendChild(option);
+                    }
+                    classSelect.value = studentClass;
+                    document.getElementById('regAssignedClass').value = studentClass;
+                }
+
+                const transportMonthlyFee = Number(student.transportMonthlyFee || 0);
+                const transportEnabled = !!student.transportEnrolled || transportMonthlyFee > 0;
+                document.getElementById('regTransportBus').checked = transportEnabled;
+                toggleRegTransportBus();
+                if (transportEnabled && transportMonthlyFee > 0) {
+                    const feeSelect = document.getElementById('regTransportBusFee');
+                    const feeText = String(transportMonthlyFee);
+                    if (Array.from(feeSelect.options).some(option => option.value === feeText)) {
+                        feeSelect.value = feeText;
+                    } else {
+                        feeSelect.value = 'other';
+                        toggleRegTransportCustomFee();
+                        document.getElementById('regTransportCustomFee').value = transportMonthlyFee;
+                    }
+                }
+
+                document.getElementById('regParentName').value = student.parent || student.parentName || '';
+                document.getElementById('regParentPhone').value = student.parentPhone || '';
+                document.getElementById('regParentID').value = student.parentID || '';
+                document.getElementById('regSpouseName').value = student.spouseName || student.conjoint || '';
+                document.getElementById('regSpousePhone').value = student.spousePhone || '';
+                document.getElementById('regSpouseID').value = student.spouseID || '';
+                document.getElementById('regAddress').value = student.address || '';
+                document.getElementById('regFeeAmount').value = Number(student.inscriptionFeeAmount || 0);
+                document.getElementById('regPaymentMode').value = 'cash';
+                document.getElementById('regTransactionRef').value = '';
+                document.getElementById('regNotes').value = student.notes || '';
+
+                const admissionBtn = document.getElementById('downloadAdmissionLetterBtn');
+                const registrationBtn = document.getElementById('downloadRegistrationFormBtn');
+                const deleteBtn = document.getElementById('deleteRegisteredStudentBtn');
+                admissionBtn.style.display = 'inline-flex';
+                registrationBtn.style.display = 'inline-flex';
+                deleteBtn.style.display = 'inline-flex';
+                admissionBtn.onclick = () => openEditBeforeDownloadModal(student.id, 'letter');
+                registrationBtn.onclick = () => openEditBeforeDownloadModal(student.id, 'form');
+                deleteBtn.onclick = () => deleteCurrentRegisteredStudent();
+            }
+
+            function showRegistrationModal() {
+                showStudentModal();
+            }
+
+            function toggleRegTransportBus() {
+                const checked = document.getElementById('regTransportBus').checked;
+                document.getElementById('regTransportFeeGroup').style.display = checked ? 'flex' : 'none';
+                if (!checked) {
+                    document.getElementById('regTransportBusFee').value = '';
+                    document.getElementById('regTransportCustomFeeGroup').style.display = 'none';
+                    document.getElementById('regTransportCustomFee').value = '';
+                }
+            }
+
+            function toggleRegTransportCustomFee() {
+                const fee = document.getElementById('regTransportBusFee').value;
+                document.getElementById('regTransportCustomFeeGroup').style.display = fee === 'other' ? 'block' : 'none';
+                if (fee !== 'other') {
+                    document.getElementById('regTransportCustomFee').value = '';
+                }
+            }
+
+            function generateStudentUID(branch, className, fullName) {
+                const branchMap = {
+                    kacyiru: 'KCY',
+                    kimisagara: 'KMS',
+                    gisozi_maternelle: 'GZM',
+                    gisozi_primaire: 'GZP'
+                };
+
+                const branchCode = branchMap[branch] || 'BRN';
+                const classCode = (className || 'CLS')
+                    .toString()
+                    .replace(/[^a-zA-Z0-9]/g, '')
+                    .toUpperCase()
+                    .slice(0, 4)
+                    .padEnd(2, 'X');
+
+                const nameParts = (fullName || '')
+                    .toString()
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean);
+                const nameCode = (nameParts[0]?.[0] || 'S') + (nameParts[1]?.[0] || 'T');
+
+                const now = new Date();
+                const yy = now.getFullYear().toString().slice(-2);
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+
+                return `${branchCode}-${classCode}-${nameCode.toUpperCase()}-${yy}${mm}${dd}-${random}`;
+            }
+
+            async function saveRegistrationAndGenerateID() {
+                const form = document.getElementById('registrationForm');
+                const fullName = document.getElementById('regChildFullName').value.trim();
+                const birthDate = document.getElementById('regChildBirthDate').value;
+                const genderInput = document.querySelector('input[name="regChildGender"]:checked');
+                const gender = genderInput ? (genderInput.value.toLowerCase() === 'fille' ? 'FILLE' : 'GARCON') : '';
+                const previousSchool = document.getElementById('regPreviousSchool').value.trim();
+                const requestedClass = document.getElementById('regRequestedClass').value;
+                const assignedClass = document.getElementById('regAssignedClass').value.trim();
+                const branchInput = document.querySelector('input[name="regBranch"]:checked');
+                const sectionInput = document.querySelector('input[name="regBranchSection"]:checked');
+                const rawBranch = branchInput ? branchInput.value : '';
+                let branch = rawBranch;
+
+                if (rawBranch === 'gisozi') {
+                    branch = sectionInput ? sectionInput.value : 'gisozi_maternelle';
+                }
+                if (rawBranch === 'kacyiru') {
+                    branch = sectionInput ? sectionInput.value : 'kacyiru_maternelle';
+                }
+
+                if ((rawBranch === 'gisozi' || rawBranch === 'kacyiru') && !sectionInput) {
+                    showToast('Veuillez sélectionner une section pour la branche choisie.', 'error');
+                    form.reportValidity();
+                    return;
+                }
+
+                const normalizedBranch = normalizeStudentBranch(branch);
+                const transportEnrolled = document.getElementById('regTransportBus').checked;
+                const transportFeeValue = document.getElementById('regTransportBusFee').value;
+                const transportCustomFeeValue = document.getElementById('regTransportCustomFee').value;
+                const transportMonthlyFee = transportEnrolled
+                    ? (transportFeeValue === 'other' ? Number(transportCustomFeeValue || 0) : Number(transportFeeValue || 0))
+                    : 0;
+                const parentName = document.getElementById('regParentName').value.trim();
+                const parentPhone = document.getElementById('regParentPhone').value.trim();
+                const parentID = document.getElementById('regParentID').value.trim();
+                const spouseName = document.getElementById('regSpouseName').value.trim();
+                const spousePhone = document.getElementById('regSpousePhone').value.trim();
+                const spouseID = document.getElementById('regSpouseID').value.trim();
+                const address = document.getElementById('regAddress').value.trim();
+                const feeAmount = Number(document.getElementById('regFeeAmount').value || 0);
+                const paymentMode = document.getElementById('regPaymentMode').value;
+                const transactionRef = document.getElementById('regTransactionRef').value.trim();
+                const studentClass = assignedClass || requestedClass;
+                const isEditMode = !!currentStudentId;
+                const existingStudent = isEditMode ? students.find(s => s.id === currentStudentId) : null;
+
+                if (!fullName || !birthDate || !gender || !branch || !parentName || !parentPhone || !studentClass) {
+                    showToast('Please fill in all required fields.', 'error');
+                    form.reportValidity();
+                    return;
+                }
+
+                if (!isEditMode && feeAmount <= 0) {
+                    showToast('Registration fee is required for new registrations.', 'error');
+                    return;
+                }
+
+                const generatedUID = isEditMode
+                    ? ((existingStudent && existingStudent.reference) || generateStudentUID(branch, studentClass, fullName))
+                    : generateStudentUID(branch, studentClass, fullName);
+                const studentLevel = getLevelFromClassName(studentClass, branch);
+                const academicYear = (currentTermConfig && currentTermConfig.academicYear) ? currentTermConfig.academicYear : '';
+
+                const studentData = {
+                    reference: generatedUID,
+                    name: fullName,
+                    birthDate,
+                    gender,
+                    previousSchool,
+                    class: studentClass,
+                    classes: studentClass,
+                    branch: normalizedBranch,
+                    level: studentLevel,
+                    degre: studentLevel,
+                    parent: parentName,
+                    parentPhone,
+                    parentID,
+                    spouseName,
+                    spousePhone,
+                    spouseID,
+                    address,
+                    transportEnrolled,
+                    transportMonthlyFee,
+                    coachingEnrolled: false,
+                    coachingMonthlyFee: 0,
+                    status: 'active',
+                    timestamp: (existingStudent && existingStudent.timestamp) || Date.now(),
+                    createdBy: (existingStudent && existingStudent.createdBy) || currentUserName,
+                    updatedAt: Date.now(),
+                    academicYear: academicYear || (existingStudent && existingStudent.academicYear) || ''
+                };
+
+                try {
+                    // Anti-duplicate pre-check for new registrations
+                    if (!isEditMode) {
+                        const duplicates = findPotentialDuplicateStudents(studentData, normalizedBranch);
+                        if (duplicates && duplicates.length > 0) {
+                            const top = duplicates[0];
+                            const existingClass = top.student.classes || top.student.class || 'N/A';
+                            const existingDate = top.student.timestamp ? new Date(top.student.timestamp).toLocaleDateString('fr-FR') : (top.student.birthDate || 'date inconnue');
+                            const message = `⚠️ Élève similaire déjà inscrit (${top.score}% de correspondance) :\n\n` +
+                                `${top.student.name || top.student.fullName || top.student.nomPrenom} — Classe ${existingClass} — inscrit le ${existingDate}\n\n` +
+                                `Voulez-vous quand même créer une NOUVELLE fiche pour cet élève ?`;
+                            if (!confirm(message)) {
+                                showToast('Inscription annulée — doublon évité.', 'info');
+                                return;
+                            }
+                        }
+                    }
+
+                    if (isEditMode) {
+                        await studentsRef.child(currentStudentId).update(studentData);
+                        currentRegisteredStudentId = currentStudentId;
+                        currentRegisteredStudentData = { ...(existingStudent || {}), ...studentData };
+
+                        showToast('Student updated successfully!', 'success');
+
+                        const admissionBtn = document.getElementById('downloadAdmissionLetterBtn');
+                        const registrationBtn = document.getElementById('downloadRegistrationFormBtn');
+                        const deleteBtn = document.getElementById('deleteRegisteredStudentBtn');
+                        admissionBtn.style.display = 'inline-flex';
+                        registrationBtn.style.display = 'inline-flex';
+                        deleteBtn.style.display = 'inline-flex';
+                        admissionBtn.onclick = () => openEditBeforeDownloadModal(currentStudentId, 'letter');
+                        registrationBtn.onclick = () => openEditBeforeDownloadModal(currentStudentId, 'form');
+                        deleteBtn.onclick = () => deleteCurrentRegisteredStudent();
+
+                        if (typeof recalculateExpectedIncome === 'function') {
+                            recalculateExpectedIncome();
+                        }
+                        if (typeof applyStudentFilters === 'function') {
+                            applyStudentFilters();
+                        }
+                        return;
+                    }
+
+                    const newStudentRef = await studentsRef.push(studentData);
+                    const newStudentKey = newStudentRef.key;
+                    currentRegisteredStudentId = newStudentKey;
+                    currentRegisteredStudentData = studentData;
+
+                    if (feeAmount > 0) {
+                        const paymentDate = new Date().toISOString().split('T')[0];
+                        const registrationPayment = {
+                            studentId: newStudentKey,
+                            studentName: studentData.name,
+                            studentClass: studentData.class,
+                            reference: `REG-${generatedUID}`,
+                            amount: feeAmount,
+                            paymentMode,
+                            paymentDate,
+                            transactionRef,
+                            receivedBy: currentUserName,
+                            branch: studentData.branch,
+                            academicYear: studentData.academicYear,
+                            timestamp: Date.now(),
+                            type: 'registration'
+                        };
+                        await db.ref('registrationPayments').push(registrationPayment);
+                    }
+
+                    showToast(`Student registered successfully! ID: ${generatedUID}`, 'success');
+
+                    const admissionBtn = document.getElementById('downloadAdmissionLetterBtn');
+                    const registrationBtn = document.getElementById('downloadRegistrationFormBtn');
+                    const deleteBtn = document.getElementById('deleteRegisteredStudentBtn');
+                    admissionBtn.style.display = 'inline-flex';
+                    registrationBtn.style.display = 'inline-flex';
+                    deleteBtn.style.display = 'inline-flex';
+                    admissionBtn.className = 'btn-modern btn-success';
+                    registrationBtn.className = 'btn-modern btn-primary';
+                    deleteBtn.className = 'btn-modern btn-outline-danger';
+                    admissionBtn.onclick = () => openEditBeforeDownloadModal(currentRegisteredStudentId, 'letter');
+                    registrationBtn.onclick = () => openEditBeforeDownloadModal(currentRegisteredStudentId, 'form');
+                    deleteBtn.onclick = () => deleteCurrentRegisteredStudent();
+
+                    if (typeof recalculateExpectedIncome === 'function') {
+                        recalculateExpectedIncome();
+                    }
+                    if (typeof applyStudentFilters === 'function') {
+                        applyStudentFilters();
+                    }
+                } catch (error) {
+                    console.error('Error saving registration:', error);
+                    showToast('Error saving registration. Please try again.', 'error');
+                }
+            }
+
+            async function deleteCurrentRegisteredStudent() {
+                if (!currentRegisteredStudentId) {
+                    showToast('No registered student selected for deletion.', 'info');
+                    return;
+                }
+
+                const student = students.find(s => s.id === currentRegisteredStudentId);
+                const studentName = (student && (student.name || student.fullName)) || 'this student';
+                const confirmed = confirm(`Are you sure you want to delete ${studentName}? This will also remove related payments.`);
+                if (!confirmed) return;
+
+                const deleted = await deleteStudent(currentRegisteredStudentId);
+                if (!deleted) return;
+
+                currentRegisteredStudentId = null;
+                currentRegisteredStudentData = null;
+                document.getElementById('downloadAdmissionLetterBtn').style.display = 'none';
+                document.getElementById('downloadRegistrationFormBtn').style.display = 'none';
+                document.getElementById('deleteRegisteredStudentBtn').style.display = 'none';
+            }
+
+            let editBeforeDownloadStudentId = null;
+            let editBeforeDownloadType = null;
+
+            function openEditBeforeDownloadModal(studentId, downloadType) {
+                if (!studentId) {
+                    showToast('Aucun élève sélectionné.', 'error');
+                    return;
+                }
+                const student = students.find(s => s.id === studentId || s.reference === studentId);
+                if (!student) {
+                    showToast('Élève introuvable.', 'error');
+                    return;
+                }
+                editBeforeDownloadStudentId = student.id;
+                editBeforeDownloadType = downloadType;
+                document.getElementById('editBeforeDownloadName').value = student.name || student.fullName || '';
+                document.getElementById('editBeforeDownloadParent').value = student.parent || '';
+                document.getElementById('editBeforeDownloadParentPhone').value = student.parentPhone || '';
+                document.getElementById('editBeforeDownloadClass').value = student.class || student.classes || '';
+                const modal = new bootstrap.Modal(document.getElementById('editBeforeDownloadModal'));
+                modal.show();
+            }
+
+            async function saveEditBeforeDownload() {
+                if (!editBeforeDownloadStudentId || !editBeforeDownloadType) return;
+                const updates = {
+                    name: document.getElementById('editBeforeDownloadName').value.trim(),
+                    parent: document.getElementById('editBeforeDownloadParent').value.trim(),
+                    parentPhone: document.getElementById('editBeforeDownloadParentPhone').value.trim(),
+                    class: document.getElementById('editBeforeDownloadClass').value.trim(),
+                    classes: document.getElementById('editBeforeDownloadClass').value.trim()
+                };
+                if (!updates.name) {
+                    showToast('Le nom de l\'enfant est requis.', 'error');
+                    return;
+                }
+                if (!updates.class) {
+                    showToast('La classe est requise.', 'error');
+                    return;
+                }
+                const saveBtn = document.getElementById('editBeforeDownloadSaveBtn');
+                const originalHtml = saveBtn.innerHTML;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enregistrement...';
+                try {
+                    await studentsRef.child(editBeforeDownloadStudentId).update(updates);
+                    const idx = students.findIndex(s => s.id === editBeforeDownloadStudentId);
+                    if (idx >= 0) Object.assign(students[idx], updates);
+                    bootstrap.Modal.getInstance(document.getElementById('editBeforeDownloadModal')).hide();
+                    const sid = editBeforeDownloadStudentId;
+                    const type = editBeforeDownloadType;
+                    editBeforeDownloadStudentId = null;
+                    editBeforeDownloadType = null;
+                    if (type === 'letter') downloadAdmissionLetter(sid);
+                    else downloadRegistrationForm(sid);
+                } catch (error) {
+                    console.error('Erreur mise à jour avant téléchargement:', error);
+                    showToast('Erreur lors de la mise à jour: ' + error.message, 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalHtml;
+                }
+            }
+
+            function resolveJsPDF() {
+                if (window.jspdf && typeof window.jspdf.jsPDF === 'function') {
+                    return window.jspdf.jsPDF;
+                }
+                if (typeof window.jsPDF === 'function') {
+                    return window.jsPDF;
+                }
+                return null;
+            }
+
+            function downloadAdmissionLetter(studentId) {
+                const student = students.find(s => s.id === studentId || s.reference === studentId);
+                if (!student) {
+                    showToast('Student not found for admission letter.', 'error');
+                    return;
+                }
+
+                const JsPDF = resolveJsPDF();
+                if (!JsPDF) {
+                    showToast('PDF library not loaded. Please refresh the page and try again.', 'error');
+                    return;
+                }
+
+                // Get branch-specific information
+                const branchId = resolveDocumentBranch(student);
+                const branchInfo = getBranchDirectorInfo(branchId);
+                const accountantFullName = (
+                    document.getElementById('accountantName')?.value ||
+                    currentUser?.name ||
+                    currentUserName ||
+                    branchInfo.accountant
+                );
+                const academicYear = getCurrentAcademicYearLabel(); // toujours l'année scolaire actuellement configurée
+                const today = new Date();
+                const formattedDate = today.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+                const birthDate = student.birthDate ? new Date(student.birthDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
+                const transportText = student.transportEnrolled ? 'Inscrit au transport scolaire / Enrolled in school transport' : '';
+
+                const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+                const pageWidth = doc.internal.pageSize.getWidth();
+
+                // Real logos from bulletin_primaire.html 
+                const logoEden = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931288/logo_eden_yg7o6h.png';
+                const logoRwanda = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931378/logo_rwanda_nb0ize.png';
+                
+                // Add logos
+                try {
+                    doc.addImage(logoEden, 'PNG', 15, 10, 15, 15);
+                    doc.addImage(logoRwanda, 'PNG', pageWidth - 30, 10, 15, 15);
+                } catch (e) {
+                    // If images fail to load, use colored rectangles as fallback
+                    doc.setFillColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                    doc.rect(15, 10, 15, 15, 'F');
+                    doc.rect(pageWidth - 30, 10, 15, 15, 'F');
+                }
+
+                // Header with branch name and colored bar
+                doc.setFillColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.rect(0, 30, pageWidth, 15, 'F');
+                
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.text(branchInfo.branchName, pageWidth / 2, 40, { align: 'center' });
+
+                // Title with colors
+                doc.setTextColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.text('LETTRE D\'ADMISSION', pageWidth / 2, 55, { align: 'center' });
+                doc.setFontSize(12);
+                doc.text('ADMISSION LETTER', pageWidth / 2, 61, { align: 'center' });
+                
+                // Separator line with branch color
+                doc.setDrawColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.setLineWidth(1);
+                doc.line(20, 65, pageWidth - 20, 65);
+
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`${branchInfo.address} | Kigali, Rwanda`, pageWidth / 2, 70, { align: 'center' });
+                
+                doc.setFontSize(9);
+                doc.text(`Tél / Tel: ${branchInfo.directorPhone}`, pageWidth / 2, 75, { align: 'center' });
+                
+                doc.setFontSize(10);
+                doc.text(`Kigali, ${formattedDate}`, pageWidth - 20, 82, { align: 'right' });
+                let cursorY = 92;
+                doc.text('Nous avons le plaisir de vous informer que votre enfant / We are pleased to inform you that your child:', 20, cursorY);
+                cursorY += 10;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(14);
+                doc.text(student.name || '', pageWidth / 2, cursorY, { align: 'center' });
+                cursorY += 10;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(11);
+                doc.text('A été admis(e) dans notre établissement / Has been admitted to our school', pageWidth / 2, cursorY, { align: 'center' });
+
+                cursorY += 14;
+                const details = [
+                    ['Référence / Student ID', student.reference || 'N/A'],
+                    ['Classe affectée / Assigned Class', student.class || 'N/A'],
+                    ['Branche / Branch', branchInfo.branchName || 'N/A'],
+                    ['Date de naissance / Date of Birth', birthDate || 'N/A'],
+                    ['Année académique / Academic Year', academicYear || 'N/A']
+                ];
+
+                const tableStartY = cursorY;
+                const labelX = 20;
+                const valueX = 110;
+                doc.setFontSize(11);
+                details.forEach(([label, value], index) => {
+                    const rowY = tableStartY + index * 8;
+                    doc.text(label, labelX, rowY);
+                    doc.text(String(value), valueX, rowY);
+                });
+                cursorY = tableStartY + details.length * 8 + 8;
+
+                if (transportText) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(11);
+                    doc.text('Transport:', 20, cursorY);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(10);
+                    doc.text(transportText, 40, cursorY);
+                    cursorY += 10;
+                }
+
+                const rules = 'Veuillez présenter cette lettre le premier jour de l\'école. Ceci est une confirmation officielle d\'admission et doit être conservé en lieu sûr. Please bring this letter on the first day of school; it is an official admission confirmation and must be retained safely.';
+                const ruleLines = doc.splitTextToSize(rules, pageWidth - 40);
+                doc.setFontSize(10);
+                doc.text(ruleLines, 20, cursorY);
+                cursorY += ruleLines.length * 6 + 14;
+
+                // Branch-specific authority information
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.text('AUTORITÉS SCOLAIRES / SCHOOL AUTHORITIES:', 20, cursorY);
+                cursorY += 8;
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                const admissionAuthorityLines = getBranchAuthorityLines(branchInfo, accountantFullName);
+                admissionAuthorityLines.forEach(line => {
+                    doc.text(line, 20, cursorY);
+                    cursorY += 7;
+                });
+
+                const signatureY = cursorY + 20;
+                const boxWidth = 80;
+                const boxHeight = 30;
+                doc.setDrawColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.setLineWidth(0.5);
+                doc.rect(20, signatureY, boxWidth, boxHeight);
+                doc.rect(pageWidth - 20 - boxWidth, signatureY, boxWidth, boxHeight);
+                doc.setFontSize(10);
+                doc.setTextColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.text('AUTORITÉ SCOLAIRE', 20 + boxWidth / 2, signatureY + 8, { align: 'center' });
+                doc.text('PARENT', pageWidth - 20 - boxWidth / 2, signatureY + 8, { align: 'center' });
+                doc.setTextColor(0, 0, 0);
+                doc.text('SIGNATURE', pageWidth / 2, signatureY + boxHeight + 10, { align: 'center' });
+
+                doc.setFontSize(9);
+                doc.setTextColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.text(branchInfo.branchName, pageWidth / 2, pageWidth > 210 ? 280 : 285, { align: 'center' });
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(8);
+                doc.text('Kigali, Rwanda', pageWidth / 2, pageWidth > 210 ? 285 : 290, { align: 'center' });
+
+                const fileName = `Admission_Letter_${student.reference || studentId}.pdf`;
+                doc.save(fileName);
+                showToast('Admission letter downloaded! La lettre est en A4.', 'success');
+            }
+
+            function downloadRegistrationForm(studentId) {
+                const student = students.find(s => s.id === studentId || s.reference === studentId);
+                if (!student) {
+                    showToast('Student not found for registration form.', 'error');
+                    return;
+                }
+
+                const JsPDF = resolveJsPDF();
+                if (!JsPDF) {
+                    showToast('PDF library not loaded. Please refresh the page and try again.', 'error');
+                    return;
+                }
+
+                const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const branchId = resolveDocumentBranch(student);
+                const branchInfo = getBranchDirectorInfo(branchId);
+                const accountantFullName = (
+                    document.getElementById('accountantName')?.value ||
+                    currentUser?.name ||
+                    currentUserName ||
+                    branchInfo.accountant
+                );
+                const margin = 4;
+                const contentW = pageWidth - (margin * 2);
+                const contentH = pageHeight - (margin * 2);
+
+                const logoRwanda = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931378/logo_rwanda_nb0ize.png';
+                const logoEden = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931288/logo_eden_yg7o6h.png';
+
+                const registrationPayment = [...registrationPayments]
+                    .filter(p => p.studentId === student.id)
+                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0] || null;
+
+                const registrationFee = registrationPayment ? (parseFloat(registrationPayment.amount) || 0) : 0;
+                const registrationMode = registrationPayment ? (registrationPayment.paymentMode || '') : '';
+                const registrationRef = registrationPayment ? (registrationPayment.transactionRef || registrationPayment.reference || '') : '';
+
+                const safeText = (value) => {
+                    if (value === undefined || value === null || value === '') return '-';
+                    return String(value);
+                };
+
+                const labelValue = (label, value, x, y) => {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(32, 48, 64);
+                    doc.text(label, x, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(18, 18, 18);
+                    doc.text(safeText(value), x + 38, y);
+                };
+
+                // Full-page background so A4 is visually filled edge-to-edge.
+                doc.setFillColor(248, 252, 249);
+                doc.rect(0, 0, pageWidth, pageHeight, 'F');
+                doc.setDrawColor(25, 52, 43);
+                doc.setLineWidth(0.8);
+                doc.rect(0.8, 0.8, pageWidth - 1.6, pageHeight - 1.6, 'S');
+
+                let y = margin;
+
+                // Header panel
+                doc.setFillColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.roundedRect(margin, y, contentW, 28, 3, 3, 'F');
+
+                const drawRegistrationLogoFrame = (x, yPos, width, height) => {
+                    doc.setFillColor(255, 255, 255);
+                    doc.setDrawColor(214, 224, 219);
+                    doc.setLineWidth(0.5);
+                    doc.roundedRect(x, yPos, width, height, 2.5, 2.5, 'FD');
+                };
+
+                const logoBoxY = y + 2;
+                const logoBoxW = 20;
+                const logoBoxH = 10;
+                const leftLogoX = margin + 2;
+                const rightLogoX = pageWidth - margin - 22;
+
+                drawRegistrationLogoFrame(leftLogoX, logoBoxY, logoBoxW, logoBoxH);
+                drawRegistrationLogoFrame(rightLogoX, logoBoxY, logoBoxW, logoBoxH);
+
+                try {
+                    doc.addImage(logoEden, 'PNG', leftLogoX + 1, logoBoxY + 1, logoBoxW - 2, logoBoxH - 2);
+                    doc.addImage(logoRwanda, 'PNG', rightLogoX + 1, logoBoxY + 1, logoBoxW - 2, logoBoxH - 2);
+                } catch (e) {
+                    doc.setFillColor(230, 238, 234);
+                    doc.roundedRect(leftLogoX + 1, logoBoxY + 1, logoBoxW - 2, logoBoxH - 2, 2, 2, 'F');
+                    doc.roundedRect(rightLogoX + 1, logoBoxY + 1, logoBoxW - 2, logoBoxH - 2, 2, 2, 'F');
+                }
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(15);
+                doc.setTextColor(255, 255, 255);
+                doc.text('FORMULAIRE D\'INSCRIPTION SCOLAIRE', pageWidth / 2, y + 12, { align: 'center' });
+                doc.setFontSize(10);
+                doc.text(branchInfo.branchName, pageWidth / 2, y + 18, { align: 'center' });
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.text('Maternelle (N1, N2, N3) et Primaire (P1-P6)', pageWidth / 2, y + 24, { align: 'center' });
+
+                y += 34;
+
+                // Student card
+                doc.setDrawColor(180, 204, 192);
+                doc.setLineWidth(0.4);
+                doc.roundedRect(margin, y, contentW, 72, 2, 2, 'S');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.text('01. INFORMATION DE L\'ENFANT', margin + 4, y + 7);
+
+                let rowY = y + 15;
+                labelValue('Nom-prénom:', student.name || student.fullName, margin + 4, rowY);
+                labelValue('Sexe:', student.gender === 'GARCON' ? 'GARÇON' : 'FILLE', margin + 104, rowY);
+                rowY += 8;
+                labelValue('Date de naissance:', student.birthDate ? new Date(student.birthDate).toLocaleDateString('fr-FR') : '', margin + 4, rowY);
+                labelValue('Classe:', student.class || student.classes, margin + 104, rowY);
+                rowY += 8;
+                labelValue('École provenance:', student.previousSchool, margin + 4, rowY);
+                labelValue('Référence:', student.reference, margin + 104, rowY);
+                rowY += 8;
+                labelValue('Branche:', getBranchName(student.branch), margin + 4, rowY);
+                labelValue('Transport bus:', student.transportEnrolled ? 'Oui' : 'Non', margin + 104, rowY);
+                rowY += 8;
+                labelValue('Année scolaire:', getCurrentAcademicYearLabel(), margin + 4, rowY);
+                labelValue('Adresse:', student.address, margin + 104, rowY);
+                rowY += 8;
+
+                y += 78;
+
+                // Parent + spouse cards
+                const colGap = 6;
+                const colW = (contentW - colGap) / 2;
+
+                doc.roundedRect(margin, y, colW, 44, 2, 2, 'S');
+                doc.roundedRect(margin + colW + colGap, y, colW, 44, 2, 2, 'S');
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.text('02. CHEF DE FAMILLE', margin + 4, y + 7);
+                doc.text('03. LA CONJOINT(E)', margin + colW + colGap + 4, y + 7);
+
+                rowY = y + 15;
+                labelValue('Nom-prénom:', student.parent, margin + 4, rowY);
+                labelValue('Nom-prénom:', student.spouseName, margin + colW + colGap + 4, rowY);
+                rowY += 8;
+                labelValue('Téléphone:', student.parentPhone, margin + 4, rowY);
+                labelValue('Téléphone:', student.spousePhone, margin + colW + colGap + 4, rowY);
+                rowY += 8;
+                labelValue('Pièce ID:', student.parentID, margin + 4, rowY);
+                labelValue('Pièce ID:', student.spouseID, margin + colW + colGap + 4, rowY);
+
+                y += 50;
+
+                // Payment card
+                doc.roundedRect(margin, y, contentW, 36, 2, 2, 'S');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.text('04. PAIEMENT INSCRIPTION', margin + 4, y + 7);
+
+                rowY = y + 15;
+                labelValue('Montant:', formatCurrencyRWF(registrationFee), margin + 4, rowY);
+                labelValue('Mode:', registrationMode ? registrationMode.toUpperCase() : '-', margin + 104, rowY);
+                rowY += 8;
+                labelValue('Référence:', registrationRef, margin + 4, rowY);
+                labelValue('Date création:', student.timestamp ? new Date(student.timestamp).toLocaleDateString('fr-FR') : '', margin + 104, rowY);
+
+                y += 44;
+
+                // Authority / branch section to occupy lower page area.
+                const authorityBoxH = Math.max(22, contentH - (y - margin) - 32);
+                doc.roundedRect(margin, y, contentW, authorityBoxH, 2, 2, 'S');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(branchInfo.colorRGB[0], branchInfo.colorRGB[1], branchInfo.colorRGB[2]);
+                doc.text('05. AUTORITÉS ET VALIDATION', margin + 4, y + 7);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(35, 35, 35);
+                doc.setFontSize(9);
+                const registrationAuthorityLines = getBranchAuthorityLines(branchInfo, accountantFullName);
+                let authorityLineY = y + 14;
+                registrationAuthorityLines.forEach(line => {
+                    doc.text(line, margin + 4, authorityLineY);
+                    authorityLineY += 6;
+                });
+
+                const sigY = y + authorityBoxH - 20;
+
+                // Signatures
+                const sigBoxW = 64;
+                const sigBoxH = 18;
+                const leftSigX = margin + 6;
+                const rightSigX = pageWidth - margin - 6 - sigBoxW;
+                doc.roundedRect(leftSigX, sigY, sigBoxW, sigBoxH, 2, 2, 'S');
+                doc.roundedRect(rightSigX, sigY, sigBoxW, sigBoxH, 2, 2, 'S');
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(30, 30, 30);
+                doc.text('AUTORITÉ SCOLAIRE', leftSigX + (sigBoxW / 2), sigY + 7, { align: 'center' });
+                doc.text('PARENT', rightSigX + (sigBoxW / 2), sigY + 7, { align: 'center' });
+                doc.text('Signature', pageWidth / 2, sigY + 24, { align: 'center' });
+
+                doc.setFontSize(8);
+                doc.setTextColor(105, 105, 105);
+                doc.text(branchInfo.address || 'Kigali, Rwanda', pageWidth / 2, pageHeight - 4, { align: 'center' });
+
+                const fileName = `Registration_Form_${student.reference || studentId}.pdf`;
+                doc.save(fileName);
+                showToast('Registration form downloaded!', 'success');
+            }
+
+            function populateRegistrationRequestedClass() {
+                const select = document.getElementById('regRequestedClass');
+                if (!select) return;
+                select.innerHTML = '<option value="">Sélectionner une classe</option>';
+                // If current selection targets the Kacyiru crèche, show age-based creche levels
+                const sectionValue = (document.querySelector('input[name="regBranchSection"]:checked') || document.querySelector('input[name="regBranch"]:checked'))?.value || '';
+                if (sectionValue === 'kacyiru_creche') {
+                    const crecheLevels = ['Crèche 3-6 mois', 'Crèche 6-12 mois', 'Crèche 12-24 mois'];
+                    crecheLevels.forEach(c => {
+                        const option = document.createElement('option');
+                        option.value = c;
+                        option.textContent = c;
+                        select.appendChild(option);
+                    });
+                    return;
+                }
+
+                const classes = ['N1','N2','P1','P2','P3','P4','P5','P6'];
+                classes.forEach(c => {
+                    const option = document.createElement('option');
+                    option.value = c;
+                    option.textContent = c;
+                    select.appendChild(option);
+                });
+            }
+
+            function getRegistrationBranchLevel(branchValue) {
+                if (branchValue === 'gisozi_maternelle') return 'Maternelle';
+                if (branchValue === 'gisozi_primaire') return 'Primaire';
+                if (branchValue === 'kacyiru_creche') return 'Crèche';
+                return null;
+            }
+
+            function matchesRegistrationBranchLevel(className, branchValue) {
+                const selectedLevel = getRegistrationBranchLevel(branchValue);
+                if (!selectedLevel) return true;
+
+                const normalizedClass = (className || '').toString().trim().toUpperCase();
+                if (selectedLevel === 'Maternelle') return normalizedClass.startsWith('N');
+                if (selectedLevel === 'Primaire') return normalizedClass.startsWith('P');
+                if (selectedLevel === 'Crèche' || selectedLevel === 'Creche') {
+                    // Accept classes labelled for crèche: either start with 'C' or contain the word 'CRECHE' (case-insensitive)
+                    return /^C/i.test(className) || /cr[eè]che/i.test(className);
+                }
+                return true;
+            }
+
+            async function getRegistrationClassesForBranch(branchValue) {
+                const normalizedBranch = getFirebaseBranchForWorkers(branchValue);
+                const branchCandidates = [...new Set([normalizedBranch, branchValue].filter(Boolean))];
+                const selectedLevel = getRegistrationBranchLevel(branchValue);
+
+                for (const branchKey of branchCandidates) {
+                    const classNames = new Set();
+                    try {
+                        const classesSnap = await db.ref(`branches/${branchKey}/classes`).once('value');
+                        if (!classesSnap.exists()) continue;
+
+                        classesSnap.forEach(child => {
+                            const val = child.val();
+                            const isActive = (typeof val === 'object') ? val.active !== false : true;
+                            if (!isActive) return;
+
+                            const className = (typeof val === 'object' ? (val.name || child.key) : child.key || '').toString().trim();
+                            if (!className) return;
+                            if (!matchesRegistrationBranchLevel(className, branchValue)) return;
+
+                            if (selectedLevel) {
+                                const classLevel = (typeof val === 'object' ? (val.level || val.degre || '') : '').toString().trim().toLowerCase();
+                                const inferredLevel = className.toUpperCase().startsWith('N') ? 'nursery' : className.toUpperCase().startsWith('P') ? 'primary' : '';
+                                const levelToCheck = classLevel || inferredLevel;
+                                if (selectedLevel === 'Maternelle' && !['maternelle', 'nursery'].includes(levelToCheck)) return;
+                                if (selectedLevel === 'Primaire' && !['primaire', 'primary'].includes(levelToCheck)) return;
+                            }
+
+                            classNames.add(className);
+                        });
+
+                        if (classNames.size > 0) {
+                            return [...classNames].sort((a, b) => a.localeCompare(b, 'fr'));
+                        }
+                    } catch (error) {
+                        console.error('Error loading registration classes for branch:', branchKey, error);
+                    }
+                }
+
+                return [...new Set(
+                    getStudentsForCurrentBranch(branchValue)
+                        .map(student => (student.classes || student.class || student.classe || '').toString().trim())
+                        .filter(className => className && matchesRegistrationBranchLevel(className, branchValue))
+                )].sort((a, b) => a.localeCompare(b, 'fr'));
+            }
+
+            async function populateRegistrationClassesByBranch(branchValue) {
+                const select = document.getElementById('regRequestedClass');
+                if (!select) return;
+
+                select.innerHTML = '<option value="">Chargement...</option>';
+                select.disabled = true;
+
+                if (!branchValue) {
+                    select.innerHTML = '<option value="">Sélectionner d\'abord une branche</option>';
+                    select.disabled = false;
+                    return;
+                }
+
+                if (branchValue === 'gisozi' || branchValue === 'kacyiru') {
+                    select.innerHTML = '<option value="">Sélectionner d\'abord une section</option>';
+                    select.disabled = true;
+                    return;
+                }
+
+                try {
+                    const classNames = await getRegistrationClassesForBranch(branchValue);
+
+                    if (classNames.length === 0) {
+                        select.innerHTML = '<option value="">Aucune classe trouvée</option>';
+                        select.disabled = false;
+                        return;
+                    }
+
+                    select.innerHTML = '<option value="">Sélectionner une classe</option>';
+
+                    const nursery = classNames.filter(c => c.toString().toUpperCase().startsWith('N'));
+                    const primary = classNames.filter(c => c.toString().toUpperCase().startsWith('P'));
+                    const other = classNames.filter(c => !c.toString().toUpperCase().match(/^[NP]/));
+
+                    if (nursery.length) {
+                        const g = document.createElement('optgroup');
+                        g.label = 'Maternelle';
+                        nursery.forEach(c => {
+                            const o = document.createElement('option');
+                            o.value = c;
+                            o.textContent = c;
+                            g.appendChild(o);
+                        });
+                        select.appendChild(g);
+                    }
+
+                    if (primary.length) {
+                        const g = document.createElement('optgroup');
+                        g.label = 'Primaire';
+                        primary.forEach(c => {
+                            const o = document.createElement('option');
+                            o.value = c;
+                            o.textContent = c;
+                            g.appendChild(o);
+                        });
+                        select.appendChild(g);
+                    }
+
+                    if (other.length) {
+                        const g = document.createElement('optgroup');
+                        g.label = 'Autres';
+                        other.forEach(c => {
+                            const o = document.createElement('option');
+                            o.value = c;
+                            o.textContent = c;
+                            g.appendChild(o);
+                        });
+                        select.appendChild(g);
+                    }
+
+                    select.disabled = false;
+                } catch (err) {
+                    console.error('Erreur chargement classes:', err);
+                    select.innerHTML = '<option value="">Erreur de chargement</option>';
+                    select.disabled = false;
+                }
+            }
+
+            function toggleInscriptionFeeAmount() {
+                const show = document.getElementById('studentInscriptionFee').checked;
+                document.getElementById('inscriptionFeeAmountGroup').style.display = show ? 'block' : 'none';
+                if (!show) document.getElementById('studentInscriptionFeeAmount').value = 0;
+            }
+
+            function toggleCoachingMonthlyFee() {
+                const show = document.getElementById('studentCoachingEnrolled').checked;
+                document.getElementById('coachingMonthlyFeeGroup').style.display = show ? 'block' : 'none';
+                if (!show) document.getElementById('studentCoachingMonthlyFee').value = 0;
+            }
+
+            function toggleTransportMonthlyFee() {
+                const show = document.getElementById('studentTransportEnrolled').checked;
+                document.getElementById('transportMonthlyFeeGroup').style.display = show ? 'block' : 'none';
+                if (!show) document.getElementById('studentTransportMonthlyFee').value = 0;
+            }
+
+            // Populate student class select in modal dynamically based on students in selected branch
+            function populateStudentModalClassFilter() {
+                const select = document.getElementById('studentClass');
+                if (!select) return;
+                
+                const currentValue = select.value; // Preserve current selection
+                
+                // Clear existing options except "Select"
+                select.innerHTML = '<option value="">Select</option>';
+                
+                // Get unique classes from students in the selected branch
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                let levelFilter = null;
+                if (selectedBranch === 'gisozi_maternelle') {
+                    levelFilter = 'nursery';
+                } else if (selectedBranch === 'gisozi_primaire') {
+                    levelFilter = 'primary';
+                }
+                
+                const branchStudents = students.filter(student => {
+                    if (student.branch !== firebaseBranch) return false;
+                    if (levelFilter && student.level !== levelFilter) return false;
+                    return true;
+                });
+                const uniqueClasses = [...new Set(branchStudents.map(student => 
+                    (student.classes || student.class || '').toString().trim()
+                ))].filter(cls => cls !== '').sort();
+                
+                // Group classes by type (Nursery vs Primary)
+                const nurseryClasses = uniqueClasses.filter(cls => cls.startsWith('N'));
+                const primaryClasses = uniqueClasses.filter(cls => cls.startsWith('P'));
+                
+                // Add Nursery optgroup if there are nursery classes
+                if (nurseryClasses.length > 0) {
+                    const nurseryOptgroup = document.createElement('optgroup');
+                    nurseryOptgroup.label = 'NURSERY';
+                    
+                    nurseryClasses.forEach(cls => {
+                        const option = document.createElement('option');
+                        option.value = cls;
+                        option.textContent = cls;
+                        nurseryOptgroup.appendChild(option);
+                    });
+                    
+                    select.appendChild(nurseryOptgroup);
+                }
+                
+                // Add Primary optgroup if there are primary classes
+                if (primaryClasses.length > 0) {
+                    const primaryOptgroup = document.createElement('optgroup');
+                    primaryOptgroup.label = 'PRIMARY';
+                    
+                    primaryClasses.forEach(cls => {
+                        const option = document.createElement('option');
+                        option.value = cls;
+                        option.textContent = cls;
+                        primaryOptgroup.appendChild(option);
+                    });
+                    
+                    select.appendChild(primaryOptgroup);
+                }
+                
+                // Restore previous selection if it still exists
+                if (currentValue && Array.from(select.options).some(option => option.value === currentValue)) {
+                    select.value = currentValue;
+                }
+            }
+
+            // Edit student
+            function editStudent(studentId) {
+                const student = students.find(s => s.id === studentId);
+                if (!student) {
+                    showToast('Student not found', 'error');
+                    return;
+                }
+
+                openStudentEditModal(student).catch(error => {
+                    console.error('Error opening edit modal:', error);
+                    showToast('Unable to open student edit popup.', 'error');
+                });
+            }
+
+            // Save student
+            async function saveStudent() {
+                const form = document.getElementById('studentForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                
+                try {
+                    if (currentStudentId) {
+                    const studentData = {
+                        reference: document.getElementById('studentReference').value,
+                        name: document.getElementById('studentFullName').value,
+                        birthDate: document.getElementById('studentBirthDate').value,
+                        class: document.getElementById('studentClass').value,
+                        parent: document.getElementById('studentParent').value || '',
+                        parentPhone: document.getElementById('studentParentPhone').value || '',
+                        branch: document.getElementById('studentBranch').value,
+                        inscriptionFee: document.getElementById('studentInscriptionFee').checked,
+                        inscriptionFeeAmount: document.getElementById('studentInscriptionFee').checked ? parseFloat(document.getElementById('studentInscriptionFeeAmount').value) || 0 : 0,
+                        coachingEnrolled: document.getElementById('studentCoachingEnrolled').checked,
+                        coachingMonthlyFee: document.getElementById('studentCoachingEnrolled').checked ? parseFloat(document.getElementById('studentCoachingMonthlyFee').value) || 0 : 0,
+                        transportEnrolled: document.getElementById('studentTransportEnrolled').checked,
+                        transportMonthlyFee: document.getElementById('studentTransportEnrolled').checked ? parseFloat(document.getElementById('studentTransportMonthlyFee').value) || 0 : 0,
+                        timestamp: Date.now()
+                    };
+                    
+                    await studentsRef.child(currentStudentId).update(studentData);
+                    showToast('Student updated successfully!', 'success');
+                } else {
+                        // Vérifier si la référence existe déjà
+                        const existingSnapshot = await studentsRef
+                            .orderByChild('reference')
+                            .equalTo(studentData.reference)
+                            .once('value');
+                        
+                        if (existingSnapshot.exists()) {
+                            showToast('This reference already exists!', 'error');
+                            return;
+                        }
+                        
+                        await studentsRef.push(studentData);
+                        showToast('Student added successfully!', 'success');
+                    }
+                    
+                    bootstrap.Modal.getInstance(document.getElementById('studentModal')).hide();
+                    document.getElementById('studentForm').reset();
+                    currentStudentId = null;
+                    
+                    // Générer une nouvelle référence
+                    generateStudentReference();
+                    
+                } catch (error) {
+                    console.error('Error saving student:', error);
+                    showToast('Error saving student', 'error');
+                }
+            }
+
+            // Generate student reference
+            function generateStudentReference() {
+                const referenceField = document.getElementById('studentReference');
+                if (!referenceField) {
+                    console.warn('Student reference field not found; skipping reference generation.');
+                    return;
+                }
+
+                const now = new Date();
+                const timestamp = now.getTime();
+                const random = Math.floor(Math.random() * 1000);
+                referenceField.value = `EDU-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${timestamp.toString().slice(-6)}${random.toString().padStart(3, '0')}`;
+            }
+
+            // Delete student prompt
+            function deleteStudentPrompt(studentId) {
+                const student = students.find(s => s.id === studentId);
+                if (!student) return;
+                
+                if (confirm(`Are you sure you want to delete student ${student.name || student.fullName}?`)) {
+                    deleteStudent(studentId);
+                }
+            }
+
+            // Delete student
+            async function deleteStudent(studentId) {
+                try {
+                    const student = students.find(s => s.id === studentId);
+                    if (!student) return;
+
+                    const paymentRefs = [
+                        studentFeesRef,
+                        feesPaymentsRef,
+                        coachingPaymentsRef,
+                        transportPaymentsRef,
+                        registrationPaymentsRef
+                    ];
+
+                    for (const ref of paymentRefs) {
+                        const snapshot = await ref.orderByChild('studentId').equalTo(studentId).once('value');
+                        if (!snapshot.exists()) continue;
+                        const updates = {};
+                        snapshot.forEach(child => {
+                            updates[child.key] = null;
+                        });
+                        if (Object.keys(updates).length > 0) {
+                            await ref.update(updates);
+                        }
+                    }
+
+                    await studentsRef.child(studentId).remove();
+                    showToast(currentLanguage === 'fr' ? 'Élève supprimé avec succès !' : 'Student deleted successfully!', 'success');
+
+                    try { if (typeof applyStudentFilters === 'function') applyStudentFilters(); } catch (e) { console.warn(e); }
+                    try { if (typeof loadStudentFees === 'function') loadStudentFees(); } catch (e) { console.warn(e); }
+                    try { if (typeof loadFees === 'function') loadFees(); } catch (e) { console.warn(e); }
+                    try { if (typeof recalculateExpectedIncome === 'function') recalculateExpectedIncome(); } catch (e) { console.warn(e); }
+                    try { if (typeof updateDailyReportTable === 'function') updateDailyReportTable(); } catch (e) { console.warn(e); }
+                    return true;
+                    
+                } catch (error) {
+                    console.error('Error deleting student:', error);
+                    showToast(currentLanguage === 'fr' ? 'Erreur lors de la suppression de l\'élève' : 'Error deleting student', 'error');
+                    return false;
+                }
+            }
+
+            // Export students to Excel
+            function exportStudentsExcel() {
+                try {
+                    // Filtrer les élèves par branche
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                    let levelFilter = null;
+                    if (selectedBranch === 'gisozi_maternelle') {
+                        levelFilter = 'nursery';
+                    } else if (selectedBranch === 'gisozi_primaire') {
+                        levelFilter = 'primary';
+                    }
+                    const branchStudents = students.filter(student => {
+                        if (student.branch !== firebaseBranch) return false;
+                        if (levelFilter && student.level !== levelFilter) return false;
+                        return true;
+                    });
+                    
+                    // Appliquer les filtres actuels
+                    const selectedClass = document.getElementById('filterStudentClass').value;
+                    const ageRange = document.getElementById('filterAgeRange').value;
+                    const sortBy = document.getElementById('sortStudents').value;
+                    
+                    let filteredStudents = [...branchStudents];
+                    
+                    // Filtrer par classe si sélectionnée
+                    if (selectedClass) {
+                        filteredStudents = filteredStudents.filter(student => student.class === selectedClass);
+                    }
+                    
+                    // Filtrer par tranche d'âge si sélectionnée
+                    if (ageRange) {
+                        filteredStudents = filteredStudents.filter(student => {
+                            if (!student.birthDate) return false;
+                            const age = calculateAge(student.birthDate);
+                            const [minAge, maxAge] = ageRange.split('-').map(num => {
+                                if (num.endsWith('+')) {
+                                    return parseInt(num);
+                                }
+                                return parseInt(num);
+                            });
+                            
+                            if (ageRange.endsWith('+')) {
+                                return age >= minAge;
+                            } else {
+                                return age >= minAge && age <= maxAge;
+                            }
+                        });
+                    }
+                    
+                    // Préparer les données pour l'export
+                    const exportData = filteredStudents.map((student, index) => {
+                        const studentPayments = studentFees.filter(fee => fee.studentId === student.id);
+                        const totalPaid = studentPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+                        const age = calculateAge(student.birthDate);
+                        const currentClass = student.classes || student.class || '';
+                        
+                        return {
+                            'NO': index + 1,
+                            'REFERENCE': student.reference || 'N/A',
+                            'FULL NAME': student.name || student.fullName,
+                            'CLASS': currentClass,
+                            'BIRTH DATE': student.birthDate ? new Date(student.birthDate).toLocaleDateString('en-US') : '',
+                            'AGE': `${age} years`,
+                            'PARENT': student.parent || '',
+                            'PARENT PHONE': student.parentPhone || '',
+                            'TOTAL PAID': totalPaid,
+                            'BRANCH': getBranchName(student.branch),
+                            'REGISTRATION DATE': student.timestamp ? new Date(student.timestamp).toLocaleDateString('en-US') : ''
+                        };
+                    });
+                    
+                    // Créer le classeur Excel
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet(exportData);
+                    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+                    
+                    // Générer le fichier
+                    const fileName = `students_${selectedBranch}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    
+                    showToast('Student list exported to Excel successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting students Excel:', error);
+                    showToast('Error exporting Excel', 'error');
+                }
+            }
+
+            // Variables pour l'importation
+            let importedStudentsData = [];
+            let filteredImportedStudents = [];
+
+            // Show import students modal
+            function showImportStudentsModal() {
+                document.getElementById('importFileInput').value = '';
+                document.getElementById('importStep1').style.display = 'block';
+                document.getElementById('importStep2').style.display = 'none';
+                document.getElementById('importNextBtn').style.display = 'block';
+                document.getElementById('importConfirmBtn').style.display = 'none';
+                document.getElementById('importBackBtn').style.display = 'none';
+                
+                importedStudentsData = [];
+                filteredImportedStudents = [];
+                
+                const branchNames = {
+                    kacyiru: 'EDEN FAMILY SCHOOL KACYIRU',
+                    kimisagara: 'EDEN FAMILY SCHOOL KIMISAGARA',
+                    gisozi_maternelle: 'EDEN FAMILY SCHOOL GISOZI NURSERY',
+                    gisozi_primaire: 'EDEN FAMILY SCHOOL GISOZI PRIMARY'
+                };
+                document.getElementById('importBranchText').textContent = branchNames[selectedBranch];
+                
+                const modal = new bootstrap.Modal(document.getElementById('importStudentsModal'));
+                modal.show();
+            }
+
+            // Preview import file (Excel or Word)
+            async function previewImportFile() {
+                const file = document.getElementById('importFileInput').files[0];
+                if (!file) return;
+                
+                try {
+                    // Utiliser les utilitaires avancés d'importation
+                    const result = await importStudentFile(file);
+
+                    if (!result.success) {
+                        showToast(result.message, 'error');
+                        return;
+                    }
+
+                    // Traiter les données valides
+                    importedStudentsData = result.students.map((student, index) => ({
+                        index: index + 1,
+                        rowNumber: student.rowNumber,
+                        fullName: student.fullName,
+                        birthDate: student.birthDate || '',
+                        class: student.class || 'UNASSIGNED',
+                        parent: student.parent || '',
+                        parentPhone: student.phone || '',
+                        reference: `EDU-${Date.now()}-${index}`,
+                        timestamp: Date.now(),
+                        warnings: {
+                            dateWarning: !student.birthDate,
+                            missingParent: !student.parent,
+                            missingPhone: !student.phone
+                        }
+                    }));
+
+                    if (importedStudentsData.length === 0) {
+                        let message = result.message;
+                        if (result.invalidRows && result.invalidRows.length > 0) {
+                            message += `\n\nInvalid rows:\n`;
+                            result.invalidRows.slice(0, 5).forEach(row => {
+                                message += `- Row ${row.row}: ${row.reason}\n`;
+                            });
+                            if (result.invalidRows.length > 5) {
+                                message += `... and ${result.invalidRows.length - 5} more errors`;
+                            }
+                        }
+                        showToast(message, 'error');
+                        return;
+                    }
+
+                    // Message de résumé
+                    let warningMessage = `${importedStudentsData.length} valid student(s) loaded\n\n`;
+                    warningMessage += 'Fields extracted: FULL NAME, CLASS, PARENT, BIRTH DATE, PHONE\n';
+                    warningMessage += 'Note: Numbers extracted from mixed fields (e.g., "ID123 John" → "123")';
+                    
+                    if (result.invalidRows && result.invalidRows.length > 0) {
+                        warningMessage += `\n\n⚠️ ${result.invalidRows.length} invalid row(s) were skipped (FULL NAME or CLASS missing/invalid)`;
+                    }
+
+                    showToast(warningMessage, 'success');
+                    
+                } catch (error) {
+                    console.error('Error reading file:', error);
+                    showToast('Error reading file: ' + error.message, 'error');
+                }
+            }
+
+            // Proceed to step 2
+            function proceedImportStep2() {
+                if (importedStudentsData.length === 0) {
+                    showToast('Please select a file first', 'error');
+                    return;
+                }
+                
+                const defaultClass = document.getElementById('importDefaultClass').value;
+                const ageFilter = document.getElementById('importAgeFilter').value;
+                
+                // Appliquer les filtres
+                filteredImportedStudents = importedStudentsData.map(student => ({
+                    ...student,
+                    class: student.class || defaultClass
+                }));
+                
+                // Filtrer par tranche d'âge si spécifiée
+                if (ageFilter) {
+                    filteredImportedStudents = filteredImportedStudents.filter(student => {
+                        if (!student.birthDate) return true;
+                        const age = calculateAge(student.birthDate);
+                        const [minAge, maxAge] = ageFilter.split('-').map(num => {
+                            if (num.endsWith('+')) {
+                                return parseInt(num);
+                            }
+                            return parseInt(num);
+                        });
+                        
+                        if (ageFilter.endsWith('+')) {
+                            return age >= minAge;
+                        } else {
+                            return age >= minAge && age <= maxAge;
+                        }
+                    });
+                }
+                
+                // Afficher l'aperçu
+                updateImportPreview();
+                
+                // Passer à l'étape 2
+                document.getElementById('importStep1').style.display = 'none';
+                document.getElementById('importStep2').style.display = 'block';
+                document.getElementById('importNextBtn').style.display = 'none';
+                document.getElementById('importConfirmBtn').style.display = 'block';
+                document.getElementById('importBackBtn').style.display = 'block';
+                
+                document.getElementById('importFileInfo').textContent = filteredImportedStudents.length;
+            }
+
+            // Update import preview
+            function updateImportPreview() {
+                const tbody = document.getElementById('importPreviewBody');
+                tbody.innerHTML = '';
+                
+                filteredImportedStudents.forEach((student, index) => {
+                    const age = student.birthDate ? calculateAge(student.birthDate) : '?';
+                    const tr = document.createElement('tr');
+                    
+                    // Déterminer le statut avec avertissements
+                    let statusBadge = '<span class="badge bg-success">✓ OK</span>';
+                    let warnings = '';
+                    
+                    if (student.warnings) {
+                        const warns = [];
+                        if (student.warnings.dateWarning) warns.push('📅 Date missing');
+                        if (student.warnings.missingParent) warns.push('👤 Parent missing');
+                        if (student.warnings.missingPhone) warns.push('📱 Phone missing');
+                        
+                        if (warns.length > 0) {
+                            statusBadge = '<span class="badge bg-warning">⚠️ Incomplete</span>';
+                            warnings = `<br><small class="text-muted">${warns.join(', ')}</small>`;
+                        }
+                    }
+                    
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${student.fullName}</strong></td>
+                        <td>${student.birthDate ? new Date(student.birthDate).toLocaleDateString('en-US') : '⚠️ Missing'}</td>
+                        <td><span class="badge bg-primary">${student.class || 'N/A'}</span></td>
+                        <td>${student.parent || '<em class="text-danger">-</em>'}</td>
+                        <td>${statusBadge}${warnings}</td>
+                    `;
+                    tr.style.verticalAlign = 'top';
+                    tbody.appendChild(tr);
+                });
+                
+                // Afficher un résumé des données
+                const warningCount = filteredImportedStudents.filter(s => s.warnings && (s.warnings.dateWarning || s.warnings.missingParent || s.warnings.missingPhone)).length;
+                const summary = document.createElement('div');
+                summary.className = 'mt-3 p-3 bg-light rounded';
+                
+                if (warningCount > 0) {
+                    summary.innerHTML = `
+                        <div class="alert alert-warning mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Warning:</strong> ${warningCount} student(s) with incomplete data.
+                            <br><small>NAME and CLASS fields are validated. Other fields can be filled manually after import.</small>
+                        </div>
+                    `;
+                } else {
+                    summary.innerHTML = `
+                        <div class="alert alert-success mb-0">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Excellent!</strong> All students have required data (NAME and CLASS).
+                        </div>
+                    `;
+                }
+                
+                const existingSummary = document.querySelector('.importPreviewSummary');
+                if (existingSummary) {
+                    existingSummary.replaceWith(summary);
+                } else {
+                    summary.className = 'importPreviewSummary ' + summary.className;
+                    document.getElementById('importPreviewBody').parentElement.insertAdjacentElement('afterend', summary);
+                }
+            }
+
+            // Confirm import students
+            async function confirmImportStudents() {
+                if (filteredImportedStudents.length === 0) {
+                    showToast('No students to import!', 'error');
+                    return;
+                }
+                
+                try {
+                    // Désactiver le bouton pour éviter les clics multiples
+                    const btn = document.getElementById('importConfirmBtn');
+                    const originalText = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Importing...';
+                    
+                    let successCount = 0;
+                    let errorCount = 0;
+                    
+                    // Déterminer le type de fichier importé (excel ou word) pour l'enregistrement
+                    const fileExt = document.getElementById('importFileInput').files[0]?.name.split('.').pop().toLowerCase();
+                    const importType = fileExt === 'docx' ? 'word' : 'excel';
+
+                    // Importer chaque élève
+                    for (const student of filteredImportedStudents) {
+                        try {
+                            // Générer une référence unique
+                            const reference = `EDU-${new Date().getFullYear()}${(new Date().getMonth() + 1).toString().padStart(2, '0')}${new Date().getDate().toString().padStart(2, '0')}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+                            
+                            const studentData = {
+                                reference: reference,
+                                name: student.fullName,
+                                birthDate: student.birthDate || '',
+                                classes: student.class || student.classes || '',
+                                parent: student.parent || '',
+                                parentPhone: student.parentPhone || '',
+                                branch: selectedBranch,
+                                status: 'active',
+                                timestamp: Date.now(),
+                                createdBy: currentUserName,
+                                importedFrom: importType
+                            };
+                            
+                            await studentsRef.push(studentData);
+                            successCount++;
+                            
+                        } catch (error) {
+                            console.error('Error importing student:', error);
+                            errorCount++;
+                        }
+                    }
+                    
+                    // Restaurer le bouton
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    
+                    // Afficher le résultat
+                    let message = `Import completed: ${successCount} student(s) imported successfully`;
+                    if (errorCount > 0) {
+                        message += ` and ${errorCount} error(s)`;
+                    }
+                    
+                    showToast(message, successCount > 0 ? 'success' : 'error');
+                    
+                    // Fermer le modal et actualiser la liste
+                    bootstrap.Modal.getInstance(document.getElementById('importStudentsModal')).hide();
+                    applyStudentFilters();
+                    
+                    // Enregistrer dans l'historique des activités
+                    const importLabel = importType === 'word' ? 'Word' : 'Excel';
+                    await logActivity('IMPORT_STUDENTS', `${successCount} student(s) imported from ${importLabel}`, 'import_students', {
+                        successCount: successCount,
+                        errorCount: errorCount,
+                        totalCount: filteredImportedStudents.length
+                    });
+                    
+                } catch (error) {
+                    console.error('Error importing:', error);
+                    showToast('Error during import', 'error');
+                }
+            }
+
+            // Show student fee modal
+            function showStudentFeeModal() {
+                document.getElementById('studentFeeForm').reset();
+                currentStudentFeeId = null;
+                document.getElementById('studentPaymentDate').value = getTimezoneAwareDate();
+                document.getElementById('studentInfoDisplay').style.display = 'none';
+                document.getElementById('studentClassFilter').disabled = false;
+                document.getElementById('studentSelect').disabled = false;
+                const transportBranchRow = document.getElementById('transportPaymentBranchRow');
+                const transportBranchSel = document.getElementById('transportPaymentBranch');
+                if (transportBranchRow) transportBranchRow.style.display = 'none';
+                if (transportBranchSel) transportBranchSel.value = selectedBranch;
+                document.querySelector('#studentFeeModal .modal-title').textContent = 'Student Payment Registration';
+                document.getElementById('studentFeeSaveBtn').innerHTML = '<i class="fas fa-save me-2"></i> Save';
+                updateStudentPaymentTypeRequirements();
+                
+                // Populate class filter for selected branch
+                populateStudentClassFilter();
+                // Charger les élèves de la branche sélectionnée
+                loadStudentsByClass();
+                
+                const modal = new bootstrap.Modal(document.getElementById('studentFeeModal'));
+                modal.show();
+            }
+
+            // Populate student class filter in fee modal dynamically based on students in selected branch
+            function populateStudentClassFilter() {
+                const select = document.getElementById('studentClassFilter');
+                if (!select) return;
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Sélectionner une classe / Select a class</option>';
+                const paymentType = document.getElementById('studentPaymentType')?.value;
+                if (paymentType === 'transport') {
+                    const transportBranchSel = document.getElementById('transportPaymentBranch');
+                    const transportBranchVal = transportBranchSel?.value || '';
+                    const transportStudents = students.filter(s => s.transportEnrolled === true || (s.transportMonthlyFee && parseFloat(s.transportMonthlyFee) > 0));
+                    const filtered = transportBranchVal
+                        ? transportStudents.filter(s => matchesBranchAndLevelForSelection(s, transportBranchVal))
+                        : transportStudents;
+                    const classList = [...new Set(filtered.map(s => (s.classes || s.class || '')).filter(Boolean))].sort();
+                    buildClassOptionGroups(select, classList);
+                    if (currentValue && Array.from(select.options).some(o => o.value === currentValue)) {
+                        select.value = currentValue;
+                    }
+                    return;
+                }
+                const classList = getBranchClasses(selectedBranch);
+                buildClassOptionGroups(select, classList);
+                if (currentValue && Array.from(select.options).some(o => o.value === currentValue)) {
+                    select.value = currentValue;
+                }
+            }
+
+            // Load students by class
+            function loadStudentsByClass() {
+                const selectedClass = document.getElementById('studentClassFilter').value;
+                const select = document.getElementById('studentSelect');
+                select.innerHTML = '<option value="">Select a student</option>';
+                
+                if (!selectedClass) return;
+
+                const paymentType = document.getElementById('studentPaymentType')?.value;
+                let classStudents;
+                if (paymentType === 'transport') {
+                    const transportBranchSel = document.getElementById('transportPaymentBranch');
+                    const transportBranchVal = transportBranchSel?.value || '';
+                    let pool = students.filter(s => s.transportEnrolled === true || (s.transportMonthlyFee && parseFloat(s.transportMonthlyFee) > 0));
+                    if (transportBranchVal) {
+                        pool = pool.filter(s => matchesBranchAndLevelForSelection(s, transportBranchVal));
+                    }
+                    classStudents = pool.filter(s => (s.classes || s.class || '').toString().trim() === selectedClass);
+                } else {
+                    classStudents = getStudentsForCurrentBranch().filter(student => {
+                        const studentClass = (student.classes || student.class || '').toString().trim();
+                        return studentClass === selectedClass;
+                    });
+                }
+                
+                classStudents.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.id;
+                    option.textContent = `${student.reference} - ${student.name || student.fullName}`;
+                    select.appendChild(option);
+                });
+            }
+
+            function onTransportPaymentBranchChange() {
+                populateStudentClassFilter();
+                document.getElementById('studentSelect').innerHTML = '<option value="">Select a student</option>';
+                document.getElementById('studentInfoDisplay').style.display = 'none';
+                loadStudentsByClass();
+            }
+
+            // Load student details when selected
+            function loadStudentDetails() {
+                const studentId = document.getElementById('studentSelect').value;
+                const student = students.find(s => s.id === studentId);
+                
+                if (!student) {
+                    document.getElementById('studentInfoDisplay').style.display = 'none';
+                    return;
+                }
+                
+                document.getElementById('studentReferenceDisplay').value = student.reference || 'N/A';
+                document.getElementById('studentBirthDateDisplay').value = student.birthDate ? new Date(student.birthDate).toLocaleDateString('en-US') : 'N/A';
+                updateStudentPaymentPayerField();
+                updateStudentPaymentTypeRequirements();
+                updateStudentPaymentRemainingBalance();
+                
+                document.getElementById('studentInfoDisplay').style.display = 'flex';
+            }
+
+            // Update Student Payment Remaining Balance based on Payment Type
+            async function updateStudentPaymentRemainingBalance() {
+                const paymentType = document.getElementById('studentPaymentType').value;
+                const studentId = document.getElementById('studentSelect').value;
+                const remainingBalanceElement = document.getElementById('remainingBalance');
+                
+                if (!paymentType || !studentId || !remainingBalanceElement) {
+                    if (remainingBalanceElement) {
+                        remainingBalanceElement.textContent = '0 RWF';
+                        remainingBalanceElement.style.color = '#28a745';
+                    }
+                    return;
+                }
+                
+                const student = students.find(s => s.id === studentId);
+                if (!student) {
+                    remainingBalanceElement.textContent = '0 RWF';
+                    remainingBalanceElement.style.color = '#28a745';
+                    return;
+                }
+                
+                try {
+                    // Determine configured amount for this payment type
+                    let configuredMonthly = 0;
+                    
+                    // First check student's personal config
+                    if (paymentType === 'coaching') {
+                        configuredMonthly = parseFloat(student.coachingMonthlyFee) || 0;
+                    } else if (paymentType === 'transport') {
+                        configuredMonthly = parseFloat(student.transportMonthlyFee) || 0;
+                    } else if (paymentType === 'fees') {
+                        configuredMonthly = parseFloat(student.feesMonthlyAmount) || 0;
+                    }
+                    
+                    // If not found in student config, try to get from fee configuration
+                    if (configuredMonthly === 0) {
+                        let quarter, schoolYear;
+                        if (currentTermConfig && currentTermConfig.academicYear && currentTermConfig.trimestre) {
+                            quarter = currentTermConfig.trimestre;
+                            schoolYear = currentTermConfig.academicYear;
+                        } else {
+                            const now = new Date();
+                            const currentMonth = now.getMonth() + 1;
+                            const currentYear = now.getFullYear();
+                            quarter = currentMonth >= 1 && currentMonth <= 4 ? 1 : (currentMonth >= 5 && currentMonth <= 8 ? 2 : 3);
+                            schoolYear = currentMonth >= 9 ? `${currentYear}-${currentYear + 1}` : `${currentYear - 1}-${currentYear}`;
+                        }
+                        
+                        const configKey = `EDEN_FAMILY_SCHOOL_${student.branch.toUpperCase().replace(/\s+/g, '_')}_${quarter}_${schoolYear}`;
+                        const snapshot = await feeConfigRef.child(configKey).once('value');
+                        
+                        if (snapshot.exists()) {
+                            const config = snapshot.val();
+                            if (config.schoolFees) {
+                                const schoolFeeMap = {
+                                    'fees': config.schoolFees.fees,
+                                    'transport': config.schoolFees.transport,
+                                    'coaching': config.schoolFees.coaching,
+                                    'uniforme': config.schoolFees.uniform
+                                };
+                                configuredMonthly = schoolFeeMap[paymentType] || 0;
+                            }
+                            
+                            if (configuredMonthly === 0 && config.additionalFees) {
+                                const additionalFeeMap = {
+                                    'lunch': config.additionalFees.lunch,
+                                    'breakfast': config.additionalFees.breakfast,
+                                    'material': config.additionalFees.material,
+                                    'insurance': config.additionalFees.insurance,
+                                    'other': config.additionalFees.other
+                                };
+                                configuredMonthly = additionalFeeMap[paymentType] || 0;
+                            }
+                        }
+                    }
+                    
+                    // Calculate expected total for trimester (3 months)
+                    const expectedTotal = configuredMonthly * 3;
+                    
+                    // Get all payments for this student of this specific payment type in current term
+                    const paidForThisType = studentFees
+                        .filter(f => f.studentId === studentId && f.paymentType === paymentType)
+                        .filter(isPaymentInCurrentTerm)
+                        .reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+                    
+                    // Calculate remaining balance
+                    const remainingBalance = Math.max(0, expectedTotal - paidForThisType);
+                    
+                    // Update display
+                    remainingBalanceElement.textContent = remainingBalance > 0 
+                        ? formatCurrencyRWF(remainingBalance) 
+                        : 'PAID';
+                    remainingBalanceElement.style.color = remainingBalance > 0 ? '#dc143c' : '#28a745';
+                    
+                } catch (error) {
+                    console.error('Error calculating payment remaining balance:', error);
+                    remainingBalanceElement.textContent = 'Error';
+                    remainingBalanceElement.style.color = '#dc143c';
+                }
+            }
+
+            // Populate Student Payments class filter dynamically
+            function populateStudentPaymentsClassFilter() {
+                const select = document.getElementById('filterClass');
+                if (!select) return;
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Toutes les classes / All classes</option>';
+
+                const classList = getBranchClasses(selectedBranch);
+                buildClassOptionGroups(select, classList);
+
+                if (currentValue && Array.from(select.options).some(o => o.value === currentValue)) {
+                    select.value = currentValue;
+                }
+            }
+
+            // Get timezone-aware date
+            function getTimezoneAwareDate() {
+                const now = new Date();
+                return now.toISOString().split('T')[0];
+            }
+
+            function isPaymentInCurrentTerm(payment) {
+                if (!payment) return false;
+
+                const term = currentTermConfig || {};
+                if (term.trimester && term.academicYear && payment.trimester && payment.academicYear) {
+                    return String(payment.trimester) === String(term.trimester)
+                        && String(payment.academicYear) === String(term.academicYear);
+                }
+
+                if (term.startDate && term.endDate) {
+                    const dateStr = getPaymentDateString(payment);
+                    if (!dateStr) return false;
+                    const paymentDate = new Date(dateStr);
+                    const startDate = new Date(term.startDate);
+                    const endDate = new Date(term.endDate);
+                    return paymentDate >= startDate && paymentDate <= endDate;
+                }
+
+                return true;
+            }
+
+            function getStudentConfiguredExpectedAmount(student) {
+                if (!student) return 0;
+
+                const feesTrimester = parseFloat(student.feesMonthlyAmount) || 0;
+
+                const coachingMonthly = parseFloat(student.coachingMonthlyFee) || 0;
+                const coachingEnabled = student.coachingEnrolled === true || coachingMonthly > 0;
+                const coachingTrimester = coachingEnabled ? coachingMonthly * 3 : 0;
+
+                const transportMonthly = parseFloat(student.transportMonthlyFee) || 0;
+                const transportEnabled = student.transportEnrolled === true || transportMonthly > 0;
+                const transportTrimester = transportEnabled ? transportMonthly * 3 : 0;
+
+                return feesTrimester + coachingTrimester + transportTrimester;
+            }
+
+            function getStudentConfiguredAmountBreakdown(student) {
+                if (!student) return 'Not configured';
+
+                const feesAmount = parseFloat(student.feesMonthlyAmount) || 0;
+                const coachingAmount = parseFloat(student.coachingMonthlyFee) || 0;
+                const transportAmount = parseFloat(student.transportMonthlyFee) || 0;
+
+                return `Fees: ${formatCurrencyRWF(feesAmount)} | Coaching: ${formatCurrencyRWF(coachingAmount)} | Transport: ${formatCurrencyRWF(transportAmount)}`;
+            }
+
+            function getStudentPaidAmountBreakdown(paymentsInTerm) {
+                const payments = Array.isArray(paymentsInTerm) ? paymentsInTerm : [];
+
+                const feesPaid = payments
+                    .filter(p => p.paymentType === 'fees')
+                    .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+
+                const coachingPaid = payments
+                    .filter(p => p.paymentType === 'coaching')
+                    .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+
+                const transportPaid = payments
+                    .filter(p => p.paymentType === 'transport')
+                    .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+
+                const totalPaid = feesPaid + coachingPaid + transportPaid;
+
+                return `Total: ${formatCurrencyRWF(totalPaid)} | Fees: ${formatCurrencyRWF(feesPaid)} | Coaching: ${formatCurrencyRWF(coachingPaid)} | Transport: ${formatCurrencyRWF(transportPaid)}`;
+            }
+
+            function getStudentPaymentSummary(studentId) {
+                const student = students.find(s => s.id === studentId);
+                if (!student) return null;
+
+                const paymentsInTerm = studentFees
+                    .filter(f => f.studentId === studentId)
+                    .filter(isPaymentInCurrentTerm)
+                    .sort((a, b) => {
+                        const da = getPaymentDateString(a) || '1970-01-01';
+                        const db = getPaymentDateString(b) || '1970-01-01';
+                        return new Date(db) - new Date(da);
+                    });
+
+                const configuredAmount = getStudentConfiguredExpectedAmount(student);
+                const totalPaid = paymentsInTerm.reduce((sum, payment) => sum + (parseFloat(payment.amount) || 0), 0);
+                const remaining = Math.max(0, configuredAmount - totalPaid);
+
+                return {
+                    student,
+                    paymentsInTerm,
+                    configuredAmount,
+                    totalPaid,
+                    remaining
+                };
+            }
+
+            // Calculate expected amount for a student based on their branch and current term
+            async function calculateExpectedAmount(student) {
+                if (!currentTermConfig || !currentTermConfig.trimester || !currentTermConfig.academicYear) {
+                    return 0;
+                }
+
+                const branch = student.branch;
+                const trimester = currentTermConfig.trimester;
+                const academicYear = currentTermConfig.academicYear;
+
+                const configKey = `EDEN_FAMILY_SCHOOL_${branch.toUpperCase()}_${trimester}_${academicYear}`;
+                const configSnapshot = await feeConfigRef.child(configKey).once('value');
+
+                if (!configSnapshot.exists()) {
+                    return 0;
+                }
+
+                const config = configSnapshot.val();
+                let totalExpected = 0;
+
+                // Mandatory school fees
+                if (config.schoolFees) {
+                    totalExpected += config.schoolFees.minervale || 0;
+                }
+
+                // Mandatory additional fees based on branch
+                if (config.additionalFees) {
+                    // Breakfast mandatory for kacyiru, kimisagara, gisozi_maternelle
+                    if (['kacyiru', 'kimisagara', 'gisozi_maternelle'].includes(branch)) {
+                        totalExpected += config.additionalFees.breakfast || 0;
+                    }
+                    // Lunch mandatory for gisozi_primaire
+                    if (branch === 'gisozi_primaire') {
+                        totalExpected += config.additionalFees.lunch || 0;
+                    }
+                    // School supplies, insurance, uniform mandatory in trimester 1
+                    if (trimester === '1') {
+                        totalExpected += (config.additionalFees.schoolMaterial || 0) +
+                                    (config.additionalFees.insurance || 0) +
+                                    (config.additionalFees.uniform || 0);
+                    }
+                }
+
+                // Optional fees if student is enrolled
+                if (config.schoolFees) {
+                    if (student.coachingEnrolled) {
+                        // Coaching is monthly * 3 months per trimester
+                        const coachingMonthly = student.coachingMonthlyFee || config.schoolFees.coaching || 0;
+                        totalExpected += coachingMonthly * 3;
+                    }
+                    if (student.transportEnrolled) {
+                        // Transport is monthly * 3 months per trimester
+                        const transportMonthly = student.transportMonthlyFee || config.schoolFees.transport || 0;
+                        totalExpected += transportMonthly * 3;
+                    }
+                }
+
+                return totalExpected;
+            }
+
+            // Recalculate remaining balance for all payments of a student
+            async function recalculateStudentRemainingBalances(studentId) {
+                const student = students.find(s => s.id === studentId);
+                if (!student) return;
+
+                const totalExpected = await calculateExpectedAmount(student);
+                
+                if (currentTermConfig && currentTermConfig.startDate && currentTermConfig.endDate) {
+                    const startDate = new Date(currentTermConfig.startDate);
+                    const endDate = new Date(currentTermConfig.endDate);
+                    
+                    // Get all payments for this student in this trimester, sorted by date
+                    const studentPayments = studentFees
+                        .filter(fee => fee.studentId === studentId)
+                        .filter(fee => {
+                            const paymentDate = new Date(fee.paymentDate);
+                            return paymentDate >= startDate && paymentDate <= endDate;
+                        })
+                        .sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate));
+                    
+                    let cumulativePaid = 0;
+                    const updates = {};
+                    for (const payment of studentPayments) {
+                        cumulativePaid += payment.amount || 0;
+                        const remainingBalance = totalExpected - cumulativePaid;
+                        payment.remainingBalance = remainingBalance;
+                        if (payment.id) {
+                            updates[payment.id + '/remainingBalance'] = remainingBalance;
+                        }
+                    }
+                    
+                    // Update all records in Firebase
+                    if (Object.keys(updates).length > 0) {
+                        await studentFeesRef.update(updates);
+                    }
+                }
+            }
+
+            // Save student fee
+            async function saveStudentFee() {
+                const form = document.getElementById('studentFeeForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                
+                const studentId = document.getElementById('studentSelect').value;
+                const student = students.find(s => s.id === studentId);
+                
+                if (!student) {
+                    showToast(currentLanguage === 'fr' ? 'Veuillez sélectionner un élève' : 'Please select a student', 'error');
+                    return;
+                }
+                
+                // Ensure studentName has a value (fallback chain)
+                const studentName = student.fullName || student.name || `Student-${studentId}`;
+                const studentClass = student.classes || student.class || 'Not specified';
+                const paymentType = document.getElementById('studentPaymentType').value;
+                const selectedInstallmentMonths = getSelectedStudentPaymentMonths();
+                const monthRequiredTypes = ['coaching', 'transport'];
+                const preventDuplicatePayment = document.getElementById('preventDuplicatePayment')?.checked !== false;
+
+                if (monthRequiredTypes.includes(paymentType) && selectedInstallmentMonths.length === 0) {
+                    showToast(currentLanguage === 'fr'
+                        ? `Pour un paiement ${getPaymentTypeText(paymentType)}, vous devez sélectionner le Mois 1, le Mois 2 ou le Mois 3.`
+                        : `For ${getPaymentTypeText(paymentType)} payment, you must select Month 1, Month 2, or Month 3.`, 'error');
+                    document.getElementById('studentCoachingMonth').focus();
+                    return;
+                }
+
+                if (paymentType === 'coaching' && selectedInstallmentMonths.length > 1) {
+                    showToast(currentLanguage === 'fr' ? 'Le paiement coaching n\'accepte qu\'un seul mois à la fois.' : 'Coaching payment accepts only one month at a time.', 'error');
+                    return;
+                }
+
+                if (currentStudentFeeId && paymentType === 'transport' && selectedInstallmentMonths.length > 1) {
+                    showToast(currentLanguage === 'fr'
+                        ? 'Pour modifier, sélectionnez un seul mois. La sélection de plusieurs mois est disponible pour les nouveaux paiements.'
+                        : 'For edit, select only one month. Multi-month selection is available for new payments.', 'error');
+                    return;
+                }
+
+                if (preventDuplicatePayment && monthRequiredTypes.includes(paymentType) && selectedInstallmentMonths.length > 0) {
+                    for (const selectedInstallmentMonth of selectedInstallmentMonths) {
+                        const monthAlreadyPaid = (studentFees || []).some(payment => {
+                            if (payment.studentId !== studentId) return false;
+                            if (payment.paymentType !== paymentType) return false;
+                            if (!isPaymentInCurrentTerm(payment)) return false;
+                            if (currentStudentFeeId && payment.id === currentStudentFeeId) return false;
+
+                            const paidMonth = payment.paymentMonth || getYearMonthValue(payment.paymentDate);
+                            return paidMonth === selectedInstallmentMonth;
+                        });
+
+                        if (monthAlreadyPaid) {
+                            showToast(currentLanguage === 'fr'
+                                ? `Ce mois ${getPaymentTypeText(paymentType).toLowerCase()} est déjà payé pour cet élève dans le trimestre en cours.`
+                                : `This ${getPaymentTypeText(paymentType).toLowerCase()} month is already paid for this student in current trimester.`, 'error');
+                            return;
+                        }
+                    }
+                }
+                
+                const paymentMode = document.getElementById('studentPaymentMode').value;
+                const payerName = document.getElementById('studentParentDisplay').value || (paymentMode === 'momo' ? 'Momo' : (student.parent || ''));
+
+                const effectivePaymentDate = document.getElementById('studentPaymentDate').value;
+
+                const feeData = {
+                    studentId: studentId,
+                    studentName: studentName,
+                    studentClass: studentClass,
+                    reference: document.getElementById('studentTransactionRef').value || `PAY-${Date.now()}`,
+                    paymentType: paymentType,
+                    amount: parseFloat(document.getElementById('studentAmount').value),
+                    paymentMode: paymentMode,
+                    paymentDate: effectivePaymentDate,
+                    paymentMonth: monthRequiredTypes.includes(paymentType) ? selectedInstallmentMonths[0] : '',
+                    payerName: payerName,
+                    notes: document.getElementById('studentPaymentNotes').value || '',
+                    receivedBy: currentUserName,
+                    timestamp: Date.now(),
+                    branch: student.branch,
+                    trimester: currentTermConfig?.trimester || currentTermConfig?.trimestre || '',
+                    academicYear: currentTermConfig?.academicYear || ''
+                };
+
+                const isMultiTransportPayment = paymentType === 'transport' && selectedInstallmentMonths.length > 1;
+                const totalAmountToApply = isMultiTransportPayment
+                    ? feeData.amount * selectedInstallmentMonths.length
+                    : feeData.amount;
+
+                if (preventDuplicatePayment && !currentStudentFeeId) {
+                    const periodsToCheck = monthRequiredTypes.includes(feeData.paymentType)
+                        ? (selectedInstallmentMonths.length > 0 ? selectedInstallmentMonths : [feeData.paymentMonth || getYearMonthValue(feeData.paymentDate) || ''])
+                        : [feeData.paymentDate || ''];
+
+                    const samePaymentAlreadyExists = periodsToCheck.some(feePeriod => {
+                        return (studentFees || []).some(payment => {
+                            if (payment.studentId !== feeData.studentId) return false;
+                            if (payment.paymentType !== feeData.paymentType) return false;
+                            if ((parseFloat(payment.amount) || 0) !== (parseFloat(feeData.amount) || 0)) return false;
+                            if ((payment.paymentMode || '') !== (feeData.paymentMode || '')) return false;
+
+                            const paymentPeriod = monthRequiredTypes.includes(payment.paymentType)
+                                ? (payment.paymentMonth || getYearMonthValue(payment.paymentDate) || '')
+                                : (payment.paymentDate || '');
+
+                            if (paymentPeriod !== feePeriod) return false;
+
+                            const existingRef = (payment.reference || '').toString().trim().toLowerCase();
+                            const newRef = (feeData.reference || '').toString().trim().toLowerCase();
+                            if (existingRef && newRef && existingRef !== newRef) return false;
+
+                            return true;
+                        });
+                    });
+
+                    if (samePaymentAlreadyExists) {
+                        showToast('Duplicate payment detected. Disable "Avoid duplicate payment" only if this is intentional.', 'error');
+                        return;
+                    }
+                }
+
+                try {
+                    // Calculate remaining balance before saving
+                    const totalExpected = await calculateExpectedAmount(student);
+
+                    if (currentStudentFeeId) {
+                        const existingFee = studentFees.find(f => f.id === currentStudentFeeId);
+                        if (!existingFee) {
+                            showToast('Payment to update was not found', 'error');
+                            return;
+                        }
+
+                        const oldAmount = parseFloat(existingFee.amount || 0) || 0;
+                        const deltaAmount = feeData.amount - oldAmount;
+
+                        const txResult = await new Promise((resolve, reject) => {
+                            studentsRef.child(studentId).transaction(
+                                (current) => {
+                                    if (!current) return current;
+                                    const currentTotalPaid = parseFloat(current.totalPaid || 0) || 0;
+                                    const nextTotalPaid = Math.max(0, currentTotalPaid + deltaAmount);
+                                    current.totalPaid = nextTotalPaid;
+                                    current.remainingBalance = Math.max(0, totalExpected - nextTotalPaid);
+                                    current.lastPaymentAt = Date.now();
+                                    return current;
+                                },
+                                (error, committed, snapshot) => {
+                                    if (error) {
+                                        reject(error);
+                                        return;
+                                    }
+                                    resolve({ committed, snapshot });
+                                },
+                                false
+                            );
+                        });
+
+                        if (!txResult.committed) {
+                            showToast('Payment update conflict detected. Please retry.', 'error');
+                            return;
+                        }
+
+                        const updatedStudent = txResult.snapshot?.val() || {};
+                        feeData.remainingBalance = parseFloat(updatedStudent.remainingBalance || 0) || 0;
+                        feeData.totalPaidAfter = parseFloat(updatedStudent.totalPaid || 0) || 0;
+
+                        const { id, ...updatePayload } = feeData;
+                        await studentFeesRef.child(currentStudentFeeId).update(updatePayload);
+
+                        await recalculateStudentRemainingBalances(studentId);
+                        showToast('Payment updated successfully!', 'success');
+
+                        bootstrap.Modal.getInstance(document.getElementById('studentFeeModal')).hide();
+                        document.getElementById('studentFeeForm').reset();
+                        currentStudentFeeId = null;
+                        return;
+                    }
+
+                    const txResult = await new Promise((resolve, reject) => {
+                        studentsRef.child(studentId).transaction(
+                            (current) => {
+                                if (!current) return current;
+                                const currentTotalPaid = parseFloat(current.totalPaid || 0) || 0;
+                                const nextTotalPaid = currentTotalPaid + totalAmountToApply;
+                                current.totalPaid = nextTotalPaid;
+                                current.remainingBalance = Math.max(0, totalExpected - nextTotalPaid);
+                                current.lastPaymentAt = Date.now();
+                                return current;
+                            },
+                            (error, committed, snapshot) => {
+                                if (error) {
+                                    reject(error);
+                                    return;
+                                }
+                                resolve({ committed, snapshot });
+                            },
+                            false
+                        );
+                    });
+
+                    if (!txResult.committed) {
+                        showToast('Payment conflict detected. Please retry.', 'error');
+                        return;
+                    }
+
+                    const updatedStudent = txResult.snapshot?.val() || {};
+                    feeData.remainingBalance = parseFloat(updatedStudent.remainingBalance || 0) || 0;
+                    feeData.totalPaidAfter = parseFloat(updatedStudent.totalPaid || 0) || 0;
+
+                    const feeEntries = isMultiTransportPayment
+                        ? selectedInstallmentMonths.map((monthValue, index) => ({
+                            ...feeData,
+                            paymentMonth: monthValue,
+                            reference: `${feeData.reference}-M${index + 1}`
+                        }))
+                        : [feeData];
+
+                    try {
+                        const writePromises = feeEntries.map(entry => {
+                            const newFeeRef = studentFeesRef.push();
+                            return newFeeRef.set(entry);
+                        });
+                        await Promise.all(writePromises);
+                    } catch (feeWriteError) {
+                        // Compensation rollback if fee entry fails after total update
+                        await studentsRef.child(studentId).transaction((current) => {
+                            if (!current) return current;
+                            const currentTotalPaid = parseFloat(current.totalPaid || 0) || 0;
+                            const rolledBackTotal = Math.max(0, currentTotalPaid - totalAmountToApply);
+                            current.totalPaid = rolledBackTotal;
+                            current.remainingBalance = Math.max(0, totalExpected - rolledBackTotal);
+                            return current;
+                        }, undefined, false);
+                        throw feeWriteError;
+                    }
+                    
+                    // Recalculate remaining balances for all other payments of this student
+                    await recalculateStudentRemainingBalances(studentId);
+                    
+                    showToast('Payment recorded successfully!', 'success');
+                    
+                    await logActivity('ADD_STUDENT_PAYMENT', `Payment recorded for ${studentName}: ${formatCurrencyRWF(totalAmountToApply)}`, 'student_payment', {
+                        studentId: studentId,
+                        studentName: studentName,
+                        studentClass: studentClass,
+                        amount: totalAmountToApply,
+                        paymentType: feeData.paymentType
+                    });
+                    
+                    bootstrap.Modal.getInstance(document.getElementById('studentFeeModal')).hide();
+                    document.getElementById('studentFeeForm').reset();
+                    
+                } catch (error) {
+                    console.error('Error saving payment:', error);
+                    showToast('Error saving payment', 'error');
+                }
+            }
+
+            // Load student fees
+            function getFilteredStudentFeesForCurrentSelection() {
+                const selectedClass = (document.getElementById('filterClass')?.value || '').trim();
+                const selectedMonth = (document.getElementById('filterMonth')?.value || '').trim();
+                const selectedDateFrom = (document.getElementById('filterDateFrom')?.value || '').trim();
+                const selectedDateTo = (document.getElementById('filterDateTo')?.value || '').trim();
+                const searchTerm = (document.getElementById('searchStudentPayment')?.value || '').trim().toLowerCase();
+
+                return studentFees.filter(fee => {
+                    const student = students.find(s => s.id === fee.studentId);
+                    if (!student || !matchesBranchAndLevelForSelection(student, selectedBranch)) return false;
+
+                    if (selectedClass) {
+                        const studentClass = (fee.studentClass || student.classes || student.class || '').toString().trim();
+                        if (studentClass !== selectedClass) return false;
+                    }
+
+                    const dateStr = getPaymentDateString(fee);
+
+                    if (selectedMonth && (!dateStr || !dateStr.startsWith(selectedMonth))) return false;
+                    if (selectedDateFrom && (!dateStr || dateStr < selectedDateFrom)) return false;
+                    if (selectedDateTo && (!dateStr || dateStr > selectedDateTo)) return false;
+
+                    if (searchTerm) {
+                        const searchableText = [
+                            fee.reference,
+                            fee.studentName,
+                            fee.studentClass,
+                            fee.paymentType,
+                            fee.paymentMode,
+                            fee.receivedBy,
+                            dateStr,
+                            student?.name,
+                            student?.fullname,
+                            student?.reference
+                        ].filter(Boolean).join(' ').toLowerCase();
+
+                        if (!searchableText.includes(searchTerm)) return false;
+                    }
+
+                    return true;
+                });
+            }
+
+            function handleStudentFeesDateRangeChange(changedField) {
+                const fromInput = document.getElementById('filterDateFrom');
+                const toInput = document.getElementById('filterDateTo');
+                if (!fromInput || !toInput) {
+                    loadStudentFees();
+                    return;
+                }
+
+                const fromValue = (fromInput.value || '').trim();
+                const toValue = (toInput.value || '').trim();
+
+                // Keep native date pickers constrained to a valid range.
+                toInput.min = fromValue || '';
+                fromInput.max = toValue || '';
+
+                if (fromValue && toValue && fromValue > toValue) {
+                    if (changedField === 'from') {
+                        toInput.value = fromValue;
+                    } else if (changedField === 'to') {
+                        fromInput.value = toValue;
+                    }
+                }
+
+                loadStudentFees();
+            }
+
+            async function loadStudentFees() {
+                try {
+                    const tbody = document.getElementById('studentFeesTable');
+                    tbody.innerHTML = '';
+                    const selectedDateFrom = (document.getElementById('filterDateFrom')?.value || '').trim();
+                    const selectedDateTo = (document.getElementById('filterDateTo')?.value || '').trim();
+
+                    if (selectedDateFrom && selectedDateTo && selectedDateFrom > selectedDateTo) {
+                        showToast('Start date cannot be after end date', 'error');
+                        return;
+                    }
+
+                    const branchFees = getFilteredStudentFeesForCurrentSelection();
+                    
+                    if (branchFees.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="11" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-money-bill-wave fa-2x mb-3"></i>
+                                        <p>No payments found in this branch</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+                    
+                    // Recalculate remaining balances for all students in this branch
+                    const uniqueStudentIds = [...new Set(branchFees.map(fee => fee.studentId))];
+                    for (const studentId of uniqueStudentIds) {
+                        await recalculateStudentRemainingBalances(studentId);
+                    }
+                    
+                    branchFees.sort((a, b) => new Date(getPaymentDateString(b) || 0) - new Date(getPaymentDateString(a) || 0));
+                    
+                    for (const fee of branchFees) {
+                        const student = students.find(s => s.id === fee.studentId);
+                        
+                        const paymentSummary = getStudentPaymentSummary(fee.studentId);
+                        const totalPaid = paymentSummary ? paymentSummary.totalPaid : 0;
+                        const totalExpected = paymentSummary ? paymentSummary.configuredAmount : 0;
+                        const remainingBalance = paymentSummary ? paymentSummary.remaining : 0;
+                        
+                        const paymentTypeBadge = fee.paymentType === 'fees' ? 'badge-fees' :
+                                            fee.paymentType === 'coaching' ? 'badge-coaching' :
+                                            fee.paymentType === 'transport' ? 'badge-transport' :
+                                            'badge bg-secondary';
+                        
+                        const tr = document.createElement('tr');
+                        tr.className = 'animate-fade-in';
+                        tr.innerHTML = `
+                            <td>${branchFees.indexOf(fee) + 1}</td>
+                            <td><strong>${fee.reference || 'N/A'}</strong></td>
+                            <td>${fee.studentName || 'N/A'}</td>
+                            <td>${fee.studentClass || 'N/A'}</td>
+                            <td><span class="${paymentTypeBadge}">${getPaymentTypeText(fee.paymentType)}</span></td>
+                            <td><strong>${formatCurrencyRWF(fee.amount)}</strong></td>
+                            <td>${new Date(fee.paymentDate).toLocaleDateString('en-US')}</td>
+                            <td><span class="${fee.paymentMode === 'bank' ? 'badge-bank' : fee.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash'}">${fee.paymentMode === 'bank' ? 'Bank' : fee.paymentMode === 'momo' ? 'Mobile Money' : 'Cash'}</span></td>
+                            <td>
+                                ${remainingBalance <= 0 ? '<span class="badge bg-success">PAID</span>' : `<strong class="text-danger">${formatCurrencyRWF(remainingBalance)}</strong>`}
+                                <div><small class="text-muted">Configured: ${formatCurrencyRWF(totalExpected)}</small></div>
+                                <div><small class="text-muted">Paid: ${formatCurrencyRWF(totalPaid)}</small></div>
+                            </td>
+                            <td>${fee.receivedBy || 'N/A'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="viewStudentDetail('${fee.studentId}')" title="Payment details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning me-1" onclick="editStudentFee('${fee.id}')" title="Edit payment">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-success me-1" onclick="downloadStudentPaymentInfo('${fee.studentId}')" title="Download payment info">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteStudentFeePrompt('${fee.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error loading payments:', error);
+                    showToast('Error loading payments', 'error');
+                }
+            }
+
+            async function loadFees() {
+                try {
+                    const tbody = document.getElementById('feesTableBody');
+                    if (!tbody) {
+                        // Cet élément n'existe plus dans le DOM actuel (remplacé par loadFeesSection())
+                        return;
+                    }
+                    tbody.innerHTML = '';
+
+                    const selectedClass = document.getElementById('filterFeesClass').value;
+                    const selectedMonth = document.getElementById('filterFeesMonth').value;
+
+                    populateFeesClassFilterOptions();
+
+                    const branchFees = feesPayments.filter(payment => {
+                        const student = students.find(s => s.id === payment.studentId);
+                        const paymentDate = payment.paymentDate ? new Date(payment.paymentDate) : null;
+                        const paymentMonth = paymentDate ? paymentDate.toISOString().slice(0, 7) : '';
+
+                        return student && student.branch === selectedBranch &&
+                            (!selectedClass || payment.studentClass === selectedClass) &&
+                            (!selectedMonth || paymentMonth === selectedMonth);
+                    });
+
+                    if (branchFees.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="11" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-money-bill-wave fa-2x mb-3"></i>
+                                        <p>No Fee payments found for this branch</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    branchFees.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+
+                    for (const payment of branchFees) {
+                        const dateLabel = payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString('en-US') : 'N/A';
+                        const row = document.createElement('tr');
+                        row.className = 'animate-fade-in';
+                        row.innerHTML = `
+                            <td>${branchFees.indexOf(payment) + 1}</td>
+                            <td><strong>${payment.reference || 'N/A'}</strong></td>
+                            <td>${payment.studentName || 'N/A'}</td>
+                            <td>${payment.studentClass || 'N/A'}</td>
+                            <td>${formatCurrencyRWF(payment.amount)}</td>
+                            <td>${dateLabel}</td>
+                            <td><span class="${payment.paymentMode === 'bank' ? 'badge-bank' : payment.paymentMode === 'momo' ? 'badge-momo' : 'badge-cash'}">${payment.paymentMode === 'bank' ? 'Bank' : payment.paymentMode === 'momo' ? 'Mobile Money' : 'Cash'}</span></td>
+                            <td>${payment.remainingBalance !== undefined ? formatCurrencyRWF(payment.remainingBalance) : 'N/A'}</td>
+                            <td>${payment.receivedBy || 'N/A'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteFeePaymentPrompt('${payment.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    }
+                } catch (error) {
+                    console.error('Error loading fees:', error);
+                    showToast('Error loading fees', 'error');
+                }
+            }
+
+            function populateFeesClassFilterOptions() {
+                const filter = document.getElementById('filterFeesClass');
+                const currentValue = filter.value;
+                const classOptions = new Set();
+
+                feesPayments.forEach(payment => {
+                    if (payment.studentClass) {
+                        classOptions.add(payment.studentClass);
+                    }
+                });
+
+                filter.innerHTML = '<option value="">All classes</option>';
+                Array.from(classOptions).sort().forEach(className => {
+                    filter.innerHTML += `<option value="${className}">${className}</option>`;
+                });
+                filter.value = currentValue;
+            }
+
+            function showFeesModal() {
+                const modalElement = document.getElementById('feesModal');
+                const modal = new bootstrap.Modal(modalElement);
+                document.getElementById('feesForm').reset();
+                document.getElementById('feesPaymentDate').value = new Date().toISOString().slice(0, 10);
+
+                const classSelect = document.getElementById('feesModalClass');
+                classSelect.innerHTML = '<option value="">Select a class</option>';
+                const classes = new Set();
+                students
+                    .filter(student => student.branch === selectedBranch)
+                    .forEach(student => {
+                        if (student.class) classes.add(student.class);
+                    });
+                Array.from(classes).sort().forEach(className => {
+                    classSelect.innerHTML += `<option value="${className}">${className}</option>`;
+                });
+
+                const studentSelect = document.getElementById('feesStudentSelect');
+                studentSelect.innerHTML = '<option value="">Select a student</option>';
+                modal.show();
+            }
+
+            function loadFeesStudentsByClass() {
+                const selectedClass = document.getElementById('feesModalClass').value;
+                const studentSelect = document.getElementById('feesStudentSelect');
+                studentSelect.innerHTML = '<option value="">Select a student</option>';
+
+                students
+                    .filter(student => student.branch === selectedBranch && (!selectedClass || student.class === selectedClass))
+                    .sort((a, b) => (a.name || a.fullName || '').localeCompare(b.name || b.fullName || ''))
+                    .forEach(student => {
+                        studentSelect.innerHTML += `<option value="${student.id}">${student.name || student.fullName || 'Student'}</option>`;
+                    });
+            }
+
+            async function saveFeePayment(event) {
+                event.preventDefault();
+                try {
+                    const studentId = document.getElementById('feesStudentSelect').value;
+                    if (!studentId) {
+                        showToast('Please select a student', 'error');
+                        return;
+                    }
+
+                    const student = students.find(s => s.id === studentId);
+                    if (!student) {
+                        showToast('Selected student not found', 'error');
+                        return;
+                    }
+
+                    const amount = parseFloat(document.getElementById('feesPaymentAmount').value) || 0;
+                    const paymentMode = document.getElementById('feesPaymentMode').value;
+                    const paymentDate = document.getElementById('feesPaymentDate').value;
+                    const reference = document.getElementById('feesPaymentReference').value.trim() || `FEES-${Date.now()}`;
+                    const notes = document.getElementById('feesPaymentNotes').value.trim();
+
+                    const paymentData = {
+                        studentId,
+                        studentName: student.name || student.fullName || '',
+                        studentClass: student.class || '',
+                        branch: selectedBranch,
+                        amount,
+                        paymentMode,
+                        paymentDate,
+                        reference,
+                        notes,
+                        receivedBy: currentUser?.displayName || 'System',
+                        paymentType: 'fees'
+                    };
+
+                    await feesPaymentsRef.push(paymentData);
+                    showToast('Fee payment recorded successfully!', 'success');
+                    loadFees();
+                    bootstrap.Modal.getInstance(document.getElementById('feesModal'))?.hide();
+                } catch (error) {
+                    console.error('Error saving fee payment:', error);
+                    showToast('Error saving fee payment', 'error');
+                }
+            }
+
+            function deleteFeePaymentPrompt(paymentId) {
+                if (confirm('Are you sure you want to delete this fee payment?')) {
+                    deleteFeePayment(paymentId);
+                }
+            }
+
+            async function deleteFeePayment(paymentId) {
+                try {
+                    await feesPaymentsRef.child(paymentId).remove();
+                    showToast('Fee payment deleted successfully!', 'success');
+                    loadFees();
+                } catch (error) {
+                    console.error('Error deleting fee payment:', error);
+                    showToast('Error deleting fee payment', 'error');
+                }
+            }
+
+            function showBulkFeesModal() {
+                const modalElement = document.getElementById('bulkFeesModal');
+                const modal = new bootstrap.Modal(modalElement);
+                document.getElementById('bulkFeesForm').reset();
+                modal.show();
+            }
+
+            async function saveBulkFeesConfiguration(event) {
+                event.preventDefault();
+                try {
+                    const feeType = document.getElementById('bulkFeesType').value;
+                    const amount = parseInt(document.getElementById('bulkFeesAmount').value, 10);
+                    const branch = document.getElementById('bulkFeesBranch').value;
+                    const effectiveMonth = document.getElementById('bulkFeesEffectiveMonth').value;
+                    const notes = document.getElementById('bulkFeesNote').value.trim();
+
+                    if (!feeType || !amount || amount <= 0) {
+                        showToast('Please select a fee type and enter a valid amount', 'error');
+                        return;
+                    }
+
+                    const configPayload = {
+                        feeType,
+                        amount,
+                        branch: branch || 'all',
+                        effectiveMonth: effectiveMonth || null,
+                        notes,
+                        createdAt: getTimezoneAwareDate().toISOString()
+                    };
+
+                    await feeConfigRef.push(configPayload);
+                    showToast('Bulk fees configuration saved successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('bulkFeesModal'))?.hide();
+                } catch (error) {
+                    console.error('Error saving bulk fees configuration:', error);
+                    showToast('Error saving bulk fees configuration', 'error');
+                }
+            }
+
+            // Delete student fee prompt
+            function deleteStudentFeePrompt(feeId) {
+                if (confirm('Are you sure you want to delete this payment?')) {
+                    deleteStudentFee(feeId);
+                }
+            }
+
+            function editStudentFee(feeId) {
+                const fee = studentFees.find(f => f.id === feeId);
+                if (!fee) {
+                    showToast('Payment not found', 'error');
+                    return;
+                }
+
+                const student = students.find(s => s.id === fee.studentId);
+                if (!student) {
+                    showToast('Student not found', 'error');
+                    return;
+                }
+
+                showStudentFeeModal();
+
+                currentStudentFeeId = feeId;
+                document.querySelector('#studentFeeModal .modal-title').textContent = 'Edit Student Payment';
+                document.getElementById('studentFeeSaveBtn').innerHTML = '<i class="fas fa-save me-2"></i> Update';
+
+                const studentClass = fee.studentClass || student.classes || student.class || '';
+                document.getElementById('studentClassFilter').value = studentClass;
+                loadStudentsByClass();
+                document.getElementById('studentSelect').value = fee.studentId;
+                loadStudentDetails();
+
+                document.getElementById('studentClassFilter').disabled = true;
+                document.getElementById('studentSelect').disabled = true;
+
+                document.getElementById('studentPaymentType').value = fee.paymentType || '';
+                document.getElementById('studentAmount').value = parseFloat(fee.amount || 0) || '';
+                document.getElementById('studentPaymentMode').value = fee.paymentMode || 'cash';
+                document.getElementById('studentPaymentDate').value = fee.paymentDate || getTimezoneAwareDate();
+                document.getElementById('studentPaymentDate').readOnly = false;
+                document.getElementById('studentPaymentDate').disabled = false;
+                document.getElementById('studentTransactionRef').value = fee.transactionRef || fee.reference || '';
+                document.getElementById('studentPaymentNotes').value = fee.notes || '';
+
+                updateStudentPaymentPayerField();
+
+                const selectedMonth = fee.paymentMonth || getYearMonthValue(fee.paymentDate);
+                updateStudentPaymentTypeRequirements(selectedMonth);
+                updateStudentPaymentRemainingBalance();
+            }
+
+            // Delete student fee
+            async function deleteStudentFee(feeId) {
+                try {
+                    await studentFeesRef.child(feeId).remove();
+                    showToast('Payment deleted successfully!', 'success');
+                    
+                } catch (error) {
+                    console.error('Error deleting payment:', error);
+                    showToast('Error deleting payment', 'error');
+                }
+            }
+
+            // Filter student payments
+            function filterStudentPayments() {
+                loadStudentFees();
+            }
+
+            function buildStudentPaymentDuplicateKey(payment) {
+                const monthRequiredTypes = ['coaching', 'transport'];
+                const paymentType = (payment?.paymentType || '').toString().trim().toLowerCase();
+                const amount = (parseFloat(payment?.amount) || 0).toFixed(2);
+                const paymentMode = (payment?.paymentMode || '').toString().trim().toLowerCase();
+                const period = monthRequiredTypes.includes(paymentType)
+                    ? ((payment?.paymentMonth || getYearMonthValue(payment?.paymentDate) || '').toString().trim())
+                    : ((getPaymentDateString(payment) || '').toString().trim());
+
+                return [payment?.studentId || '', paymentType, amount, paymentMode, period].join('|');
+            }
+
+            function collectDuplicateStudentPayments() {
+                const grouped = new Map();
+                const branchFees = getFilteredStudentFeesForCurrentSelection();
+
+                branchFees.forEach(payment => {
+                    const key = buildStudentPaymentDuplicateKey(payment);
+                    if (!grouped.has(key)) grouped.set(key, []);
+                    grouped.get(key).push(payment);
+                });
+
+                const duplicateGroups = [];
+                grouped.forEach((payments, key) => {
+                    if (payments.length < 2) return;
+                    const sorted = [...payments].sort((a, b) => {
+                        const aTime = new Date(a.paymentDate || a.date || a.timestamp || 0).getTime();
+                        const bTime = new Date(b.paymentDate || b.date || b.timestamp || 0).getTime();
+                        return aTime - bTime;
+                    });
+                    duplicateGroups.push({ key, payments: sorted });
+                });
+
+                return duplicateGroups;
+            }
+
+            function openStudentPaymentDuplicatesModal() {
+                const summary = document.getElementById('studentDuplicateSummary');
+                const tableBody = document.getElementById('studentDuplicateTableBody');
+                duplicatePaymentCandidates = [];
+                summary.className = 'alert alert-secondary mb-3';
+                summary.innerHTML = '<i class="fas fa-info-circle me-2"></i>Cliquez sur <strong>Analyse</strong> pour rechercher les doublons.';
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="fas fa-search me-2"></i>Appuyez sur le bouton <strong>Analyse</strong> pour démarrer la recherche.
+                        </td>
+                    </tr>
+                `;
+                const modal = new bootstrap.Modal(document.getElementById('studentDuplicateModal'));
+                modal.show();
+            }
+
+            function analyseStudentDuplicates() {
+                const duplicateGroups = collectDuplicateStudentPayments();
+                const summary = document.getElementById('studentDuplicateSummary');
+                const tableBody = document.getElementById('studentDuplicateTableBody');
+
+                duplicatePaymentCandidates = [];
+
+                if (!duplicateGroups.length) {
+                    summary.className = 'alert alert-success mb-3';
+                    summary.innerHTML = '<i class="fas fa-check-circle me-2"></i>No duplicate payments found in current filters.';
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                No duplicates detected.
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    const totalRows = duplicateGroups.reduce((sum, group) => sum + group.payments.length, 0);
+                    const autoSelected = duplicateGroups.reduce((sum, group) => sum + Math.max(0, group.payments.length - 1), 0);
+                    summary.className = 'alert alert-warning mb-3';
+                    summary.innerHTML = `<strong>${duplicateGroups.length}</strong> duplicate groups found (${totalRows} rows). Recommended delete selection: ${autoSelected}.`;
+
+                    const rows = [];
+                    duplicateGroups.forEach((group, groupIndex) => {
+                        const firstPayment = group.payments[0] || {};
+                        const sampleStudent = students.find(s => s.id === firstPayment.studentId);
+                        const studentClass = firstPayment.studentClass || sampleStudent?.classes || sampleStudent?.class || 'N/A';
+                        const period = ['coaching', 'transport'].includes((firstPayment.paymentType || '').toLowerCase())
+                            ? (firstPayment.paymentMonth || getYearMonthValue(firstPayment.paymentDate) || 'N/A')
+                            : (getPaymentDateString(firstPayment) || 'N/A');
+
+                        rows.push(`
+                            <tr class="table-light">
+                                <td colspan="9">
+                                    <strong>Group ${groupIndex + 1}</strong> - ${firstPayment.studentName || sampleStudent?.name || 'Unknown student'}
+                                    | Class: ${studentClass}
+                                    | ${getPaymentTypeText(firstPayment.paymentType || 'other')}
+                                    | ${formatCurrencyRWF(firstPayment.amount || 0)}
+                                    | ${period}
+                                </td>
+                            </tr>
+                        `);
+
+                        group.payments.forEach((payment, idx) => {
+                            const keepRow = idx === 0;
+                            const rowId = `dup_${payment.id}`;
+                            const studentNameEncoded = encodeURIComponent(payment.studentName || '');
+                            if (!keepRow) {
+                                duplicatePaymentCandidates.push(payment.id);
+                            }
+
+                            const paymentPeriod = ['coaching', 'transport'].includes((payment.paymentType || '').toLowerCase())
+                                ? (payment.paymentMonth || getYearMonthValue(payment.paymentDate) || 'N/A')
+                                : (getPaymentDateString(payment) || 'N/A');
+
+                            rows.push(`
+                                <tr>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            class="form-check-input duplicate-payment-checkbox"
+                                            id="${rowId}"
+                                            data-fee-id="${payment.id}"
+                                            data-student-id="${payment.studentId || ''}"
+                                            data-student-name="${studentNameEncoded}"
+                                            data-recommended-delete="${keepRow ? 'false' : 'true'}"
+                                            ${keepRow ? '' : 'checked'}
+                                            onchange="updateDuplicateSelectionSummary()"
+                                        >
+                                    </td>
+                                    <td>${keepRow ? '<span class="badge bg-success">KEEP</span>' : '<span class="badge bg-warning text-dark">DUPLICATE</span>'}</td>
+                                    <td>${payment.studentName || 'N/A'}</td>
+                                    <td>${getPaymentTypeText(payment.paymentType || 'other')}</td>
+                                    <td>${formatCurrencyRWF(payment.amount || 0)}</td>
+                                    <td>${paymentPeriod}</td>
+                                    <td>${payment.paymentMode || 'N/A'}</td>
+                                    <td>${payment.reference || 'N/A'}</td>
+                                    <td>${payment.receivedBy || 'N/A'}</td>
+                                </tr>
+                            `);
+                        });
+                    });
+
+                    tableBody.innerHTML = rows.join('');
+                }
+
+                updateDuplicateSelectionSummary();
+            }
+
+            function selectRecommendedDuplicates() {
+                document.querySelectorAll('.duplicate-payment-checkbox').forEach(checkbox => {
+                    checkbox.checked = checkbox.dataset.recommendedDelete === 'true';
+                });
+                updateDuplicateSelectionSummary();
+            }
+
+            function clearDuplicateSelection() {
+                document.querySelectorAll('.duplicate-payment-checkbox').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updateDuplicateSelectionSummary();
+            }
+
+            function updateDuplicateSelectionSummary() {
+                const checkedBoxes = Array.from(document.querySelectorAll('.duplicate-payment-checkbox:checked'));
+                const countElement = document.getElementById('duplicateSelectedCount');
+                const studentsElement = document.getElementById('duplicateSelectedStudents');
+                const deleteBtn = document.getElementById('deleteDuplicatePaymentsBtn');
+
+                if (countElement) {
+                    countElement.textContent = `${checkedBoxes.length} selected`;
+                }
+
+                const selectedStudents = Array.from(new Set(
+                    checkedBoxes
+                        .map(cb => decodeURIComponent(cb.dataset.studentName || '').trim())
+                        .filter(Boolean)
+                ));
+
+                if (studentsElement) {
+                    studentsElement.textContent = selectedStudents.length
+                        ? `Selected students: ${selectedStudents.join(', ')}`
+                        : 'Selected students: none';
+                }
+
+                if (deleteBtn) {
+                    deleteBtn.disabled = checkedBoxes.length === 0;
+                }
+            }
+
+            async function deleteSelectedDuplicatePayments() {
+                const checkedBoxes = Array.from(document.querySelectorAll('.duplicate-payment-checkbox:checked'));
+                if (!checkedBoxes.length) {
+                    showToast('Select duplicate rows to delete.', 'error');
+                    return;
+                }
+
+                const selectedIds = checkedBoxes.map(cb => cb.dataset.feeId).filter(Boolean);
+                const selectedStudentNames = Array.from(new Set(
+                    checkedBoxes
+                        .map(cb => decodeURIComponent(cb.dataset.studentName || '').trim())
+                        .filter(Boolean)
+                ));
+
+                const previewStudents = selectedStudentNames.slice(0, 5).join(', ');
+                const extraCount = Math.max(0, selectedStudentNames.length - 5);
+                const detailsText = previewStudents
+                    ? `\nStudents: ${previewStudents}${extraCount ? ` (+${extraCount} more)` : ''}`
+                    : '';
+
+                if (!confirm(`Delete ${selectedIds.length} selected duplicate payment(s)?${detailsText}`)) {
+                    return;
+                }
+
+                const deleteBtn = document.getElementById('deleteDuplicatePaymentsBtn');
+                const originalBtnHtml = deleteBtn ? deleteBtn.innerHTML : '';
+
+                try {
+                    if (deleteBtn) {
+                        deleteBtn.disabled = true;
+                        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+                    }
+
+                    await Promise.all(selectedIds.map(id => studentFeesRef.child(id).remove()));
+
+                    const removedIds = new Set(selectedIds);
+                    studentFees = (studentFees || []).filter(fee => !removedIds.has(fee.id));
+
+                    const affectedStudentIds = Array.from(new Set(
+                        checkedBoxes.map(cb => cb.dataset.studentId).filter(Boolean)
+                    ));
+                    for (const studentId of affectedStudentIds) {
+                        await recalculateStudentRemainingBalances(studentId);
+                    }
+
+                    loadStudentFees();
+                    updateStats();
+
+                    showToast(`${selectedIds.length} duplicate payment(s) deleted successfully.`, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('studentDuplicateModal'))?.hide();
+                } catch (error) {
+                    console.error('Error deleting duplicate payments:', error);
+                    showToast('Error deleting duplicate payments', 'error');
+                } finally {
+                    if (deleteBtn) {
+                        deleteBtn.disabled = false;
+                        deleteBtn.innerHTML = originalBtnHtml;
+                    }
+                }
+            }
+
+            // ---------------- Registration duplicates utilities ----------------
+            let registrationDuplicateCandidates = [];
+
+            function openRegistrationDuplicateModal() {
+                const summary = document.getElementById('registrationDuplicateSummary');
+                const tableBody = document.getElementById('registrationDuplicateTableBody');
+                registrationDuplicateCandidates = [];
+                summary.className = 'alert alert-secondary mb-3';
+                summary.innerHTML = '<i class="fas fa-info-circle me-2"></i>Cliquez sur <strong>Analyse</strong> pour rechercher les doublons d\'inscription.';
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="fas fa-search me-2"></i>Appuyez sur le bouton <strong>Analyse</strong> pour démarrer la recherche.
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('registrationDuplicateSelectedCount').textContent = '0 sélectionné(s)';
+                document.getElementById('registrationDuplicateSelectedStudents').textContent = 'Selected students: none';
+                document.getElementById('deleteRegistrationDuplicatesBtn').disabled = true;
+                if (!pendingInscriptionsData.length) {
+                    loadPendingInscriptions().catch(error => {
+                        console.error('Error loading pending inscriptions before duplicate modal:', error);
+                    });
+                }
+                const modal = new bootstrap.Modal(document.getElementById('registrationDuplicateModal'));
+                modal.show();
+            }
+
+            function collectRegistrationDuplicateGroups() {
+                // gather registrationPayments for current branch and pending inscriptions
+                const regs = (registrationPayments || []).filter(r => (r.branch || '').toString() === (selectedBranch || '').toString());
+                const pend = (pendingInscriptionsData || []).filter(p => inscriptionMatchesSelectedBranch(p));
+
+                const groups = new Map();
+
+                regs.forEach(r => {
+                    const name = r.studentName || r.name || '';
+                    const cls = r.studentClass || r.class || r.classes || '';
+                    const dob = r.studentBirthDate || r.birthDate || r.dateNaissance || '';
+                    const phone = r.parentPhone || r.chefTelephone || r.transactionRef || '';
+                    const key = r.studentId ? `id:${r.studentId}` : `name:${normalizeKey(name)}|class:${normalizeKey(cls)}|dob:${dob}|phone:${normalizeKey(phone)}`;
+                    if (!groups.has(key)) groups.set(key, []);
+                    groups.get(key).push({ source: 'registration', record: r, timestamp: r.timestamp || 0, id: r.id });
+                });
+
+                pend.forEach(p => {
+                    const name = p.nomPrenom || p.name || '';
+                    const cls = p.niveau || p.requestedClass || p.classe || p.assignedClass || '';
+                    const dob = p.dateNaissance || '';
+                    const phone = p.chefTelephone || '';
+                    const key = `pending:${normalizeKey(name)}|class:${normalizeKey(cls)}|dob:${dob}|phone:${normalizeKey(phone)}`;
+                    if (!groups.has(key)) groups.set(key, []);
+                    groups.get(key).push({ source: 'pending', record: p, timestamp: p.timestamp || 0, id: p.id });
+                });
+
+                const duplicateGroups = [];
+                groups.forEach((items, key) => {
+                    if (items.length < 2) return;
+                    const sorted = items.sort((a,b) => (a.timestamp || 0) - (b.timestamp || 0));
+                    duplicateGroups.push({ key, items: sorted });
+                });
+                return duplicateGroups;
+            }
+
+            async function analyseRegistrationDuplicates() {
+                if (!pendingInscriptionsData.length) {
+                    await loadPendingInscriptions().catch(error => {
+                        console.error('Error loading pending inscriptions before duplicate analysis:', error);
+                    });
+                }
+
+                // Use fuzzy scan across students as primary grouping, fall back to registration/pending groups
+                const studentGroups = scanAllDuplicateGroups(selectedBranch || undefined);
+                let groups = [];
+                if (studentGroups && studentGroups.length) {
+                    // transform studentGroups into the same shape used by the UI: items with source 'student'
+                    groups = studentGroups.map((g, gi) => ({ key: `studentGroup:${gi}`, items: g.map(s => ({ source: 'student', record: s, timestamp: s.timestamp || 0, id: s.id })) }));
+                } else {
+                    groups = collectRegistrationDuplicateGroups();
+                }
+                const summary = document.getElementById('registrationDuplicateSummary');
+                const tableBody = document.getElementById('registrationDuplicateTableBody');
+                registrationDuplicateCandidates = [];
+
+                if (!groups.length) {
+                    summary.className = 'alert alert-success mb-3';
+                    summary.innerHTML = '<i class="fas fa-check-circle me-2"></i>Aucun doublon d\'inscription trouvé pour cette branche.';
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                No duplicates detected.
+                            </td>
+                        </tr>
+                    `;
+                    updateRegistrationDuplicateSelectionSummary();
+                    return;
+                }
+
+                const totalRows = groups.reduce((sum, g) => sum + g.items.length, 0);
+                const autoSelected = groups.reduce((sum, g) => sum + Math.max(0, g.items.length - 1), 0);
+                summary.className = 'alert alert-warning mb-3';
+                summary.innerHTML = `<strong>${groups.length}</strong> groupes de doublons trouvés (${totalRows} lignes). Recommandation: ${autoSelected} à supprimer.`;
+
+                const rows = [];
+                groups.forEach((group, gi) => {
+                    // If group is from student-based fuzzy scan, show score and class
+                    const first = group.items[0];
+                    const sampleName = (first.record && (first.record.name || first.record.studentName || first.record.nomPrenom || first.record.fullName)) || 'N/A';
+                    rows.push(`<tr class="table-light"><td colspan="9"><strong>Groupe ${gi+1}</strong> - ${sampleName}</td></tr>`);
+                    group.items.forEach((it, idx) => {
+                        const keep = idx === 0;
+                        const rec = it.record || {};
+                        const rowId = `regdup_${it.source}_${it.id}`;
+                        const studentNameEncoded = encodeURIComponent(rec.name || rec.studentName || rec.nomPrenom || rec.fullName || '');
+                        if (!keep) registrationDuplicateCandidates.push({ source: it.source, id: it.id, record: rec, studentId: rec.id || rec.studentId || '' });
+
+                        // compute score if fuzzy student object
+                        let scoreText = '';
+                        if (it.source === 'student') {
+                            const leader = group.items[0].record || {};
+                            const { score, nameSim, sameClass } = computeStudentDuplicateScore(rec, leader);
+                            scoreText = `${score}%` + (sameClass ? ' (même classe)' : ' (classe différente)');
+                        }
+
+                        rows.push(`
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input registration-duplicate-checkbox" id="${rowId}"
+                                        data-record-id="${it.id}" data-source="${it.source}" data-student-id="${rec.id || rec.studentId || ''}"
+                                        data-student-name="${studentNameEncoded}" data-recommended-delete="${keep ? 'false' : 'true'}" ${keep ? '' : 'checked'} onchange="updateRegistrationDuplicateSelectionSummary()">
+                                </td>
+                                <td>${keep ? '<span class="badge bg-success">GARDER</span>' : '<span class="badge bg-warning text-dark">DOUBLON</span>'}</td>
+                                <td>${rec.name || rec.studentName || rec.nomPrenom || rec.fullName || 'N/A'}</td>
+                                <td>${rec.birthDate || rec.dateNaissance || 'N/A'}</td>
+                                <td>${rec.parent || rec.chefNomPrenom || rec.parentName || ''}</td>
+                                <td>${rec.parentPhone || rec.chefTelephone || ''}</td>
+                                <td>${rec.class || rec.classes || rec.studentClass || ''}</td>
+                                <td>${scoreText || it.source}</td>
+                                <td><button class="btn btn-sm btn-outline-secondary" onclick="console.log('View', '${it.id}')">View</button></td>
+                            </tr>
+                        `);
+                    });
+                });
+
+                tableBody.innerHTML = rows.join('');
+                updateRegistrationDuplicateSelectionSummary();
+            }
+
+            function selectRecommendedRegistrationDuplicates() {
+                document.querySelectorAll('.registration-duplicate-checkbox').forEach(cb => cb.checked = cb.dataset.recommendedDelete === 'true');
+                updateRegistrationDuplicateSelectionSummary();
+            }
+
+            function clearRegistrationDuplicateSelection() {
+                document.querySelectorAll('.registration-duplicate-checkbox').forEach(cb => cb.checked = false);
+                updateRegistrationDuplicateSelectionSummary();
+            }
+
+            function updateRegistrationDuplicateSelectionSummary() {
+                const checked = Array.from(document.querySelectorAll('.registration-duplicate-checkbox:checked'));
+                const countEl = document.getElementById('registrationDuplicateSelectedCount');
+                const studentsEl = document.getElementById('registrationDuplicateSelectedStudents');
+                const deleteBtn = document.getElementById('deleteRegistrationDuplicatesBtn');
+                if (countEl) countEl.textContent = `${checked.length} sélectionné(s)`;
+
+                const names = Array.from(new Set(checked.map(cb => decodeURIComponent(cb.dataset.studentName || '').trim()).filter(Boolean)));
+                if (studentsEl) studentsEl.textContent = names.length ? `Selected students: ${names.join(', ')}` : 'Selected students: none';
+                if (deleteBtn) deleteBtn.disabled = checked.length === 0;
+            }
+
+            async function deleteSelectedRegistrationDuplicates() {
+                const checked = Array.from(document.querySelectorAll('.registration-duplicate-checkbox:checked'));
+                if (!checked.length) { showToast('Select duplicate rows to delete.', 'error'); return; }
+
+                const items = checked.map(cb => ({ source: cb.dataset.source, id: cb.dataset.recordId, studentId: cb.dataset.studentId || '' }));
+                const names = Array.from(new Set(checked.map(cb => decodeURIComponent(cb.dataset.studentName || '').trim()).filter(Boolean)));
+                const preview = names.slice(0,5).join(', ');
+                const extra = Math.max(0, names.length - 5);
+                const detailText = preview ? `\nStudents: ${preview}${extra ? ` (+${extra} more)` : ''}` : '';
+                if (!confirm(`Delete ${items.length} selected duplicate record(s)?${detailText}`)) return;
+
+                const deleteBtn = document.getElementById('deleteRegistrationDuplicatesBtn');
+                const originalHtml = deleteBtn ? deleteBtn.innerHTML : '';
+                try {
+                    if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...'; }
+
+                    // Delete records or student duplicates
+                    for (const it of items) {
+                        if (it.source === 'registration') {
+                            await registrationPaymentsRef.child(it.id).remove();
+                        } else if (it.source === 'pending') {
+                            await pendingInscriptionsRef.child(it.id).remove();
+                        } else if (it.source === 'student') {
+                            await deleteStudent(it.id);
+                        }
+                    }
+
+                    // For orphan studentIds after registration/pending deletion, remove the student if no registrationPayments remain
+                    const studentIds = Array.from(new Set(items.map(i => i.studentId).filter(Boolean)));
+                    for (const sid of studentIds) {
+                        const snap = await db.ref('registrationPayments').orderByChild('studentId').equalTo(sid).once('value');
+                        if (!snap.exists()) {
+                            await deleteStudent(sid);
+                        }
+                    }
+
+                    showToast(`${items.length} duplicate record(s) deleted successfully.`, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('registrationDuplicateModal'))?.hide();
+                    // refresh data
+                    await loadRegistration();
+                    if (typeof applyStudentFilters === 'function') applyStudentFilters();
+                } catch (error) {
+                    console.error('Error deleting registration duplicates:', error);
+                    showToast('Error deleting registration duplicates', 'error');
+                } finally {
+                    if (deleteBtn) { deleteBtn.disabled = false; deleteBtn.innerHTML = originalHtml; }
+                }
+            }
+
+            // Update daily report table with automatic calculation
+            function updateDailyReportTable() {
+                const date = document.getElementById('dailyReportDate').value;
+                
+                if (!date) {
+                    return;
+                }
+                
+                // Calculer les paiements du jour par catégorie (filtrer par branche)
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const dayStudentPayments = studentFees.filter(fee => {
+                    const paymentDate = getPaymentDateString(fee);
+                    if (!paymentDate || paymentDate !== date) return false;
+                    return matchesPaymentBranchAndLevelForSelection(fee, selectedBranch);
+                });
+                const dayTransportPayments = (transportPayments || []).filter(payment => {
+                    const paymentDate = getPaymentDateString(payment);
+                    if (!paymentDate || paymentDate !== date) return false;
+                    return matchesPaymentBranchAndLevelForSelection(payment, selectedBranch);
+                });
+                
+                // Initialiser les totaux par catégorie
+                const fees = dayStudentPayments
+                    .filter(p => p.paymentType === 'fees')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const coaching = dayStudentPayments
+                    .filter(p => p.paymentType === 'coaching')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const transportFromStudentFees = dayStudentPayments
+                    .filter(p => p.paymentType === 'transport')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const transportFromPayments = dayTransportPayments
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const transport = transportFromStudentFees + transportFromPayments;
+                const uniform = dayStudentPayments
+                    .filter(p => p.paymentType === 'uniforme')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const other = dayStudentPayments
+                    .filter(p => !['fees', 'transport', 'coaching', 'uniforme'].includes(p.paymentType || ''))
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                
+                // Calculer les dépenses du jour (depuis dailyExpenses) - filtrer par branche
+                const dayExpenses = dailyExpenses.filter(expense => expense.date === date && expense.branch === firebaseBranch);
+                const totalExpenses = dayExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                
+                // Préparer les justifications (catégories des dépenses)
+                const justifications = dayExpenses.length > 0 
+                    ? dayExpenses.map(exp => `${exp.category}: ${formatCurrencyRWF(exp.amount)}`).join('<br>')
+                    : 'No expenses recorded';
+                
+                // Récupérer le solde d'ouverture (depuis localStorage ou 0)
+                const openingBalanceFallback = getAutoOpeningBalanceFromYesterday(date, firebaseBranch);
+                const openingBalance = getOpeningBalanceValue(date, firebaseBranch, openingBalanceFallback);
+                
+                // Calculer les totaux
+                const totalActualIncome = fees + transport + coaching + uniform + other;
+                const closingBalance = openingBalance + totalActualIncome - totalExpenses;
+                const difference = totalActualIncome - totalExpenses;
+                
+                // Sauvegarder automatiquement le Closing Balance (qui devient Opening Balance du jour suivant)
+                saveClosingBalance(date, closingBalance);
+                
+                // Mettre à jour le tableau
+                const tbody = document.getElementById('dailyReportBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td>
+                            <input type="number" class="form-control opening-balance-input" 
+                                id="openingBalance" value="${openingBalance}" 
+                                onchange="saveOpeningBalance('${date}')">
+                        </td>
+                        <td><strong class="money-in">${formatCurrencyRWF(fees).replace('RWF', '')}</strong></td>
+                        <td><strong class="money-in">${formatCurrencyRWF(transport).replace('RWF', '')}</strong></td>
+                        <td><strong class="money-in">${formatCurrencyRWF(coaching).replace('RWF', '')}</strong></td>
+                        <td><strong class="money-in">${formatCurrencyRWF(uniform).replace('RWF', '')}</strong></td>
+                        <td><strong class="money-in">${formatCurrencyRWF(other).replace('RWF', '')}</strong></td>
+                        <td class="justification-cell"><small>${justifications}</small></td>
+                        <td><strong class="money-out">${formatCurrencyRWF(totalExpenses).replace('RWF', '')}</strong></td>
+                        <td><strong class="money-out">${formatCurrencyRWF(totalExpenses).replace('RWF', '')}</strong></td>
+                        <td><strong class="balance">${formatCurrencyRWF(closingBalance).replace('RWF', '')}</strong></td>
+                        <td><strong class="${difference >= 0 ? 'money-in' : 'money-out'}">
+                            ${formatCurrencyRWF(difference).replace('RWF', '')}
+                        </strong></td>
+                    </tr>
+                `;
+                
+                // Mettre à jour le résumé des paiements du jour
+                const dayIncomePayments = [...dayStudentPayments, ...dayTransportPayments];
+                updateDaySummary(dayIncomePayments, dayExpenses, openingBalance, closingBalance, difference, totalActualIncome);
+            }
+
+            // Sauvegarder le solde d'ouverture
+            async function saveOpeningBalance(date) {
+                const openingBalance = parseFloat(document.getElementById('openingBalance').value) || 0;
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                localStorage.setItem(`openingBalance_${date}_${firebaseBranch}`, openingBalance);
+                await openingBalancesRef.child(`${firebaseBranch}/${date}`).transaction(() => openingBalance, undefined, false);
+                updateDailyReportTable(); // Recalculer tout
+            }
+
+            // Sauvegarder le solde de clôture ET le mettre comme Opening Balance du jour suivant
+            async function saveClosingBalance(date, closingBalance) {
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                
+                // 1. Sauvegarder le Closing Balance pour le jour actuel
+                localStorage.setItem(`closingBalance_${date}_${firebaseBranch}`, closingBalance);
+                await closingBalancesRef.child(`${firebaseBranch}/${date}`).transaction(() => closingBalance, undefined, false);
+                
+                // 2. Calculer le jour suivant
+                const d = new Date(date);
+                d.setDate(d.getDate() + 1);
+                const nextDate = d.toISOString().split('T')[0];
+                
+                // 3. Le Closing Balance d'aujourd'hui devient l'Opening Balance de demain
+                localStorage.setItem(`openingBalance_${nextDate}_${firebaseBranch}`, closingBalance);
+                // Note: Pour Firebase, nous utilisons le closingBalances comme source dans getOpeningBalanceValue
+            }
+
+            // Mettre à jour le résumé de la journée
+            function updateDaySummary(fees, expenses, openingBalance, closingBalance, difference, actualIncome) {
+                const totalIncome = fees.reduce((sum, fee) => sum + (parseFloat(fee.amount) || 0), 0);
+                const totalExpenses = expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                const actualTotal = typeof actualIncome === 'number' ? actualIncome : totalIncome;
+                
+                const summaryHTML = `
+                    <div class="report-summary-cards">
+                        <div class="summary-card income">
+                            <h6><i class="fas fa-money-bill-wave me-2"></i>Total Income</h6>
+                            <div class="summary-value">${formatCurrencyRWF(actualTotal)}</div>
+                            <small>${fees.length} payment(s) received</small>
+                        </div>
+                        <div class="summary-card expenses">
+                            <h6><i class="fas fa-shopping-cart me-2"></i>Total Expenses</h6>
+                            <div class="summary-value">${formatCurrencyRWF(totalExpenses)}</div>
+                            <small>${expenses.length} expense(s) recorded</small>
+                        </div>
+                        <div class="summary-card balance">
+                            <h6><i class="fas fa-wallet me-2"></i>Opening Balance</h6>
+                            <div class="summary-value">${formatCurrencyRWF(openingBalance)}</div>
+                            <small>Initial balance</small>
+                        </div>
+                        <div class="summary-card ${difference >= 0 ? 'income' : 'expenses'}">
+                            <h6><i class="fas fa-balance-scale me-2"></i>Difference</h6>
+                            <div class="summary-value">${formatCurrencyRWF(difference)}</div>
+                            <small>${difference >= 0 ? 'Profit' : 'Loss'}</small>
+                        </div>
+                    </div>
+                `;
+                
+                // Ajouter le résumé au-dessus du tableau
+                const existingSummary = document.getElementById('daySummary');
+                if (existingSummary) {
+                    existingSummary.innerHTML = summaryHTML;
+                } else {
+                    const summaryDiv = document.createElement('div');
+                    summaryDiv.id = 'daySummary';
+                    summaryDiv.innerHTML = summaryHTML;
+                    document.querySelector('#dailyReportSection .table-responsive').insertAdjacentElement('beforebegin', summaryDiv);
+                }
+
+                updateDailyExpectedComparison(actualTotal);
+            }
+
+            function getTrimesterPaymentTotalsForBranch(branch) {
+                const emptyTotals = { fees: 0, coaching: 0, transport: 0, registration: 0, total: 0 };
+                if (!branch || !currentTermConfig) return emptyTotals;
+
+                const firebaseBranch = getFirebaseBranchForWorkers(branch);
+                const termTrimester = String(currentTermConfig.trimester || currentTermConfig.trimestre || '');
+                const termAcademicYear = String(currentTermConfig.academicYear || '');
+                const termStart = currentTermConfig.startDate ? new Date(currentTermConfig.startDate) : null;
+                const termEnd = currentTermConfig.endDate ? new Date(currentTermConfig.endDate) : null;
+
+                const matchesBranch = (payment) => {
+                    if (!payment) return false;
+                    if (payment.branch) {
+                        return payment.branch === branch || payment.branch === firebaseBranch;
+                    }
+                    const student = students.find(s => s.id === payment.studentId);
+                    return student ? (student.branch === branch || student.branch === firebaseBranch) : false;
+                };
+
+                const matchesTerm = (payment) => {
+                    if (!payment) return false;
+                    const paymentTrimester = String(payment.trimester || payment.trimestre || '');
+                    const paymentAcademicYear = String(payment.academicYear || '');
+
+                    if (termTrimester && termAcademicYear && paymentTrimester && paymentAcademicYear) {
+                        return paymentTrimester === termTrimester && paymentAcademicYear === termAcademicYear;
+                    }
+
+                    if (termStart && termEnd) {
+                        const paymentDateStr = getPaymentDateString(payment);
+                        if (!paymentDateStr) return false;
+                        const paymentDate = new Date(paymentDateStr);
+                        return paymentDate >= termStart && paymentDate <= termEnd;
+                    }
+
+                    return true;
+                };
+
+                const sumPayments = (payments) => (payments || [])
+                    .filter(p => matchesBranch(p) && matchesTerm(p))
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+                const termStudentPayments = (studentFees || []).filter(p => matchesBranch(p) && matchesTerm(p));
+                const fees = termStudentPayments
+                    .filter(p => (p.paymentType || 'fees') === 'fees')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const coaching = termStudentPayments
+                    .filter(p => p.paymentType === 'coaching')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const transport = termStudentPayments
+                    .filter(p => p.paymentType === 'transport')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const registration = sumPayments(registrationPayments || []);
+
+                return {
+                    fees,
+                    coaching,
+                    transport,
+                    registration,
+                    total: fees + coaching + transport + registration
+                };
+            }
+
+            // Charger le rapport journalier avec données réelles
+            async function loadDailyReport() {
+                let date = document.getElementById('dailyReportDate').value;
+
+                if (!date) {
+                    // Définir la date d'aujourd'hui par défaut
+                    date = new Date().toISOString().split('T')[0];
+                    document.getElementById('dailyReportDate').value = date;
+                }
+
+                const reportDateInput = document.getElementById('reportDate');
+                if (reportDateInput) {
+                    reportDateInput.value = date;
+                }
+
+                // Charger les dépenses pour cette date
+                await loadExpensesForDate(date);
+
+                // Mettre à jour la liste des dépenses affichée sous le formulaire
+                updateExpensesList();
+
+                // Mettre à jour le tableau avec les données réelles
+                updateDailyReportTable();
+
+                // Charger un rapport existant s'il y en a un
+                await loadExistingReport(date);
+            }
+
+            function setDailyReportDateOffset(offsetDays) {
+                const dateInput = document.getElementById('dailyReportDate');
+                if (!dateInput) return;
+
+                const base = new Date();
+                base.setDate(base.getDate() + (Number(offsetDays) || 0));
+                const formatted = base.toISOString().split('T')[0];
+                dateInput.value = formatted;
+                loadDailyReport();
+            }
+
+            function syncDailyReportDateFromReportDate() {
+                const reportDate = document.getElementById('reportDate')?.value;
+                if (!reportDate) return;
+                document.getElementById('dailyReportDate').value = reportDate;
+                loadDailyReport();
+            }
+
+            // Load opening balance reports for current branch
+            function loadOpeningBalanceReports() {
+                const dailySection = document.getElementById('dailyReportSection');
+                const weeklySection = document.getElementById('weeklyReportSection');
+                const monthlySection = document.getElementById('monthlyReportSection');
+                
+                if (dailySection && dailySection.style.display === 'block') {
+                    loadDailyReport();
+                } else if (weeklySection && weeklySection.style.display === 'block') {
+                    loadWeeklyReport();
+                } else if (monthlySection && monthlySection.style.display === 'block') {
+                    loadMonthlyReport();
+                }
+            }
+
+            // Load fee configuration into settings form
+            async function loadFeeConfiguration() {
+                if (!currentTermConfig) {
+                    console.log('Term config not loaded yet');
+                    return;
+                }
+                try {
+                    // Get current branch and use current term config
+                    const branch = document.getElementById('feeBranch').value;
+                    const quarter = currentTermConfig.trimester;
+                    const year = currentTermConfig.academicYear;
+                    
+                    // Map full branch name to branchId
+                    const branchIdMap = {
+                        'EDEN FAMILY SCHOOL KACYIRU': 'kacyiru',
+                        'EDEN FAMILY SCHOOL KIMISAGARA': 'kimisagara',
+                        'EDEN FAMILY SCHOOL GISOZI NURSERY': 'gisozi_maternelle',
+                        'EDEN FAMILY SCHOOL GISOZI PRIMARY': 'gisozi_primaire'
+                    };
+                    const branchId = branchIdMap[branch];
+                    
+                    // Apply branch fee rules
+                    applyBranchFeeRules(branchId, quarter);
+                    
+                    // Create the key as saved in database
+                    const configKey = `EDEN_FAMILY_SCHOOL_${branch.toUpperCase().replace(/\s+/g, '_')}_${quarter}_${year}`;
+                    
+                    const snapshot = await feeConfigRef.child(configKey).once('value');
+                    
+                    if (snapshot.exists()) {
+                        const config = snapshot.val();
+                        
+                        // Populate the form fields with loaded data
+                        if (config.schoolFees) {
+                            if (config.schoolFees.fees !== undefined) document.getElementById('feeFees').value = config.schoolFees.fees;
+                            if (config.schoolFees.transport !== undefined) document.getElementById('feeTransport').value = config.schoolFees.transport;
+                            if (config.schoolFees.coaching !== undefined) document.getElementById('feeCoaching').value = config.schoolFees.coaching;
+                            if (config.schoolFees.uniform !== undefined) document.getElementById('feeUniform').value = config.schoolFees.uniform;
+                        }
+                        
+                        if (config.additionalFees) {
+                            if (config.additionalFees.lunch !== undefined) document.getElementById('feeLunch').value = config.additionalFees.lunch;
+                            if (config.additionalFees.breakfast !== undefined) document.getElementById('feeBreakfast').value = config.additionalFees.breakfast;
+                            if (config.additionalFees.material !== undefined) document.getElementById('feeMaterial').value = config.additionalFees.material;
+                            if (config.additionalFees.insurance !== undefined) document.getElementById('feeInsurance').value = config.additionalFees.insurance;
+                        }
+                        
+                        console.log('Fee configuration loaded:', config);
+                    } else {
+                        // If no configuration exists, keep default values
+                        console.log('No configuration found for this period');
+                    }
+                } catch (error) {
+                    console.error('Error loading fee configuration:', error);
+                }
+            }
+
+            // Apply branch-specific fee rules
+            function applyBranchFeeRules(branchId, trimester) {
+                // Fees - always mandatory and visible
+                document.getElementById('feeFees').closest('.mb-3').style.display = 'block';
+                document.getElementById('feeFees').required = true;
+
+                // Breakfast - configurable for all branches except explicit exclusions
+                const breakfastDiv = document.getElementById('feeBreakfast').closest('.mb-3');
+                const breakfastInput = document.getElementById('feeBreakfast');
+                if (['kacyiru', 'kacyiru_maternelle', 'kacyiru_creche', 'kimisagara', 'gisozi_maternelle', 'gisozi_primaire'].includes(branchId)) {
+                    breakfastDiv.style.display = 'block';
+                    breakfastInput.required = true;
+                } else {
+                    breakfastDiv.style.display = 'none';
+                    breakfastInput.required = false;
+                }
+
+                // Lunch - mandatory for gisozi_primaire; hidden for others
+                const lunchDiv = document.getElementById('feeLunch').closest('.mb-3');
+                const lunchInput = document.getElementById('feeLunch');
+                if (branchId === 'gisozi_primaire') {
+                    lunchDiv.style.display = 'block';
+                    lunchInput.required = true;
+                } else {
+                    lunchDiv.style.display = 'none';
+                    lunchInput.required = false;
+                }
+
+                // School Supplies, Insurance, Uniform - mandatory in T1, optional in T2/T3
+                const materialInput = document.getElementById('feeMaterial');
+                const insuranceInput = document.getElementById('feeInsurance');
+                const uniformInput = document.getElementById('feeUniform');
+                
+                const isRequired = trimester === '1';
+                materialInput.required = isRequired;
+                insuranceInput.required = isRequired;
+                uniformInput.required = isRequired;
+
+                // Coaching and Transport - always optional
+                document.getElementById('feeCoaching').required = false;
+                document.getElementById('feeTransport').required = false;
+            }
+
+            // Populate payment amount based on fee configuration
+            async function populatePaymentAmount() {
+                const paymentType = document.getElementById('studentPaymentType').value;
+                const studentId = document.getElementById('studentSelect').value;
+                
+                if (!paymentType || !studentId) return;
+                
+                const student = students.find(s => s.id === studentId);
+                if (!student) return;
+                
+                // Determine current quarter and year based on current term config or current date
+                let quarter, schoolYear;
+                if (currentTermConfig && currentTermConfig.academicYear && currentTermConfig.trimester) {
+                    quarter = currentTermConfig.trimester;
+                    schoolYear = currentTermConfig.academicYear;
+                } else {
+                    // Fallback to date calculation
+                    const now = new Date();
+                    const currentMonth = now.getMonth() + 1; // 1-12
+                    const currentYear = now.getFullYear();
+                    
+                    // Determine quarter
+                    if (currentMonth >= 1 && currentMonth <= 4) quarter = 1;
+                    else if (currentMonth >= 5 && currentMonth <= 8) quarter = 2;
+                    else quarter = 3;
+                    
+                    // School year spans two calendar years
+                    schoolYear = currentMonth >= 9 ? `${currentYear}-${currentYear + 1}` : `${currentYear - 1}-${currentYear}`;
+                }
+                
+                try {
+                    // Get fee configuration for student's branch
+                    const configKey = `EDEN_FAMILY_SCHOOL_${student.branch.toUpperCase().replace(/\s+/g, '_')}_${quarter}_${schoolYear}`;
+                    const snapshot = await feeConfigRef.child(configKey).once('value');
+                    
+                    if (snapshot.exists()) {
+                        const config = snapshot.val();
+                        
+                        // Map payment type to config field
+                        let amount = 0;
+                        if (config.schoolFees) {
+                            const schoolFeeMap = {
+                                'fees': config.schoolFees.fees,
+                                'transport': config.schoolFees.transport,
+                                'coaching': config.schoolFees.coaching,
+                                'uniforme': config.schoolFees.uniform
+                            };
+                            if (schoolFeeMap[paymentType] !== undefined) {
+                                amount = schoolFeeMap[paymentType];
+                            }
+                        }
+                        
+                        if (amount === 0 && config.additionalFees) {
+                            const additionalFeeMap = {
+                                'lunch': config.additionalFees.lunch,
+                                'breakfast': config.additionalFees.breakfast,
+                                'material': config.additionalFees.material,
+                                'insurance': config.additionalFees.insurance
+                            };
+                            if (additionalFeeMap[paymentType] !== undefined) {
+                                amount = additionalFeeMap[paymentType];
+                            }
+                        }
+                        
+                        if (amount > 0) {
+                            document.getElementById('studentAmount').value = amount;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading payment amount:', error);
+                }
+                
+                updateStudentPaymentRemainingBalance();
+            }
+
+            // Charger les dépenses depuis Firebase pour une date spécifique
+            async function loadExpensesForDate(date) {
+                try {
+                    const snapshot = await dailyExpensesRef
+                        .orderByChild('date')
+                        .equalTo(date)
+                        .once('value');
+                    
+                    dailyExpenses = [];
+                    snapshot.forEach(childSnapshot => {
+                        const expense = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        dailyExpenses.push(expense);
+                    });
+                    
+                    console.log(`${dailyExpenses.length} expenses loaded for ${date}`);
+                    
+                } catch (error) {
+                    console.error('Error loading expenses:', error);
+                }
+            }
+
+            // Mettre à jour la liste des dépenses (affichée sous le formulaire)
+            function updateExpensesList() {
+                const container = document.getElementById('expensesList');
+                container.innerHTML = '';
+                
+                const date = document.getElementById('dailyReportDate').value;
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const dayExpenses = dailyExpenses.filter(exp => {
+                    const expenseBranch = (exp.branch || '').toString().trim().toLowerCase();
+                    const selectedUiBranch = (selectedBranch || '').toString().trim().toLowerCase();
+                    const selectedFirebaseBranch = (firebaseBranch || '').toString().trim().toLowerCase();
+                    const matchesBranch = expenseBranch === selectedUiBranch || expenseBranch === selectedFirebaseBranch;
+                    return exp.date === date && matchesBranch;
+                });
+                
+                if (dayExpenses.length === 0) {
+                    container.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No expenses recorded for ${new Date(date).toLocaleDateString('en-US')}
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Créer une carte pour chaque dépense
+                dayExpenses.forEach(expense => {
+                    const expenseCard = document.createElement('div');
+                    expenseCard.className = 'expense-item';
+                    expenseCard.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${expense.category}</strong>
+                                <div class="text-muted">${expense.addedBy} - ${new Date(expense.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-danger fw-bold">${formatCurrencyRWF(expense.amount)}</div>
+                                <button class="btn btn-sm btn-outline-primary mt-1 me-1" onclick="editExpense('${expense.id}')" title="Edit expense">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger mt-1" onclick="removeExpense('${expense.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(expenseCard);
+                });
+                
+                // Ajouter le total
+                const total = dayExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'mt-3 p-3 bg-light rounded';
+                totalDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>Total expenses for this day:</strong>
+                        <strong class="text-danger fs-5">${formatCurrencyRWF(total)}</strong>
+                    </div>
+                `;
+                container.appendChild(totalDiv);
+            }
+
+            async function editExpense(expenseId) {
+                const expense = dailyExpenses.find(exp => exp.id === expenseId);
+                if (!expense) {
+                    showToast('Expense not found', 'error');
+                    return;
+                }
+
+                const newCategory = prompt('Expense category:', expense.category || '');
+                if (newCategory === null) return;
+
+                const newAmountInput = prompt('Expense amount (RWF):', String(expense.amount || ''));
+                if (newAmountInput === null) return;
+
+                const newAmount = parseFloat(newAmountInput);
+                if (!newCategory.trim() || !Number.isFinite(newAmount) || newAmount <= 0) {
+                    showToast('Invalid category or amount', 'error');
+                    return;
+                }
+
+                try {
+                    await dailyExpensesRef.child(expenseId).update({
+                        category: newCategory.trim(),
+                        amount: newAmount,
+                        updatedAt: Date.now(),
+                        updatedBy: currentUserName
+                    });
+
+                    const date = document.getElementById('dailyReportDate').value;
+                    await loadExpensesForDate(date);
+                    updateExpensesList();
+                    updateDailyReportTable();
+                    showToast('Expense updated successfully', 'success');
+                } catch (error) {
+                    console.error('Error updating expense:', error);
+                    showToast('Error updating expense', 'error');
+                }
+            }
+
+            // Ajouter une dépense avec enregistrement Firebase
+            function toggleOtherExpenseInput() {
+                const categorySelect = document.getElementById('expenseCategory');
+                const otherFieldRow = document.getElementById('otherExpenseFieldRow');
+                const otherDetailsInput = document.getElementById('expenseOtherDetails');
+                const isOtherSelected = categorySelect?.value === 'Other';
+
+                if (!otherFieldRow || !otherDetailsInput) return;
+
+                otherFieldRow.style.display = isOtherSelected ? 'flex' : 'none';
+                otherDetailsInput.required = isOtherSelected;
+
+                if (!isOtherSelected) {
+                    otherDetailsInput.value = '';
+                }
+            }
+
+            async function addDailyExpense() {
+                const selectedCategory = document.getElementById('expenseCategory').value;
+                const otherDetails = (document.getElementById('expenseOtherDetails')?.value || '').trim();
+                const amountInput = document.getElementById('expenseAmount').value;
+                const amount = parseFloat(amountInput);
+                const date = document.getElementById('dailyReportDate').value;
+
+                if (selectedCategory === 'Other' && !otherDetails) {
+                    showToast('Please specify the other expense justification', 'error');
+                    return;
+                }
+
+                const category = selectedCategory === 'Other' ? otherDetails : selectedCategory;
+                
+                if (!category || !amount || amount <= 0 || !date) {
+                    showToast('Please fill all fields correctly', 'error');
+                    return;
+                }
+                
+                try {
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                    const expenseData = {
+                        category: category,
+                        amount: amount,
+                        date: date,
+                        addedBy: currentUserName,
+                        branch: firebaseBranch,
+                        timestamp: Date.now()
+                    };
+                    
+                    // Enregistrer dans Firebase
+                    await dailyExpensesRef.push(expenseData);
+                    
+                    // Mettre à jour l'affichage
+                    await loadExpensesForDate(date);
+                    updateExpensesList();
+                    updateDailyReportTable();
+                    // Mettre à jour les rapports hebdo/mensuel si ouverts
+                    if (document.querySelector('.weekly-report-section')?.style.display === 'block') {
+                        loadWeeklyReport();
+                    }
+                    if (document.querySelector('.monthly-report-section')?.style.display === 'block') {
+                        loadMonthlyReport();
+                    }
+                    
+                    // Réinitialiser le formulaire
+                    document.getElementById('expenseCategory').value = '';
+                    document.getElementById('expenseAmount').value = '';
+                    const otherDetailsInput = document.getElementById('expenseOtherDetails');
+                    if (otherDetailsInput) {
+                        otherDetailsInput.value = '';
+                    }
+                    toggleOtherExpenseInput();
+                    
+                    showToast('Expense recorded successfully', 'success');
+                    
+                } catch (error) {
+                    console.error('Error recording expense:', error);
+                    showToast('Error recording expense', 'error');
+                }
+            }
+
+            // Supprimer une dépense
+            async function removeExpense(expenseId) {
+                if (!confirm('Are you sure you want to delete this expense?')) return;
+                
+                try {
+                    await dailyExpensesRef.child(expenseId).remove();
+                    
+                    const date = document.getElementById('dailyReportDate').value;
+                    await loadExpensesForDate(date);
+                    updateExpensesList();
+                    updateDailyReportTable();
+                    // Mettre à jour les rapports hebdo/mensuel si ouverts
+                    if (document.querySelector('.weekly-report-section')?.style.display === 'block') {
+                        loadWeeklyReport();
+                    }
+                    if (document.querySelector('.monthly-report-section')?.style.display === 'block') {
+                        loadMonthlyReport();
+                    }
+                    
+                    showToast('Expense deleted successfully', 'success');
+                } catch (error) {
+                    console.error('Error deleting expense:', error);
+                    showToast('Error deleting expense', 'error');
+                }
+            }
+
+            // Sauvegarder le rapport journalier
+            async function saveDailyReport() {
+                try {
+                    const date = document.getElementById('dailyReportDate').value;
+                    if (!date) {
+                        showToast(currentLanguage === 'fr' ? 'Veuillez sélectionner une date de rapport' : 'Please select a report date', 'error');
+                        return;
+                    }
+                    const summary = getDailyReportSummary(date);
+
+                    const reportData = {
+                        date: date,
+                        branch: selectedBranch,
+                        openingBalance: summary.openingBalance,
+                        fees: summary.fees,
+                        transport: summary.transport,
+                        coaching: summary.coaching,
+                        uniform: summary.uniform,
+                        other: summary.other,
+                        totalIncome: summary.totalIncome,
+                        totalExpenses: summary.totalExpenses,
+                        closingBalance: summary.closingBalance,
+                        difference: summary.difference,
+                        justification: summary.justifications,
+                        expenseDetails: summary.expenseDetails,
+                        tableRow: summary.tableRow,
+
+                        // Données du formulaire
+                        generalObservations: document.getElementById('generalObservations').value,
+                        status: 'draft',
+                        preparedBy: document.getElementById('reportPreparedBy').value,
+                        generatedBy: currentUserName,
+                        timestamp: Date.now(),
+                        type: 'daily'
+                    };
+
+                    // Sauvegarder avec clé composite pour éviter les doublons
+                    const dailyKey = makeCompositeKey('daily', selectedBranch, date);
+                    await dailyReportsRef.child(dailyKey).set(reportData);
+                    await reportHistoryRef.child(dailyKey).set(reportData);
+
+                    setDailyReportFormMode(true, date);
+
+                    showToast(currentLanguage === 'fr' ? 'Rapport journalier enregistré avec succès !' : 'Daily report saved successfully!', 'success');
+                } catch (error) {
+                    console.error('Error saving report:', error);
+                    showToast(currentLanguage === 'fr' ? 'Erreur lors de l\'enregistrement du rapport' : 'Error saving report', 'error');
+                }
+            }
+
+            // Get the current daily report summary and table data
+            function getDailyReportSummary(date) {
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+
+                const dayStudentPayments = studentFees.filter(fee => {
+                    const paymentDate = getPaymentDateString(fee);
+                    if (!paymentDate || paymentDate !== date) return false;
+                    return matchesPaymentBranchAndLevelForSelection(fee, selectedBranch);
+                });
+                const dayTransportPayments = (transportPayments || []).filter(payment => {
+                    const paymentDate = getPaymentDateString(payment);
+                    if (!paymentDate || paymentDate !== date) return false;
+                    return matchesPaymentBranchAndLevelForSelection(payment, selectedBranch);
+                });
+
+                const fees = dayStudentPayments
+                    .filter(p => p.paymentType === 'fees')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const coaching = dayStudentPayments
+                    .filter(p => p.paymentType === 'coaching')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const transportFromStudentFees = dayStudentPayments
+                    .filter(p => p.paymentType === 'transport')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const transportFromPayments = dayTransportPayments
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const transport = transportFromStudentFees + transportFromPayments;
+                const uniform = dayStudentPayments
+                    .filter(p => p.paymentType === 'uniforme')
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const other = dayStudentPayments
+                    .filter(p => !['fees', 'transport', 'coaching', 'uniforme'].includes(p.paymentType || ''))
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+                const dayExpenses = dailyExpenses.filter(exp => exp.date === date && exp.branch === firebaseBranch);
+                const expenseDetails = dayExpenses.map(exp => ({ category: exp.category, amount: parseFloat(exp.amount) || 0 }));
+                const totalExpenses = expenseDetails.reduce((sum, exp) => sum + exp.amount, 0);
+                const openingBalanceFallback = getAutoOpeningBalanceFromYesterday(date, firebaseBranch);
+                const openingBalance = getOpeningBalanceValue(date, firebaseBranch, openingBalanceFallback);
+                const totalIncome = fees + transport + coaching + uniform + other;
+                const closingBalance = openingBalance + totalIncome - totalExpenses;
+                const difference = totalIncome - totalExpenses;
+                const justifications = expenseDetails.length > 0
+                    ? expenseDetails.map(exp => `${exp.category}: ${formatCurrencyRWF(exp.amount)}`).join('\n')
+                    : 'No expenses recorded';
+
+                const tableRow = [{
+                    'Opening Balance': openingBalance,
+                    'Fees': fees,
+                    'Transport': transport,
+                    'Coaching': coaching,
+                    'Uniform': uniform,
+                    'Other': other,
+                    'Justification': justifications,
+                    'Amount': formatCurrencyRWF(totalExpenses),
+                    'Total Expenses': totalExpenses,
+                    'Closing Balance': closingBalance,
+                    'Difference': difference
+                }];
+
+                return {
+                    date,
+                    firebaseBranch,
+                    openingBalance,
+                    fees,
+                    transport,
+                    coaching,
+                    uniform,
+                    other,
+                    totalIncome,
+                    totalExpenses,
+                    closingBalance,
+                    difference,
+                    justifications,
+                    expenseDetails,
+                    tableRow
+                };
+            }
+
+            // Load existing report
+            async function loadExistingReport(date) {
+                try {
+                    if (!date) return;
+
+                    const dailyKey = makeCompositeKey('daily', selectedBranch, date);
+                    const keySnapshot = await dailyReportsRef.child(dailyKey).once('value');
+
+                    if (keySnapshot.exists()) {
+                        const report = keySnapshot.val();
+                        document.getElementById('generalObservations').value = report.generalObservations || '';
+
+                        if (document.getElementById('openingBalance')) {
+                            document.getElementById('openingBalance').value = report.openingBalance || 0;
+                        }
+
+                        setDailyReportFormMode(true, date);
+                        return;
+                    }
+
+                    // Fallback pour anciens enregistrements sans clé composite
+                    const snapshot = await dailyReportsRef
+                        .orderByChild('date')
+                        .equalTo(date)
+                        .once('value');
+
+                    let reportFound = false;
+                    if (snapshot.exists()) {
+                        snapshot.forEach(childSnapshot => {
+                            const report = childSnapshot.val();
+                            if (report.branch === selectedBranch && !reportFound) {
+                                reportFound = true;
+                                document.getElementById('generalObservations').value = report.generalObservations || '';
+
+                                if (document.getElementById('openingBalance')) {
+                                    document.getElementById('openingBalance').value = report.openingBalance || 0;
+                                }
+                            }
+                        });
+                    }
+
+                    if (reportFound) {
+                        setDailyReportFormMode(true, date);
+                    } else {
+                        document.getElementById('generalObservations').value = '';
+                        setDailyReportFormMode(false, date);
+                    }
+                } catch (error) {
+                    console.error('Error loading report:', error);
+                }
+            }
+
+            function setDailyReportFormMode(hasExistingReport, date) {
+                const statusEl = document.getElementById('dailyReportStatus');
+                const saveBtn = document.getElementById('saveDailyReportBtn');
+                const formattedDate = date ? new Date(date).toLocaleDateString('en-US') : 'selected date';
+
+                if (statusEl) {
+                    if (hasExistingReport) {
+                        statusEl.className = 'alert alert-info py-2 mb-3';
+                        statusEl.innerHTML = `<i class="fas fa-pen me-2"></i>Existing report found for <strong>${formattedDate}</strong>. You can modify and save updates.`;
+                    } else {
+                        statusEl.className = 'alert alert-secondary py-2 mb-3';
+                        statusEl.innerHTML = `<i class="fas fa-file-circle-plus me-2"></i>No report found for <strong>${formattedDate}</strong>. You can create it now.`;
+                    }
+                }
+
+                if (saveBtn) {
+                    saveBtn.innerHTML = hasExistingReport
+                        ? '<i class="fas fa-save me-2"></i> Update Report'
+                        : '<i class="fas fa-save me-2"></i> Save Report';
+                }
+            }
+
+            // Show daily report
+            function showDailyReport() {
+                const dailySection = document.getElementById('dailyReportSection');
+                const weeklySection = document.getElementById('weeklyReportSection');
+                const monthlySection = document.getElementById('monthlyReportSection');
+                
+                if (dailySection) dailySection.style.display = 'block';
+                if (weeklySection) weeklySection.style.display = 'none';
+                if (monthlySection) monthlySection.style.display = 'none';
+                loadDailyReport();
+            }
+
+            // Show weekly report
+            function showWeeklyReport() {
+                const dailySection = document.getElementById('dailyReportSection');
+                const weeklySection = document.getElementById('weeklyReportSection');
+                const monthlySection = document.getElementById('monthlyReportSection');
+                
+                if (dailySection) dailySection.style.display = 'none';
+                if (weeklySection) weeklySection.style.display = 'block';
+                if (monthlySection) monthlySection.style.display = 'none';
+                loadWeeklyReport();
+            }
+
+            // Show monthly report
+            function showMonthlyReport() {
+                const dailySection = document.getElementById('dailyReportSection');
+                const weeklySection = document.getElementById('weeklyReportSection');
+                const monthlySection = document.getElementById('monthlyReportSection');
+                
+                if (dailySection) dailySection.style.display = 'none';
+                if (weeklySection) weeklySection.style.display = 'none';
+                if (monthlySection) monthlySection.style.display = 'block';
+                loadMonthlyReport();
+            }
+
+            // Initialize charts
+            function initializeCharts() {
+                // Weekly chart
+                const weeklyCtx = document.getElementById('weeklyChart');
+                if (weeklyCtx) {
+                    weeklyChart = new Chart(weeklyCtx.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                            datasets: [{
+                                label: 'Income (RWF)',
+                                data: [0, 0, 0, 0, 0, 0, 0],
+                                borderColor: 'rgba(46, 139, 87, 1)',
+                                backgroundColor: 'rgba(46, 139, 87, 0.2)',
+                                tension: 0.4
+                            }, {
+                                label: 'Expenses (RWF)',
+                                data: [0, 0, 0, 0, 0, 0, 0],
+                                borderColor: 'rgba(220, 20, 60, 1)',
+                                backgroundColor: 'rgba(220, 20, 60, 0.2)',
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Monthly chart
+                const monthlyCtx = document.getElementById('monthlyChart');
+                if (monthlyCtx) {
+                    monthlyChart = new Chart(monthlyCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                            datasets: [{
+                                label: 'Income (RWF)',
+                                data: [0, 0, 0, 0],
+                                backgroundColor: 'rgba(46, 139, 87, 0.7)',
+                                borderColor: 'rgba(46, 139, 87, 1)',
+                                borderWidth: 1
+                            }, {
+                                label: 'Expenses (RWF)',
+                                data: [0, 0, 0, 0],
+                                backgroundColor: 'rgba(220, 20, 60, 0.7)',
+                                borderColor: 'rgba(220, 20, 60, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Update real payroll chart
+            function updateRealPayrollChart() {
+                const ctx = document.getElementById('realPayrollChart');
+                if (!ctx) return;
+                
+                if (realPayrollChart) {
+                    realPayrollChart.destroy();
+                }
+                
+                const currentYear = new Date().getFullYear();
+                const monthlyData = Array(12).fill(0);
+                
+                // Filtrer par branche
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const branchTeachers = teachers.filter(teacher => teacher.branch === firebaseBranch);
+                
+                // Pour l'instant, utiliser les salaires des travailleurs comme données
+                monthlyData[new Date().getMonth()] = branchTeachers.reduce((sum, teacher) => sum + (teacher.salary || 0), 0);
+                
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                
+                realPayrollChart = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: monthNames,
+                        datasets: [{
+                            label: 'Payroll Total (RWF)',
+                            data: monthlyData,
+                            backgroundColor: 'rgba(46, 139, 87, 0.7)',
+                            borderColor: 'rgba(46, 139, 87, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        animation: {
+                            duration: 2000,
+                            easing: 'easeOutQuart'
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value >= 1000000) {
+                                            return (value / 1000000).toFixed(1) + 'M RWF';
+                                        } else if (value >= 1000) {
+                                            return (value / 1000).toFixed(0) + 'K RWF';
+                                        }
+                                        return value + ' RWF';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Load weekly report data
+            function loadWeeklyReport() {
+            const weekValue = document.getElementById('weeklyReportDate').value;
+            if (!weekValue) {
+                const today = new Date();
+                const yr = today.getFullYear();
+                const wk = getWeekNumber(today);
+                document.getElementById('weeklyReportDate').value = `${yr}-W${String(wk).padStart(2,'0')}`;
+            }
+
+            const weekStr = document.getElementById('weeklyReportDate').value;
+            const [yearStr, weekPart] = weekStr.split('-W');
+            const year = parseInt(yearStr);
+            const weekNum = parseInt(weekPart);
+            const monday = getDateOfWeek(weekNum, year);
+            
+            const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+            const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+            
+            const tbody = document.getElementById('weeklyDaysTableBody');
+            tbody.innerHTML = '';
+
+            // Accumulators for week totals
+            let wkFees=0, wkTransport=0, wkCoaching=0, wkUniform=0, wkOther=0;
+            let wkExpenses=0, wkDiff=0;
+            let firstOpening = null;
+            let lastClosing = 0;
+            let allJustifications = [];
+            let runningBalance = null;
+
+            for (let i = 0; i < 7; i++) {
+                const dayDate = new Date(monday);
+                dayDate.setDate(monday.getDate() + i);
+                const dateStr = dayDate.toISOString().split('T')[0];
+
+                            // Get opening balance from Firebase (fallback to localStorage/running balance)
+                            const openingBalance = getOpeningBalanceValue(
+                                dateStr,
+                                firebaseBranch,
+                                (runningBalance !== null ? runningBalance : 0)
+                            );
+                if (firstOpening === null) firstOpening = openingBalance;
+
+                // Get student fees for this day and branch
+                let levelFilter = null;
+                if (selectedBranch === 'gisozi_maternelle') levelFilter = 'nursery';
+                else if (selectedBranch === 'gisozi_primaire') levelFilter = 'primary';
+
+                const dayFees = studentFees.filter(fee => {
+                const feeDate = new Date(fee.paymentDate).toISOString().split('T')[0];
+                if (feeDate !== dateStr) return false;
+                const student = students.find(s => s.id === fee.studentId);
+                if (!student) return false;
+                if (student.branch !== firebaseBranch) return false;
+                if (levelFilter && student.level !== levelFilter) return false;
+                return true;
+                });
+
+                let dayFeesTotal = 0, dayTransportTotal = 0, dayCoachingTotal = 0;
+                let dayUniformTotal = 0, dayOtherTotal = 0;
+
+                dayFees.forEach(fee => {
+                const amt = parseFloat(fee.amount) || 0;
+                switch(fee.paymentType) {
+                    case 'minervale': case 'fees': dayFeesTotal += amt; break;
+                    case 'transport': dayTransportTotal += amt; break;
+                    case 'coaching': dayCoachingTotal += amt; break;
+                    case 'uniforme': dayUniformTotal += amt; break;
+                    default: dayOtherTotal += amt; break;
+                }
+                });
+
+                // Get coaching payments for this day
+                if (typeof coachingPayments !== 'undefined') {
+                coachingPayments.filter(p => p.branch === selectedBranch && p.paymentDate === dateStr)
+                    .forEach(p => dayCoachingTotal += parseFloat(p.amount) || 0);
+                }
+                // Get transport payments for this day
+                if (typeof transportPayments !== 'undefined') {
+                transportPayments.filter(p => p.branch === selectedBranch && p.paymentDate === dateStr)
+                    .forEach(p => dayTransportTotal += parseFloat(p.amount) || 0);
+                }
+
+                // Get expenses for this day
+                const dayExpensesList = dailyExpenses.filter(exp => exp.date === dateStr && exp.branch === firebaseBranch);
+                const dayExpensesTotal = dayExpensesList.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                const justText = dayExpensesList.map(exp => `${exp.category}: ${formatCurrencyRWF(exp.amount)}`).join(' | ') || '—';
+                if (dayExpensesList.length > 0) allJustifications.push(`${dayNames[i]}: ${justText}`);
+
+                const totalIncome = dayFeesTotal + dayTransportTotal + dayCoachingTotal + dayUniformTotal + dayOtherTotal;
+                const closingBalance = openingBalance + totalIncome - dayExpensesTotal;
+                const difference = totalIncome - dayExpensesTotal;
+                
+                // Sauvegarder automatiquement le Closing Balance
+                saveClosingBalance(dateStr, closingBalance);
+                
+                runningBalance = closingBalance;
+                lastClosing = closingBalance;
+
+                // Accumulate totals
+                wkFees += dayFeesTotal;
+                wkTransport += dayTransportTotal;
+                wkCoaching += dayCoachingTotal;
+                wkUniform += dayUniformTotal;
+                wkOther += dayOtherTotal;
+                wkExpenses += dayExpensesTotal;
+                wkDiff += difference;
+
+                // Determine row color
+                const isWeekend = i >= 5;
+                const hasData = totalIncome > 0 || dayExpensesTotal > 0;
+                const rowBg = isWeekend ? 'background:#f8f9fa;' : hasData ? 'background:#fff;' : 'background:#fff;';
+                const diffColor = difference >= 0 ? 'color:#28a745; font-weight:bold;' : 'color:#dc3545; font-weight:bold;';
+
+                const tr = document.createElement('tr');
+                tr.style.cssText = rowBg;
+                tr.innerHTML = `
+                <td><strong style="color:${isWeekend?'#6c757d':'inherit'}">${dayNames[i]}</strong></td>
+                <td><small>${new Date(dateStr).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</small></td>
+                <td class="text-end">${formatCurrencyRWF(openingBalance)}</td>
+                <td class="text-end ${dayFeesTotal>0?'money-in':''}">${dayFeesTotal>0 ? formatCurrencyRWF(dayFeesTotal) : '<span class="text-muted">—</span>'}</td>
+                <td class="text-end ${dayTransportTotal>0?'money-in':''}">${dayTransportTotal>0 ? formatCurrencyRWF(dayTransportTotal) : '<span class="text-muted">—</span>'}</td>
+                <td class="text-end ${dayCoachingTotal>0?'money-in':''}">${dayCoachingTotal>0 ? formatCurrencyRWF(dayCoachingTotal) : '<span class="text-muted">—</span>'}</td>
+                <td class="text-end ${dayUniformTotal>0?'money-in':''}">${dayUniformTotal>0 ? formatCurrencyRWF(dayUniformTotal) : '<span class="text-muted">—</span>'}</td>
+                <td class="text-end ${dayOtherTotal>0?'money-in':''}">${dayOtherTotal>0 ? formatCurrencyRWF(dayOtherTotal) : '<span class="text-muted">—</span>'}</td>
+                <td><small style="font-size:0.75rem;">${justText}</small></td>
+                <td class="text-end ${dayExpensesTotal>0?'money-out':''}">${dayExpensesTotal>0 ? formatCurrencyRWF(dayExpensesTotal) : '<span class="text-muted">—</span>'}</td>
+                <td class="text-end balance">${formatCurrencyRWF(closingBalance)}</td>
+                <td class="text-end" style="${diffColor}">${formatCurrencyRWF(difference)}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            // Update footer totals
+            const wkIncome = wkFees + wkTransport + wkCoaching + wkUniform + wkOther;
+            document.getElementById('weekTotalOpening').textContent = formatCurrencyRWF(firstOpening || 0);
+            document.getElementById('weekTotalFees').textContent = formatCurrencyRWF(wkFees);
+            document.getElementById('weekTotalTransport').textContent = formatCurrencyRWF(wkTransport);
+            document.getElementById('weekTotalCoaching').textContent = formatCurrencyRWF(wkCoaching);
+            document.getElementById('weekTotalUniform').textContent = formatCurrencyRWF(wkUniform);
+            document.getElementById('weekTotalOther').textContent = formatCurrencyRWF(wkOther);
+            document.getElementById('weekTotalJustification').textContent = allJustifications.length > 0 ? allJustifications.join(' | ') : '—';
+            document.getElementById('weekTotalExpenses').textContent = formatCurrencyRWF(wkExpenses);
+            document.getElementById('weekTotalClosing').textContent = formatCurrencyRWF(lastClosing);
+            document.getElementById('weekTotalDifference').textContent = formatCurrencyRWF(wkDiff);
+
+            // Update period label
+            const weekStart = new Date(monday).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+            const weekEnd = new Date(monday);
+            weekEnd.setDate(monday.getDate() + 6);
+            const weekEndStr = weekEnd.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+            document.getElementById('weeklyPeriodLabel').textContent = `Week ${weekNum} — ${weekStart} to ${weekEndStr}`;
+            document.getElementById('weeklyReportPreparedBy').value = currentUserName;
+
+            // Update income summary cards
+            updateReportExpectedCards();
+
+            // Store week data for PDF export
+            window.currentWeeklyData = {
+                weekNum, year, monday,
+                totals: { fees:wkFees, transport:wkTransport, coaching:wkCoaching, uniform:wkUniform, other:wkOther, expenses:wkExpenses, income:wkIncome, diff:wkDiff, opening:firstOpening||0, closing:lastClosing },
+                justifications: allJustifications,
+                period: `${weekStart} to ${weekEndStr}`
+            };
+            }
+
+            // Navigate week forward or backward
+            function navigateWeek(direction) {
+            const input = document.getElementById('weeklyReportDate');
+            const val = input.value;
+            if (!val) return;
+            const [yearStr, weekPart] = val.split('-W');
+            let year = parseInt(yearStr);
+            let week = parseInt(weekPart) + direction;
+            if (week < 1) { year--; week = 52; }
+            else if (week > 52) { year++; week = 1; }
+            input.value = `${year}-W${String(week).padStart(2,'0')}`;
+            loadWeeklyReport();
+            }
+
+            // Show weekly details
+            function showWeeklyDetails(weekStr) {
+                const [year, weekNum] = weekStr.split('-W');
+                const startDate = getDateOfWeek(parseInt(weekNum), parseInt(year));
+                
+                let details = `Weekly Details for Week ${weekNum}:\n\n`;
+                const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                
+                let totalIncome = 0;
+                let totalExpenses = 0;
+                
+                for (let i = 0; i < 7; i++) {
+                    const dayDate = new Date(startDate);
+                    dayDate.setDate(startDate.getDate() + i);
+                    const dateStr = dayDate.toISOString().split('T')[0];
+                    
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                    const dayFees = studentFees.filter(fee => {
+                        const feeDate = new Date(fee.paymentDate).toISOString().split('T')[0];
+                        const student = students.find(s => s.id === fee.studentId);
+                        return feeDate === dateStr && student && student.branch === firebaseBranch;
+                    });
+                    const dayIncome = dayFees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
+                    
+                    const dayExpenses = dailyExpenses.filter(exp => exp.date === dateStr && exp.branch === firebaseBranch);
+                    const dayExpense = dayExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+                    
+                    totalIncome += dayIncome;
+                    totalExpenses += dayExpense;
+                    
+                    details += `${dayNames[i]} (${dateStr}): Income ${formatCurrencyRWF(dayIncome)}, Expenses ${formatCurrencyRWF(dayExpense)}\n`;
+                }
+                
+                details += `\nWeekly Totals:\nTotal Income: ${formatCurrencyRWF(totalIncome)}\nTotal Expenses: ${formatCurrencyRWF(totalExpenses)}\nDifference: ${formatCurrencyRWF(totalIncome - totalExpenses)}`;
+                
+                alert(details);
+            }
+
+            // Helper: get week number
+            function getWeekNumber(date) {
+                const d = new Date(date);
+                d.setHours(0, 0, 0, 0);
+                d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+                const yearStart = new Date(d.getFullYear(), 0, 1);
+                return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            }
+
+            // Helper: get date of week
+            function getDateOfWeek(week, year) {
+                const date = new Date(year, 0, 1 + (week - 1) * 7);
+                const day = date.getDay();
+                const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust to Monday
+                return new Date(date.setDate(diff));
+            }
+
+            function getPaymentDateString(payment) {
+                if (!payment) return null;
+                if (payment.paymentDate) return new Date(payment.paymentDate).toISOString().split('T')[0];
+                if (payment.date) return new Date(payment.date).toISOString().split('T')[0];
+                if (payment.timestamp) return new Date(payment.timestamp).toISOString().split('T')[0];
+                return null;
+            }
+
+            function refreshReportsIfActive() {
+                if (!document.getElementById('reports')?.classList.contains('active')) return;
+                if (document.getElementById('dailyReportSection')?.style.display === 'block') {
+                    updateDailyReportTable();
+                }
+                if (document.querySelector('.weekly-report-section')?.style.display === 'block') {
+                    loadWeeklyReport();
+                }
+                if (document.querySelector('.monthly-report-section')?.style.display === 'block') {
+                    loadMonthlyReport();
+                }
+            }
+
+            // Generate weekly report (save to history)
+            async function generateWeeklyReport() {
+                try {
+                    const weekValue = document.getElementById('weeklyReportDate').value;
+                    const period = document.getElementById('weeklyPeriod').value;
+                    const summary = document.getElementById('weeklySummary').value;
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                    
+                    // Calculate totals for the week
+                    const weekDays = [];
+                    const [year, weekNum] = weekValue.split('-W');
+                    const startDate = getDateOfWeek(parseInt(weekNum), parseInt(year));
+                    let totalIncomeWeek = 0, totalExpensesWeek = 0, closingBalanceWeek = 0;
+                    
+                    for (let i = 0; i < 7; i++) {
+                        const dayDate = new Date(startDate);
+                        dayDate.setDate(startDate.getDate() + i);
+                        const dateStr = dayDate.toISOString().split('T')[0];
+                        
+                        const dayFees = studentFees.filter(fee => {
+                            const feeDate = new Date(fee.paymentDate).toISOString().split('T')[0];
+                            const student = students.find(s => s.id === fee.studentId);
+                            return feeDate === dateStr && student && student.branch === selectedBranch;
+                        });
+                        const totalIncome = dayFees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
+                        
+                        const dayExpenses = dailyExpenses.filter(exp => exp.date === dateStr && exp.branch === selectedBranch);
+                        const totalExpenses = dayExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+                        
+                        totalIncomeWeek += totalIncome;
+                        totalExpensesWeek += totalExpenses;
+                    }
+                    
+                    const openingBalanceWeek = getOpeningBalanceValue(startDate.toISOString().split('T')[0], firebaseBranch, 0);
+                    closingBalanceWeek = openingBalanceWeek + totalIncomeWeek - totalExpensesWeek;
+                    
+                    const reportData = {
+                        period: weekValue,
+                        startDate: startDate.toISOString().split('T')[0],
+                        endDate: new Date(startDate.getTime() + 6*86400000).toISOString().split('T')[0],
+                        totalIncome: totalIncomeWeek,
+                        totalExpenses: totalExpensesWeek,
+                        openingBalance: openingBalanceWeek,
+                        closingBalance: closingBalanceWeek,
+                        difference: totalIncomeWeek - totalExpensesWeek,
+                        summary: summary,
+                        branch: selectedBranch,
+                        preparedBy: document.getElementById('weeklyReportPreparedBy').value,
+                        generatedBy: currentUserName,
+                        timestamp: Date.now(),
+                        type: 'weekly'
+                    };
+                    
+                    const weeklyKey = makeCompositeKey('weekly', selectedBranch, weekValue);
+                    await weeklyReportsRef.child(weeklyKey).set(reportData);
+                    await reportHistoryRef.child(weeklyKey).set(reportData);
+                    
+                    showToast('Weekly report generated and saved!', 'success');
+                } catch (error) {
+                    console.error('Error generating weekly report:', error);
+                    showToast('Error generating weekly report', 'error');
+                }
+            }
+
+            // Load monthly report data
+            function loadMonthlyReport() {
+            const monthValue = document.getElementById('monthlyReportDate').value;
+            if (!monthValue) {
+                const today = new Date();
+                document.getElementById('monthlyReportDate').value = today.toISOString().slice(0,7);
+                return loadMonthlyReport();
+            }
+
+            const [yearStr, monthStr] = monthValue.split('-');
+            const year = parseInt(yearStr);
+            const month = parseInt(monthStr);
+            const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+            // Build weeks array for this month
+            const firstDay = new Date(year, month-1, 1);
+            const lastDay = new Date(year, month, 0);
+            const weeks = [];
+            let currentWeekStart = new Date(firstDay);
+            
+            // Adjust to Monday if first day is not Monday
+            const dayOfWeek = currentWeekStart.getDay();
+            if (dayOfWeek !== 1) {
+                const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                currentWeekStart.setDate(currentWeekStart.getDate() + diff);
+            }
+
+            let levelFilter = null;
+            if (selectedBranch === 'gisozi_maternelle') levelFilter = 'nursery';
+            else if (selectedBranch === 'gisozi_primaire') levelFilter = 'primary';
+
+            while (currentWeekStart <= lastDay) {
+                const weekEnd = new Date(currentWeekStart);
+                weekEnd.setDate(currentWeekStart.getDate() + 6);
+                
+                // Clamp to month boundaries for display
+                const displayStart = new Date(Math.max(currentWeekStart, firstDay));
+                const displayEnd = new Date(Math.min(weekEnd, lastDay));
+                
+                let wkFees=0, wkTransport=0, wkCoaching=0, wkUniform=0, wkOther=0, wkExpenses=0;
+                let weekOpeningBalance = 0;
+                let weekFirstDay = true;
+                let weekJustifications = [];
+
+                // Loop through each day of the week
+                for (let d = new Date(displayStart); d <= displayEnd; d.setDate(d.getDate()+1)) {
+                const dateStr = new Date(d).toISOString().split('T')[0];
+                
+                if (weekFirstDay) {
+                    weekOpeningBalance = getOpeningBalanceValue(dateStr, firebaseBranch, 0);
+                    weekFirstDay = false;
+                }
+
+                const dayFees = studentFees.filter(fee => {
+                    const feeDate = new Date(fee.paymentDate).toISOString().split('T')[0];
+                    if (feeDate !== dateStr) return false;
+                    const student = students.find(s => s.id === fee.studentId);
+                    if (!student || student.branch !== firebaseBranch) return false;
+                    if (levelFilter && student.level !== levelFilter) return false;
+                    return true;
+                });
+
+                dayFees.forEach(fee => {
+                    const amt = parseFloat(fee.amount) || 0;
+                    switch(fee.paymentType) {
+                    case 'minervale': case 'fees': wkFees += amt; break;
+                    case 'transport': wkTransport += amt; break;
+                    case 'coaching': wkCoaching += amt; break;
+                    case 'uniforme': wkUniform += amt; break;
+                    default: wkOther += amt; break;
+                    }
+                });
+
+                if (typeof coachingPayments !== 'undefined') {
+                    coachingPayments.filter(p => p.branch === selectedBranch && p.paymentDate === dateStr)
+                    .forEach(p => wkCoaching += parseFloat(p.amount) || 0);
+                }
+                if (typeof transportPayments !== 'undefined') {
+                    transportPayments.filter(p => p.branch === selectedBranch && p.paymentDate === dateStr)
+                    .forEach(p => wkTransport += parseFloat(p.amount) || 0);
+                }
+
+                const dayExpensesList = dailyExpenses.filter(exp => exp.date === dateStr && exp.branch === firebaseBranch);
+                dayExpensesList.forEach(exp => {
+                    wkExpenses += parseFloat(exp.amount) || 0;
+                    weekJustifications.push(`${exp.category}: ${formatCurrencyRWF(exp.amount)}`);
+                });
+                }
+
+                const weekIncome = wkFees + wkTransport + wkCoaching + wkUniform + wkOther;
+                const weekClosing = weekOpeningBalance + weekIncome - wkExpenses;
+                const weekDiff = weekIncome - wkExpenses;
+
+                weeks.push({
+                label: `Week ${weeks.length + 1}`,
+                startDate: displayStart.toLocaleDateString('en-US',{month:'short',day:'numeric'}),
+                endDate: displayEnd.toLocaleDateString('en-US',{month:'short',day:'numeric'}),
+                opening: weekOpeningBalance,
+                fees: wkFees, transport: wkTransport, coaching: wkCoaching,
+                uniform: wkUniform, other: wkOther, expenses: wkExpenses,
+                income: weekIncome, closing: weekClosing, diff: weekDiff,
+                justifications: weekJustifications.join(' | ') || '—',
+                // Store full date range for expandable detail
+                fullStart: new Date(displayStart).toISOString().split('T')[0],
+                fullEnd: new Date(displayEnd).toISOString().split('T')[0]
+                });
+
+                currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+            }
+
+            // Render weeks table
+            const tbody = document.getElementById('monthlyWeeksTableBody');
+            tbody.innerHTML = '';
+            let monthFees=0, monthTransport=0, monthCoaching=0, monthUniform=0, monthOther=0;
+            let monthExpenses=0, monthDiff=0;
+            let monthOpening = weeks.length > 0 ? weeks[0].opening : 0;
+            let monthClosing = 0;
+
+            weeks.forEach((wk, idx) => {
+                monthFees += wk.fees;
+                monthTransport += wk.transport;
+                monthCoaching += wk.coaching;
+                monthUniform += wk.uniform;
+                monthOther += wk.other;
+                monthExpenses += wk.expenses;
+                monthDiff += wk.diff;
+                monthClosing = wk.closing;
+
+                const diffColor = wk.diff >= 0 ? 'color:#28a745;font-weight:bold;' : 'color:#dc3545;font-weight:bold;';
+                const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.title = 'Click to see daily detail';
+                tr.onclick = () => showMonthlyWeekDetail(wk);
+                tr.innerHTML = `
+                <td>
+                    <strong>${wk.label}</strong>
+                    <i class="fas fa-chevron-down ms-1 text-muted" style="font-size:0.7rem;"></i>
+                </td>
+                <td><small>${wk.startDate} — ${wk.endDate}</small></td>
+                <td class="text-end">${formatCurrencyRWF(wk.opening)}</td>
+                <td class="text-end ${wk.fees>0?'money-in':''}">${wk.fees>0?formatCurrencyRWF(wk.fees):'<span class="text-muted">—</span>'}</td>
+                <td class="text-end ${wk.transport>0?'money-in':''}">${wk.transport>0?formatCurrencyRWF(wk.transport):'<span class="text-muted">—</span>'}</td>
+                <td class="text-end ${wk.coaching>0?'money-in':''}">${wk.coaching>0?formatCurrencyRWF(wk.coaching):'<span class="text-muted">—</span>'}</td>
+                <td class="text-end ${wk.uniform>0?'money-in':''}">${wk.uniform>0?formatCurrencyRWF(wk.uniform):'<span class="text-muted">—</span>'}</td>
+                <td class="text-end ${wk.other>0?'money-in':''}">${wk.other>0?formatCurrencyRWF(wk.other):'<span class="text-muted">—</span>'}</td>
+                <td class="text-end ${wk.expenses>0?'money-out':''}">${wk.expenses>0?formatCurrencyRWF(wk.expenses):'<span class="text-muted">—</span>'}</td>
+                <td class="text-end balance">${formatCurrencyRWF(wk.closing)}</td>
+                <td class="text-end" style="${diffColor}">${formatCurrencyRWF(wk.diff)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Footer totals
+            const totalIncome = monthFees + monthTransport + monthCoaching + monthUniform + monthOther;
+            document.getElementById('monthTotalOpening').textContent = formatCurrencyRWF(monthOpening);
+            document.getElementById('monthTotalFees').textContent = formatCurrencyRWF(monthFees);
+            document.getElementById('monthTotalTransport').textContent = formatCurrencyRWF(monthTransport);
+            document.getElementById('monthTotalCoaching').textContent = formatCurrencyRWF(monthCoaching);
+            document.getElementById('monthTotalUniform').textContent = formatCurrencyRWF(monthUniform);
+            document.getElementById('monthTotalOther').textContent = formatCurrencyRWF(monthOther);
+            document.getElementById('monthTotalExpenses').textContent = formatCurrencyRWF(monthExpenses);
+            document.getElementById('monthTotalClosing').textContent = formatCurrencyRWF(monthClosing);
+            document.getElementById('monthTotalDifference').textContent = formatCurrencyRWF(monthDiff);
+
+            // Period label
+            document.getElementById('monthlyPeriodLabel').textContent = `${monthNames[month-1]} ${year}`;
+            document.getElementById('monthlyReportPreparedBy').value = currentUserName;
+
+            // Update income summary
+            updateReportExpectedCards();
+
+            // Store for PDF export
+            window.currentMonthlyData = { year, month, monthNames, weeks, totals: { fees:monthFees, transport:monthTransport, coaching:monthCoaching, uniform:monthUniform, other:monthOther, expenses:monthExpenses, income:totalIncome, diff:monthDiff, opening:monthOpening, closing:monthClosing }};
+            }
+
+            // Show expandable daily detail for a week inside monthly report
+            function showMonthlyWeekDetail(weekData) {
+            const detailDiv = document.getElementById('monthlyWeekDetail');
+            const detailTitle = document.getElementById('monthlyWeekDetailTitle');
+            const detailBody = document.getElementById('monthlyWeekDetailBody');
+            
+            // Toggle if same week
+            if (detailTitle.textContent === `${weekData.label} Detail (${weekData.startDate} — ${weekData.endDate})`) {
+                detailDiv.style.display = detailDiv.style.display === 'none' ? 'block' : 'none';
+                return;
+            }
+            
+            detailTitle.textContent = `${weekData.label} Detail (${weekData.startDate} — ${weekData.endDate})`;
+            detailBody.innerHTML = '';
+            detailDiv.style.display = 'block';
+            
+            const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+            const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+            let levelFilter = null;
+            if (selectedBranch === 'gisozi_maternelle') levelFilter = 'nursery';
+            else if (selectedBranch === 'gisozi_primaire') levelFilter = 'primary';
+
+            const start = new Date(weekData.fullStart);
+            const end = new Date(weekData.fullEnd);
+            let runningBal = weekData.opening;
+
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+                const dateStr = new Date(d).toISOString().split('T')[0];
+                const openingBal = getOpeningBalanceValue(dateStr, firebaseBranch, runningBal);
+
+                const dayFees = studentFees.filter(fee => {
+                const feeDate = new Date(fee.paymentDate).toISOString().split('T')[0];
+                if (feeDate !== dateStr) return false;
+                const student = students.find(s => s.id === fee.studentId);
+                if (!student || student.branch !== firebaseBranch) return false;
+                if (levelFilter && student.level !== levelFilter) return false;
+                return true;
+                });
+
+                let df=0, dt=0, dc=0, du=0, dOther=0;
+                dayFees.forEach(fee => {
+                const amt = parseFloat(fee.amount)||0;
+                switch(fee.paymentType) {
+                    case 'minervale': case 'fees': df+=amt; break;
+                    case 'transport': dt+=amt; break;
+                    case 'coaching': dc+=amt; break;
+                    case 'uniforme': du+=amt; break;
+                    default: dOther+=amt; break;
+                }
+                });
+
+                if (typeof coachingPayments !== 'undefined')
+                coachingPayments.filter(p=>p.branch===selectedBranch&&p.paymentDate===dateStr).forEach(p=>dc+=parseFloat(p.amount)||0);
+                if (typeof transportPayments !== 'undefined')
+                transportPayments.filter(p=>p.branch===selectedBranch&&p.paymentDate===dateStr).forEach(p=>dt+=parseFloat(p.amount)||0);
+
+                const dayExpList = dailyExpenses.filter(exp=>exp.date===dateStr&&exp.branch===firebaseBranch);
+                const dayExp = dayExpList.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+                const justText = dayExpList.map(e=>`${e.category}: ${formatCurrencyRWF(e.amount)}`).join(' | ')||'—';
+
+                const income = df+dt+dc+du+dOther;
+                const closing = openingBal + income - dayExp;
+                const diff = income - dayExp;
+                
+                // Sauvegarder automatiquement le Closing Balance
+                saveClosingBalance(dateStr, closing);
+                
+                runningBal = closing;
+
+                const diffColor = diff>=0?'color:#28a745;font-weight:bold;':'color:#dc3545;font-weight:bold;';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td><strong>${dayNames[new Date(dateStr).getDay()]}</strong></td>
+                <td><small>${new Date(dateStr).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</small></td>
+                <td class="text-end">${formatCurrencyRWF(openingBal)}</td>
+                <td class="text-end ${df>0?'money-in':''}">${df>0?formatCurrencyRWF(df):'—'}</td>
+                <td class="text-end ${dt>0?'money-in':''}">${dt>0?formatCurrencyRWF(dt):'—'}</td>
+                <td class="text-end ${dc>0?'money-in':''}">${dc>0?formatCurrencyRWF(dc):'—'}</td>
+                <td class="text-end ${du>0?'money-in':''}">${du>0?formatCurrencyRWF(du):'—'}</td>
+                <td class="text-end ${dOther>0?'money-in':''}">${dOther>0?formatCurrencyRWF(dOther):'—'}</td>
+                <td><small style="font-size:0.75rem;">${justText}</small></td>
+                <td class="text-end ${dayExp>0?'money-out':''}">${dayExp>0?formatCurrencyRWF(dayExp):'—'}</td>
+                <td class="text-end balance">${formatCurrencyRWF(closing)}</td>
+                <td class="text-end" style="${diffColor}">${formatCurrencyRWF(diff)}</td>
+                `;
+                detailBody.appendChild(tr);
+            }
+            }
+
+            // Navigate month
+            function navigateMonth(direction) {
+            const input = document.getElementById('monthlyReportDate');
+            const val = input.value;
+            if (!val) return;
+            const [y, m] = val.split('-').map(Number);
+            const newDate = new Date(y, m - 1 + direction, 1);
+            const newY = newDate.getFullYear();
+            const newM = String(newDate.getMonth()+1).padStart(2,'0');
+            input.value = `${newY}-${newM}`;
+            loadMonthlyReport();
+            }
+
+            // Generate monthly report (save to history)
+            async function generateMonthlyReport() {
+                try {
+                    const monthValue = document.getElementById('monthlyReportDate').value;
+                    const period = document.getElementById('monthlyPeriod').value;
+                    const analysis = document.getElementById('monthlyAnalysis').value;
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                    
+                    const [year, month] = monthValue.split('-').map(Number);
+                    const firstDay = new Date(year, month-1, 1);
+                    const lastDay = new Date(year, month, 0);
+                    
+                    let totalIncomeMonth = 0, totalExpensesMonth = 0;
+                    for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+                        const dateStr = d.toISOString().split('T')[0];
+                        const dayFees = studentFees.filter(fee => {
+                            const feeDate = new Date(fee.paymentDate).toISOString().split('T')[0];
+                            const student = students.find(s => s.id === fee.studentId);
+                            return feeDate === dateStr && student && student.branch === selectedBranch;
+                        });
+                        totalIncomeMonth += dayFees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
+                        
+                        const dayExpenses = dailyExpenses.filter(exp => exp.date === dateStr && exp.branch === selectedBranch);
+                        totalExpensesMonth += dayExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+                    }
+                    
+                    const openingBalanceMonth = getOpeningBalanceValue(firstDay.toISOString().split('T')[0], firebaseBranch, 0);
+                    const closingBalanceMonth = openingBalanceMonth + totalIncomeMonth - totalExpensesMonth;
+                    
+                    const reportData = {
+                        period: monthValue,
+                        month: month,
+                        year: year,
+                        totalIncome: totalIncomeMonth,
+                        totalExpenses: totalExpensesMonth,
+                        openingBalance: openingBalanceMonth,
+                        closingBalance: closingBalanceMonth,
+                        difference: totalIncomeMonth - totalExpensesMonth,
+                        analysis: analysis,
+                        branch: selectedBranch,
+                        preparedBy: document.getElementById('monthlyReportPreparedBy').value,
+                        generatedBy: currentUserName,
+                        timestamp: Date.now(),
+                        type: 'monthly'
+                    };
+                    
+                    const monthlyKey = makeCompositeKey('monthly', selectedBranch, monthValue);
+                    await monthlyReportsRef.child(monthlyKey).set(reportData);
+                    await reportHistoryRef.child(monthlyKey).set(reportData);
+                    
+                    showToast('Monthly report generated and saved!', 'success');
+                } catch (error) {
+                    console.error('Error generating monthly report:', error);
+                    showToast('Error generating monthly report', 'error');
+                }
+            }
+
+            // Load report history
+            async function loadReportHistory() {
+                const tbody = document.getElementById('reportHistoryTable');
+                tbody.innerHTML = '';
+                
+                // Get reports from history (already loaded via listener)
+                const branchHistory = reportHistory.filter(r => r.branch === selectedBranch);
+                
+                if (branchHistory.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center">No report history</td></tr>';
+                    return;
+                }
+                
+                branchHistory.sort((a, b) => b.timestamp - a.timestamp);
+                
+                branchHistory.forEach(report => {
+                    const typeLabel = report.type === 'daily' ? 'Daily' : report.type === 'weekly' ? 'Weekly' : 'Monthly';
+                    const periodDisplay = report.date || report.period || report.startDate || report.monthYear || 'N/A';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${new Date(report.timestamp).toLocaleDateString('en-US')}</td>
+                        <td><span class="badge ${report.type === 'daily' ? 'bg-info' : report.type === 'weekly' ? 'bg-success' : 'bg-primary'}">${typeLabel}</span></td>
+                        <td>${periodDisplay}</td>
+                        <td>${formatCurrencyRWF(report.totalIncome || 0)}</td>
+                        <td>${formatCurrencyRWF(report.totalExpenses || 0)}</td>
+                        <td class="${(report.difference || 0) >= 0 ? 'money-in' : 'money-out'}">${formatCurrencyRWF(report.difference || 0)}</td>
+                        <td>${report.generatedBy || report.preparedBy || 'N/A'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewReportDetails('${report.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // View report details (placeholder)
+            function viewReportDetails(reportId) {
+                const report = reportHistory.find(r => r.id === reportId);
+                if (!report) return;
+                
+                // For simplicity, show an alert with report info
+                let details = `Report Type: ${report.type}\n`;
+                details += `Period: ${report.date || report.period || report.startDate || 'N/A'}\n`;
+                details += `Total Income: ${formatCurrencyRWF(report.totalIncome || 0)}\n`;
+                details += `Total Expenses: ${formatCurrencyRWF(report.totalExpenses || 0)}\n`;
+                details += `Difference: ${formatCurrencyRWF(report.difference || 0)}\n`;
+                if (report.summary) details += `Summary: ${report.summary}\n`;
+                if (report.analysis) details += `Analysis: ${report.analysis}\n`;
+                details += `Generated by: ${report.generatedBy || report.preparedBy}\n`;
+                details += `Date: ${new Date(report.timestamp).toLocaleString('en-US')}`;
+                
+                alert(details);
+            }
+
+            // Save settings
+            async function saveSettings() {
+                const settingsData = {
+                    overtimeRate: parseFloat(document.getElementById('overtimeRate').value) || 0,
+                    socialRate: parseFloat(document.getElementById('socialRate').value) || 0,
+                    paymentDay: document.getElementById('paymentDay').value,
+                    currency: document.getElementById('currency').value,
+                    updatedBy: currentUserName,
+                    updatedAt: Date.now()
+                };
+                
+                try {
+                    await settingsRef.set(settingsData);
+                    showToast('Settings saved successfully!', 'success');
+                } catch (error) {
+                    console.error('Error saving settings:', error);
+                    showToast('Error saving settings', 'error');
+                }
+            }
+
+            // Migrate Teachers to Works
+            async function migrateTeachersToWorks() {
+                // Confirmation dialog
+                if (!confirm('Are you sure you want to migrate all teachers data to the works node? This action will copy all teacher records and cannot be undone.')) {
+                    return;
+                }
+
+                try {
+                    console.log('Starting migration: teachers → works...');
+                    showToast('⏳ Migration in progress...', 'info');
+
+                    // 1. Read all data from 'teachers'
+                    const teachersSnap = await db.ref('teachers').once('value');
+                    if (!teachersSnap.exists()) {
+                        console.log('No teachers found to migrate');
+                        showToast('⚠️ No teachers found to migrate', 'warning');
+                        return;
+                    }
+
+                    const updates = {};
+                    let migratedCount = 0;
+
+                    teachersSnap.forEach(child => {
+                        const teacherId = child.key;
+                        const teacherData = child.val();
+
+                        // 2. Copy each teacher to 'works' with the same ID
+                        updates[`works/${teacherId}`] = {
+                            ...teacherData,
+                            migratedFrom: 'teachers',
+                            migratedAt: Date.now(),
+                            migratedBy: currentUserName || 'system'
+                        };
+
+                        migratedCount++;
+                    });
+
+                    // 3. Apply all updates in a single operation
+                    await db.ref().update(updates);
+
+                    console.log(`✅ Migration completed successfully: ${migratedCount} teacher(s) migrated`);
+                    showToast(`✅ Successfully migrated ${migratedCount} teacher(s) to works!`, 'success');
+
+                    // Log the migration activity
+                    if (typeof logActivity === 'function') {
+                        await logActivity('DATA_MIGRATION', `Migrated ${migratedCount} teachers to works node`, 'migration', {
+                            migratedCount: migratedCount,
+                            source: 'teachers',
+                            destination: 'works'
+                        });
+                    }
+
+                } catch (error) {
+                    console.error('❌ Error during migration:', error);
+                    showToast('❌ Error during migration: ' + error.message, 'error');
+                }
+            }
+
+            // Save accountant info
+            async function saveAccountantInfo() {
+                if (!currentUserUID) {
+                    showToast('User not authenticated', 'error');
+                    return;
+                }
+                
+                const accountantData = {
+                    name: document.getElementById('accountantName').value,
+                    email: document.getElementById('accountantEmail').value,
+                    role: currentUser?.role || 'comptable',
+                    branch: currentUser?.branch || selectedBranch,
+                    title: document.getElementById('accountantTitle').value,
+                    updatedAt: Date.now(),
+                    updatedBy: currentUserName
+                };
+                
+                try {
+                    // Keep both generic and role-specific profile records in sync
+                    await Promise.all([
+                        usersRef.child(currentUserUID).update(accountantData),
+                        db.ref('accountants/' + currentUserUID).update({
+                            name: accountantData.name,
+                            email: accountantData.email,
+                            role: accountantData.role,
+                            branch: accountantData.branch,
+                            title: accountantData.title,
+                            updatedAt: accountantData.updatedAt,
+                            updatedBy: accountantData.updatedBy
+                        })
+                    ]);
+                    currentUser = {
+                        ...currentUser,
+                        ...accountantData
+                    };
+                    currentUserName = accountantData.name;
+                    updateUIWithUserInfo();
+                    showToast('Accountant information saved successfully!', 'success');
+                } catch (error) {
+                    console.error('Error saving accountant info:', error);
+                    showToast('Error saving accountant info', 'error');
+                }
+            }
+
+            function toggleAccountantPasswordVisibility(inputId, triggerBtn) {
+                const input = document.getElementById(inputId);
+                if (!input) return;
+
+                const reveal = input.type === 'password';
+                input.type = reveal ? 'text' : 'password';
+                if (triggerBtn) triggerBtn.textContent = reveal ? 'Hide' : 'Show';
+            }
+
+            function getAccountantFriendlyAuthError(error) {
+                const code = (error && error.code) || '';
+                switch (code) {
+                    case 'auth/invalid-email':
+                        return 'Invalid email address.';
+                    case 'auth/email-already-in-use':
+                        return 'This email is already used by another account.';
+                    case 'auth/weak-password':
+                        return 'The new password is too weak.';
+                    case 'auth/wrong-password':
+                        return 'Current password is incorrect.';
+                    case 'auth/requires-recent-login':
+                        return 'Sensitive action requires a recent login. Please reconnect and try again.';
+                    default:
+                        return (error && error.message) || 'Unable to update credentials.';
+                }
+            }
+
+            async function updateAccountantCredentials() {
+                const user = auth.currentUser;
+                if (!user) {
+                    showToast('No authenticated user. Please sign in again.', 'error');
+                    return;
+                }
+
+                const newEmailInput = document.getElementById('accountCredsNewEmail');
+                const currentPasswordInput = document.getElementById('accountCredsCurrentPassword');
+                const newPasswordInput = document.getElementById('accountCredsNewPassword');
+                const confirmPasswordInput = document.getElementById('accountCredsConfirmPassword');
+                const updateBtn = document.getElementById('updateAccountantCredsBtn');
+
+                const newEmail = (newEmailInput && newEmailInput.value || '').trim();
+                const currentPassword = (currentPasswordInput && currentPasswordInput.value || '').trim();
+                const newPassword = (newPasswordInput && newPasswordInput.value || '').trim();
+                const confirmPassword = (confirmPasswordInput && confirmPasswordInput.value || '').trim();
+
+                const currentEmail = (user.email || '').trim();
+                const wantsEmailChange = !!newEmail && newEmail.toLowerCase() !== currentEmail.toLowerCase();
+                const wantsPasswordChange = !!newPassword;
+
+                if (!wantsEmailChange && !wantsPasswordChange) {
+                    showToast('No changes detected.', 'warning');
+                    return;
+                }
+
+                if (!currentPassword) {
+                    showToast('Please enter your current password to confirm.', 'warning');
+                    return;
+                }
+
+                if (wantsPasswordChange) {
+                    if (newPassword.length < 6) {
+                        showToast('New password must be at least 6 characters.', 'warning');
+                        return;
+                    }
+                    if (newPassword !== confirmPassword) {
+                        showToast('Password confirmation does not match.', 'warning');
+                        return;
+                    }
+                }
+
+                const originalBtnHtml = updateBtn ? updateBtn.innerHTML : '';
+                if (updateBtn) {
+                    updateBtn.disabled = true;
+                    updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+                }
+
+                try {
+                    const credential = firebase.auth.EmailAuthProvider.credential(currentEmail || newEmail, currentPassword);
+                    await user.reauthenticateWithCredential(credential);
+
+                    if (wantsEmailChange) {
+                        await user.updateEmail(newEmail);
+                        await Promise.all([
+                            usersRef.child(user.uid).update({
+                                email: newEmail,
+                                updatedAt: Date.now(),
+                                updatedBy: currentUserName || 'system'
+                            }),
+                            db.ref('accountants/' + user.uid).update({
+                                email: newEmail,
+                                updatedAt: Date.now(),
+                                updatedBy: currentUserName || 'system'
+                            })
+                        ]);
+                        if (currentUser) currentUser.email = newEmail;
+                        const accountantEmailEl = document.getElementById('accountantEmail');
+                        if (accountantEmailEl) accountantEmailEl.value = newEmail;
+                        if (newEmailInput) newEmailInput.value = newEmail;
+                    }
+
+                    if (wantsPasswordChange) {
+                        await user.updatePassword(newPassword);
+                    }
+
+                    if (currentPasswordInput) currentPasswordInput.value = '';
+                    if (newPasswordInput) newPasswordInput.value = '';
+                    if (confirmPasswordInput) confirmPasswordInput.value = '';
+
+                    showToast('Credentials updated successfully in Firebase Auth.', 'success');
+                } catch (error) {
+                    console.error('Error updating accountant credentials:', error);
+                    showToast(getAccountantFriendlyAuthError(error), 'error');
+                } finally {
+                    if (updateBtn) {
+                        updateBtn.disabled = false;
+                        updateBtn.innerHTML = originalBtnHtml;
+                    }
+                }
+            }
+
+            // Save term configuration
+            async function saveTermConfig() {
+                const trimesterValue = document.getElementById('termTrimester').value;
+                const termData = {
+                    academicYear: document.getElementById('termAcademicYear').value,
+                    trimester: trimesterValue,
+                    trimestre: trimesterValue,
+                    startDate: document.getElementById('termStartDate').value,
+                    endDate: document.getElementById('termEndDate').value,
+                    updatedAt: Date.now(),
+                    updatedBy: currentUserName
+                };
+
+                try {
+                    await db.ref('settings/termConfig').set(termData);
+                    currentTermConfig = termData;
+                    // Update fee configuration form
+                    document.getElementById('feeQuarter').value = currentTermConfig.trimester;
+                    document.getElementById('feeYear').value = currentTermConfig.academicYear;
+                    // Load fee configuration for new term
+                    loadFeeConfiguration();
+                    // Calculate expected income for new term
+                    recalculateExpectedIncome();
+                    showToast('Term configuration saved successfully!', 'success');
+                } catch (error) {
+                    console.error('Error saving term config:', error);
+                    showToast('Error saving term configuration', 'error');
+                }
+            }
+
+            // Load term configuration
+            function formatTermPeriodLabel(trimester) {
+                const value = String(trimester || '');
+                if (value === 'vacances') return 'Vacances';
+                if (['1', '2', '3'].includes(value)) return `T${value}`;
+                return value || '?';
+            }
+
+            async function loadTermConfig() {
+                try {
+                    const snapshot = await db.ref('settings/termConfig').once('value');
+                    if (snapshot.exists()) {
+                        currentTermConfig = snapshot.val();
+                        // Populate the form
+                        const calculatedAcademicYear = getAcademicYearForEnrollmentDate(new Date());
+                        currentTermConfig.academicYear = calculatedAcademicYear;
+                        document.getElementById('termAcademicYear').value = calculatedAcademicYear;
+                        document.getElementById('termTrimester').value = currentTermConfig.trimester || '';
+                        document.getElementById('termStartDate').value = currentTermConfig.startDate || '';
+                        document.getElementById('termEndDate').value = currentTermConfig.endDate || '';
+                    } else {
+                        // Default values
+                        currentTermConfig = {
+                            academicYear: getAcademicYearForEnrollmentDate(new Date()),
+                            trimester: '1',
+                            startDate: '',
+                            endDate: ''
+                        };
+                    }
+                    // Set fee configuration form to current term
+                    document.getElementById('feeQuarter').value = currentTermConfig.trimester;
+                    document.getElementById('feeYear').value = currentTermConfig.academicYear;
+                    // Load fee configuration for current term
+                    loadFeeConfiguration();
+                } catch (error) {
+                    console.error('Error loading term config:', error);
+                    currentTermConfig = {
+                        academicYear: '2025-2026',
+                        trimester: '1',
+                        startDate: '',
+                        endDate: ''
+                    };
+                }
+            }
+
+            // Save fee configuration
+            async function saveFeeConfiguration() {
+                const branch = document.getElementById('feeBranch').value;
+                const quarter = document.getElementById('feeQuarter').value;
+                const year = document.getElementById('feeYear').value;
+                
+                const feeConfigData = {
+                    branch: branch,
+                    trimester: quarter === 'vacances' ? 'vacances' : parseInt(quarter, 10),
+                    academicYear: year,
+                    schoolFees: {
+                        fees: parseInt(document.getElementById('feeFees').value) || 150000,
+                        transport: parseInt(document.getElementById('feeTransport').value) || 50000,
+                        coaching: parseInt(document.getElementById('feeCoaching').value) || 80000,
+                        uniform: parseInt(document.getElementById('feeUniform').value) || 30000
+                    },
+                    additionalFees: {
+                        lunch: parseInt(document.getElementById('feeLunch').value) || 20000,
+                        breakfast: parseInt(document.getElementById('feeBreakfast').value) || 10000,
+                        material: parseInt(document.getElementById('feeMaterial').value) || 15000,
+                        insurance: parseInt(document.getElementById('feeInsurance').value) || 10000
+                    },
+                    total: 0,
+                    updatedBy: currentUserName,
+                    updatedAt: Date.now()
+                };
+                
+                // Calculate total
+                feeConfigData.total = Object.values(feeConfigData.schoolFees).reduce((a, b) => a + b, 0) + 
+                                    Object.values(feeConfigData.additionalFees).reduce((a, b) => a + b, 0);
+                
+                try {
+                    // Create key based on branch, trimester and year
+                    const configKey = `EDEN_FAMILY_SCHOOL_${branch.toUpperCase().replace(/\s+/g, '_')}_${quarter}_${year}`;
+                    await feeConfigRef.child(configKey).set(feeConfigData);
+                    showToast('Fee configuration saved successfully!', 'success');
+                } catch (error) {
+                    console.error('Error saving fee configuration:', error);
+                    showToast('Error saving fee configuration', 'error');
+                }
+            }
+
+            // Backup data
+            async function backupData() {
+                try {
+                    // Récupérer toutes les données
+                    const allData = {
+                        teachers: teachers,
+                        students: students,
+                        studentFees: studentFees,
+                        debts: debts,
+                        dailyExpenses: dailyExpenses,
+                        payrollHistory: payrollHistory,
+                        timestamp: Date.now(),
+                        backedUpBy: currentUserName
+                    };
+                    
+                    // Créer un blob JSON
+                    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Créer un lien de téléchargement
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `backup_edensmart_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    showToast('Backup created successfully!', 'success');
+                } catch (error) {
+                    console.error('Error creating backup:', error);
+                    showToast('Error creating backup', 'error');
+                }
+            }
+
+            async function getDailyReportForExport(date) {
+                const dailyKey = makeCompositeKey('daily', selectedBranch, date);
+                const keySnapshot = await dailyReportsRef.child(dailyKey).once('value');
+                if (keySnapshot.exists()) {
+                    return keySnapshot.val();
+                }
+
+                const snapshot = await dailyReportsRef
+                    .orderByChild('date')
+                    .equalTo(date)
+                    .once('value');
+
+                let fallback = null;
+                if (snapshot.exists()) {
+                    snapshot.forEach(childSnapshot => {
+                        if (fallback) return;
+                        const report = childSnapshot.val();
+                        if (report && report.branch === selectedBranch) {
+                            fallback = report;
+                        }
+                    });
+                }
+
+                if (fallback) {
+                    return fallback;
+                }
+
+                return getDailyReportSummary(date);
+            }
+
+            // Export Daily Report to Excel
+            async function exportDailyReportExcel() {
+                try {
+                    const date = document.getElementById('dailyReportDate').value;
+                    if (!date) {
+                        showToast('Please select a date', 'error');
+                        return;
+                    }
+
+                    const reportData = await getDailyReportForExport(date);
+                    const tableRows = Array.isArray(reportData?.tableRow) && reportData.tableRow.length > 0
+                        ? reportData.tableRow
+                        : getDailyReportSummary(date).tableRow;
+
+                    const exportData = tableRows.map(row => ({
+                        'Opening Balance': row['Opening Balance'],
+                        'Fees': row['Fees'],
+                        'Transport': row['Transport'],
+                        'Coaching': row['Coaching'],
+                        'Uniform': row['Uniform'],
+                        'Other': row['Other'],
+                        'Justification': row['Justification'],
+                        'Amount': row['Amount'],
+                        'Total Expenses': row['Total Expenses'],
+                        'Closing Balance': row['Closing Balance'],
+                        'Difference': row['Difference']
+                    }));
+
+                    const observations = (reportData?.generalObservations || document.getElementById('generalObservations')?.value || '').toString().trim();
+                    exportData.push({
+                        'Opening Balance': '',
+                        'Fees': '',
+                        'Transport': '',
+                        'Coaching': '',
+                        'Uniform': '',
+                        'Other': '',
+                        'Justification': 'General Observations',
+                        'Amount': observations || 'No observations.',
+                        'Total Expenses': '',
+                        'Closing Balance': '',
+                        'Difference': ''
+                    });
+
+                    const ws = XLSX.utils.json_to_sheet(exportData);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Daily Report');
+
+                    XLSX.writeFile(wb, `daily_report_${date}.xlsx`);
+                    showToast('Daily report exported to Excel successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting daily report Excel:', error);
+                    showToast('Error exporting Excel', 'error');
+                }
+            }
+
+            // Export Daily Report to PDF
+            async function exportDailyReportPDF() {
+                try {
+                    const date = document.getElementById('dailyReportDate').value;
+                    if (!date) { showToast('Please select a date', 'error'); return; }
+
+                    const reportData = await getDailyReportForExport(date);
+                    const tableRows = Array.isArray(reportData?.tableRow) && reportData.tableRow.length > 0
+                        ? reportData.tableRow
+                        : getDailyReportSummary(date).tableRow;
+                    const row = tableRows[0];
+                    const d = window.expectedIncomeData || {};
+                    const term = window.currentTermConfig || {};
+                    const branchName = getBranchName(selectedBranch);
+
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                    const pageW = doc.internal.pageSize.getWidth();
+                    const margin = 14;
+                    const schoolLogoUrl = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931288/logo_eden_yg7o6h.png';
+
+                    const loadImageAsDataUrl = async (url) => {
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error('Unable to load school logo');
+                        const blob = await response.blob();
+                        return await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.onerror = () => reject(new Error('Unable to read school logo'));
+                            reader.readAsDataURL(blob);
+                        });
+                    };
+
+                    // ---- HEADER WITH LOGO ----
+                    try {
+                        const schoolLogoDataUrl = await loadImageAsDataUrl(schoolLogoUrl);
+                        doc.addImage(schoolLogoDataUrl, 'PNG', margin + 2, 8, 20, 20);
+                        doc.addImage(schoolLogoDataUrl, 'PNG', pageW - margin - 22, 8, 20, 20);
+                    } catch (logoError) {
+                        console.warn('Daily report logo fallback used:', logoError);
+                        doc.setFillColor(46, 139, 87);
+                        doc.circle(margin + 12, 18, 12, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(6);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text('EDEN', margin + 12, 16, { align: 'center' });
+                        doc.text('FAMILY', margin + 12, 19, { align: 'center' });
+                        doc.text('SCHOOL', margin + 12, 22, { align: 'center' });
+
+                        doc.setFillColor(46, 139, 87);
+                        doc.circle(pageW - margin - 12, 18, 12, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.text('EDEN', pageW - margin - 12, 16, { align: 'center' });
+                        doc.text('FAMILY', pageW - margin - 12, 19, { align: 'center' });
+                        doc.text('SCHOOL', pageW - margin - 12, 22, { align: 'center' });
+                    }
+
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFontSize(13);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('DAILY FINANCIAL REPORT', pageW / 2, 12, { align: 'center' });
+                    doc.setFontSize(10);
+                    doc.text('EDEN FAMILY SCHOOL', pageW / 2, 18, { align: 'center' });
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('MATERNELLE (N1, N2, N3) ET PRIMAIRE (P1, P2, P3, P4)', pageW / 2, 23, { align: 'center' });
+                    doc.text('BRANCHE DE KACYIRU, GISOZI, KIMISAGARA', pageW / 2, 27, { align: 'center' });
+
+                    doc.setDrawColor(46, 139, 87);
+                    doc.setLineWidth(0.8);
+                    doc.line(margin, 31, pageW - margin, 31);
+
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('Branch: ' + branchName, margin, 37);
+                    doc.text('Date: ' + new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), margin, 42);
+                    doc.text('Trimester: ' + formatTermPeriodLabel(term.trimester) + ' | Academic Year: ' + (term.academicYear || '?'), margin, 47);
+                    doc.text('Prepared by: ' + currentUserName, margin, 52);
+                    doc.text('Generated: ' + new Date().toLocaleString('en-US'), pageW - margin, 52, { align: 'right' });
+
+                    doc.setLineWidth(0.3);
+                    doc.line(margin, 55, pageW - margin, 55);
+
+                    // ---- DAILY TRANSACTIONS TABLE ----
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('DAILY TRANSACTIONS', margin, 61);
+
+                    doc.autoTable({
+                        head: [['Opening Balance', 'Fees', 'Transport', 'Coaching', 'Uniform', 'Other', 'Justification', 'Expenses', 'Closing Balance', 'Difference']],
+                        body: [[
+                            formatCurrencyRWF(row['Opening Balance']),
+                            formatCurrencyRWF(row['Fees'] || row['Tuition'] || 0),
+                            formatCurrencyRWF(row['Transport'] || 0),
+                            formatCurrencyRWF(row['Coaching'] || 0),
+                            formatCurrencyRWF(row['Uniform'] || 0),
+                            formatCurrencyRWF(row['Other'] || 0),
+                            row['Justification'] || '—',
+                            formatCurrencyRWF(row['Total Expenses'] || 0),
+                            formatCurrencyRWF(row['Closing Balance'] || 0),
+                            formatCurrencyRWF(row['Difference'] || 0)
+                        ]],
+                        startY: 64,
+                        theme: 'grid',
+                        styles: { fontSize: 7, cellPadding: 2 },
+                        headStyles: { fillColor: [46, 139, 87], textColor: [255, 255, 255], fontStyle: 'bold' },
+                        margin: { left: margin, right: margin }
+                    });
+
+                    let currentY = doc.lastAutoTable.finalY + 8;
+
+                    // ---- GENERAL OBSERVATIONS (before income summary) ----
+                    const generalObservations = (reportData?.generalObservations || document.getElementById('generalObservations')?.value || '').toString().trim();
+                    const observationsText = generalObservations || 'No observations.';
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('GENERAL OBSERVATIONS', margin, currentY);
+                    currentY += 4;
+                    const observationsLines = doc.splitTextToSize(observationsText, pageW - margin * 2 - 4);
+                    const obsHeight = Math.max(10, observationsLines.length * 4 + 4);
+                    doc.setDrawColor(220, 220, 220);
+                    doc.rect(margin, currentY, pageW - margin * 2, obsHeight);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.text(observationsLines, margin + 2, currentY + 4);
+                    currentY += obsHeight + 6;
+
+                    // ---- INCOME SUMMARY SECTION ----
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('INCOME SUMMARY — ' + branchName.toUpperCase(), margin, currentY);
+                    currentY += 4;
+
+                    const colW = (pageW - margin * 2) / 3;
+
+                    const drawSummaryBox = (x, y, w, title, color, data) => {
+                        doc.setFillColor(...color);
+                        doc.rect(x, y, w - 2, 5, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(8);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(title, x + (w - 2) / 2, y + 3.5, { align: 'center' });
+                        doc.setTextColor(0, 0, 0);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(7);
+                        let lineY = y + 8;
+                        data.forEach(item => {
+                            doc.text(item.label + ':', x + 1, lineY);
+                            doc.setFont('helvetica', 'bold');
+                            doc.text(item.value, x + w - 3, lineY, { align: 'right' });
+                            doc.setFont('helvetica', 'normal');
+                            lineY += 5;
+                        });
+                        return lineY;
+                    };
+
+                    const feesData = [
+                        { label: 'Total Students', value: String(d.fees?.students || 0) },
+                        { label: 'Expected (trimester)', value: formatCurrencyRWF(d.fees?.expected || 0) },
+                        { label: 'Expected (monthly)', value: formatCurrencyRWF(d.fees?.expectedMonthly || 0) },
+                        { label: 'Total Actual Income', value: formatCurrencyRWF(d.fees?.actual || 0) },
+                        { label: 'Remaining', value: formatCurrencyRWF(d.fees?.remaining || 0) }
+                    ];
+                    const coachData = [
+                        { label: 'Total Students', value: String(d.coaching?.students || 0) },
+                        { label: 'Expected (trimester)', value: formatCurrencyRWF(d.coaching?.expected || 0) },
+                        { label: 'Expected (monthly)', value: formatCurrencyRWF(d.coaching?.expectedMonthly || 0) },
+                        { label: 'Total Actual Income', value: formatCurrencyRWF(d.coaching?.actual || 0) },
+                        { label: 'Remaining', value: formatCurrencyRWF(d.coaching?.remaining || 0) }
+                    ];
+                    const transData = [
+                        { label: 'Total Students', value: String(d.transport?.students || 0) },
+                        { label: 'Expected (trimester)', value: formatCurrencyRWF(d.transport?.expected || 0) },
+                        { label: 'Expected (monthly)', value: formatCurrencyRWF(d.transport?.expectedMonthly || 0) },
+                        { label: 'Total Actual Income', value: formatCurrencyRWF(d.transport?.actual || 0) },
+                        { label: 'Remaining', value: formatCurrencyRWF(d.transport?.remaining || 0) }
+                    ];
+
+                    const endY1 = drawSummaryBox(margin, currentY + 2, colW, 'FEES', [0, 123, 255], feesData);
+                    const endY2 = drawSummaryBox(margin + colW, currentY + 2, colW, 'COACHING', [111, 66, 193], coachData);
+                    const endY3 = drawSummaryBox(margin + colW * 2, currentY + 2, colW, 'TRANSPORT', [253, 126, 20], transData);
+
+                    currentY = Math.max(endY1, endY2, endY3) + 4;
+
+                    doc.setFillColor(46, 139, 87);
+                    doc.rect(margin, currentY, pageW - margin * 2, 6, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('GRAND TOTAL', margin + 4, currentY + 4);
+                    doc.text('Expected: ' + formatCurrencyRWF(d.totals?.grandExpected || 0), margin + 40, currentY + 4);
+                    doc.text('Actual: ' + formatCurrencyRWF(d.totals?.grandActual || 0), margin + 100, currentY + 4);
+                    doc.text('Remaining: ' + formatCurrencyRWF(d.totals?.grandRemaining || 0), margin + 145, currentY + 4);
+                    currentY += 10;
+
+                    // ---- SIGNATURES ----
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('School Authorities:', margin, currentY);
+                    doc.text('DIRECTOR: 0788883842', margin, currentY + 4);
+                    doc.text('COMPTABLE: 0792570074', margin, currentY + 8);
+
+                    currentY += 15;
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('ACCOUNTANT SIGNATURE:', margin, currentY);
+                    doc.text('DIRECTOR SIGNATURE:', pageW / 2, currentY);
+                    doc.setLineWidth(0.3);
+                    doc.line(margin, currentY + 10, margin + 60, currentY + 10);
+                    doc.line(pageW / 2, currentY + 10, pageW / 2 + 60, currentY + 10);
+
+                    doc.save('daily_report_' + branchName.replace(/\s/g, '_') + '_' + date + '.pdf');
+                    showToast('Daily report PDF downloaded!', 'success');
+                } catch (error) {
+                    console.error('Error exporting daily PDF:', error);
+                    showToast('Error: ' + error.message, 'error');
+                }
+            }
+
+            // Export Weekly Report to Excel
+            function exportWeeklyReportExcel() {
+                try {
+                    const weekStart = document.getElementById('weeklyReportDate').value;
+                    if (!weekStart) {
+                        showToast('Please select a week', 'error');
+                        return;
+                    }
+                    
+                    // Get data from table rows
+                    const rows = [];
+                    let totalIncome = 0;
+                    let totalExpenses = 0;
+                    let totalClosingBalance = 0;
+                    let totalDifference = 0;
+                    
+                    document.querySelectorAll('#weeklyReportTable tr').forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 6) {
+                            const income = parseFloat(cells[2]?.innerText?.replace(/[^\d.-]/g, '') || 0);
+                            const expenses = parseFloat(cells[3]?.innerText?.replace(/[^\d.-]/g, '') || 0);
+                            const closing = parseFloat(cells[4]?.innerText?.replace(/[^\d.-]/g, '') || 0);
+                            const diff = parseFloat(cells[5]?.innerText?.replace(/[^\d.-]/g, '') || 0);
+                            
+                            totalIncome += income;
+                            totalExpenses += expenses;
+                            totalClosingBalance += closing;
+                            totalDifference += diff;
+                            
+                            rows.push({
+                                'Day': cells[0].innerText,
+                                'Opening Balance': cells[1].innerText,
+                                'Total Income': cells[2].innerText,
+                                'Total Expenses': cells[3].innerText,
+                                'Closing Balance': cells[4].innerText,
+                                'Difference': cells[5].innerText
+                            });
+                        }
+                    });
+                    
+                    // Add total row
+                    rows.push({
+                        'Day': 'TOTAL',
+                        'Opening Balance': '',
+                        'Total Income': totalIncome,
+                        'Total Expenses': totalExpenses,
+                        'Closing Balance': totalClosingBalance,
+                        'Difference': totalDifference
+                    });
+                    
+                    const ws = XLSX.utils.json_to_sheet(rows);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Weekly Report');
+                    XLSX.writeFile(wb, `weekly_report_${weekStart}.xlsx`);
+                    
+                    showToast('Weekly report exported to Excel successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting weekly report Excel:', error);
+                    showToast('Error exporting Excel', 'error');
+                }
+            }
+
+            // Export Weekly Report to PDF
+                    async function exportWeeklyReportPDF() {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                const pageW = doc.internal.pageSize.getWidth();
+                const margin = 10;
+                const data = window.currentWeeklyData;
+                const d = window.expectedIncomeData || {};
+                const branchName = getBranchName(selectedBranch);
+                const term = window.currentTermConfig || {};
+                            const logoEdenUrl = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931288/logo_eden_yg7o6h.png';
+                            const logoRwandaUrl = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931378/logo_rwanda_nb0ize.png';
+
+                            const loadImageAsDataUrl = async (url) => {
+                                const response = await fetch(url);
+                                if (!response.ok) throw new Error('Unable to load logo image');
+                                const blob = await response.blob();
+                                return await new Promise((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => resolve(reader.result);
+                                    reader.onerror = () => reject(new Error('Unable to read logo image'));
+                                    reader.readAsDataURL(blob);
+                                });
+                            };
+
+                // ---- HEADER ----
+                            try {
+                                const [logoEdenDataUrl, logoRwandaDataUrl] = await Promise.all([
+                                    loadImageAsDataUrl(logoEdenUrl),
+                                    loadImageAsDataUrl(logoRwandaUrl)
+                                ]);
+                                doc.addImage(logoEdenDataUrl, 'PNG', margin + 1, 4, 20, 20);
+                                doc.addImage(logoRwandaDataUrl, 'PNG', pageW - margin - 21, 4, 20, 20);
+                            } catch (logoError) {
+                                console.warn('Weekly report logo fallback used:', logoError);
+                                doc.setFillColor(46, 139, 87);
+                                doc.circle(margin + 10, 14, 10, 'F');
+                                doc.setTextColor(255,255,255);
+                                doc.setFontSize(5.5);
+                                doc.setFont('helvetica','bold');
+                                doc.text('EDEN', margin+10, 12, {align:'center'});
+                                doc.text('FAMILY', margin+10, 15, {align:'center'});
+                                doc.text('SCHOOL', margin+10, 18, {align:'center'});
+
+                                doc.setFillColor(46, 139, 87);
+                                doc.circle(pageW - margin - 10, 14, 10, 'F');
+                                doc.setTextColor(255,255,255);
+                                doc.text('EDEN', pageW-margin-10, 12, {align:'center'});
+                                doc.text('FAMILY', pageW-margin-10, 15, {align:'center'});
+                                doc.text('SCHOOL', pageW-margin-10, 18, {align:'center'});
+                            }
+
+                doc.setTextColor(0,0,0);
+                doc.setFontSize(13);
+                doc.setFont('helvetica','bold');
+                doc.text('WEEKLY FINANCIAL REPORT', pageW/2, 9, {align:'center'});
+                doc.setFontSize(9);
+                doc.text('EDEN FAMILY SCHOOL', pageW/2, 14, {align:'center'});
+                doc.setFontSize(7);
+                doc.setFont('helvetica','normal');
+                doc.text('MATERNELLE (N1, N2, N3) ET PRIMAIRE (P1, P2, P3, P4) — KACYIRU, GISOZI, KIMISAGARA', pageW/2, 18, {align:'center'});
+
+                doc.setDrawColor(46,139,87);
+                doc.setLineWidth(0.6);
+                doc.line(margin, 27, pageW-margin, 27);
+
+                doc.setFontSize(8);
+                doc.text(`Branch: ${branchName}`, margin, 32);
+                doc.text(`Period: ${data?.period || '—'}`, margin, 37);
+                doc.text(`Trimester: T${term.trimestre||'?'} | Academic Year: ${term.academicYear||'?'}`, margin, 42);
+                doc.text(`Prepared by: ${currentUserName}`, margin, 47);
+                doc.text(`Generated: ${new Date().toLocaleString('en-US')}`, pageW-margin, 47, {align:'right'});
+
+                doc.line(margin, 51, pageW-margin, 51);
+
+                // ---- DAILY TRANSACTIONS TABLE ----
+                const rows = [];
+                if (document.getElementById('weeklyDaysTableBody')) {
+                document.getElementById('weeklyDaysTableBody').querySelectorAll('tr').forEach(tr => {
+                    const cells = tr.querySelectorAll('td');
+                    if (cells.length >= 12) {
+                    rows.push([
+                        cells[0].innerText.trim(),
+                        cells[1].innerText.trim(),
+                        cells[2].innerText.trim(),
+                        cells[3].innerText.trim(),
+                        cells[4].innerText.trim(),
+                        cells[5].innerText.trim(),
+                        cells[6].innerText.trim(),
+                        cells[7].innerText.trim(),
+                        cells[8].innerText.trim().substring(0,40),
+                        cells[9].innerText.trim(),
+                        cells[10].innerText.trim(),
+                        cells[11].innerText.trim()
+                    ]);
+                    }
+                });
+                }
+
+                // Add totals row
+                const tot = data?.totals;
+                if (tot) {
+                rows.push([
+                    'TOTAL', '',
+                    formatCurrencyRWF(tot.opening||0),
+                    formatCurrencyRWF(tot.fees||0),
+                    formatCurrencyRWF(tot.transport||0),
+                    formatCurrencyRWF(tot.coaching||0),
+                    formatCurrencyRWF(tot.uniform||0),
+                    formatCurrencyRWF(tot.other||0),
+                    '—',
+                    formatCurrencyRWF(tot.expenses||0),
+                    formatCurrencyRWF(tot.income - tot.expenses + (tot.opening||0)),
+                    formatCurrencyRWF(tot.diff||0)
+                ]);
+                }
+
+                doc.autoTable({
+                head: [['DAY','DATE','OPENING','FEES','TRANSPORT','COACHING','UNIFORM','OTHER','JUSTIFICATION','EXPENSES','CLOSING','DIFF']],
+                body: rows,
+                startY: 48,
+                theme: 'grid',
+                styles: { fontSize: 6.5, cellPadding: 1.5, overflow: 'linebreak' },
+                headStyles: { fillColor: [46,139,87], textColor: [255,255,255], fontStyle: 'bold', fontSize: 6.5 },
+                columnStyles: {
+                    0: {cellWidth:16}, 1: {cellWidth:14}, 2: {cellWidth:20},
+                    3: {cellWidth:18}, 4: {cellWidth:18}, 5: {cellWidth:18},
+                    6: {cellWidth:15}, 7: {cellWidth:15}, 8: {cellWidth:35},
+                    9: {cellWidth:18}, 10: {cellWidth:20}, 11: {cellWidth:18}
+                },
+                didDrawRow: (hookData) => {
+                    if (hookData.row.index === rows.length - 1) {
+                    hookData.row.cells && Object.values(hookData.row.cells).forEach(cell => {
+                        cell.styles.fillColor = [200, 230, 201];
+                        cell.styles.fontStyle = 'bold';
+                    });
+                    }
+                },
+                startY: 54,
+                margin: { left: margin, right: margin }
+                });
+
+                let currentY = doc.lastAutoTable.finalY + 6;
+
+                // ---- INCOME SUMMARY ----
+                doc.setFontSize(8);
+                doc.setFont('helvetica','bold');
+                doc.text('INCOME SUMMARY — ' + branchName.toUpperCase(), margin, currentY);
+                currentY += 3;
+
+                const colW = (pageW - margin*2) / 3;
+
+                const drawBox = (x, y, w, title, rgb, items) => {
+                doc.setFillColor(...rgb);
+                doc.rect(x, y, w-2, 5, 'F');
+                doc.setTextColor(255,255,255);
+                doc.setFontSize(7.5);
+                doc.setFont('helvetica','bold');
+                doc.text(title, x+(w-2)/2, y+3.5, {align:'center'});
+                doc.setTextColor(0,0,0);
+                doc.setFont('helvetica','normal');
+                doc.setFontSize(6.5);
+                let ly = y + 9;
+                items.forEach(item => {
+                    doc.text(item.label+':', x+1, ly);
+                    doc.setFont('helvetica','bold');
+                    doc.text(item.value, x+w-3, ly, {align:'right'});
+                    doc.setFont('helvetica','normal');
+                    ly += 4.5;
+                });
+                return ly;
+                };
+
+                const wTot = data?.totals || {};
+                const feesItems = [
+                {label:'Total Students', value: String(d.fees?.students||0)},
+                {label:'Expected (trimester)', value: formatCurrencyRWF(d.fees?.expected||0)},
+                {label:'Expected (monthly)', value: formatCurrencyRWF(d.fees?.expectedMonthly||0)},
+                {label:'Total Actual Income', value: formatCurrencyRWF((wTot.fees||0)+(wTot.other||0))},
+                {label:'Remaining', value: formatCurrencyRWF(d.fees?.remaining||0)}
+                ];
+                const coachItems = [
+                {label:'Total Students', value: String(d.coaching?.students||0)},
+                {label:'Expected (trimester)', value: formatCurrencyRWF(d.coaching?.expected||0)},
+                {label:'Expected (monthly)', value: formatCurrencyRWF(d.coaching?.expectedMonthly||0)},
+                {label:'Total Actual Income', value: formatCurrencyRWF(wTot.coaching||0)},
+                {label:'Remaining', value: formatCurrencyRWF(d.coaching?.remaining||0)}
+                ];
+                const transItems = [
+                {label:'Total Students', value: String(d.transport?.students||0)},
+                {label:'Expected (trimester)', value: formatCurrencyRWF(d.transport?.expected||0)},
+                {label:'Expected (monthly)', value: formatCurrencyRWF(d.transport?.expectedMonthly||0)},
+                {label:'Total Actual Income', value: formatCurrencyRWF(wTot.transport||0)},
+                {label:'Remaining', value: formatCurrencyRWF(d.transport?.remaining||0)}
+                ];
+
+                const e1 = drawBox(margin, currentY, colW, 'FEES', [0,123,255], feesItems);
+                const e2 = drawBox(margin+colW, currentY, colW, 'COACHING', [111,66,193], coachItems);
+                const e3 = drawBox(margin+colW*2, currentY, colW, 'TRANSPORT', [253,126,20], transItems);
+                currentY = Math.max(e1,e2,e3) + 3;
+
+                doc.setFillColor(46,139,87);
+                doc.rect(margin, currentY, pageW-margin*2, 6, 'F');
+                doc.setTextColor(255,255,255);
+                doc.setFontSize(7);
+                doc.setFont('helvetica','bold');
+                const gt = d.totals || {};
+                doc.text(`GRAND TOTAL | Expected: ${formatCurrencyRWF(gt.grandExpected||0)} | Actual: ${formatCurrencyRWF(gt.grandActual||0)} | Remaining: ${formatCurrencyRWF(gt.grandRemaining||0)} | ${gt.overallPercent||0}% collected`, pageW/2, currentY+4, {align:'center'});
+                currentY += 10;
+
+                // Signatures
+                doc.setTextColor(0,0,0);
+                doc.setFontSize(7);
+                doc.setFont('helvetica','normal');
+                doc.text('DIRECTOR: 0788883842 | SECRETARY: 0794116491', margin, currentY);
+                currentY += 6;
+                doc.text('ACCOUNTANT SIGNATURE: ______________________________', margin, currentY);
+                doc.text('DIRECTOR SIGNATURE: ______________________________', pageW/2+10, currentY);
+
+                doc.save(`weekly_report_${branchName.replace(/\s/g,'_')}_${document.getElementById('weeklyReportDate').value}.pdf`);
+                showToast('Weekly PDF downloaded!', 'success');
+
+            } catch(err) {
+                console.error(err);
+                showToast('Error: ' + err.message, 'error');
+            }
+            }
+
+            // Export Monthly Report to Excel
+            function exportMonthlyReportExcel() {
+                try {
+                    const monthStart = document.getElementById('monthlyReportDate').value;
+                    if (!monthStart) {
+                        showToast('Please select a month', 'error');
+                        return;
+                    }
+                    
+                    const rows = [];
+                    let totalIncome = 0;
+                    let totalExpenses = 0;
+                    let totalClosingBalance = 0;
+                    let totalDifference = 0;
+                    
+                    document.querySelectorAll('#monthlyReportTable tr').forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 5) {
+                            const income = parseFloat(cells[1]?.innerText?.replace(/[^\d.-]/g, '') || 0);
+                            const expenses = parseFloat(cells[2]?.innerText?.replace(/[^\d.-]/g, '') || 0);
+                            const closing = parseFloat(cells[3]?.innerText?.replace(/[^\d.-]/g, '') || 0);
+                            const diff = parseFloat(cells[4]?.innerText?.replace(/[^\d.-]/g, '') || 0);
+                            
+                            totalIncome += income;
+                            totalExpenses += expenses;
+                            totalClosingBalance += closing;
+                            totalDifference += diff;
+                            
+                            rows.push({
+                                'Week': cells[0].innerText,
+                                'Total Income': cells[1].innerText,
+                                'Total Expenses': cells[2].innerText,
+                                'Closing Balance': cells[3].innerText,
+                                'Difference': cells[4].innerText
+                            });
+                        }
+                    });
+                    
+                    // Add total row
+                    rows.push({
+                        'Week': 'TOTAL',
+                        'Total Income': totalIncome,
+                        'Total Expenses': totalExpenses,
+                        'Closing Balance': totalClosingBalance,
+                        'Difference': totalDifference
+                    });
+                    
+                    const ws = XLSX.utils.json_to_sheet(rows);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Monthly Report');
+                    XLSX.writeFile(wb, `monthly_report_${monthStart}.xlsx`);
+                    
+                    showToast('Monthly report exported to Excel successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting monthly report Excel:', error);
+                    showToast('Error exporting Excel', 'error');
+                }
+            }
+
+            // Export Monthly Report to PDF
+                    async function exportMonthlyReportPDF() {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                const pageW = doc.internal.pageSize.getWidth();
+                const margin = 10;
+                const data = window.currentMonthlyData;
+                const d = window.expectedIncomeData || {};
+                const branchName = getBranchName(selectedBranch);
+                const term = window.currentTermConfig || {};
+                const monthName = data?.monthNames?.[data.month-1] || '';
+                            const logoEdenUrl = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931288/logo_eden_yg7o6h.png';
+                            const logoRwandaUrl = 'https://res.cloudinary.com/deacjkwxy/image/upload/v1774931378/logo_rwanda_nb0ize.png';
+
+                            const loadImageAsDataUrl = async (url) => {
+                                const response = await fetch(url);
+                                if (!response.ok) throw new Error('Unable to load logo image');
+                                const blob = await response.blob();
+                                return await new Promise((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => resolve(reader.result);
+                                    reader.onerror = () => reject(new Error('Unable to read logo image'));
+                                    reader.readAsDataURL(blob);
+                                });
+                            };
+
+                // Same header as weekly
+                            try {
+                                const [logoEdenDataUrl, logoRwandaDataUrl] = await Promise.all([
+                                    loadImageAsDataUrl(logoEdenUrl),
+                                    loadImageAsDataUrl(logoRwandaUrl)
+                                ]);
+                                doc.addImage(logoEdenDataUrl, 'PNG', margin + 1, 4, 20, 20);
+                                doc.addImage(logoRwandaDataUrl, 'PNG', pageW - margin - 21, 4, 20, 20);
+                            } catch (logoError) {
+                                console.warn('Monthly report logo fallback used:', logoError);
+                                doc.setFillColor(46,139,87);
+                                doc.circle(margin+10, 14, 10, 'F');
+                                doc.setTextColor(255,255,255);
+                                doc.setFontSize(5.5);
+                                doc.setFont('helvetica','bold');
+                                doc.text('EDEN',margin+10,12,{align:'center'});
+                                doc.text('FAMILY',margin+10,15,{align:'center'});
+                                doc.text('SCHOOL',margin+10,18,{align:'center'});
+                                doc.setFillColor(46,139,87);
+                                doc.circle(pageW-margin-10, 14, 10, 'F');
+                                doc.text('EDEN',pageW-margin-10,12,{align:'center'});
+                                doc.text('FAMILY',pageW-margin-10,15,{align:'center'});
+                                doc.text('SCHOOL',pageW-margin-10,18,{align:'center'});
+                            }
+
+                doc.setTextColor(0,0,0);
+                doc.setFontSize(13);
+                doc.setFont('helvetica','bold');
+                doc.text('MONTHLY FINANCIAL REPORT', pageW/2, 9, {align:'center'});
+                doc.setFontSize(9);
+                doc.text('EDEN FAMILY SCHOOL', pageW/2, 14, {align:'center'});
+                doc.setFontSize(7);
+                doc.setFont('helvetica','normal');
+                doc.text('MATERNELLE (N1, N2, N3) ET PRIMAIRE (P1, P2, P3, P4) — KACYIRU, GISOZI, KIMISAGARA', pageW/2, 18, {align:'center'});
+
+                doc.setDrawColor(46,139,87);
+                doc.setLineWidth(0.6);
+                doc.line(margin, 27, pageW-margin, 27);
+
+                doc.setFontSize(8);
+                doc.text(`Branch: ${branchName}`, margin, 32);
+                doc.text(`Month: ${monthName} ${data?.year||''}`, margin, 37);
+                doc.text(`Trimester: T${term.trimestre||'?'} | Academic Year: ${term.academicYear||'?'}`, margin, 42);
+                doc.text(`Prepared by: ${currentUserName}`, margin, 47);
+                doc.text(`Generated: ${new Date().toLocaleString('en-US')}`, pageW-margin, 47, {align:'right'});
+                doc.line(margin, 51, pageW-margin, 51);
+
+                // Monthly weeks summary table
+                const weekRows = (data?.weeks||[]).map(wk => [
+                wk.label,
+                `${wk.startDate} — ${wk.endDate}`,
+                formatCurrencyRWF(wk.opening),
+                formatCurrencyRWF(wk.fees),
+                formatCurrencyRWF(wk.transport),
+                formatCurrencyRWF(wk.coaching),
+                formatCurrencyRWF(wk.uniform),
+                formatCurrencyRWF(wk.other),
+                formatCurrencyRWF(wk.expenses),
+                formatCurrencyRWF(wk.closing),
+                formatCurrencyRWF(wk.diff)
+                ]);
+
+                const tot = data?.totals;
+                if (tot) {
+                weekRows.push(['MONTHLY TOTAL','',
+                    formatCurrencyRWF(tot.opening||0),
+                    formatCurrencyRWF(tot.fees||0),
+                    formatCurrencyRWF(tot.transport||0),
+                    formatCurrencyRWF(tot.coaching||0),
+                    formatCurrencyRWF(tot.uniform||0),
+                    formatCurrencyRWF(tot.other||0),
+                    formatCurrencyRWF(tot.expenses||0),
+                    formatCurrencyRWF(tot.closing||0),
+                    formatCurrencyRWF(tot.diff||0)
+                ]);
+                }
+
+                doc.autoTable({
+                head: [['WEEK','PERIOD','OPENING','FEES','TRANSPORT','COACHING','UNIFORM','OTHER','EXPENSES','CLOSING','DIFF']],
+                body: weekRows,
+                startY: 54,
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2 },
+                headStyles: { fillColor: [46,139,87], textColor: [255,255,255], fontStyle:'bold' },
+                didDrawRow: (hookData) => {
+                    if (hookData.row.index === weekRows.length-1) {
+                    Object.values(hookData.row.cells).forEach(cell => {
+                        cell.styles.fillColor = [200,230,201];
+                        cell.styles.fontStyle = 'bold';
+                    });
+                    }
+                },
+                margin: { left: margin, right: margin }
+                });
+
+                let currentY = doc.lastAutoTable.finalY + 6;
+
+                // Same income summary as weekly PDF
+                doc.setFontSize(8);
+                doc.setFont('helvetica','bold');
+                doc.text('INCOME SUMMARY — ' + branchName.toUpperCase(), margin, currentY);
+                currentY += 3;
+
+                const colW = (pageW - margin*2) / 3;
+
+                const drawBoxM = (x, y, w, title, rgb, items) => {
+                doc.setFillColor(...rgb);
+                doc.rect(x, y, w-2, 5, 'F');
+                doc.setTextColor(255,255,255);
+                doc.setFontSize(7.5);
+                doc.setFont('helvetica','bold');
+                doc.text(title, x+(w-2)/2, y+3.5, {align:'center'});
+                doc.setTextColor(0,0,0);
+                doc.setFont('helvetica','normal');
+                doc.setFontSize(6.5);
+                let ly = y+9;
+                items.forEach(item => {
+                    doc.text(item.label+':', x+1, ly);
+                    doc.setFont('helvetica','bold');
+                    doc.text(item.value, x+w-3, ly, {align:'right'});
+                    doc.setFont('helvetica','normal');
+                    ly += 4.5;
+                });
+                return ly;
+                };
+
+                const mTot = data?.totals || {};
+                const e1 = drawBoxM(margin, currentY, colW, 'FEES', [0,123,255], [
+                {label:'Total Students', value:String(d.fees?.students||0)},
+                {label:'Expected (trimester)', value:formatCurrencyRWF(d.fees?.expected||0)},
+                {label:'Expected (monthly)', value:formatCurrencyRWF(d.fees?.expectedMonthly||0)},
+                {label:'Total Actual Income', value:formatCurrencyRWF((mTot.fees||0)+(mTot.other||0))},
+                {label:'Remaining', value:formatCurrencyRWF(d.fees?.remaining||0)}
+                ]);
+                const e2 = drawBoxM(margin+colW, currentY, colW, 'COACHING', [111,66,193], [
+                {label:'Total Students', value:String(d.coaching?.students||0)},
+                {label:'Expected (trimester)', value:formatCurrencyRWF(d.coaching?.expected||0)},
+                {label:'Expected (monthly)', value:formatCurrencyRWF(d.coaching?.expectedMonthly||0)},
+                {label:'Total Actual Income', value:formatCurrencyRWF(mTot.coaching||0)},
+                {label:'Remaining', value:formatCurrencyRWF(d.coaching?.remaining||0)}
+                ]);
+                const e3 = drawBoxM(margin+colW*2, currentY, colW, 'TRANSPORT', [253,126,20], [
+                {label:'Total Students', value:String(d.transport?.students||0)},
+                {label:'Expected (trimester)', value:formatCurrencyRWF(d.transport?.expected||0)},
+                {label:'Expected (monthly)', value:formatCurrencyRWF(d.transport?.expectedMonthly||0)},
+                {label:'Total Actual Income', value:formatCurrencyRWF(mTot.transport||0)},
+                {label:'Remaining', value:formatCurrencyRWF(d.transport?.remaining||0)}
+                ]);
+                currentY = Math.max(e1,e2,e3)+3;
+
+                const gt = d.totals||{};
+                doc.setFillColor(46,139,87);
+                doc.rect(margin, currentY, pageW-margin*2, 6, 'F');
+                doc.setTextColor(255,255,255);
+                doc.setFontSize(7);
+                doc.setFont('helvetica','bold');
+                doc.text(`GRAND TOTAL | Expected: ${formatCurrencyRWF(gt.grandExpected||0)} | Actual: ${formatCurrencyRWF(gt.grandActual||0)} | Remaining: ${formatCurrencyRWF(gt.grandRemaining||0)} | ${gt.overallPercent||0}% collected`, pageW/2, currentY+4, {align:'center'});
+                currentY += 10;
+
+                doc.setTextColor(0,0,0);
+                doc.setFontSize(7);
+                doc.setFont('helvetica','normal');
+                doc.text('DIRECTOR: 0788883842 | SECRETARY: 0794116491', margin, currentY);
+                currentY += 6;
+                doc.text('ACCOUNTANT SIGNATURE: ______________________________', margin, currentY);
+                doc.text('DIRECTOR SIGNATURE: ______________________________', pageW/2+10, currentY);
+
+                doc.save(`monthly_report_${branchName.replace(/\s/g,'_')}_${document.getElementById('monthlyReportDate').value}.pdf`);
+                showToast('Monthly PDF downloaded!', 'success');
+
+            } catch(err) {
+                console.error(err);
+                showToast('Error: ' + err.message, 'error');
+            }
+            }
+
+
+
+            // Export all data Excel
+            async function exportAllDataExcel() {
+                try {
+                    // Préparer les données pour l'export
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                    let levelFilter = null;
+                    if (selectedBranch === 'gisozi_maternelle') {
+                        levelFilter = 'nursery';
+                    } else if (selectedBranch === 'gisozi_primaire') {
+                        levelFilter = 'primary';
+                    }
+                    const exportData = {
+                        Workers: teachers.filter(t => t.branch === firebaseBranch).map(t => ({
+                            NO: t.no,
+                            Name: t.name,
+                            Type: getWorkerTypeLabel(t.type),
+                            Phone: t.phone,
+                            'Payment Mode': t.paymentMode === 'bank' ? 'Bank' : t.paymentMode === 'momo' ? 'Mobile Money' : 'Cash',
+                            'Base Salary': t.salary,
+                            'Hire Date': t.hireDate,
+                            Status: t.status
+                        })),
+                        
+                        Students: students.filter(s => {
+                            if (s.branch !== firebaseBranch) return false;
+                            if (levelFilter && s.level !== levelFilter) return false;
+                            return true;
+                        }).map(s => ({
+                            Reference: s.reference,
+                            'Full Name': s.fullName,
+                            Class: s.class,
+                            'Birth Date': s.birthDate,
+                            Parent: s.parent,
+                            'Parent Phone': s.parentPhone,
+                            Status: s.status
+                        })),
+                        
+                        'Student Payments': studentFees.filter(f => {
+                            const student = students.find(s => s.id === f.studentId);
+                            if (!student) return false;
+                            if (student.branch !== firebaseBranch) return false;
+                            if (levelFilter && student.level !== levelFilter) return false;
+                            return true;
+                        }).map(f => ({
+                            Reference: f.reference,
+                            Student: f.studentName,
+                            Class: f.studentClass,
+                            Type: getPaymentTypeText(f.paymentType),
+                            Amount: f.amount,
+                            'Payment Mode': f.paymentMode === 'bank' ? 'Bank' : f.paymentMode === 'momo' ? 'Mobile Money' : 'Cash',
+                            Date: f.paymentDate,
+                            'Received by': f.receivedBy
+                        })),
+                        
+                        Debts: debts.filter(d => {
+                            const worker = workers.find(t => t.id === d.workerId);
+                            return worker && worker.branch === firebaseBranch;
+                        }).map(d => ({
+                            Worker: d.workerName,
+                            Amount: d.amount,
+                            Reason: d.reason,
+                            Date: d.date,
+                            Status: d.status === 'pending' ? 'Pending' : 'Paid'
+                        }))
+                    };
+                    
+                    // Créer le classeur Excel
+                    const wb = XLSX.utils.book_new();
+                    
+                    // Ajouter chaque feuille
+                    Object.keys(exportData).forEach(sheetName => {
+                        if (exportData[sheetName].length > 0) {
+                            const ws = XLSX.utils.json_to_sheet(exportData[sheetName]);
+                            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                        }
+                    });
+                    
+                    // Générer le fichier
+                    XLSX.writeFile(wb, `export_edensmart_${selectedBranch}_${new Date().toISOString().split('T')[0]}.xlsx`);
+                    
+                    showToast('Data exported to Excel successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting Excel:', error);
+                    showToast('Error exporting Excel', 'error');
+                }
+            }
+
+            // Logout
+            function logout() {
+                if (confirm('Are you sure you want to logout?')) {
+                    auth.signOut().then(() => {
+                        window.location.href = 'Auth.html';
+                    }).catch((error) => {
+                        console.error('Error logging out:', error);
+                        showToast('Error logging out', 'error');
+                    });
+                }
+            }
+
+            // Toast notification
+            function showToast(message, type = 'info') {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                toast.className = `toast-notification ${type}`;
+                toast.innerHTML = `
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">${type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Information'}</div>
+                        <div>${message}</div>
+                    </div>
+                    <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+                `;
+                
+                container.appendChild(toast);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.remove();
+                    }
+                }, 5000);
+            }
+
+            // Perform global search
+            function performGlobalSearch(query) {
+                if (!query || query.length < 2) {
+                    document.getElementById('searchResults').style.display = 'none';
+                    return;
+                }
+                
+                const searchTerm = query.toLowerCase();
+                const results = [];
+                
+                // Rechercher dans les travailleurs
+                teachers.forEach(teacher => {
+                    if (teacher.branch === selectedBranch && 
+                        (teacher.name.toLowerCase().includes(searchTerm) || 
+                        teacher.no.toLowerCase().includes(searchTerm) ||
+                        teacher.phone.includes(searchTerm))) {
+                        results.push({
+                            type: 'Worker',
+                            name: teacher.name,
+                            id: teacher.id,
+                            action: () => {
+                                showSection('teachers');
+                                setTimeout(() => editWorker(teacher.id), 500);
+                            }
+                        });
+                    }
+                });
+                
+                // Rechercher dans les élèves
+                students.forEach(student => {
+                    if (student.branch === selectedBranch && 
+                        (student.fullName.toLowerCase().includes(searchTerm) || 
+                        student.reference.toLowerCase().includes(searchTerm) ||
+                        student.parent.toLowerCase().includes(searchTerm))) {
+                        results.push({
+                            type: 'Student',
+                            name: student.fullName,
+                            id: student.id,
+                            action: () => {
+                                showSection('students');
+                                setTimeout(() => viewStudentDetail(student.id), 500);
+                            }
+                        });
+                    }
+                });
+                
+                // Afficher les résultats
+                const resultsContainer = document.getElementById('searchResults');
+                resultsContainer.innerHTML = '';
+                
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div class="search-result-item">
+                            <div class="text-muted">No results found</div>
+                        </div>
+                    `;
+                } else {
+                    results.slice(0, 10).forEach(result => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        item.innerHTML = `
+                            <div class="fw-bold">${result.type}: ${result.name}</div>
+                            <small class="text-muted">Click to see details</small>
+                        `;
+                        item.onclick = result.action;
+                        resultsContainer.appendChild(item);
+                    });
+                }
+                
+                resultsContainer.style.display = 'block';
+            }
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(event) {
+                const searchContainer = document.getElementById('searchResults');
+                const searchInput = document.getElementById('globalSearch');
+                
+                if (searchContainer && searchInput && 
+                    !searchContainer.contains(event.target) && 
+                    !searchInput.contains(event.target)) {
+                    searchContainer.style.display = 'none';
+                }
+            });
+
+                    function normalizePaymentType(paymentType) {
+                        const t = (paymentType || '').toString().trim().toLowerCase();
+                        if (['uniform', 'uniforme'].includes(t)) return 'uniforme';
+                        if (['school supplies', 'school_supplies', 'supplies', 'material', 'materials'].includes(t)) return 'material';
+                        if (['other', 'autre'].includes(t)) return 'other';
+                        return t;
+                    }
+
+                    function getIncomeCategoryFromPaymentType(paymentType) {
+                        const type = normalizePaymentType(paymentType);
+                        if (type === 'coaching') return 'coaching';
+                        if (type === 'transport') return 'transport';
+                        if (['fees', 'uniforme', 'lunch', 'breakfast', 'material', 'insurance', 'other'].includes(type)) return 'fees';
+                        return 'fees';
+                    }
+
+                    // Recalculate expected income for the selected branch and current trimester
+                    async function recalculateExpectedIncome() {
+                        try {
+                            const branch = selectedBranch;
+                            const calcBranchNameEl = document.getElementById('calcBranchName');
+                            const calcLastUpdatedEl = document.getElementById('calcLastUpdated');
+                            if (calcBranchNameEl) calcBranchNameEl.textContent = getBranchName(branch);
+                            if (calcLastUpdatedEl) calcLastUpdatedEl.textContent = new Date().toLocaleTimeString('fr-FR');
+
+                            const branchStudents = getStudentsForCurrentBranch(branch);
+
+                            const branchNames = {
+                                kacyiru: 'EDEN FAMILY SCHOOL KACYIRU',
+                                kimisagara: 'EDEN FAMILY SCHOOL KIMISAGARA',
+                                gisozi_maternelle: 'EDEN FAMILY SCHOOL GISOZI NURSERY',
+                                gisozi_primaire: 'EDEN FAMILY SCHOOL GISOZI PRIMARY'
+                            };
+                            const fullBranchName = branchNames[branch];
+                            const feeConfigList = Array.isArray(feeConfigurations) ? feeConfigurations : [];
+                            const feeConfig = feeConfigList.find(config =>
+                                config.branch === fullBranchName &&
+                                config.trimester == currentTermConfig?.trimester &&
+                                config.academicYear === currentTermConfig?.academicYear
+                            );
+                            const breakfastPerStudent = (branch === 'gisozi_primaire')
+                                ? (Number(feeConfig?.additionalFees?.breakfast) || 0)
+                                : 0;
+
+                            let totalStudentsFees = 0;
+                            let expectedFeesTrimester = 0;
+                            let totalStudentsCoaching = 0;
+                            let expectedCoachingTrimester = 0;
+                            let totalStudentsTransport = 0;
+                            let expectedTransportTrimester = 0;
+
+                            branchStudents.forEach(student => {
+                                const feesTrimester = parseFloat(student.feesMonthlyAmount) || 0;
+                                if (feesTrimester > 0) {
+                                    totalStudentsFees++;
+                                    // Fees are configured as full trimester amount.
+                                    expectedFeesTrimester += feesTrimester;
+                                }
+
+                                const coachingMonthly = parseFloat(student.coachingMonthlyFee) || 0;
+                                if (student.coachingEnrolled === true || coachingMonthly > 0) {
+                                    totalStudentsCoaching++;
+                                    expectedCoachingTrimester += coachingMonthly * 3;
+                                }
+
+                                const transportMonthly = parseFloat(student.transportMonthlyFee) || 0;
+                                if (student.transportEnrolled === true || transportMonthly > 0) {
+                                    totalStudentsTransport++;
+                                    expectedTransportTrimester += transportMonthly * 3;
+                                }
+                            });
+
+                            const expectedBreakfastTrimester = totalStudentsFees * breakfastPerStudent;
+                            expectedFeesTrimester += expectedBreakfastTrimester;
+
+                            const expectedFeesMonthly = expectedFeesTrimester / 3;
+                            const expectedCoachingMonthly = expectedCoachingTrimester / 3;
+                            const expectedTransportMonthly = expectedTransportTrimester / 3;
+
+                            const term = currentTermConfig || {};
+                            const termStart = term.startDate ? new Date(term.startDate) : null;
+                            const termEnd = term.endDate ? new Date(term.endDate) : null;
+
+                            const paymentInCurrentTerm = (payment) => {
+                                if (!payment) return false;
+
+                                if (term.trimester && term.academicYear && payment.trimester && payment.academicYear) {
+                                    return String(payment.trimester) === String(term.trimester)
+                                        && String(payment.academicYear) === String(term.academicYear);
+                                }
+
+                                if (termStart && termEnd) {
+                                    const dateStr = getPaymentDateString(payment);
+                                    if (!dateStr) return false;
+                                    const paymentDate = new Date(dateStr);
+                                    return paymentDate >= termStart && paymentDate <= termEnd;
+                                }
+
+                                return true;
+                            };
+
+                            let actualFees = 0;
+                            let actualCoaching = 0;
+                            let actualTransport = 0;
+
+                            studentFees.forEach(payment => {
+                                if (!paymentInCurrentTerm(payment)) return;
+                                const student = students.find(s => s.id === payment.studentId);
+                                if (!student || !matchesBranchAndLevelForSelection(student, branch)) return;
+
+                                const amount = parseFloat(payment.amount) || 0;
+                                const category = getIncomeCategoryFromPaymentType(payment.paymentType);
+
+                                if (category === 'coaching') actualCoaching += amount;
+                                else if (category === 'transport') actualTransport += amount;
+                                else actualFees += amount;
+                            });
+
+                            const remainingFees = expectedFeesTrimester - actualFees;
+                            const remainingCoaching = expectedCoachingTrimester - actualCoaching;
+                            const remainingTransport = expectedTransportTrimester - actualTransport;
+
+                            const totalStudents = totalStudentsFees + totalStudentsCoaching + totalStudentsTransport;
+                            const grandExpected = expectedFeesTrimester + expectedCoachingTrimester + expectedTransportTrimester;
+                            const grandActual = actualFees + actualCoaching + actualTransport;
+                            const grandRemaining = grandExpected - grandActual;
+                            const overallPercent = grandExpected > 0 ? Math.round((grandActual / grandExpected) * 100) : 0;
+
+                            const set = (id, val) => {
+                                const el = document.getElementById(id);
+                                if (el) el.textContent = val;
+                            };
+                            const pct = (id, p) => {
+                                const el = document.getElementById(id);
+                                if (el) el.style.width = Math.min(100, Math.max(0, p)) + '%';
+                            };
+
+                            set('calcTotalStudentsFees', totalStudentsFees);
+                            set('calcExpectedFees', formatCurrencyRWF(expectedFeesTrimester));
+                            set('calcExpectedFeesMonthly', formatCurrencyRWF(expectedFeesMonthly));
+                            set('calcActualFees', formatCurrencyRWF(actualFees));
+                            set('calcRemainingFees', formatCurrencyRWF(remainingFees));
+                            pct('calcFeeProgress', expectedFeesTrimester > 0 ? Math.round((actualFees / expectedFeesTrimester) * 100) : 0);
+
+                            set('calcTotalStudentsCoaching', totalStudentsCoaching);
+                            set('calcExpectedCoaching', formatCurrencyRWF(expectedCoachingTrimester));
+                            set('calcExpectedCoachingMonthly', formatCurrencyRWF(expectedCoachingMonthly));
+                            set('calcActualCoaching', formatCurrencyRWF(actualCoaching));
+                            set('calcRemainingCoaching', formatCurrencyRWF(remainingCoaching));
+                            pct('calcCoachingProgress', expectedCoachingTrimester > 0 ? Math.round((actualCoaching / expectedCoachingTrimester) * 100) : 0);
+
+                            set('calcTotalStudentsTransport', totalStudentsTransport);
+                            set('calcExpectedTransport', formatCurrencyRWF(expectedTransportTrimester));
+                            set('calcExpectedTransportMonthly', formatCurrencyRWF(expectedTransportMonthly));
+                            set('calcActualTransport', formatCurrencyRWF(actualTransport));
+                            set('calcRemainingTransport', formatCurrencyRWF(remainingTransport));
+                            pct('calcTransportProgress', expectedTransportTrimester > 0 ? Math.round((actualTransport / expectedTransportTrimester) * 100) : 0);
+
+                            set('calcTotalStudents', totalStudents);
+                            set('calcGrandExpectedFees', formatCurrencyRWF(expectedFeesTrimester));
+                            set('calcGrandExpectedCoaching', formatCurrencyRWF(expectedCoachingTrimester));
+                            set('calcGrandExpectedTransport', formatCurrencyRWF(expectedTransportTrimester));
+                            set('calcGrandActualFees', formatCurrencyRWF(actualFees));
+                            set('calcGrandActualCoaching', formatCurrencyRWF(actualCoaching));
+                            set('calcGrandActualTransport', formatCurrencyRWF(actualTransport));
+                            set('calcGrandExpected', formatCurrencyRWF(grandExpected));
+                            set('calcGrandActual', formatCurrencyRWF(grandActual));
+                            set('calcGrandRemaining', formatCurrencyRWF(grandRemaining));
+                            pct('calcOverallProgress', overallPercent);
+                            set('calcOverallPercent', overallPercent + '% collecté');
+
+                            window.expectedIncomeData = {
+                                branch,
+                                fees: { expected: expectedFeesTrimester, expectedMonthly: expectedFeesMonthly, actual: actualFees, remaining: remainingFees, students: totalStudentsFees },
+                                coaching: { expected: expectedCoachingTrimester, expectedMonthly: expectedCoachingMonthly, actual: actualCoaching, remaining: remainingCoaching, students: totalStudentsCoaching },
+                                transport: { expected: expectedTransportTrimester, expectedMonthly: expectedTransportMonthly, actual: actualTransport, remaining: remainingTransport, students: totalStudentsTransport },
+                                totals: { students: totalStudents, grandExpected, grandActual, grandRemaining, overallPercent }
+                            };
+
+                            if (typeof updateReportExpectedCards === 'function') updateReportExpectedCards();
+                        } catch (err) {
+                            console.error('Erreur recalculateExpectedIncome:', err);
+                        }
+                    }
+
+            function calculateExpectedIncome() {
+                recalculateExpectedIncome();
+            }
+
+            function getExpectedIncomeForPeriod(branch, termConfig, periodType) {
+                if (!branch || !termConfig) {
+                    return {
+                        expectedFees: 0,
+                        expectedCoaching: 0,
+                        expectedTransport: 0,
+                        totalExpected: 0
+                    };
+                }
+
+                const branchNames = {
+                    kacyiru: 'EDEN FAMILY SCHOOL KACYIRU',
+                    kimisagara: 'EDEN FAMILY SCHOOL KIMISAGARA',
+                    gisozi_maternelle: 'EDEN FAMILY SCHOOL GISOZI NURSERY',
+                    gisozi_primaire: 'EDEN FAMILY SCHOOL GISOZI PRIMARY'
+                };
+                const fullBranchName = branchNames[branch];
+                const feeConfig = feeConfigurations.find(config =>
+                    config.branch === fullBranchName &&
+                    config.trimester == termConfig.trimester &&
+                    config.academicYear === termConfig.academicYear
+                );
+
+                if (!feeConfig) {
+                    return {
+                        expectedFees: 0,
+                        expectedCoaching: 0,
+                        expectedTransport: 0,
+                        totalExpected: 0
+                    };
+                }
+
+                const branchStudents = students.filter(student => student.branch === branch);
+                const totalStudents = branchStudents.length;
+                const studentsWithCoaching = branchStudents.filter(student => student.coachingEnrolled).length;
+                const studentsWithTransport = branchStudents.filter(student => student.transportEnrolled).length;
+
+                const feesAmount = feeConfig.schoolFees?.fees || 0;
+                const breakfastAmount = (branch === 'gisozi_primaire') ? (feeConfig.additionalFees?.breakfast || 0) : 0;
+                const coachingAmount = feeConfig.schoolFees?.coaching || 0;
+                const transportAmount = feeConfig.schoolFees?.transport || 0;
+
+                const totalFees = totalStudents * (feesAmount + breakfastAmount);
+                const totalCoaching = studentsWithCoaching * coachingAmount * 3;
+                const totalTransport = studentsWithTransport * transportAmount * 3;
+                const totalExpected = totalFees + totalCoaching + totalTransport;
+
+                let divisor = 1;
+                if (periodType === 'daily') {
+                    divisor = getSchoolDaysInTrimester(termConfig);
+                } else if (periodType === 'weekly') {
+                    divisor = getTrimesterWeeks(termConfig);
+                } else if (periodType === 'monthly') {
+                    divisor = 3;
+                }
+                divisor = divisor || 1;
+
+                return {
+                    expectedFees: totalFees / divisor,
+                    expectedCoaching: totalCoaching / divisor,
+                    expectedTransport: totalTransport / divisor,
+                    totalExpected: totalExpected / divisor
+                };
+            }
+
+            function getSchoolDaysInTrimester(termConfig) {
+                if (!termConfig.startDate || !termConfig.endDate) return 1;
+                const start = new Date(termConfig.startDate);
+                const end = new Date(termConfig.endDate);
+                let count = 0;
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    const day = d.getDay();
+                    if (day !== 0 && day !== 6) {
+                        count++;
+                    }
+                }
+                return count || 1;
+            }
+
+            function getTrimesterWeeks(termConfig) {
+                if (!termConfig.startDate || !termConfig.endDate) return 1;
+                const start = new Date(termConfig.startDate);
+                const end = new Date(termConfig.endDate);
+                const msPerDay = 24 * 60 * 60 * 1000;
+                const totalDays = Math.round((end - start) / msPerDay) + 1;
+                return Math.max(1, Math.ceil(totalDays / 7));
+            }
+
+            function getExpectedForPeriod(periodType, periodValue, branch) {
+                if (!branch || !currentTermConfig || !currentTermConfig.startDate || !currentTermConfig.endDate) {
+                    return {
+                        expectedTotal: 0,
+                        expectedFees: 0,
+                        expectedCoaching: 0,
+                        expectedTransport: 0,
+                        actualTotal: 0,
+                        actualFees: 0,
+                        actualCoaching: 0,
+                        actualTransport: 0,
+                        remaining: 0
+                    };
+                }
+
+                const firebaseBranch = getFirebaseBranchForWorkers(branch);
+                const termStart = new Date(currentTermConfig.startDate);
+                const termEnd = new Date(currentTermConfig.endDate);
+
+                let periodStart, periodEnd;
+
+                if (periodType === 'daily') {
+                    periodStart = new Date(periodValue);
+                    periodEnd = new Date(periodValue);
+                } else if (periodType === 'weekly') {
+                    const weekRegex = /(\d{4})-W(\d{2})/;
+                    const matches = periodValue.match(weekRegex);
+                    if (!matches) {
+                        const year = new Date().getFullYear();
+                        const week = getWeekNumber(new Date());
+                        periodStart = getDateOfWeek(week, year);
+                    } else {
+                        periodStart = getDateOfWeek(parseInt(matches[2]), parseInt(matches[1]));
+                    }
+                    periodEnd = new Date(periodStart);
+                    periodEnd.setDate(periodEnd.getDate() + 6);
+                } else if (periodType === 'monthly') {
+                    const [year, month] = periodValue.split('-');
+                    periodStart = new Date(parseInt(year), parseInt(month) - 1, 1);
+                    periodEnd = new Date(parseInt(year), parseInt(month), 0);
+                }
+
+                const matchesBranch = (payment) => {
+                    if (!payment) return false;
+                    if (payment.branch) {
+                        return payment.branch === firebaseBranch || payment.branch === branch;
+                    }
+                    const student = students.find(s => s.id === payment.studentId);
+                    return student ? student.branch === firebaseBranch || student.branch === branch : false;
+                };
+
+                const isInPeriod = (payment) => {
+                    if (!payment) return false;
+                    const paymentDate = getPaymentDateString(payment);
+                    if (!paymentDate) return false;
+                    const pDate = new Date(paymentDate);
+                    return pDate >= periodStart && pDate <= periodEnd;
+                };
+
+                const actualFees = studentFees.filter(p => matchesBranch(p) && isInPeriod(p))
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const actualCoaching = coachingPayments.filter(p => matchesBranch(p) && isInPeriod(p))
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const actualTransport = transportPayments.filter(p => matchesBranch(p) && isInPeriod(p))
+                    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+                const actualTotal = actualFees + actualCoaching + actualTransport;
+
+                const expected = getExpectedIncomeForPeriod(branch, currentTermConfig, periodType);
+                const remaining = expected.totalExpected - actualTotal;
+
+                return {
+                    expectedTotal: expected.totalExpected,
+                    expectedFees: expected.expectedFees,
+                    expectedCoaching: expected.expectedCoaching,
+                    expectedTransport: expected.expectedTransport,
+                    actualTotal: actualTotal,
+                    actualFees: actualFees,
+                    actualCoaching: actualCoaching,
+                    actualTransport: actualTransport,
+                    remaining: remaining
+                };
+            }
+
+            function updateReportExpectedCards() {
+                const d = window.expectedIncomeData || {};
+                const term = window.currentTermConfig || {};
+
+                const fees = d.fees || {};
+                const coaching = d.coaching || {};
+                const transport = d.transport || {};
+                const totals = d.totals || {};
+
+                const branchLabel = getBranchName(selectedBranch);
+                const trimesterLabel = `${formatTermPeriodLabel(term.trimester)} ${term.academicYear || ''}`.trim();
+
+                const setTextSafe = (id, value) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = value;
+                };
+
+                const setProgressSafe = (id, percent) => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.width = `${Math.max(0, Math.min(100, Number(percent) || 0))}%`;
+                };
+
+                // Weekly summary labels
+                setTextSafe('weeklySummaryBranch', branchLabel);
+                setTextSafe('weeklySummaryTrimester', trimesterLabel);
+
+                // Weekly fees
+                setTextSafe('weeklySumFeeStudents', String(fees.students || 0));
+                setTextSafe('weeklySumFeeExpectedTrimester', formatCurrencyRWF(fees.expected || 0));
+                setTextSafe('weeklySumFeeExpectedMonthly', formatCurrencyRWF(fees.expectedMonthly || 0));
+                setTextSafe('weeklySumFeeActual', formatCurrencyRWF(fees.actual || 0));
+                setTextSafe('weeklySumFeeRemaining', formatCurrencyRWF(fees.remaining || 0));
+                setProgressSafe('weeklySumFeeProgress', fees.expected ? Math.round(((fees.actual || 0) / fees.expected) * 100) : 0);
+
+                // Weekly coaching
+                setTextSafe('weeklySumCoachStudents', String(coaching.students || 0));
+                setTextSafe('weeklySumCoachExpectedTrimester', formatCurrencyRWF(coaching.expected || 0));
+                setTextSafe('weeklySumCoachExpectedMonthly', formatCurrencyRWF(coaching.expectedMonthly || 0));
+                setTextSafe('weeklySumCoachActual', formatCurrencyRWF(coaching.actual || 0));
+                setTextSafe('weeklySumCoachRemaining', formatCurrencyRWF(coaching.remaining || 0));
+                setProgressSafe('weeklySumCoachProgress', coaching.expected ? Math.round(((coaching.actual || 0) / coaching.expected) * 100) : 0);
+
+                // Weekly transport
+                setTextSafe('weeklySumTransStudents', String(transport.students || 0));
+                setTextSafe('weeklySumTransExpectedTrimester', formatCurrencyRWF(transport.expected || 0));
+                setTextSafe('weeklySumTransExpectedMonthly', formatCurrencyRWF(transport.expectedMonthly || 0));
+                setTextSafe('weeklySumTransActual', formatCurrencyRWF(transport.actual || 0));
+                setTextSafe('weeklySumTransRemaining', formatCurrencyRWF(transport.remaining || 0));
+                setProgressSafe('weeklySumTransProgress', transport.expected ? Math.round(((transport.actual || 0) / transport.expected) * 100) : 0);
+
+                // Weekly grand totals
+                setTextSafe('weeklySumTotalStudents', String(totals.students || 0));
+                setTextSafe('weeklySumGrandFees', formatCurrencyRWF(fees.expected || 0));
+                setTextSafe('weeklySumGrandCoaching', formatCurrencyRWF(coaching.expected || 0));
+                setTextSafe('weeklySumGrandTransport', formatCurrencyRWF(transport.expected || 0));
+                setTextSafe('weeklySumGrandExpected', formatCurrencyRWF(totals.grandExpected || 0));
+                setTextSafe('weeklySumGrandActual', formatCurrencyRWF(totals.grandActual || 0));
+                setTextSafe('weeklySumGrandRemaining', formatCurrencyRWF(totals.grandRemaining || 0));
+                setProgressSafe('weeklySumOverallProgress', totals.overallPercent || 0);
+                setTextSafe('weeklySumOverallPercent', `${totals.overallPercent || 0}% collected`);
+
+                // Monthly summary labels
+                setTextSafe('monthlySummaryBranch', branchLabel);
+                setTextSafe('monthlySummaryTrimester', trimesterLabel);
+
+                // Monthly fees
+                setTextSafe('monthlySumFeeStudents', String(fees.students || 0));
+                setTextSafe('monthlySumFeeExpectedTrimester', formatCurrencyRWF(fees.expected || 0));
+                setTextSafe('monthlySumFeeExpectedMonthly', formatCurrencyRWF(fees.expectedMonthly || 0));
+                setTextSafe('monthlySumFeeActual', formatCurrencyRWF(fees.actual || 0));
+                setTextSafe('monthlySumFeeRemaining', formatCurrencyRWF(fees.remaining || 0));
+                setProgressSafe('monthlySumFeeProgress', fees.expected ? Math.round(((fees.actual || 0) / fees.expected) * 100) : 0);
+
+                // Monthly coaching
+                setTextSafe('monthlySumCoachStudents', String(coaching.students || 0));
+                setTextSafe('monthlySumCoachExpectedTrimester', formatCurrencyRWF(coaching.expected || 0));
+                setTextSafe('monthlySumCoachExpectedMonthly', formatCurrencyRWF(coaching.expectedMonthly || 0));
+                setTextSafe('monthlySumCoachActual', formatCurrencyRWF(coaching.actual || 0));
+                setTextSafe('monthlySumCoachRemaining', formatCurrencyRWF(coaching.remaining || 0));
+                setProgressSafe('monthlySumCoachProgress', coaching.expected ? Math.round(((coaching.actual || 0) / coaching.expected) * 100) : 0);
+
+                // Monthly transport
+                setTextSafe('monthlySumTransStudents', String(transport.students || 0));
+                setTextSafe('monthlySumTransExpectedTrimester', formatCurrencyRWF(transport.expected || 0));
+                setTextSafe('monthlySumTransExpectedMonthly', formatCurrencyRWF(transport.expectedMonthly || 0));
+                setTextSafe('monthlySumTransActual', formatCurrencyRWF(transport.actual || 0));
+                setTextSafe('monthlySumTransRemaining', formatCurrencyRWF(transport.remaining || 0));
+                setProgressSafe('monthlySumTransProgress', transport.expected ? Math.round(((transport.actual || 0) / transport.expected) * 100) : 0);
+
+                // Monthly grand totals
+                setTextSafe('monthlySumTotalStudents', String(totals.students || 0));
+                setTextSafe('monthlySumGrandFees', formatCurrencyRWF(fees.expected || 0));
+                setTextSafe('monthlySumGrandCoaching', formatCurrencyRWF(coaching.expected || 0));
+                setTextSafe('monthlySumGrandTransport', formatCurrencyRWF(transport.expected || 0));
+                setTextSafe('monthlySumGrandExpected', formatCurrencyRWF(totals.grandExpected || 0));
+                setTextSafe('monthlySumGrandActual', formatCurrencyRWF(totals.grandActual || 0));
+                setTextSafe('monthlySumGrandRemaining', formatCurrencyRWF(totals.grandRemaining || 0));
+                setProgressSafe('monthlySumOverallProgress', totals.overallPercent || 0);
+                setTextSafe('monthlySumOverallPercent', `${totals.overallPercent || 0}% collected`);
+            }
+
+            function updateDailyExpectedComparison(actualIncome) {
+                const comparisonContainer = document.getElementById('dailyExpectedCard');
+                if (comparisonContainer) {
+                    comparisonContainer.innerHTML = '';
+                }
+            }
+
+            function updateDailyExpectedComparison_old(actualIncome) {
+                const expected = getExpectedIncomeForPeriod(selectedBranch, currentTermConfig, 'daily');
+                const comparisonHTML = `
+                    <div class="summary-card income">
+                        <h6><i class="fas fa-calendar-day me-2"></i>Expected Daily Fees</h6>
+                        <div class="summary-value">${formatCurrencyRWF(expected.expectedFees)}</div>
+                        <small>Based on trimester average</small>
+                    </div>
+                    <div class="summary-card expenses">
+                        <h6><i class="fas fa-receipt me-2"></i>Actual Income Today</h6>
+                        <div class="summary-value">${formatCurrencyRWF(actualIncome)}</div>
+                        <small>All income received today</small>
+                    </div>
+                `;
+                const comparisonContainer = document.getElementById('dailyComparisonSummary');
+                if (comparisonContainer) {
+                    comparisonContainer.innerHTML = comparisonHTML;
+                }
+            }
+
+            function updateWeeklyExpectedComparison(actualIncome) {
+                const weekValue = document.getElementById('weeklyReportDate').value;
+                const periodData = getExpectedForPeriod('weekly', weekValue, selectedBranch);
+                const comparisonHTML = `
+                    <div class="summary-card income">
+                        <h6><i class="fas fa-calendar-week me-2"></i>Expected Weekly Income</h6>
+                        <div class="summary-value">${formatCurrencyRWF(periodData.expectedTotal)}</div>
+                        <small>Week's trimester share</small>
+                    </div>
+                    <div class="summary-card expenses">
+                        <h6><i class="fas fa-chart-line me-2"></i>Actual Weekly Income</h6>
+                        <div class="summary-value">${formatCurrencyRWF(actualIncome)}</div>
+                        <small>All income for the week</small>
+                    </div>
+                    <div class="summary-card ${periodData.remaining >= 0 ? 'income' : 'expenses'}">
+                        <h6><i class="fas fa-tasks me-2"></i>Remaining This Week</h6>
+                        <div class="summary-value">${formatCurrencyRWF(periodData.remaining)}</div>
+                        <small>Expected - Actual</small>
+                    </div>
+                `;
+                const comparisonContainer = document.getElementById('weeklyComparisonSummary');
+                if (comparisonContainer) {
+                    comparisonContainer.innerHTML = comparisonHTML;
+                }
+            }
+
+            function updateMonthlyExpectedComparison(actualIncome) {
+                const monthValue = document.getElementById('monthlyReportDate').value;
+                const periodData = getExpectedForPeriod('monthly', monthValue, selectedBranch);
+                const comparisonHTML = `
+                    <div class="summary-card income">
+                        <h6><i class="fas fa-calendar-alt me-2"></i>Expected Monthly Income</h6>
+                        <div class="summary-value">${formatCurrencyRWF(periodData.expectedTotal)}</div>
+                        <small>Month's trimester share</small>
+                    </div>
+                    <div class="summary-card expenses">
+                        <h6><i class="fas fa-wallet me-2"></i>Actual Income This Month</h6>
+                        <div class="summary-value">${formatCurrencyRWF(actualIncome)}</div>
+                        <small>All income for the month</small>
+                    </div>
+                    <div class="summary-card income">
+                        <h6><i class="fas fa-running me-2"></i>Expected Coaching/Month</h6>
+                        <div class="summary-value">${formatCurrencyRWF(periodData.expectedCoaching)}</div>
+                        <small>Based on coaching enrollment</small>
+                    </div>
+                    <div class="summary-card income">
+                        <h6><i class="fas fa-bus me-2"></i>Expected Transport/Month</h6>
+                        <div class="summary-value">${formatCurrencyRWF(periodData.expectedTransport)}</div>
+                        <small>Based on transport enrollment</small>
+                    </div>
+                    <div class="summary-card ${periodData.remaining >= 0 ? 'income' : 'expenses'}">
+                        <h6><i class="fas fa-chart-bar me-2"></i>Remaining This Month</h6>
+                        <div class="summary-value">${formatCurrencyRWF(periodData.remaining)}</div>
+                        <small>Expected - Actual</small>
+                    </div>
+                `;
+                const comparisonContainer = document.getElementById('monthlyComparisonSummary');
+                if (comparisonContainer) {
+                    comparisonContainer.innerHTML = comparisonHTML;
+                }
+            }
+
+            // ============= COACHING FUNCTIONS =============
+
+            // Load and render coaching payments
+            async function loadCoaching() {
+                try {
+                    const filterClass = document.getElementById('filterCoachingClass').value;
+                    const filterMonth = document.getElementById('filterCoachingMonth').value;
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+
+                    const snapshot = await coachingPaymentsRef.orderByChild('branch').equalTo(firebaseBranch).once('value');
+                    let coachingPayments = [];
+                    snapshot.forEach((childSnapshot) => {
+                        coachingPayments.push({
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        });
+                    });
+
+                    // Filter by class if selected
+                    if (filterClass) {
+                        coachingPayments = coachingPayments.filter(payment => {
+                            const student = students.find(s => s.id === payment.studentId);
+                            return student && student.classe === filterClass;
+                        });
+                    }
+
+                    // Filter by month if selected
+                    if (filterMonth) {
+                        coachingPayments = coachingPayments.filter(payment => {
+                            const paymentDate = new Date(payment.paymentDate);
+                            const [year, month] = filterMonth.split('-').map(Number);
+                            return paymentDate.getFullYear() === year && paymentDate.getMonth() + 1 === month;
+                        });
+                    }
+
+                    renderCoachingTable(coachingPayments);
+                    populateCoachingClassFilterOptions();
+                    recalculateExpectedIncome();
+                } catch (error) {
+                    console.error('Error loading coaching:', error);
+                    showToast('Error loading coaching payments', 'error');
+                }
+            }
+
+            // Populate coaching class filter
+            function populateCoachingClassFilterOptions() {
+                const select = document.getElementById('filterCoachingClass');
+                if (!select) return;
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Toutes les classes / All classes</option>';
+                const uniqueClasses = extractUniqueClasses(getStudentsForCurrentBranch());
+                buildClassOptionGroups(select, uniqueClasses);
+                select.value = currentValue;
+            }
+
+            // Render coaching table
+            function renderCoachingTable(payments) {
+                const tbody = document.getElementById('coachingTableBody');
+                tbody.innerHTML = '';
+
+                if (payments.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="11" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-chalkboard fa-2x mb-3"></i>
+                                    <p>No coaching payments found</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                payments.forEach((payment, index) => {
+                    const student = students.find(s => s.id === payment.studentId);
+                    const teacher = workers.find(w => w.id === payment.teacherId);
+                    const paymentDate = new Date(payment.paymentDate).toLocaleDateString('en-US');
+
+                    // Calculate remaining balance
+                    const monthlyFee = student?.coachingMonthlyFee || 0;
+                    const paidThisTrimester = payments
+                        .filter(p => p.studentId === payment.studentId && p.trimester === currentTermConfig?.trimester)
+                        .reduce((sum, p) => sum + (p.amount || 0), 0);
+                    const expectedTotal = monthlyFee * 3; // 3 months per trimester
+                    const remainingBalance = Math.max(0, expectedTotal - paidThisTrimester);
+
+                    const balanceBadge = remainingBalance > 0
+                        ? `<span style="color:#dc143c;">${formatCurrencyRWF(remainingBalance)}</span>`
+                        : '<span class="badge bg-success">PAID</span>';
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'animate-fade-in';
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${student?.fullName || student?.name || 'N/A'}</strong></td>
+                        <td>${student?.classe || 'N/A'}</td>
+                        <td><span class="badge" style="background:#7c3aed;color:#fff;">Coaching</span></td>
+                        <td>${teacher?.name || payment.teacherName || 'N/A'}</td>
+                        <td>${formatCurrencyRWF(payment.amount)}</td>
+                        <td>${paymentDate}</td>
+                        <td>${payment.paymentMode ? payment.paymentMode.charAt(0).toUpperCase() + payment.paymentMode.slice(1) : 'N/A'}</td>
+                        <td>${balanceBadge}</td>
+                        <td>${payment.receivedBy || 'N/A'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editCoachingPayment('${payment.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCoachingPayment('${payment.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Show coaching modal
+            function showCoachingModal() {
+                document.getElementById('coachingPaymentForm').reset();
+                document.getElementById('coachingStudentInfoDiv').style.display = 'none';
+                document.getElementById('coachingCustomAmountDiv').style.display = 'none';
+                document.getElementById('coachingCustomDate').style.display = 'none';
+                
+                populateCoachingClassFilter();
+                populateCoachingTeacherSelect();
+                populateCoachingPaymentDates();
+                
+                if (currentUserName) {
+                    document.getElementById('coachingReceivedBy').value = currentUserName;
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('coachingModal'));
+                modal.show();
+            }
+
+            // Show coaching history
+            function showCoachingHistory() {
+                alert('History view - to be implemented');
+            }
+
+            // Export coaching to Excel
+            function exportCoachingExcel() {
+                alert('Export to Excel - to be implemented');
+            }
+
+            // Export coaching to PDF
+            function exportCoachingPDF() {
+                alert('Export to PDF - to be implemented');
+            }
+
+            // Populate class filter in modal
+            function populateCoachingClassFilter() {
+                const select = document.getElementById('coachingClassFilter');
+                if (!select) return;
+                select.innerHTML = '<option value="">Sélectionner une classe / Select a class</option>';
+                const uniqueClasses = extractUniqueClasses(getStudentsForCurrentBranch());
+                buildClassOptionGroups(select, uniqueClasses);
+            }
+
+            // Load students by selected class
+            function loadCoachingStudentsByClass() {
+                const selectedClass = document.getElementById('coachingClassFilter').value;
+                const classStudents = getStudentsForCurrentBranch().filter(s =>
+                    (s.classes || s.class || s.classe || '').toString().trim() === selectedClass
+                );
+
+                const select = document.getElementById('coachingStudentSelect');
+                select.innerHTML = '<option value="">Select a student</option>';
+
+                classStudents.forEach(student => {
+                    const opt = document.createElement('option');
+                    opt.value = student.id;
+                    opt.textContent = `${student.reference || ''} - ${student.fullName || student.name}`;
+                    select.appendChild(opt);
+                });
+            }
+
+            // Load selected student details
+            function loadCoachingStudentDetails() {
+                const studentId = document.getElementById('coachingStudentSelect').value;
+                const student = students.find(s => s.id === studentId);
+                
+                if (!student) {
+                    document.getElementById('coachingStudentInfoDiv').style.display = 'none';
+                    return;
+                }
+                
+                document.getElementById('coachingStudentRef').value = student.reference || '';
+                document.getElementById('coachingStudentClass').value = student.classe || '';
+                document.getElementById('coachingStudentInfoDiv').style.display = 'block';
+                
+                updateCoachingBalancePreview();
+            }
+
+            // Populate teacher select
+            function populateCoachingTeacherSelect() {
+                const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const branchTeachers = workers.filter(w => 
+                    w.branch === firebaseBranch && w.type === 'enseignant'
+                );
+                
+                const select = document.getElementById('coachingTeacherSelect');
+                select.innerHTML = '<option value="">Select teacher</option>';
+                
+                branchTeachers.forEach(teacher => {
+                    const opt = document.createElement('option');
+                    opt.value = teacher.id;
+                    opt.textContent = `${teacher.no} - ${teacher.name}`;
+                    select.appendChild(opt);
+                });
+            }
+
+            // Populate payment dates
+            function populateCoachingPaymentDates() {
+                const select = document.getElementById('coachingPaymentDateType');
+                select.innerHTML = '';
+                
+                // Add current term month
+                if (currentTermConfig) {
+                    const currentDate = new Date(currentTermConfig.startDate);
+                    const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    const monthValue = currentDate.toISOString().split('T')[0].substring(0, 7);
+                    
+                    const opt = document.createElement('option');
+                    opt.value = monthValue;
+                    opt.textContent = `Month ${currentTermConfig.trimestre} - ${monthName}`;
+                    opt.selected = true;
+                    select.appendChild(opt);
+                }
+                
+                const otherOpt = document.createElement('option');
+                otherOpt.value = 'other';
+                otherOpt.textContent = 'Other';
+                select.appendChild(otherOpt);
+            }
+
+            // Handle date change
+            function handleCoachingDateChange() {
+                const selectedValue = document.getElementById('coachingPaymentDateType').value;
+                if (selectedValue === 'other') {
+                    document.getElementById('coachingCustomDate').style.display = 'block';
+                    document.getElementById('coachingCustomDate').required = true;
+                } else {
+                    document.getElementById('coachingCustomDate').style.display = 'none';
+                    document.getElementById('coachingCustomDate').required = false;
+                }
+            }
+
+            // Set coaching amount
+            function setCoachingAmount(amount, buttonElement) {
+                document.getElementById('coachingAmount').value = amount;
+                
+                if (buttonElement) {
+                    document.querySelectorAll('.btn-outline-primary').forEach(btn => btn.classList.remove('active'));
+                    buttonElement.classList.add('active');
+                }
+                
+                document.getElementById('coachingCustomAmountDiv').style.display = 'none';
+                updateCoachingBalancePreview();
+            }
+
+            // Toggle custom amount
+            function toggleCoachingCustomAmount(buttonElement) {
+                const customDiv = document.getElementById('coachingCustomAmountDiv');
+                if (customDiv.style.display === 'none') {
+                    customDiv.style.display = 'block';
+                    document.querySelectorAll('.btn-outline-primary').forEach(btn => btn.classList.remove('active'));
+                } else {
+                    customDiv.style.display = 'none';
+                    document.getElementById('coachingCustomAmount').value = '';
+                    document.getElementById('coachingAmount').value = '';
+                }
+            }
+
+            // Update coaching balance preview
+            function updateCoachingBalancePreview() {
+                const studentId = document.getElementById('coachingStudentSelect').value;
+                const student = students.find(s => s.id === studentId);
+                const amount = parseFloat(document.getElementById('coachingAmount').value) || parseFloat(document.getElementById('coachingCustomAmount').value) || 0;
+                
+                if (!student) return;
+                
+                const monthlyFee = student.coachingMonthlyFee || 0;
+                const expectedTotal = monthlyFee * 3;
+                
+                // Calculate total paid this trimester
+                const snapshot = coachingPaymentsRef || db.ref('coachingPayments');
+                const paidThisTrimester = (window.coachingPayments || [])
+                    .filter(p => p.studentId === studentId && p.trimester === currentTermConfig?.trimestre)
+                    .reduce((sum, p) => sum + (p.amount || 0), 0);
+                
+                const remainingAfterPayment = Math.max(0, expectedTotal - paidThisTrimester - amount);
+                
+                document.getElementById('coachingConfiguredFee').textContent = formatCurrencyRWF(monthlyFee);
+                document.getElementById('coachingTotalPaid').textContent = formatCurrencyRWF(paidThisTrimester);
+                document.getElementById('coachingRemainingPreview').textContent = remainingAfterPayment > 0 
+                    ? formatCurrencyRWF(remainingAfterPayment) 
+                    : 'FULLY PAID';
+                document.getElementById('coachingRemainingPreview').style.color = remainingAfterPayment > 0 ? '#dc143c' : '#28a745';
+            }
+
+            // Save coaching payment
+            async function saveCoachingPayment() {
+                const form = document.getElementById('coachingPaymentForm');
+                
+                const studentId = document.getElementById('coachingStudentSelect').value;
+                const classId = document.getElementById('coachingClassFilter').value;
+                const teacherId = document.getElementById('coachingTeacherSelect').value;
+                const amount = parseFloat(document.getElementById('coachingAmount').value) || parseFloat(document.getElementById('coachingCustomAmount').value);
+                const paymentDateType = document.getElementById('coachingPaymentDateType').value;
+                const paymentDate = paymentDateType === 'other' 
+                    ? document.getElementById('coachingCustomDate').value 
+                    : paymentDateType;
+                const paymentMode = document.getElementById('coachingPaymentMode').value;
+                const transactionRef = document.getElementById('coachingTransactionRef').value;
+                const notes = document.getElementById('coachingNotes').value;
+                
+                // Validation
+                if (!studentId || !classId || !teacherId || !amount || !paymentDate || !paymentMode) {
+                    showToast('Please fill all required fields', 'error');
+                    return;
+                }
+                
+                try {
+                    const student = students.find(s => s.id === studentId);
+                    const teacher = workers.find(w => w.id === teacherId);
+                    const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                    
+                    const paymentData = {
+                        studentId: studentId,
+                        studentName: student?.fullName || student?.name,
+                        studentClass: student?.classe,
+                        teacherId: teacherId,
+                        teacherName: teacher?.name,
+                        amount: amount,
+                        paymentDate: paymentDate,
+                        paymentMode: paymentMode,
+                        transactionRef: transactionRef,
+                        notes: notes,
+                        receivedBy: currentUserName,
+                        branch: firebaseBranch,
+                        type: 'coaching',
+                        trimester: currentTermConfig?.trimestre,
+                        academicYear: currentTermConfig?.academicYear,
+                        timestamp: Date.now()
+                    };
+                    
+                    await coachingPaymentsRef.push(paymentData);
+                    
+                    // Update student coaching info if first payment
+                    if (!student.coachingEnrolled) {
+                        await studentsRef.child(studentId).update({
+                            coachingEnrolled: true,
+                            coachingMonthlyFee: amount
+                        });
+                    }
+                    
+                    showToast('Coaching payment saved successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('coachingModal')).hide();
+                    await logActivity('ADD_COACHING', `Coaching payment recorded for ${student?.name}: ${formatCurrencyRWF(amount)}`, 'coaching_added', {
+                        studentId: studentId,
+                        studentName: student?.name,
+                        amount: amount
+                    });
+                    
+                    loadCoaching();
+                    recalculateExpectedIncome();
+                    
+                } catch (error) {
+                    console.error('Error saving coaching payment:', error);
+                    showToast('Error saving coaching payment', 'error');
+                }
+            }
+
+            // Edit coaching payment
+            function editCoachingPayment(paymentId) {
+                alert('Edit coaching payment - to be implemented');
+            }
+
+            // Delete coaching payment
+            async function deleteCoachingPayment(paymentId) {
+                if (!confirm('Are you sure you want to delete this coaching payment?')) return;
+                
+                try {
+                    await coachingPaymentsRef.child(paymentId).remove();
+                    showToast('Coaching payment deleted successfully!', 'success');
+                    loadCoaching();
+                    recalculateExpectedIncome();
+                } catch (error) {
+                    console.error('Error deleting coaching payment:', error);
+                    showToast('Error deleting coaching payment', 'error');
+                }
+            }
+
+            // Recalculate expected income including coaching
+            // Set up Firebase listeners for coaching
+            function setupCoachingListeners() {
+                if (!coachingPaymentsRef) return;
+                
+                coachingPaymentsRef.on('value', (snapshot) => {
+                    window.coachingPayments = [];
+                    snapshot.forEach((childSnapshot) => {
+                        window.coachingPayments.push({
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        });
+                    });
+                    
+                    const coachingSection = document.getElementById('coaching');
+                    if (coachingSection && coachingSection.classList.contains('active')) {
+                        loadCoaching();
+                    }
+                    recalculateExpectedIncome();
+                });
+            }
+
+            // Initialize coaching on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                setupCoachingListeners();
+            });
+
+            // ============ FEES SECTION FUNCTIONS ============
+
+            // Global array for fee configurations
+            let feeConfigs = []; // stores { studentId, amount, dateConfigured }
+
+            // Load and display the fees configuration table
+            function loadFeesSection() {
+            const tbody = document.getElementById('feesConfigTableBody');
+            tbody.innerHTML = '';
+
+                        // Filter students in current branch/level
+                        let branchStudents = getStudentsForCurrentBranch();
+
+            // Apply class filter if selected
+            const classFilter = document.getElementById('filterFeesClass')?.value;
+            if (classFilter) {
+                branchStudents = branchStudents.filter(s => (s.classes || s.class) === classFilter);
+            }
+
+            if (branchStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">
+                <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
+                <p>No students found. Configure fees using the buttons above.</p>
+                </td></tr>`;
+                return;
+            }
+
+            branchStudents.forEach((student, index) => {
+                const amount = student.feesMonthlyAmount || 0;
+                const dateConfigured = student.feesDateConfigured || '—';
+                const studentClass = student.classes || student.class || '—';
+                const amountDisplay = amount > 0
+                ? `<span class="fw-bold text-primary">${formatCurrencyRWF(amount)}</span>`
+                : `<span class="badge bg-warning text-dark">Not configured</span>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td><strong>${student.name || student.fullName}</strong></td>
+                <td><span class="badge bg-secondary">${studentClass}</span></td>
+                <td>${amountDisplay}</td>
+                <td>${dateConfigured !== '—' ? new Date(dateConfigured).toLocaleDateString('en-US') : '—'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editSingleFee('${student.id}')" title="Edit fee">
+                    <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeFeeConfig('${student.id}')" title="Remove fee">
+                    <i class="fas fa-times"></i>
+                    </button>
+                </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Update class filter dropdown
+            populateFeesClassFilter();
+
+            // Trigger recalculation
+            recalculateExpectedIncome();
+            }
+
+            // Apply class filter on fees table
+            function applyFeesFilter() {
+            loadFeesSection();
+            }
+
+            // Populate the class filter dropdown for fees section
+            function populateFeesClassFilter() {
+            const select = document.getElementById('filterFeesClass');
+            if (!select) return;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">All classes</option>';
+
+            const uniqueClasses = getBranchClasses(selectedBranch);
+
+            uniqueClasses.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls;
+                opt.textContent = cls;
+                select.appendChild(opt);
+            });
+
+            if (currentVal) select.value = currentVal;
+            }
+
+            // ---- SINGLE FEE MODAL ----
+
+            function showSingleFeeModal() {
+            // Reset form
+            document.getElementById('singleFeeClass').value = '';
+            document.getElementById('singleFeeStudent').innerHTML = '<option value="">First select a class</option>';
+            document.getElementById('singleFeeStudentInfo').style.display = 'none';
+            document.getElementById('singleFeeAmount').value = '';
+            document.getElementById('singleFeeCustomAmount').style.display = 'none';
+            document.getElementById('singleFeeCustomAmount').value = '';
+            document.getElementById('singleFeeDate').value = new Date().toISOString().split('T')[0];
+
+            // Remove active state from all preset buttons
+            document.querySelectorAll('.fee-preset-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+            document.querySelectorAll('.fee-preset-btn').forEach(b => b.classList.add('btn-outline-primary'));
+
+            // Populate class dropdown
+            populateSingleFeeClassDropdown();
+
+            const modal = new bootstrap.Modal(document.getElementById('singleFeeModal'));
+            modal.show();
+            }
+
+            function populateSingleFeeClassDropdown() {
+            const select = document.getElementById('singleFeeClass');
+            select.innerHTML = '<option value="">Select a class</option>';
+            const uniqueClasses = getBranchClasses(selectedBranch);
+            uniqueClasses.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls;
+                opt.textContent = cls;
+                select.appendChild(opt);
+            });
+            }
+
+            function loadSingleFeeStudents() {
+            const selectedClass = document.getElementById('singleFeeClass').value;
+            const select = document.getElementById('singleFeeStudent');
+            select.innerHTML = '<option value="">Select a student</option>';
+            document.getElementById('singleFeeStudentInfo').style.display = 'none';
+
+            if (!selectedClass) return;
+
+                        const filtered = getStudentsForCurrentBranch().filter(s => (s.classes || s.class) === selectedClass);
+
+            filtered.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `${s.reference || ''} - ${s.name || s.fullName}`;
+                select.appendChild(opt);
+            });
+            }
+
+            function loadSingleFeeStudentInfo() {
+            const studentId = document.getElementById('singleFeeStudent').value;
+            if (!studentId) {
+                document.getElementById('singleFeeStudentInfo').style.display = 'none';
+                return;
+            }
+
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+
+            document.getElementById('singleFeeRef').textContent = student.reference || 'N/A';
+            document.getElementById('singleFeeClassName').textContent = student.classes || student.class || 'N/A';
+
+            const currentFee = student.feesMonthlyAmount;
+            document.getElementById('singleFeeCurrentAmount').textContent =
+                currentFee ? formatCurrencyRWF(currentFee) + ' / trimester' : 'Not configured';
+
+            document.getElementById('singleFeeStudentInfo').style.display = 'block';
+
+            // Pre-select current amount if exists
+            if (currentFee) {
+                const presets = [20000, 25000, 30000, 35000, 40000, 45000, 50000];
+                if (presets.includes(currentFee)) {
+                document.querySelectorAll('.fee-preset-btn').forEach(b => {
+                    if (parseInt(b.getAttribute('onclick').match(/\d+/)?.[0]) === currentFee) {
+                    b.classList.remove('btn-outline-primary', 'btn-outline-secondary');
+                    b.classList.add('btn-primary', 'active');
+                    }
+                });
+                }
+                document.getElementById('singleFeeAmount').value = currentFee;
+            }
+            }
+
+            // Edit fee directly from table
+            function editSingleFee(studentId) {
+            showSingleFeeModal();
+            setTimeout(() => {
+                const student = students.find(s => s.id === studentId);
+                if (!student) return;
+                const studentClass = student.classes || student.class;
+                document.getElementById('singleFeeClass').value = studentClass;
+                loadSingleFeeStudents();
+                setTimeout(() => {
+                document.getElementById('singleFeeStudent').value = studentId;
+                loadSingleFeeStudentInfo();
+                }, 100);
+            }, 300);
+            }
+
+            function selectFeePreset(btn, amount) {
+            // Remove active from all preset buttons
+            document.querySelectorAll('.fee-preset-btn').forEach(b => {
+                b.classList.remove('btn-primary', 'btn-secondary', 'active');
+                b.classList.add('btn-outline-primary');
+            });
+            // Activate clicked button
+            btn.classList.remove('btn-outline-primary', 'btn-outline-secondary');
+            btn.classList.add('btn-primary', 'active');
+            // Set amount
+            document.getElementById('singleFeeAmount').value = amount;
+            // Hide custom input
+            document.getElementById('singleFeeCustomAmount').style.display = 'none';
+            document.getElementById('singleFeeCustomAmount').value = '';
+            }
+
+            function showFeeOtherInput(btn) {
+            document.querySelectorAll('.fee-preset-btn').forEach(b => {
+                b.classList.remove('btn-primary', 'btn-secondary', 'active');
+                b.classList.add('btn-outline-primary');
+            });
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-secondary', 'active');
+            document.getElementById('singleFeeCustomAmount').style.display = 'block';
+            document.getElementById('singleFeeCustomAmount').focus();
+            document.getElementById('singleFeeAmount').value = '';
+            }
+
+            function setSingleFeeFromCustom(value) {
+            document.getElementById('singleFeeAmount').value = value;
+            }
+
+            async function saveSingleFee() {
+            const studentId = document.getElementById('singleFeeStudent').value;
+            const amount = parseFloat(document.getElementById('singleFeeAmount').value);
+            const date = document.getElementById('singleFeeDate').value;
+
+            if (!studentId) { showToast('Please select a student', 'error'); return; }
+            if (!amount || amount <= 0) { showToast('Please select or enter a fee amount', 'error'); return; }
+            if (!date) { showToast('Please select a date', 'error'); return; }
+
+            try {
+                await db.ref('students/' + studentId).update({
+                feesMonthlyAmount: amount,
+                feesDateConfigured: date,
+                feesConfiguredBy: currentUserName,
+                feesUpdatedAt: Date.now()
+                });
+
+                showToast('Fee configured successfully! ' + formatCurrencyRWF(amount) + '/trimester', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('singleFeeModal')).hide();
+                loadFeesSection();
+                recalculateExpectedIncome();
+
+            } catch(error) {
+                console.error('Error saving fee:', error);
+                showToast('Error saving fee: ' + error.message, 'error');
+            }
+            }
+
+            async function removeFeeConfig(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            if (!confirm(`Remove fee configuration for ${student.name || student.fullName}?`)) return;
+
+            try {
+                await db.ref('students/' + studentId).update({
+                feesMonthlyAmount: 0,
+                feesDateConfigured: null,
+                feesConfiguredBy: null
+                });
+                showToast('Fee configuration removed', 'success');
+                loadFeesSection();
+                recalculateExpectedIncome();
+            } catch(error) {
+                showToast('Error removing fee: ' + error.message, 'error');
+            }
+            }
+
+            // ---- BULK FEE MODAL ----
+
+            function showBulkFeeModal() {
+            document.getElementById('bulkFeeClass').value = '';
+            document.getElementById('bulkFeeAmount').value = '';
+            document.getElementById('bulkFeeCustomAmount').style.display = 'none';
+            document.getElementById('bulkFeeCustomAmount').value = '';
+            document.getElementById('bulkFeeDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('bulkFeePreview').style.display = 'none';
+            document.getElementById('bulkSelectedCount').textContent = '0';
+            document.querySelectorAll('.bulk-fee-preset-btn').forEach(b => {
+                b.classList.remove('btn-primary', 'active');
+                b.classList.add('btn-outline-primary');
+            });
+
+            // Populate class dropdown
+            const classSelect = document.getElementById('bulkFeeClass');
+            classSelect.innerHTML = '<option value="">All classes</option>';
+            const uniqueClasses = getBranchClasses(selectedBranch);
+            uniqueClasses.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls;
+                opt.textContent = cls;
+                classSelect.appendChild(opt);
+            });
+
+            loadBulkFeeStudents();
+
+            const modal = new bootstrap.Modal(document.getElementById('bulkFeeModal'));
+            modal.show();
+            }
+
+            function loadBulkFeeStudents() {
+            const classFilter = document.getElementById('bulkFeeClass').value;
+            const tbody = document.getElementById('bulkFeeStudentsList');
+            tbody.innerHTML = '';
+
+            let filtered = getStudentsForCurrentBranch();
+            if (classFilter) filtered = filtered.filter(s => (s.classes || s.class) === classFilter);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No students found</td></tr>';
+                return;
+            }
+
+            filtered.forEach(student => {
+                const currentFee = student.feesMonthlyAmount;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td>
+                    <input type="checkbox" class="bulk-student-checkbox" value="${student.id}"
+                        onchange="updateBulkSelectedCount()">
+                </td>
+                <td><strong>${student.name || student.fullName}</strong><br>
+                    <small class="text-muted">${student.reference || ''}</small></td>
+                <td><span class="badge bg-secondary">${student.classes || student.class || '—'}</span></td>
+                <td>${currentFee && currentFee > 0
+                    ? '<span class="text-primary fw-bold">' + formatCurrencyRWF(currentFee) + '</span>'
+                    : '<span class="badge bg-warning text-dark">Not set</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('selectAllCheckbox').checked = false;
+            updateBulkSelectedCount();
+            }
+
+            function updateBulkSelectedCount() {
+            const checked = document.querySelectorAll('.bulk-student-checkbox:checked').length;
+            document.getElementById('bulkSelectedCount').textContent = checked;
+
+            const amount = parseFloat(document.getElementById('bulkFeeAmount').value) || 0;
+            if (checked > 0 && amount > 0) {
+                document.getElementById('bulkFeePreview').style.display = 'block';
+                document.getElementById('bulkFeePreviewAmount').textContent = formatCurrencyRWF(amount);
+                document.getElementById('bulkFeePreviewCount').textContent = checked;
+            } else {
+                document.getElementById('bulkFeePreview').style.display = 'none';
+            }
+            }
+
+            function toggleAllBulkStudents(masterCheckbox) {
+            document.querySelectorAll('.bulk-student-checkbox').forEach(cb => {
+                cb.checked = masterCheckbox.checked;
+            });
+            updateBulkSelectedCount();
+            }
+
+            function selectAllBulkStudents() {
+            document.querySelectorAll('.bulk-student-checkbox').forEach(cb => cb.checked = true);
+            document.getElementById('selectAllCheckbox').checked = true;
+            updateBulkSelectedCount();
+            }
+
+            function deselectAllBulkStudents() {
+            document.querySelectorAll('.bulk-student-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('selectAllCheckbox').checked = false;
+            updateBulkSelectedCount();
+            }
+
+            function selectBulkFeePreset(btn, amount) {
+            document.querySelectorAll('.bulk-fee-preset-btn').forEach(b => {
+                b.classList.remove('btn-primary', 'btn-secondary', 'active');
+                b.classList.add('btn-outline-primary');
+            });
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-primary', 'active');
+            document.getElementById('bulkFeeAmount').value = amount;
+            document.getElementById('bulkFeeCustomAmount').style.display = 'none';
+            document.getElementById('bulkFeeCustomAmount').value = '';
+            updateBulkSelectedCount();
+            }
+
+            function showBulkFeeOtherInput(btn) {
+            document.querySelectorAll('.bulk-fee-preset-btn').forEach(b => {
+                b.classList.remove('btn-primary', 'active');
+                b.classList.add('btn-outline-primary');
+            });
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-secondary', 'active');
+            document.getElementById('bulkFeeCustomAmount').style.display = 'block';
+            document.getElementById('bulkFeeCustomAmount').focus();
+            document.getElementById('bulkFeeAmount').value = '';
+            }
+
+            function setBulkFeeFromCustom(value) {
+            document.getElementById('bulkFeeAmount').value = value;
+            updateBulkSelectedCount();
+            }
+
+            async function saveBulkFees() {
+            const checkedBoxes = document.querySelectorAll('.bulk-student-checkbox:checked');
+            const amount = parseFloat(document.getElementById('bulkFeeAmount').value);
+            const date = document.getElementById('bulkFeeDate').value;
+
+            if (checkedBoxes.length === 0) { showToast('Please select at least one student', 'error'); return; }
+            if (!amount || amount <= 0) { showToast('Please select or enter a fee amount', 'error'); return; }
+            if (!date) { showToast('Please select a date', 'error'); return; }
+
+            const saveBtn = document.querySelector('#bulkFeeModal .btn-modern.btn-primary-modern');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Saving...';
+
+            try {
+                const updates = {};
+                checkedBoxes.forEach(cb => {
+                updates['students/' + cb.value + '/feesMonthlyAmount'] = amount;
+                updates['students/' + cb.value + '/feesDateConfigured'] = date;
+                updates['students/' + cb.value + '/feesConfiguredBy'] = currentUserName;
+                updates['students/' + cb.value + '/feesUpdatedAt'] = Date.now();
+                });
+
+                await db.ref().update(updates);
+
+                showToast(`Fee ${formatCurrencyRWF(amount)} applied to ${checkedBoxes.length} student(s)!`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('bulkFeeModal')).hide();
+                loadFeesSection();
+                recalculateExpectedIncome();
+
+            } catch(error) {
+                console.error('Error saving bulk fees:', error);
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+            }
+
+            // Call loadFeesSection when fees section becomes active
+            // Add in showSection() function: else if (sectionId === 'fees') { loadFeesSection(); }
+
+            // ============================================
+            // TRANSPORT CONFIGURATION FUNCTIONS
+            // ============================================
+
+            // Returns true if current user is the Kacyiru accountant (special transport rights)
+            function isKacyiruComptable() {
+                const branch = (currentUser?.branch || currentUser?.branche || '').toString().trim().toLowerCase();
+                return branch === 'kacyiru';
+            }
+
+            // Returns the branch to use for transport operations (can differ from selectedBranch for Kacyiru comptable)
+            function getActiveTransportBranch() {
+                const sel = document.getElementById('transportBranchSelector');
+                if (isKacyiruComptable() && sel) return sel.value || selectedBranch;
+                return selectedBranch;
+            }
+
+            function onTransportBranchChange() {
+                // Reset class filter
+                const cf = document.getElementById('filterTransportClass');
+                if (cf) cf.value = '';
+                loadTransportSection();
+            }
+
+            // Show/hide transport branch selector based on current user
+            function initTransportBranchSelector() {
+                const sel = document.getElementById('transportBranchSelector');
+                if (!sel) return;
+                if (isKacyiruComptable()) {
+                    sel.style.display = '';
+                    const optionValues = Array.from(sel.options).map(option => option.value);
+                    const currentSelection = sel.value;
+                    const fallbackBranch = optionValues.includes(selectedBranch) ? selectedBranch : 'kacyiru';
+                    sel.value = optionValues.includes(currentSelection) && currentSelection ? currentSelection : fallbackBranch;
+                } else {
+                    sel.style.display = 'none';
+                }
+            }
+
+            function populateBulkTransportClassDropdown() {
+                const branch = isKacyiruComptable()
+                    ? (document.getElementById('bulkTransportBranch')?.value || selectedBranch)
+                    : selectedBranch;
+                const select = document.getElementById('bulkTransportClass');
+                select.innerHTML = '<option value="">All classes</option>';
+                const uniqueClasses = getBranchClasses(branch);
+                uniqueClasses.forEach(cls => {
+                    const opt = document.createElement('option');
+                    opt.value = cls;
+                    opt.textContent = cls;
+                    select.appendChild(opt);
+                });
+            }
+
+            function loadTransportSection() {
+            initTransportBranchSelector();
+            const tbody = document.getElementById('transportConfigTableBody');
+            tbody.innerHTML = '';
+
+            const transportBranch = getActiveTransportBranch();
+
+                        // Filter students in this branch/level that have transportMonthlyFee configured
+                        let branchStudents = getStudentsForCurrentBranch(transportBranch);
+
+            // Show only students with transportEnrolled=true OR transportMonthlyFee > 0
+            branchStudents = branchStudents.filter(s => s.transportEnrolled === true || (s.transportMonthlyFee && parseFloat(s.transportMonthlyFee) > 0));
+
+            // Apply class filter if selected
+            const classFilter = document.getElementById('filterTransportClass')?.value;
+            if (classFilter) {
+                branchStudents = branchStudents.filter(s => (s.classes || s.class) === classFilter);
+            }
+
+            if (branchStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">
+                <i class="fas fa-bus fa-2x mb-2"></i>
+                <p>No students found. Configure transport using the buttons above.</p>
+                </td></tr>`;
+                populateTransportClassFilter();
+                recalculateExpectedIncome();
+                return;
+            }
+
+            branchStudents.forEach((student, index) => {
+                const amount = student.transportMonthlyFee || 0;
+                const dateConfigured = student.transportDateConfigured || '—';
+                const studentClass = student.classes || student.class || '—';
+                const amountDisplay = amount > 0
+                ? `<span class="fw-bold text-primary">${formatCurrencyRWF(amount)}</span>`
+                : `<span class="badge bg-warning text-dark">Not configured</span>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td><strong>${student.name || student.fullName}</strong></td>
+                <td><span class="badge bg-secondary">${studentClass}</span></td>
+                <td>${amountDisplay}</td>
+                <td>${dateConfigured !== '—' ? new Date(dateConfigured).toLocaleDateString('en-US') : '—'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editSingleTransport('${student.id}')" title="Edit transport">
+                    <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeTransportConfig('${student.id}')" title="Remove transport">
+                    <i class="fas fa-times"></i>
+                    </button>
+                </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Update class filter dropdown
+            populateTransportClassFilter();
+
+            // Trigger recalculation
+            recalculateExpectedIncome();
+            }
+
+            // Apply class filter on transport table
+            function applyTransportFilter() {
+            loadTransportSection();
+            }
+
+            // Populate the class filter dropdown for transport section
+            function populateTransportClassFilter() {
+            const select = document.getElementById('filterTransportClass');
+            if (!select) return;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">All classes</option>';
+
+            const uniqueClasses = getBranchClasses(getActiveTransportBranch());
+
+            uniqueClasses.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls;
+                opt.textContent = cls;
+                select.appendChild(opt);
+            });
+
+            select.value = currentVal;
+            }
+
+            // ---- SINGLE TRANSPORT MODAL ----
+
+            function showSingleTransportModal() {
+            document.getElementById('singleTransportClass').value = '';
+            document.getElementById('singleTransportStudent').value = '';
+            document.getElementById('singleTransportAmount').value = '';
+            document.getElementById('singleTransportCustomAmount').style.display = 'none';
+            document.getElementById('singleTransportCustomAmount').value = '';
+            document.getElementById('singleTransportDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('singleTransportStudentInfo').style.display = 'none';
+            
+                        // Show branch selector for Kacyiru comptable
+                        const branchRow = document.getElementById('singleTransportBranchRow');
+                        if (branchRow) {
+                            if (isKacyiruComptable()) {
+                                branchRow.style.display = '';
+                                document.getElementById('singleTransportBranch').value = getActiveTransportBranch();
+                            } else {
+                                branchRow.style.display = 'none';
+                            }
+                        }
+            
+                        // Clear all preset button active states
+            document.querySelectorAll('.transport-preset-btn').forEach(btn => btn.classList.remove('active', 'btn-primary', 'btn-outline-primary'));
+            document.querySelectorAll('.transport-preset-btn').forEach(btn => btn.classList.add('btn-outline-primary'));
+            
+            populateSingleTransportClassDropdown();
+            const modal = new bootstrap.Modal(document.getElementById('singleTransportModal'));
+            modal.show();
+            }
+
+            function populateSingleTransportClassDropdown() {
+            const select = document.getElementById('singleTransportClass');
+            select.innerHTML = '<option value="">Select a class</option>';
+
+                        const branch = isKacyiruComptable()
+                            ? (document.getElementById('singleTransportBranch')?.value || getActiveTransportBranch())
+                            : selectedBranch;
+                        const uniqueClasses = getBranchClasses(branch);
+
+            uniqueClasses.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls;
+                opt.textContent = cls;
+                select.appendChild(opt);
+            });
+            }
+
+            function loadSingleTransportStudents() {
+            const classVal = document.getElementById('singleTransportClass').value;
+            const select = document.getElementById('singleTransportStudent');
+            select.innerHTML = '<option value="">Select a student</option>';
+
+            if (!classVal) return;
+
+                        const branch = isKacyiruComptable()
+                            ? (document.getElementById('singleTransportBranch')?.value || getActiveTransportBranch())
+                            : selectedBranch;
+                        const filtered = getStudentsForCurrentBranch(branch).filter(s => (s.classes || s.class) === classVal);
+            filtered.forEach(student => {
+                const opt = document.createElement('option');
+                opt.value = student.id;
+                opt.textContent = student.name || student.fullName;
+                select.appendChild(opt);
+            });
+            }
+
+            function loadSingleTransportStudentInfo() {
+            const studentId = document.getElementById('singleTransportStudent').value;
+            const infoDiv = document.getElementById('singleTransportStudentInfo');
+
+            if (!studentId) {
+                infoDiv.style.display = 'none';
+                return;
+            }
+
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+
+            document.getElementById('singleTransportRef').textContent = student.id;
+            document.getElementById('singleTransportClassName').textContent = student.classes || student.class || '—';
+            
+            const currentAmount = student.transportMonthlyFee || 0;
+            document.getElementById('singleTransportCurrentAmount').textContent = 
+                currentAmount > 0 ? `${formatCurrencyRWF(currentAmount)}/month` : 'Not configured';
+
+            infoDiv.style.display = 'block';
+            }
+
+            function editSingleTransport(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+
+            // Reset and populate modal with student data
+            const classVal = student.classes || student.class;
+            document.getElementById('singleTransportClass').value = classVal || '';
+            loadSingleTransportStudents();
+            
+            setTimeout(() => {
+                document.getElementById('singleTransportStudent').value = studentId;
+                loadSingleTransportStudentInfo();
+                
+                // Set the amount
+                const amount = student.transportMonthlyFee || 0;
+                document.getElementById('singleTransportAmount').value = amount;
+                
+                // Set date
+                const date = student.transportDateConfigured || new Date().toISOString().split('T')[0];
+                document.getElementById('singleTransportDate').value = date;
+
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('singleTransportModal'));
+                modal.show();
+            }, 100);
+            }
+
+            function selectTransportPreset(btn, amount) {
+            document.querySelectorAll('.transport-preset-btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.classList.contains('btn-primary')) {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-primary');
+                }
+            });
+            btn.classList.add('active', 'btn-primary');
+            btn.classList.remove('btn-outline-primary');
+            document.getElementById('singleTransportAmount').value = amount;
+            document.getElementById('singleTransportCustomAmount').style.display = 'none';
+            }
+
+            function showTransportOtherInput(btn) {
+            document.querySelectorAll('.transport-preset-btn').forEach(b => {
+                b.classList.remove('active', 'btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            document.getElementById('singleTransportCustomAmount').style.display = 'block';
+            document.getElementById('singleTransportCustomAmount').focus();
+            }
+
+            function setSingleTransportFromCustom(value) {
+            document.getElementById('singleTransportAmount').value = value;
+            }
+
+            async function saveSingleTransport() {
+            const studentId = document.getElementById('singleTransportStudent').value;
+            const amount = parseFloat(document.getElementById('singleTransportAmount').value);
+            const date = document.getElementById('singleTransportDate').value;
+
+            if (!studentId) { showToast('Please select a student', 'error'); return; }
+            if (!amount || amount <= 0) { showToast('Please select or enter an amount', 'error'); return; }
+            if (!date) { showToast('Please select a date', 'error'); return; }
+
+            try {
+                await db.ref('students/' + studentId).update({
+                transportEnrolled: true,
+                transportMonthlyFee: amount,
+                transportDateConfigured: date,
+                transportConfiguredBy: currentUserName,
+                transportUpdatedAt: Date.now()
+                });
+
+                showToast('Transport configured successfully! ' + formatCurrencyRWF(amount) + '/month', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('singleTransportModal')).hide();
+                loadTransportSection();
+                recalculateExpectedIncome();
+
+            } catch(error) {
+                console.error('Error saving transport:', error);
+                showToast('Error saving transport: ' + error.message, 'error');
+            }
+            }
+
+            async function removeTransportConfig(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            if (!confirm(`Remove transport configuration for ${student.name || student.fullName}?`)) return;
+
+            try {
+                await db.ref('students/' + studentId).update({
+                transportEnrolled: false,
+                transportMonthlyFee: 0,
+                transportDateConfigured: null,
+                transportConfiguredBy: null
+                });
+                showToast('Transport configuration removed', 'success');
+                loadTransportSection();
+                recalculateExpectedIncome();
+            } catch(error) {
+                showToast('Error removing transport: ' + error.message, 'error');
+            }
+            }
+
+            // ---- BULK TRANSPORT MODAL ----
+
+            function showBulkTransportModal() {
+            document.getElementById('bulkTransportClass').value = '';
+            document.getElementById('bulkTransportAmount').value = '';
+            document.getElementById('bulkTransportCustomAmount').style.display = 'none';
+            document.getElementById('bulkTransportCustomAmount').value = '';
+            document.getElementById('bulkTransportDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('bulkTransportPreview').style.display = 'none';
+            document.getElementById('bulkTransportSelectedCount').textContent = '0';
+            document.getElementById('selectAllTransportCheckbox').checked = false;
+
+                        // Show branch selector for Kacyiru comptable
+                        const branchRow = document.getElementById('bulkTransportBranchRow');
+                        if (branchRow) {
+                            if (isKacyiruComptable()) {
+                                branchRow.style.display = '';
+                                document.getElementById('bulkTransportBranch').value = getActiveTransportBranch();
+                            } else {
+                                branchRow.style.display = 'none';
+                            }
+                        }
+
+                        // Populate class dropdown
+                        populateBulkTransportClassDropdown();
+
+            loadBulkTransportStudents();
+            
+            // Clear preset buttons
+            document.querySelectorAll('.bulk-transport-preset-btn').forEach(btn => btn.classList.remove('active', 'btn-primary', 'btn-outline-primary'));
+            document.querySelectorAll('.bulk-transport-preset-btn').forEach(btn => btn.classList.add('btn-outline-primary'));
+
+            const modal = new bootstrap.Modal(document.getElementById('bulkTransportModal'));
+            modal.show();
+            }
+
+            function loadBulkTransportStudents() {
+            const classFilter = document.getElementById('bulkTransportClass').value;
+            const tbody = document.getElementById('bulkTransportStudentsList');
+            tbody.innerHTML = '';
+
+                        const bulkBranch = isKacyiruComptable()
+                            ? (document.getElementById('bulkTransportBranch')?.value || getActiveTransportBranch())
+                            : selectedBranch;
+                        let filtered = getStudentsForCurrentBranch(bulkBranch);
+            if (classFilter) filtered = filtered.filter(s => (s.classes || s.class) === classFilter);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No students found</td></tr>';
+                updateBulkTransportSelectedCount();
+                return;
+            }
+
+            filtered.forEach(student => {
+                const currentTransport = student.transportMonthlyFee || 0;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td><input type="checkbox" class="bulk-transport-checkbox" value="${student.id}" onchange="updateBulkTransportSelectedCount()"></td>
+                <td>${student.name || student.fullName}</td>
+                <td><span class="badge bg-secondary">${student.classes || student.class || '—'}</span></td>
+                <td>${currentTransport > 0 ? formatCurrencyRWF(currentTransport) : '—'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateBulkTransportSelectedCount();
+            }
+
+            function updateBulkTransportSelectedCount() {
+            const checkedBoxes = document.querySelectorAll('.bulk-transport-checkbox:checked');
+            document.getElementById('bulkTransportSelectedCount').textContent = checkedBoxes.length;
+
+            const amount = parseFloat(document.getElementById('bulkTransportAmount').value);
+            if (checkedBoxes.length > 0 && amount > 0) {
+                document.getElementById('bulkTransportPreview').style.display = 'block';
+                document.getElementById('bulkTransportPreviewAmount').textContent = formatCurrencyRWF(amount);
+                document.getElementById('bulkTransportPreviewCount').textContent = checkedBoxes.length;
+            } else {
+                document.getElementById('bulkTransportPreview').style.display = 'none';
+            }
+            }
+
+            function toggleAllTransportStudents(cb) {
+            document.querySelectorAll('.bulk-transport-checkbox').forEach(checkbox => {
+                checkbox.checked = cb.checked;
+            });
+            updateBulkTransportSelectedCount();
+            }
+
+            function selectAllTransportStudents() {
+            document.getElementById('selectAllTransportCheckbox').checked = true;
+            toggleAllTransportStudents(document.getElementById('selectAllTransportCheckbox'));
+            }
+
+            function deselectAllTransportStudents() {
+            document.getElementById('selectAllTransportCheckbox').checked = false;
+            toggleAllTransportStudents(document.getElementById('selectAllTransportCheckbox'));
+            }
+
+            function selectBulkTransportPreset(btn, amount) {
+            document.querySelectorAll('.bulk-transport-preset-btn').forEach(b => {
+                b.classList.remove('active', 'btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            btn.classList.add('active', 'btn-primary');
+            btn.classList.remove('btn-outline-primary');
+            document.getElementById('bulkTransportAmount').value = amount;
+            document.getElementById('bulkTransportCustomAmount').style.display = 'none';
+            updateBulkTransportSelectedCount();
+            }
+
+            function showBulkTransportOtherInput(btn) {
+            document.querySelectorAll('.bulk-transport-preset-btn').forEach(b => {
+                b.classList.remove('active', 'btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            document.getElementById('bulkTransportCustomAmount').style.display = 'block';
+            document.getElementById('bulkTransportCustomAmount').focus();
+            }
+
+            function setBulkTransportFromCustom(value) {
+            document.getElementById('bulkTransportAmount').value = value;
+            updateBulkTransportSelectedCount();
+            }
+
+            async function saveBulkTransport() {
+            const checkedBoxes = document.querySelectorAll('.bulk-transport-checkbox:checked');
+            const amount = parseFloat(document.getElementById('bulkTransportAmount').value);
+            const date = document.getElementById('bulkTransportDate').value;
+
+            if (checkedBoxes.length === 0) { showToast('Please select at least one student', 'error'); return; }
+            if (!amount || amount <= 0) { showToast('Please select or enter an amount', 'error'); return; }
+            if (!date) { showToast('Please select a date', 'error'); return; }
+
+            const saveBtn = document.querySelector('#bulkTransportModal .btn-modern.btn-primary-modern');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Saving...';
+
+            try {
+                const updates = {};
+                checkedBoxes.forEach(cb => {
+                updates['students/' + cb.value + '/transportEnrolled'] = true;
+                updates['students/' + cb.value + '/transportMonthlyFee'] = amount;
+                updates['students/' + cb.value + '/transportDateConfigured'] = date;
+                updates['students/' + cb.value + '/transportConfiguredBy'] = currentUserName;
+                updates['students/' + cb.value + '/transportUpdatedAt'] = Date.now();
+                });
+
+                await db.ref().update(updates);
+
+                showToast(`Transport ${formatCurrencyRWF(amount)}/month applied to ${checkedBoxes.length} student(s)!`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('bulkTransportModal')).hide();
+                loadTransportSection();
+                recalculateExpectedIncome();
+
+            } catch(error) {
+                console.error('Error saving bulk transport:', error);
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+            }
+
+            // ============================================
+            // COACHING CONFIGURATION FUNCTIONS
+            // ============================================
+
+            function loadCoachingSection() {
+            const tbody = document.getElementById('coachingConfigTableBody');
+            tbody.innerHTML = '';
+
+                        // Filter students in this branch/level that have coachingMonthlyFee configured
+                        let branchStudents = getStudentsForCurrentBranch();
+
+            // Show only students with coachingEnrolled=true OR coachingMonthlyFee > 0
+            branchStudents = branchStudents.filter(s => s.coachingEnrolled === true || (s.coachingMonthlyFee && parseFloat(s.coachingMonthlyFee) > 0));
+
+            // Apply class filter if selected
+            const classFilter = document.getElementById('filterCoachingClass')?.value;
+            if (classFilter) {
+                branchStudents = branchStudents.filter(s => (s.classes || s.class) === classFilter);
+            }
+
+            if (branchStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">
+                <i class="fas fa-chalkboard fa-2x mb-2"></i>
+                <p>No students found. Configure coaching using the buttons above.</p>
+                </td></tr>`;
+                populateCoachingClassFilter();
+                recalculateExpectedIncome();
+                return;
+            }
+
+            branchStudents.forEach((student, index) => {
+                const amount = student.coachingMonthlyFee || 0;
+                const dateConfigured = student.coachingDateConfigured || '—';
+                const studentClass = student.classes || student.class || '—';
+                const teacherName = workers.find(w => w.id === student.coachingTeacherId)?.name || student.coachingTeacherName || 'Not assigned';
+                const amountDisplay = amount > 0
+                ? `<span class="fw-bold text-primary">${formatCurrencyRWF(amount)}</span>`
+                : `<span class="badge bg-warning text-dark">Not configured</span>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td><strong>${student.name || student.fullName}</strong></td>
+                <td><span class="badge bg-secondary">${studentClass}</span></td>
+                <td>${teacherName}</td>
+                <td>${amountDisplay}</td>
+                <td>${dateConfigured !== '—' ? new Date(dateConfigured).toLocaleDateString('en-US') : '—'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editSingleCoaching('${student.id}')" title="Edit coaching">
+                    <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeCoachingConfig('${student.id}')" title="Remove coaching">
+                    <i class="fas fa-times"></i>
+                    </button>
+                </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Update class filter dropdown
+            populateCoachingClassFilter();
+
+            // Trigger recalculation
+            recalculateExpectedIncome();
+            }
+
+            // Apply class filter on coaching table
+            function applyCoachingFilter() {
+            loadCoachingSection();
+            }
+
+            // Populate the class filter dropdown for coaching section
+            function populateCoachingClassFilter() {
+            const select = document.getElementById('filterCoachingClass');
+            if (!select) return;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">All classes</option>';
+
+            const uniqueClasses = getBranchClasses(selectedBranch);
+
+            uniqueClasses.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls;
+                opt.textContent = cls;
+                select.appendChild(opt);
+            });
+
+            select.value = currentVal;
+            }
+
+            // Populate teacher select for single modal
+            function populateSingleCoachingTeacherSelect() {
+            const select = document.getElementById('singleCoachingTeacher');
+            select.innerHTML = '<option value="">No teacher assigned</option>';
+
+            const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+            const branchWorkers = workers.filter(w => 
+                w.type === 'enseignant' && 
+                (w.branch === firebaseBranch || w.branch === selectedBranch)
+            );
+
+            branchWorkers.sort((a, b) => {
+                const noA = parseInt(a.NO || 0);
+                const noB = parseInt(b.NO || 0);
+                return noA - noB;
+            }).forEach(worker => {
+                const opt = document.createElement('option');
+                opt.value = worker.id;
+                const noText = worker.NO ? `${worker.NO} - ` : '';
+                opt.textContent = noText + (worker.name || worker.fullName || 'Unknown');
+                select.appendChild(opt);
+            });
+            }
+
+            // Populate teacher select for bulk modal
+            function populateBulkCoachingTeacherSelect() {
+            const select = document.getElementById('bulkCoachingTeacher');
+            select.innerHTML = '<option value="">No teacher assigned</option>';
+
+            const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+            const branchWorkers = workers.filter(w => 
+                w.type === 'enseignant' && 
+                (w.branch === firebaseBranch || w.branch === selectedBranch)
+            );
+
+            branchWorkers.sort((a, b) => {
+                const noA = parseInt(a.NO || 0);
+                const noB = parseInt(b.NO || 0);
+                return noA - noB;
+            }).forEach(worker => {
+                const opt = document.createElement('option');
+                opt.value = worker.id;
+                const noText = worker.NO ? `${worker.NO} - ` : '';
+                opt.textContent = noText + (worker.name || worker.fullName || 'Unknown');
+                select.appendChild(opt);
+            });
+            }
+
+            // ---- SINGLE COACHING MODAL ----
+
+            function showSingleCoachingModal() {
+            document.getElementById('singleCoachingClass').value = '';
+            document.getElementById('singleCoachingStudent').value = '';
+            document.getElementById('singleCoachingTeacher').value = '';
+            document.getElementById('singleCoachingAmount').value = '';
+            document.getElementById('singleCoachingCustomAmount').style.display = 'none';
+            document.getElementById('singleCoachingCustomAmount').value = '';
+            document.getElementById('singleCoachingDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('singleCoachingStudentInfo').style.display = 'none';
+            
+            // Clear all preset button active states
+            document.querySelectorAll('.coaching-preset-btn').forEach(btn => btn.classList.remove('active', 'btn-primary', 'btn-outline-primary'));
+            document.querySelectorAll('.coaching-preset-btn').forEach(btn => btn.classList.add('btn-outline-primary'));
+            
+            populateSingleCoachingClassDropdown();
+            populateSingleCoachingTeacherSelect();
+            const modal = new bootstrap.Modal(document.getElementById('singleCoachingModal'));
+            modal.show();
+            }
+
+            function populateSingleCoachingClassDropdown() {
+            const select = document.getElementById('singleCoachingClass');
+            select.innerHTML = '<option value="">Select a class</option>';
+
+            const uniqueClasses = getBranchClasses(selectedBranch);
+
+            uniqueClasses.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls;
+                opt.textContent = cls;
+                select.appendChild(opt);
+            });
+            }
+
+            function loadSingleCoachingStudents() {
+            const classVal = document.getElementById('singleCoachingClass').value;
+            const select = document.getElementById('singleCoachingStudent');
+            select.innerHTML = '<option value="">Select a student</option>';
+
+            if (!classVal) return;
+
+            const filtered = getStudentsForCurrentBranch().filter(s => (s.classes || s.class) === classVal);
+            filtered.forEach(student => {
+                const opt = document.createElement('option');
+                opt.value = student.id;
+                opt.textContent = student.name || student.fullName;
+                select.appendChild(opt);
+            });
+            }
+
+            function loadSingleCoachingStudentInfo() {
+            const studentId = document.getElementById('singleCoachingStudent').value;
+            const infoDiv = document.getElementById('singleCoachingStudentInfo');
+
+            if (!studentId) {
+                infoDiv.style.display = 'none';
+                return;
+            }
+
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+
+            document.getElementById('singleCoachingRef').textContent = student.id;
+            document.getElementById('singleCoachingClassName').textContent = student.classes || student.class || '—';
+            
+            const currentAmount = student.coachingMonthlyFee || 0;
+            document.getElementById('singleCoachingCurrentAmount').textContent = 
+                currentAmount > 0 ? `${formatCurrencyRWF(currentAmount)}/month` : 'Not configured';
+
+            const teacherName = workers.find(w => w.id === student.coachingTeacherId)?.name || student.coachingTeacherName || 'Not assigned';
+            document.getElementById('singleCoachingCurrentTeacher').textContent = teacherName;
+
+            // Pre-select teacher if assigned
+            if (student.coachingTeacherId) {
+                document.getElementById('singleCoachingTeacher').value = student.coachingTeacherId;
+            }
+
+            infoDiv.style.display = 'block';
+            }
+
+            function editSingleCoaching(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+
+            // Reset and populate modal with student data
+            const classVal = student.classes || student.class;
+            document.getElementById('singleCoachingClass').value = classVal || '';
+            loadSingleCoachingStudents();
+            
+            setTimeout(() => {
+                document.getElementById('singleCoachingStudent').value = studentId;
+                loadSingleCoachingStudentInfo();
+                
+                // Set the amount
+                const amount = student.coachingMonthlyFee || 0;
+                document.getElementById('singleCoachingAmount').value = amount;
+                
+                // Set date
+                const date = student.coachingDateConfigured || new Date().toISOString().split('T')[0];
+                document.getElementById('singleCoachingDate').value = date;
+
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('singleCoachingModal'));
+                modal.show();
+            }, 100);
+            }
+
+            function selectCoachingPreset(btn, amount) {
+            document.querySelectorAll('.coaching-preset-btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.classList.contains('btn-primary')) {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-primary');
+                }
+            });
+            btn.classList.add('active', 'btn-primary');
+            btn.classList.remove('btn-outline-primary');
+            document.getElementById('singleCoachingAmount').value = amount;
+            document.getElementById('singleCoachingCustomAmount').style.display = 'none';
+            }
+
+            function showCoachingOtherInput(btn) {
+            document.querySelectorAll('.coaching-preset-btn').forEach(b => {
+                b.classList.remove('active', 'btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            document.getElementById('singleCoachingCustomAmount').style.display = 'block';
+            document.getElementById('singleCoachingCustomAmount').focus();
+            }
+
+            function setSingleCoachingFromCustom(value) {
+            document.getElementById('singleCoachingAmount').value = value;
+            }
+
+            async function saveSingleCoaching() {
+            const studentId = document.getElementById('singleCoachingStudent').value;
+            const amount = parseFloat(document.getElementById('singleCoachingAmount').value);
+            const date = document.getElementById('singleCoachingDate').value;
+            const teacherId = document.getElementById('singleCoachingTeacher').value;
+
+            if (!studentId) { showToast('Please select a student', 'error'); return; }
+            if (!amount || amount <= 0) { showToast('Please select or enter an amount', 'error'); return; }
+            if (!date) { showToast('Please select a date', 'error'); return; }
+
+            try {
+                const teacherName = teacherId 
+                ? (workers.find(w => w.id === teacherId)?.name || '')
+                : '';
+
+                await db.ref('students/' + studentId).update({
+                coachingEnrolled: true,
+                coachingMonthlyFee: amount,
+                coachingTeacherId: teacherId || '',
+                coachingTeacherName: teacherName,
+                coachingDateConfigured: date,
+                coachingConfiguredBy: currentUserName,
+                coachingUpdatedAt: Date.now()
+                });
+
+                showToast('Coaching configured successfully! ' + formatCurrencyRWF(amount) + '/month', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('singleCoachingModal')).hide();
+                loadCoachingSection();
+                recalculateExpectedIncome();
+
+            } catch(error) {
+                console.error('Error saving coaching:', error);
+                showToast('Error saving coaching: ' + error.message, 'error');
+            }
+            }
+
+            async function removeCoachingConfig(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            if (!confirm(`Remove coaching configuration for ${student.name || student.fullName}?`)) return;
+
+            try {
+                await db.ref('students/' + studentId).update({
+                coachingEnrolled: false,
+                coachingMonthlyFee: 0,
+                coachingTeacherId: '',
+                coachingTeacherName: '',
+                coachingDateConfigured: null,
+                coachingConfiguredBy: null
+                });
+                showToast('Coaching configuration removed', 'success');
+                loadCoachingSection();
+                recalculateExpectedIncome();
+            } catch(error) {
+                showToast('Error removing coaching: ' + error.message, 'error');
+            }
+            }
+
+            // ---- BULK COACHING MODAL ----
+
+            function showBulkCoachingModal() {
+            document.getElementById('bulkCoachingClass').value = '';
+            document.getElementById('bulkCoachingTeacher').value = '';
+            document.getElementById('bulkCoachingAmount').value = '';
+            document.getElementById('bulkCoachingCustomAmount').style.display = 'none';
+            document.getElementById('bulkCoachingCustomAmount').value = '';
+            document.getElementById('bulkCoachingDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('bulkCoachingPreview').style.display = 'none';
+            document.getElementById('bulkCoachingSelectedCount').textContent = '0';
+            document.getElementById('selectAllCoachingCheckbox').checked = false;
+
+            // Populate class dropdown
+            const select = document.getElementById('bulkCoachingClass');
+            select.innerHTML = '<option value="">All classes</option>';
+            const uniqueClasses = getBranchClasses(selectedBranch);
+            uniqueClasses.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls;
+                opt.textContent = cls;
+                select.appendChild(opt);
+            });
+
+            populateBulkCoachingTeacherSelect();
+            loadBulkCoachingStudents();
+            
+            // Clear preset buttons
+            document.querySelectorAll('.bulk-coaching-preset-btn').forEach(btn => btn.classList.remove('active', 'btn-primary', 'btn-outline-primary'));
+            document.querySelectorAll('.bulk-coaching-preset-btn').forEach(btn => btn.classList.add('btn-outline-primary'));
+
+            const modal = new bootstrap.Modal(document.getElementById('bulkCoachingModal'));
+            modal.show();
+            }
+
+            function loadBulkCoachingStudents() {
+            const classFilter = document.getElementById('bulkCoachingClass').value;
+            const tbody = document.getElementById('bulkCoachingStudentsList');
+            tbody.innerHTML = '';
+
+            let filtered = getStudentsForCurrentBranch();
+            if (classFilter) filtered = filtered.filter(s => (s.classes || s.class) === classFilter);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No students found</td></tr>';
+                updateBulkCoachingSelectedCount();
+                return;
+            }
+
+            filtered.forEach(student => {
+                const currentCoaching = student.coachingMonthlyFee || 0;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td><input type="checkbox" class="bulk-coaching-checkbox" value="${student.id}" onchange="updateBulkCoachingSelectedCount()"></td>
+                <td>${student.name || student.fullName}</td>
+                <td><span class="badge bg-secondary">${student.classes || student.class || '—'}</span></td>
+                <td>${currentCoaching > 0 ? formatCurrencyRWF(currentCoaching) : '—'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateBulkCoachingSelectedCount();
+            }
+
+            function updateBulkCoachingSelectedCount() {
+            const checkedBoxes = document.querySelectorAll('.bulk-coaching-checkbox:checked');
+            document.getElementById('bulkCoachingSelectedCount').textContent = checkedBoxes.length;
+
+            const amount = parseFloat(document.getElementById('bulkCoachingAmount').value);
+            if (checkedBoxes.length > 0 && amount > 0) {
+                document.getElementById('bulkCoachingPreview').style.display = 'block';
+                document.getElementById('bulkCoachingPreviewAmount').textContent = formatCurrencyRWF(amount);
+                document.getElementById('bulkCoachingPreviewCount').textContent = checkedBoxes.length;
+            } else {
+                document.getElementById('bulkCoachingPreview').style.display = 'none';
+            }
+            }
+
+            function toggleAllCoachingStudents(cb) {
+            document.querySelectorAll('.bulk-coaching-checkbox').forEach(checkbox => {
+                checkbox.checked = cb.checked;
+            });
+            updateBulkCoachingSelectedCount();
+            }
+
+            function selectAllCoachingStudents() {
+            document.getElementById('selectAllCoachingCheckbox').checked = true;
+            toggleAllCoachingStudents(document.getElementById('selectAllCoachingCheckbox'));
+            }
+
+            function deselectAllCoachingStudents() {
+            document.getElementById('selectAllCoachingCheckbox').checked = false;
+            toggleAllCoachingStudents(document.getElementById('selectAllCoachingCheckbox'));
+            }
+
+            function selectBulkCoachingPreset(btn, amount) {
+            document.querySelectorAll('.bulk-coaching-preset-btn').forEach(b => {
+                b.classList.remove('active', 'btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            btn.classList.add('active', 'btn-primary');
+            btn.classList.remove('btn-outline-primary');
+            document.getElementById('bulkCoachingAmount').value = amount;
+            document.getElementById('bulkCoachingCustomAmount').style.display = 'none';
+            updateBulkCoachingSelectedCount();
+            }
+
+            function showBulkCoachingOtherInput(btn) {
+            document.querySelectorAll('.bulk-coaching-preset-btn').forEach(b => {
+                b.classList.remove('active', 'btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            document.getElementById('bulkCoachingCustomAmount').style.display = 'block';
+            document.getElementById('bulkCoachingCustomAmount').focus();
+            }
+
+            function setBulkCoachingFromCustom(value) {
+            document.getElementById('bulkCoachingAmount').value = value;
+            updateBulkCoachingSelectedCount();
+            }
+
+            async function saveBulkCoaching() {
+            const checkedBoxes = document.querySelectorAll('.bulk-coaching-checkbox:checked');
+            const amount = parseFloat(document.getElementById('bulkCoachingAmount').value);
+            const date = document.getElementById('bulkCoachingDate').value;
+            const teacherId = document.getElementById('bulkCoachingTeacher').value;
+
+            if (checkedBoxes.length === 0) { showToast('Please select at least one student', 'error'); return; }
+            if (!amount || amount <= 0) { showToast('Please select or enter an amount', 'error'); return; }
+            if (!date) { showToast('Please select a date', 'error'); return; }
+
+            const saveBtn = document.querySelector('#bulkCoachingModal .btn-modern.btn-primary-modern');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Saving...';
+
+            try {
+                const teacherName = teacherId 
+                ? (workers.find(w => w.id === teacherId)?.name || '')
+                : '';
+
+                const updates = {};
+                checkedBoxes.forEach(cb => {
+                updates['students/' + cb.value + '/coachingEnrolled'] = true;
+                updates['students/' + cb.value + '/coachingMonthlyFee'] = amount;
+                updates['students/' + cb.value + '/coachingTeacherId'] = teacherId || '';
+                updates['students/' + cb.value + '/coachingTeacherName'] = teacherName;
+                updates['students/' + cb.value + '/coachingDateConfigured'] = date;
+                updates['students/' + cb.value + '/coachingConfiguredBy'] = currentUserName;
+                updates['students/' + cb.value + '/coachingUpdatedAt'] = Date.now();
+                });
+
+                await db.ref().update(updates);
+
+                showToast(`Coaching ${formatCurrencyRWF(amount)}/month applied to ${checkedBoxes.length} student(s)!`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('bulkCoachingModal')).hide();
+                loadCoachingSection();
+                recalculateExpectedIncome();
+
+            } catch(error) {
+                console.error('Error saving bulk coaching:', error);
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+            }
+
+        

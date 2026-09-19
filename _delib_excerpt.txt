@@ -1,0 +1,190 @@
+mark-pdf me-1"></i>PDF
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="teacher-attendance-summary mt-3">
+                      <span class="teacher-attendance-badge"><i class="bi bi-calendar3"></i><span id="teacherAttendanceTermLabel">Période : —</span></span>
+                      <span class="teacher-attendance-badge"><i class="bi bi-person-badge"></i><span id="teacherAttendanceCount">0 enseignant</span></span>
+                      <span class="teacher-attendance-badge"><i class="bi bi-info-circle"></i><span id="teacherAttendanceWeekLabel">Semaine : —</span></span>
+                    </div>
+                  </div>
+                  <div id="teacherAttendanceSheet"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Académique -->
+          <div id="section-academic" class="content-section" style="display: none;">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Gestion Académique</h5>
+              </div>
+              <div class="card-body">
+                <!-- Onglets Horizontaux Modernes -->
+                <div class="academic-tabs" id="academicTabs">
+                  <button class="academic-tab-btn active" onclick="switchAcademic('assignments')" data-tab="assignments">
+                    <i class="bi bi-clipboard-check"></i>Devoirs
+                  </button>
+                  <button class="academic-tab-btn" onclick="switchAcademic('tests')" data-tab="tests">
+                    <i class="bi bi-file-text"></i>Tests
+                  </button>
+                  <button class="academic-tab-btn" onclick="switchAcademic('exams')" data-tab="exams">
+                    <i class="bi bi-pen"></i>Examens
+                  </button>
+                  <button class="academic-tab-btn" onclick="switchAcademic('vacation')" data-tab="vacation">
+                    <i class="bi bi-sun"></i>Travaux Vacances
+                  </button>
+                  <button class="academic-tab-btn" onclick="switchAcademic('reports')" data-tab="reports">
+                    <i class="bi bi-file-pdf"></i>Bulletins
+                  </button>
+                  <button class="academic-tab-btn" onclick="switchAcademic('classes')" data-tab="classes">
+                    <i class="bi bi-building"></i>Classes
+                  </button>
+                  <button class="academic-tab-btn" onclick="switchAcademic('photos')" data-tab="photos">
+                    <i class="bi bi-camera-fill"></i>Photos
+                  </button>
+                  <button class="academic-tab-btn" onclick="switchAcademic('presentations')" data-tab="presentations">
+                    <i class="bi bi-play-circle-fill"></i>Présentations
+                  </button>
+                  <button class="academic-tab-btn" onclick="switchAcademic('deliberation')" data-tab="deliberation">
+                    <i class="bi bi-award-fill"></i>Délibération
+                  </button>
+                </div>
+                <div id="academic-assignments" class="academic-content">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Gestion des Devoirs</h6>
+                    <button class="btn btn-primary btn-sm" onclick="openAddAssignmentModal()">
+                      <i class="bi bi-plus-circle me-1"></i> Ajouter un devoir
+                    </button>
+                  </div>
+                  <div id="assignmentsList"></div>
+                </div>
+                <div id="academic-tests" class="academic-content" style="display: none;">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0"><i class="bi bi-file-text me-2"></i>Gestion des Tests</h6>
+                    <button class="btn btn-primary btn-sm" onclick="openAddTestModal()">
+                      <i class="bi bi-plus-circle me-1"></i> Ajouter un test
+                    </button>
+                  </div>
+                  <div id="testsList"></div>
+                </div>
+                <div id="academic-exams" class="academic-content" style="display: none;">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0"><i class="bi bi-pen me-2"></i>Gestion des Examens</h6>
+                    <button class="btn btn-primary btn-sm" onclick="openAddExamModal()">
+                      <i class="bi bi-plus-circle me-1"></i> Ajouter un examen
+                    </button>
+                  </div>
+                  <div id="examsList"></div>
+                </div>
+                <div id="academic-vacation" class="academic-content" style="display: none;">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0"><i class="bi bi-sun me-2"></i>Travaux de Vacances</h6>
+                    <button class="btn btn-primary btn-sm" onclick="openAddVacationWorkModal()">
+                      <i class="bi bi-plus-circle me-1"></i> Ajouter un travail
+                    </button>
+                  </div>
+                  <div id="vacationList"></div>
+                </div>
+                <div id="academic-reports" class="academic-content" style="display: none;">
+                  <h6 class="mb-3">
+                    <img src="asset/img/logo_eden.png" alt="Logo Eden Family School" class="print-logo me-2" style="vertical-align: middle; width: 40px; height: auto;" />
+                    Historique des Bulletins Scolaires
+                  </h6>
+                  
+                  <div class="row mb-3">
+                    <div class="col-md-4">
+                      <select class="form-select" id="historyClassSelect" onchange="loadBulletinHistory()">
+                        <option value="">Toutes les classes</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <select class="form-select" id="historyTrimesterSelect" onchange="loadBulletinHistory()">
+                        <option value="">Bulletin Trimestre</option>
+                        <option value="1">Bulletin T1</option>
+                        <option value="2">Bulletin T2</option>
+                        <option value="3">Bulletin T3</option>
+                        <option value="BN">Bulletin BN (Annuel)</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4 history-toolbar-actions">
+                      <span class="history-stat">Élèves de la classe: <strong id="totalStudents">0</strong></span>
+                      <span class="history-stat">Bulletins: <strong id="totalBulletins">0</strong></span>
+                      <button class="btn btn-primary btn-sm" onclick="loadBulletinHistory(true)">
+                        <i class="bi bi-arrow-clockwise"></i> Actualiser
+                      </button>
+                      <button class="btn btn-outline-secondary btn-sm" onclick="analyzeBulletinDuplicates()" title="Analyse les doublons dans la liste actuelle">
+                        <i class="bi bi-search"></i> Analyser doublons
+                      </button>
+                      <button class="btn btn-outline-warning btn-sm" onclick="analyzeMissingNotes()" id="missingNotesBtn" title="Analyser les bulletins pour notes manquantes">
+                        <i class="bi bi-exclamation-circle"></i> Notes manquantes
+                      </button>
+                      <button class="btn btn-outline-danger btn-sm" onclick="removeBulletinDuplicates()" title="Supprime les doublons detectes de facon securisee">
+                        <i class="bi bi-trash"></i> Supprimer doublons
+                      </button>
+                      <button class="btn btn-success btn-sm" onclick="openPrintAllTypeModal()" id="printAllBtn">
+                        <i class="bi bi-printer-fill"></i> Print All
+                      </button>
+                      <button class="btn btn-outline-primary btn-sm" onclick="downloadClassBulletinReport()" id="downloadClassReportBtn">
+                        <i class="bi bi-download"></i> Rapport classe
+                      </button>
+                    </div>
+                  </div>
+
+                  <div id="missingNotesPanel" class="card mb-3" style="display: none;">
+                    <div class="card-header bg-warning text-dark d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                      <div>
+                        <strong>Analyse Notes manquantes</strong>
+                        <div class="small text-muted">Rechercher les élèves et bulletins incomplets, puis exporter ou alerter les enseignants.</div>
+                      </div>
+                      <div class="btn-toolbar gap-2">
+                        <button class="btn btn-primary btn-sm" onclick="analyzeMissingNotes()">
+                          <i class="bi bi-search"></i> Analyser
+                        </button>
+                          <button class="btn btn-secondary btn-sm" onclick="downloadMissingNotesPdfReport()">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> Exporter PDF
+                          </button>
+                        <button class="btn btn-success btn-sm" onclick="downloadMissingNotesReport()">
+                          <i class="bi bi-download"></i> Exporter CSV
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="alertTeacherForMissingNotes()">
+                          <i class="bi bi-envelope"></i> Alerter enseignants
+                        </button>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="row g-2 align-items-center mb-3">
+                        <div class="col-md-6">
+                          <input id="missingNotesSearch" type="search" class="form-control form-control-sm" placeholder="Recherche élève / classe / branche / matière" oninput="filterMissingNotesTable()">
+                        </div>
+                        <div class="col-md-3">
+                          <select id="missingNotesClassFilter" class="form-select form-select-sm" onchange="filterMissingNotesTable()">
+                            <option value="">Toutes les classes</option>
+                          </select>
+                        </div>
+                        <div class="col-md-3 text-md-end">
+                          <span id="missingNotesSummary" class="text-muted">Aucun rapport généré.</span>
+                        </div>
+                      </div>
+                      <div id="missingNotesTableContainer" class="table-responsive"></div>
+                    </div>
+                  </div>
+
+                  <!-- Bulletin History List -->
+                  <div id="bulletinHistoryList" class="row g-3">
+                    <!-- Bulletin cards will be loaded here -->
+                  </div>
+                  <div id="missingGradesReport" class="mt-3"></div>
+                  
+                  <!-- Preview Area (hidden by default) -->
+                  <div id="previewArea" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; overflow: auto;">
+                    <div class="d-flex justify-content-between p-3 bg-light">
+                      <h5>Aperçu du Bulletin</h5>
+                      <button class="btn btn-secondary" onclick="closePreview()">
+                        <i class="bi bi-x-lg"></i> Fermer
+                      </button>
+                    </div>
+                    <div id="previewContent" class="p-3"></div>
+ 

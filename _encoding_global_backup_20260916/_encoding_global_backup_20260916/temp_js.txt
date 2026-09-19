@@ -1,0 +1,500 @@
+﻿        }
+
+        // Logout
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                auth.signOut().then(() => {
+                    window.location.href = 'Auth.html';
+                }).catch((error) => {
+                    console.error('Error logging out:', error);
+                    showToast('Error logging out', 'error');
+                });
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <div class="flex-grow-1">
+                    <div class="fw-bold">${type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Information'}</div>
+                    <div>${message}</div>
+                </div>
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+
+        // Perform global search
+        function performGlobalSearch(query) {
+            if (!query || query.length < 2) {
+                document.getElementById('searchResults').style.display = 'none';
+                return;
+            }
+            
+            const searchTerm = query.toLowerCase();
+            const results = [];
+            
+            // Rechercher dans les travailleurs
+            teachers.forEach(teacher => {
+                if (teacher.branch === selectedBranch && 
+                    (teacher.name.toLowerCase().includes(searchTerm) || 
+                     teacher.no.toLowerCase().includes(searchTerm) ||
+                     teacher.phone.includes(searchTerm))) {
+                    results.push({
+                        type: 'Worker',
+                        name: teacher.name,
+                        id: teacher.id,
+                        action: () => {
+                            showSection('teachers');
+                            setTimeout(() => editWorker(teacher.id), 500);
+                        }
+                    });
+                }
+            });
+            
+            // Rechercher dans les Ã©lÃ¨ves
+            students.forEach(student => {
+                if (student.branch === selectedBranch && 
+                    (student.fullName.toLowerCase().includes(searchTerm) || 
+                     student.reference.toLowerCase().includes(searchTerm) ||
+                     student.parent.toLowerCase().includes(searchTerm))) {
+                    results.push({
+                        type: 'Student',
+                        name: student.fullName,
+                        id: student.id,
+                        action: () => {
+                            showSection('students');
+                            setTimeout(() => viewStudentDetail(student.id), 500);
+                        }
+                    });
+                }
+            });
+            
+            // Afficher les rÃ©sultats
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = '';
+            
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="search-result-item">
+                        <div class="text-muted">No results found</div>
+                    </div>
+                `;
+            } else {
+                results.slice(0, 10).forEach(result => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.innerHTML = `
+                        <div class="fw-bold">${result.type}: ${result.name}</div>
+                        <small class="text-muted">Click to see details</small>
+                    `;
+                    item.onclick = result.action;
+                    resultsContainer.appendChild(item);
+                });
+            }
+            
+            resultsContainer.style.display = 'block';
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(event) {
+            const searchContainer = document.getElementById('searchResults');
+            const searchInput = document.getElementById('globalSearch');
+            
+            if (searchContainer && searchInput && 
+                !searchContainer.contains(event.target) && 
+                !searchInput.contains(event.target)) {
+                searchContainer.style.display = 'none';
+            }
+        });
+
+        // Recalculate expected income for the selected branch and current trimester
+        async function recalculateExpectedIncome() {
+            const branch = selectedBranch;
+            const term = currentTermConfig || {};
+            const branchName = getBranchName(branch || '');
+            const firebaseBranch = getFirebaseBranchForWorkers(branch);
+            const branchCandidates = Array.from(new Set([branch, firebaseBranch].filter(Boolean)));
+
+            const setText = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            };
+
+            const setProgress = (barId, percentId, actual, expected) => {
+                const percent = expected > 0 ? Math.min(100, Math.max(0, Math.round((actual / expected) * 100))) : 0;
+                const progressBar = document.getElementById(barId);
+                if (progressBar) {
+                    progressBar.style.width = `${percent}%`;
+                    progressBar.setAttribute('aria-valuenow', percent);
+                }
+                setText(percentId, `${percent}%`);
+            };
+
+            const formatCurrency = (value) => formatCurrencyRWF(Number(value) || 0);
+            const isSameTerm = (payment) => {
+                if (!payment || !term.trimester || !term.academicYear) return false;
+                return String(payment.trimester) === String(term.trimester)
+                    && String(payment.academicYear) === String(term.academicYear);
+            };
+            const matchesBranch = (payment) => {
+                if (!payment) return false;
+                if (payment.branch && branchCandidates.includes(payment.branch)) return true;
+                if (payment.studentId) {
+                    const student = students.find(s => s.id === payment.studentId);
+                    return student ? branchCandidates.includes(student.branch) : false;
+                }
+                return false;
+            };
+
+            const loadPayments = async (nodeName) => {
+                let total = 0;
+                try {
+                    const snapshots = await Promise.all(branchCandidates.map(branchValue =>
+                        db.ref(nodeName).orderByChild('branch').equalTo(branchValue).once('value')
+                    ));
+                    snapshots.forEach(snapshot => {
+                        snapshot.forEach(child => {
+                            const payment = child.val();
+                            if (isSameTerm(payment)) {
+                                total += Number(payment.amount || 0);
+                            }
+                        });
+                    });
+                } catch (error) {
+                    console.error(`Error loading ${nodeName}:`, error);
+                }
+                return total;
+            };
+
+            const loadFeesActual = async () => {
+                let total = await loadPayments('feesPayments');
+                if (total === 0 && Array.isArray(studentFees)) {
+                    studentFees.forEach(payment => {
+                        if (matchesBranch(payment) && isSameTerm(payment)) {
+                            total += Number(payment.amount || 0);
+                        }
+                    });
+                }
+                return total;
+            };
+
+            if (!branch || !term.trimester || !term.academicYear) {
+                setText('calcBranchName', branchName);
+                setText('calcLastUpdated', `Last updated: ${new Date().toLocaleString()}`);
+                [
+                    'calcTotalStudentsFees', 'calcExpectedFees', 'calcExpectedFeesMonthly', 'calcActualFees', 'calcRemainingFees',
+                    'calcTotalStudentsCoaching', 'calcExpectedCoaching', 'calcExpectedCoachingMonthly', 'calcActualCoaching', 'calcRemainingCoaching',
+                    'calcTotalStudentsTransport', 'calcExpectedTransport', 'calcExpectedTransportMonthly', 'calcActualTransport', 'calcRemainingTransport',
+                    'calcTotalStudents', 'calcGrandExpectedFees', 'calcGrandExpectedCoaching', 'calcGrandExpectedTransport',
+                    'calcGrandActualFees', 'calcGrandActualCoaching', 'calcGrandActualTransport',
+                    'calcGrandExpected', 'calcGrandActual', 'calcGrandRemaining', 'calcOverallPercent'
+                ].forEach(id => setText(id, id.includes('Percent') ? '0%' : '0'));
+                ['calcFeeProgress', 'calcCoachingProgress', 'calcTransportProgress', 'calcOverallProgress']
+                    .forEach(id => {
+                        const bar = document.getElementById(id);
+                        if (bar) bar.style.width = '0%';
+                    });
+                window.expectedIncomeData = {
+                    fees: { expected: 0, actual: 0, remaining: 0, students: 0 },
+                    coaching: { expected: 0, actual: 0, remaining: 0, students: 0 },
+                    transport: { expected: 0, actual: 0, remaining: 0, students: 0 }
+                };
+                return;
+            }
+
+// FEES â€” based on feesMonthlyAmount configured per student
+const feeStudents = students.filter(s => 
+  s.branch === branch && 
+  s.feesMonthlyAmount && 
+  parseFloat(s.feesMonthlyAmount) > 0
+);
+const totalStudentsFees = feeStudents.length;
+const expectedFeesTrimester = feeStudents.reduce((sum, s) => sum + (parseFloat(s.feesMonthlyAmount) * 3), 0);
+const expectedFeesMonthly = expectedFeesTrimester / 3;
+
+// Actual fees collected this trimester from feesPayments array
+let actualFees = 0;
+feesPayments
+  .filter(p => p.branch === branch && 
+               String(p.trimester) === String(term.trimester) && 
+               p.academicYear === term.academicYear)
+  .forEach(p => actualFees += parseFloat(p.amount) || 0);
+
+const remainingFees = expectedFeesTrimester - actualFees;
+
+const coachingStudents = students.filter(s => s.branch === branch && s.coachingEnrolled === true);
+            const totalStudentsCoaching = coachingStudents.length;
+            const expectedCoachingTrimester = coachingStudents.reduce((sum, s) => sum + (Number(s.coachingMonthlyFee || 0) * 3), 0);
+
+            const transportStudents = students.filter(s => s.branch === branch && s.transportEnrolled === true);
+            const totalStudentsTransport = transportStudents.length;
+            const expectedTransportTrimester = transportStudents.reduce((sum, s) => sum + (Number(s.transportMonthlyFee || 0) * 3), 0);
+
+            const totalStudentsSummary = students.filter(s => s.branch === branch && s.status === 'active').length;
+
+            const [actualFees, actualCoaching, actualTransport] = await Promise.all([
+                loadFeesActual(),
+                loadPayments('coachingPayments'),
+                loadPayments('transportPayments')
+            ]);
+
+            const remainingFees = expectedFeesTrimester - actualFees;
+            const remainingCoaching = expectedCoachingTrimester - actualCoaching;
+            const remainingTransport = expectedTransportTrimester - actualTransport;
+            const grandTotalExpected = expectedFeesTrimester + expectedCoachingTrimester + expectedTransportTrimester;
+            const grandTotalActual = actualFees + actualCoaching + actualTransport;
+            const grandTotalRemaining = grandTotalExpected - grandTotalActual;
+
+            setText('calcBranchName', branchName);
+            setText('calcLastUpdated', `Last updated: ${new Date().toLocaleString()}`);
+
+            setText('calcTotalStudentsFees', totalStudentsFees);
+            setText('calcExpectedFees', formatCurrency(expectedFeesTrimester));
+            setText('calcExpectedFeesMonthly', formatCurrency(expectedFeesTrimester / 3));
+            setText('calcActualFees', formatCurrency(actualFees));
+            setText('calcRemainingFees', formatCurrency(remainingFees));
+            setProgress('calcFeeProgress', null, actualFees, expectedFeesTrimester);
+
+            setText('calcTotalStudentsCoaching', totalStudentsCoaching);
+            setText('calcExpectedCoaching', formatCurrency(expectedCoachingTrimester));
+            setText('calcExpectedCoachingMonthly', formatCurrency(expectedCoachingTrimester / 3));
+            setText('calcActualCoaching', formatCurrency(actualCoaching));
+            setText('calcRemainingCoaching', formatCurrency(remainingCoaching));
+            setProgress('calcCoachingProgress', null, actualCoaching, expectedCoachingTrimester);
+
+            setText('calcTotalStudentsTransport', totalStudentsTransport);
+            setText('calcExpectedTransport', formatCurrency(expectedTransportTrimester));
+            setText('calcExpectedTransportMonthly', formatCurrency(expectedTransportTrimester / 3));
+            setText('calcActualTransport', formatCurrency(actualTransport));
+            setText('calcRemainingTransport', formatCurrency(remainingTransport));
+            setProgress('calcTransportProgress', null, actualTransport, expectedTransportTrimester);
+
+            setText('calcTotalStudents', totalStudentsSummary);
+            setText('calcGrandExpectedFees', formatCurrency(expectedFeesTrimester));
+            setText('calcGrandExpectedCoaching', formatCurrency(expectedCoachingTrimester));
+            setText('calcGrandExpectedTransport', formatCurrency(expectedTransportTrimester));
+            setText('calcGrandActualFees', formatCurrency(actualFees));
+            setText('calcGrandActualCoaching', formatCurrency(actualCoaching));
+            setText('calcGrandActualTransport', formatCurrency(actualTransport));
+            setText('calcGrandExpected', formatCurrency(grandTotalExpected));
+            setText('calcGrandActual', formatCurrency(grandTotalActual));
+            setText('calcGrandRemaining', formatCurrency(grandTotalRemaining));
+            setProgress('calcOverallProgress', 'calcOverallPercent', grandTotalActual, grandTotalExpected);
+
+            window.expectedIncomeData = {
+                fees: {
+                    expected: expectedFeesTrimester,
+                    actual: actualFees,
+                    remaining: remainingFees,
+                    students: totalStudentsFees
+                },
+                coaching: {
+                    expected: expectedCoachingTrimester,
+                    actual: actualCoaching,
+                    remaining: remainingCoaching,
+                    students: totalStudentsCoaching
+                },
+                transport: {
+                    expected: expectedTransportTrimester,
+                    actual: actualTransport,
+                    remaining: remainingTransport,
+                    students: totalStudentsTransport
+                }
+            };
+        }
+
+        function calculateExpectedIncome() {
+            recalculateExpectedIncome();
+        }
+
+        function getExpectedIncomeForPeriod(branch, termConfig, periodType) {
+            if (!branch || !termConfig) {
+                return {
+                    expectedFees: 0,
+                    expectedCoaching: 0,
+                    expectedTransport: 0,
+                    totalExpected: 0
+                };
+            }
+
+            const branchNames = {
+                kacyiru: 'EDEN FAMILY SCHOOL KACYIRU',
+                kimisagara: 'EDEN FAMILY SCHOOL KIMISAGARA',
+                gisozi_maternelle: 'EDEN FAMILY SCHOOL GISOZI NURSERY',
+                gisozi_primaire: 'EDEN FAMILY SCHOOL GISOZI PRIMARY'
+            };
+            const fullBranchName = branchNames[branch];
+            const feeConfig = feeConfigurations.find(config =>
+                config.branch === fullBranchName &&
+                config.trimester == termConfig.trimester &&
+                config.academicYear === termConfig.academicYear
+            );
+
+            if (!feeConfig) {
+                return {
+                    expectedFees: 0,
+                    expectedCoaching: 0,
+                    expectedTransport: 0,
+                    totalExpected: 0
+                };
+            }
+
+            const branchStudents = students.filter(student => student.branch === branch);
+            const totalStudents = branchStudents.length;
+            const studentsWithCoaching = branchStudents.filter(student => student.coachingEnrolled).length;
+            const studentsWithTransport = branchStudents.filter(student => student.transportEnrolled).length;
+
+            const feesAmount = feeConfig.schoolFees?.fees || 0;
+            const coachingAmount = feeConfig.schoolFees?.coaching || 0;
+            const transportAmount = feeConfig.schoolFees?.transport || 0;
+
+            const totalFees = totalStudents * feesAmount;
+            const totalCoaching = studentsWithCoaching * coachingAmount * 3;
+            const totalTransport = studentsWithTransport * transportAmount * 3;
+            const totalExpected = totalFees + totalCoaching + totalTransport;
+
+            let divisor = 1;
+            if (periodType === 'daily') {
+                divisor = getSchoolDaysInTrimester(termConfig);
+            } else if (periodType === 'weekly') {
+                divisor = getTrimesterWeeks(termConfig);
+            } else if (periodType === 'monthly') {
+                divisor = 3;
+            }
+            divisor = divisor || 1;
+
+            return {
+                expectedFees: totalFees / divisor,
+                expectedCoaching: totalCoaching / divisor,
+                expectedTransport: totalTransport / divisor,
+                totalExpected: totalExpected / divisor
+            };
+        }
+
+        function getSchoolDaysInTrimester(termConfig) {
+            if (!termConfig.startDate || !termConfig.endDate) return 1;
+            const start = new Date(termConfig.startDate);
+            const end = new Date(termConfig.endDate);
+            let count = 0;
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const day = d.getDay();
+                if (day !== 0 && day !== 6) {
+                    count++;
+                }
+            }
+            return count || 1;
+        }
+
+        function getTrimesterWeeks(termConfig) {
+            if (!termConfig.startDate || !termConfig.endDate) return 1;
+            const start = new Date(termConfig.startDate);
+            const end = new Date(termConfig.endDate);
+            const msPerDay = 24 * 60 * 60 * 1000;
+            const totalDays = Math.round((end - start) / msPerDay) + 1;
+            return Math.max(1, Math.ceil(totalDays / 7));
+        }
+
+        function getExpectedForPeriod(periodType, periodValue, branch) {
+            if (!branch || !currentTermConfig || !currentTermConfig.startDate || !currentTermConfig.endDate) {
+                return {
+                    expectedTotal: 0,
+                    expectedFees: 0,
+                    expectedCoaching: 0,
+                    expectedTransport: 0,
+                    actualTotal: 0,
+                    actualFees: 0,
+                    actualCoaching: 0,
+                    actualTransport: 0,
+                    remaining: 0
+                };
+            }
+
+            const firebaseBranch = getFirebaseBranchForWorkers(branch);
+            const termStart = new Date(currentTermConfig.startDate);
+            const termEnd = new Date(currentTermConfig.endDate);
+
+            let periodStart, periodEnd;
+
+            if (periodType === 'daily') {
+                periodStart = new Date(periodValue);
+                periodEnd = new Date(periodValue);
+            } else if (periodType === 'weekly') {
+                const weekRegex = /(\d{4})-W(\d{2})/;
+                const matches = periodValue.match(weekRegex);
+                if (!matches) {
+                    const year = new Date().getFullYear();
+                    const week = getWeekNumber(new Date());
+                    periodStart = getDateOfWeek(week, year);
+                } else {
+                    periodStart = getDateOfWeek(parseInt(matches[2]), parseInt(matches[1]));
+                }
+                periodEnd = new Date(periodStart);
+                periodEnd.setDate(periodEnd.getDate() + 6);
+            } else if (periodType === 'monthly') {
+                const [year, month] = periodValue.split('-');
+                periodStart = new Date(parseInt(year), parseInt(month) - 1, 1);
+                periodEnd = new Date(parseInt(year), parseInt(month), 0);
+            }
+
+            const matchesBranch = (payment) => {
+                if (!payment) return false;
+                if (payment.branch) {
+                    return payment.branch === firebaseBranch || payment.branch === branch;
+                }
+                const student = students.find(s => s.id === payment.studentId);
+                return student ? student.branch === firebaseBranch || student.branch === branch : false;
+            };
+
+            const isInPeriod = (payment) => {
+                if (!payment) return false;
+                const paymentDate = getPaymentDateString(payment);
+                if (!paymentDate) return false;
+                const pDate = new Date(paymentDate);
+                return pDate >= periodStart && pDate <= periodEnd;
+            };
+
+            const actualFees = studentFees.filter(p => matchesBranch(p) && isInPeriod(p))
+                .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+            const actualCoaching = coachingPayments.filter(p => matchesBranch(p) && isInPeriod(p))
+                .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+            const actualTransport = transportPayments.filter(p => matchesBranch(p) && isInPeriod(p))
+                .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+            const actualTotal = actualFees + actualCoaching + actualTransport;
+
+            const expected = getExpectedIncomeForPeriod(branch, currentTermConfig, periodType);
+            const remaining = expected.totalExpected - actualTotal;
+
+            return {
+                expectedTotal: expected.totalExpected,
+                expectedFees: expected.expectedFees,
+                expectedCoaching: expected.expectedCoaching,
+                expectedTransport: expected.expectedTransport,
+                actualTotal: actualTotal,
+                actualFees: actualFees,
+                actualCoaching: actualCoaching,
+                actualTransport: actualTransport,
+                remaining: remaining
+            };
+        }
+
+        function updateDailyExpectedComparison(actualIncome) {
+            const periodData = getExpectedForPeriod('daily', document.getElementById('dailyReportDate').value, selectedBranch);
+            const comparisonHTML = `
+                <div class="summary-card income">
+                    <h6><i class="fas fa-calendar-day me-2"></i>Expected Daily Income</h6>
+                    <div class="summary-value">${formatCurrencyRWF(periodData.expectedTotal)}</div>
+                    <small>Today's trimester share</small>
+                </div>

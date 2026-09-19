@@ -1,0 +1,144 @@
+t classesData = [];
+      let sectionsData = [];
+      let currentClassStudents = [];
+      let selectedClassName = null;
+      let currentDetailTeacherId = null;
+      let selectedClassStudentIds = [];
+      let currentSelectedTeacherForAssignment = null;
+      let selectedBranchConfig = normalizeKey(localStorage.getItem('secretaryBranchConfig') || '');
+      const branchConfigStorageKey = 'secretaryBranchConfig';
+      const SECRETARY_BRANCHES = ['gisozi', 'kacyiru', 'kimisagara'];
+      let _applyBranchConfigTimer = null;
+      let _bulletinHistoryGeneration = 0;
+      const BULLETIN_HISTORY_CACHE_TTL_MS = 60000;
+      let _studentsSnapshotCache = { timestamp: 0, data: [] };
+      const _bulletinPathSnapshotCache = new Map();
+
+      let _studentsListenerAttached = false;
+      let _classesListenerAttached = false;
+      let _teachersListenerAttached = false;
+      let _assignmentsListenerAttached = false;
+      let _testsListenerAttached = false;
+      let _examsListenerAttached = false;
+      let _vacationWorksListenerAttached = false;
+      let _booksListenerAttached = false;
+      let _inscriptionsListenerAttached = false;
+      let _messagesListenerAttached = false;
+      let _activitiesListenerAttached = false;
+      let _usersListenerAttached = false;
+
+      function detachAllListeners() {
+        if (!database) return;
+        if (_studentsListenerAttached) { database.ref('students').off(); _studentsListenerAttached = false; }
+        if (_classesListenerAttached) { database.ref('classes').off(); _classesListenerAttached = false; }
+        if (_teachersListenerAttached) { database.ref('users').off(); _teachersListenerAttached = false; }
+        if (_assignmentsListenerAttached) { database.ref('assignments').off(); _assignmentsListenerAttached = false; }
+        if (_testsListenerAttached) { database.ref('tests').off(); _testsListenerAttached = false; }
+        if (_examsListenerAttached) { database.ref('exams').off(); _examsListenerAttached = false; }
+        if (_vacationWorksListenerAttached) { database.ref('vacationWorks').off(); _vacationWorksListenerAttached = false; }
+        if (_booksListenerAttached) { database.ref('books').off(); _booksListenerAttached = false; }
+        if (_inscriptionsListenerAttached) { database.ref('inscriptions-scolaires').off(); _inscriptionsListenerAttached = false; }
+        if (_messagesListenerAttached) { database.ref('messages').off(); _messagesListenerAttached = false; }
+        if (_activitiesListenerAttached) { database.ref('activities').off(); _activitiesListenerAttached = false; }
+        if (_usersListenerAttached) { database.ref('users').off(); _usersListenerAttached = false; }
+      }
+
+      // Variables pour l'importation des fichiers
+      let importedStudentsData = [];
+      let filteredImportedStudents = [];
+
+      // Les classes doivent maintenant être chargées depuis /classes dans Firebase.
+      // ALL_CLASSES n'est plus utilisé en production.
+      let reportsData = {};
+      let teacherIdMigrationDone = false;
+
+      let currentLang = 'fr';
+
+      // En mode "SESSION", on évite qu'une autre connexion déconnecte l'utilisateur de cet onglet
+      auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(() => {
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            currentUser = user;
+            document.getElementById('currentUser').textContent = user.email || 'Secrétaire';
+            loadActiveSecretarySchoolYear().then(() => loadAllData());
+            loadMessages();
+            loadActivities();
+            loadUsers();
+            renderUsers();
+            setTimeout(() => { populateEnrolledBranchFilter(); renderEnrolledStudents(); }, 250);
+          } else {
+            window.location.href = 'Auth.html';
+          }
+        });
+      }).catch((err) => {
+        console.warn('setPersistence(Session) impossible, fallback local:', err);
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            currentUser = user;
+            document.getElementById('currentUser').textContent = user.email || 'Secrétaire';
+            loadActiveSecretarySchoolYear().then(() => loadAllData());
+            loadMessages();
+            loadActivities();
+            loadUsers();
+            renderUsers();
+            setTimeout(() => { populateEnrolledBranchFilter(); renderEnrolledStudents(); }, 250);
+          } else {
+            window.location.href = 'Auth.html';
+          }
+        });
+      });
+
+      // Chargement des données
+      function loadAllData() {
+        loadStudents(currentUser?.uid);
+        loadAssignments();
+        loadTests();
+        loadExams();
+        loadVacationWorks();
+        loadBooks();
+        loadInscriptions();
+        loadClasses();
+        loadSections();
+        loadTeachersFromUsers();
+        initializeSecretaryBranchFilter();
+      }
+
+      function loadSections() {
+        if (!database) return;
+        database.ref('sections').on('value', (snapshot) => {
+          sectionsData = [];
+          snapshot.forEach(child => {
+            sectionsData.push({ id: child.key, ...child.val() });
+          });
+          console.log('sections loaded', sectionsData.length);
+          // refresh section radio group if visible
+          const currentBranch = document.querySelector('input[name="branche"]:checked')?.value;
+          if (currentBranch) handleSecretaryBranchSelection(currentBranch);
+        });
+      }
+
+      // ═══ INITIALISATION FILTRE BRANCHE SECRÉTAIRE ═══
+      function initializeSecretaryBranchFilter() {
+        console.log('🔀 Initializing secretary branch filter...');
+        console.log('   selectedBranchConfig:', selectedBranchConfig);
+
+        // Rebuild bulletin class filter using secretary branch configuration
+        if (typeof onHistoryBranchChange === 'function') {
+          onHistoryBranchChange();
+        }
+        
+        // Apply the branch filter to all sections
+        applyBranchConfig();
+      }
+
+      function loadStudents(currentUID) {
+        database.ref('students').on('value', (snapshot) => {
+          studentsData = [];
+          console.log('👨‍🎓 Loading students from /students...');
+
+          snapshot.forEach(child => {
+            const student = { id: child.key, ...child.val() };
+
+            // Keep a canonical full name even if data was saved as first/last name fields.
+            if (!student.name || !student.name.trim()) {
+              const firstName = (student.firstName || student.prenom || '').toStri
