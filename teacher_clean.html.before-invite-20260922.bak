@@ -4387,92 +4387,10 @@
     return newRef.key;
   }
 
-
-  // ===== INVITATION ENSEIGNANT =====
-  let teacherInviteToken = '';
-  let teacherInviteData = null;
-
-  function getTeacherInviteToken() {
-    try { return new URLSearchParams(window.location.search).get('invite') || ''; } catch(e) { return ''; }
-  }
-  function escapeInviteHtml(v) {
-    return String(v == null ? '' : v).replace(/[&<>]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]; });
-  }
-  async function loadTeacherInvite() {
-    teacherInviteToken = getTeacherInviteToken();
-    if (!teacherInviteToken) return null;
-    try {
-      const snap = await db.ref('accountInvites/' + teacherInviteToken).once('value');
-      if (!snap.exists()) throw new Error('Lien invalide ou supprimé.');
-      const data = snap.val() || {};
-      if (data.type !== 'teacher') throw new Error("Ce lien n'est pas une invitation enseignant.");
-      if (data.used) throw new Error('Ce lien a déjà été utilisé.');
-      if (Number(data.expiresAt) <= Date.now()) throw new Error("Ce lien a expiré. Demandez une nouvelle invitation.");
-      teacherInviteData = data;
-      return data;
-    } catch(e) {
-      teacherInviteData = null;
-      showTeacherInviteError(e.message || 'Invitation indisponible.');
-      return null;
-    }
-  }
-  function showTeacherInviteError(message) {
-    document.getElementById('teacherInviteOverlay')?.remove();
-    const o=document.createElement('div'); o.id='teacherInviteOverlay';
-    o.style.cssText='position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0f3d72,#1a5ca8);display:flex;align-items:center;justify-content:center;padding:20px;';
-    o.innerHTML='<div style="background:#fff;border-radius:20px;max-width:520px;width:100%;padding:32px;text-align:center;"><h2 style="color:#0f3d72;">Lien indisponible</h2><p style="color:#64748b;line-height:1.6;">'+escapeInviteHtml(message)+'</p><a href="Auth.html" style="display:inline-flex;background:#1a5ca8;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:800;">Retour</a></div>';
-    document.body.appendChild(o);
-  }
-  async function showTeacherInviteForm(data) {
-    const main=document.getElementById('mainWrap'); if(main) main.style.display='none';
-    document.getElementById('teacherInviteOverlay')?.remove();
-    const o=document.createElement('div'); o.id='teacherInviteOverlay';
-    o.style.cssText='position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0f3d72,#1a5ca8);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;';
-    o.innerHTML='<div style="background:#fff;border-radius:20px;max-width:620px;width:100%;padding:30px;"><h2 style="color:#0f3d72;">Eden Family School — Création de compte Enseignant</h2><div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;margin-bottom:18px;color:#475569;">Nom : <strong>'+escapeInviteHtml(data.name)+'</strong><br>Email : <strong>'+escapeInviteHtml(data.email)+'</strong><br>Branche : <strong>'+escapeInviteHtml(data.branche)+'</strong> • Classe : <strong>'+escapeInviteHtml(data.classe)+'</strong><div id="teacherInviteCountdown" style="margin-top:8px;font-weight:900;color:#b45309;"></div></div><form id="teacherInviteForm" style="display:grid;gap:13px;"><input class="f-input" value="'+escapeInviteHtml(data.name)+'" readonly><input class="f-input" value="'+escapeInviteHtml(data.email)+'" readonly><input class="f-input" id="inviteAccountPassword" type="password" minlength="6" autocomplete="new-password" required placeholder="Créer un mot de passe"><input class="f-input" id="inviteAccountConfirm" type="password" minlength="6" autocomplete="new-password" required placeholder="Confirmer le mot de passe"><div id="teacherInviteMessage" style="display:none;padding:10px;border-radius:9px;font-weight:700;"></div><button type="submit" id="teacherInviteSubmit" class="btn btn-blue" style="width:100%;justify-content:center;padding:13px;">Créer mon compte</button></form></div>';
-    document.body.appendChild(o);
-    function countdown(){const el=document.getElementById('teacherInviteCountdown');if(!el)return;const left=Math.max(0,Number(teacherInviteData.expiresAt)-Date.now());if(!left){el.textContent="⛔ Le lien vient d'expirer.";const b=document.getElementById('teacherInviteSubmit');if(b)b.disabled=true;}else el.textContent='⏱️ Temps restant : '+Math.floor(left/60000)+' min '+String(Math.floor((left%60000)/1000)).padStart(2,'0')+' s';}
-    countdown(); window.__teacherInviteTimer=setInterval(countdown,1000);
-    document.getElementById('teacherInviteForm')?.addEventListener('submit',submitTeacherInviteAccount);
-  }
-  async function submitTeacherInviteAccount(e) {
-    e.preventDefault();
-    const password=document.getElementById('inviteAccountPassword')?.value||'', confirm=document.getElementById('inviteAccountConfirm')?.value||'', submit=document.getElementById('teacherInviteSubmit');
-    if(!teacherInviteData || teacherInviteData.used || Number(teacherInviteData.expiresAt)<=Date.now()){showTeacherInviteMessage('Le lien est expiré ou déjà utilisé.',false);return;}
-    if(password.length<6){showTeacherInviteMessage('Le mot de passe doit contenir au moins 6 caractères.',false);return;}
-    if(password!==confirm){showTeacherInviteMessage('Les deux mots de passe ne correspondent pas.',false);return;}
-    if(submit){submit.disabled=true;submit.textContent='Création en cours…';}
-    try {
-      const response=await fetch('/api/account-invite-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:teacherInviteToken,password:password})});
-      const result=await response.json().catch(function(){return {};});
-      if(!response.ok || !result.success) throw new Error(result.error || 'Impossible de créer le compte.');
-      showTeacherInviteMessage('Compte créé avec succès. Ouverture du portail Enseignants…',true);
-      if(submit) submit.textContent='Compte créé';
-      clearInterval(window.__teacherInviteTimer);
-      try {
-        await auth.signInWithEmailAndPassword(teacherInviteData.email, password);
-        setTimeout(function(){ window.location.href='teacher_clean.html'; }, 700);
-      } catch(loginError) {
-        setTimeout(function(){ window.location.href='Auth.html'; }, 1500);
-      }
-    } catch(error) {
-      showTeacherInviteMessage(error.message || 'Impossible de créer le compte.',false);
-      if(submit){submit.disabled=false;submit.textContent='Créer mon compte';}
-    }
-  }
-  function showTeacherInviteMessage(message,success){const box=document.getElementById('teacherInviteMessage');if(!box)return;box.style.display='block';box.style.background=success?'#dcfce7':'#fee2e2';box.style.color=success?'#166534':'#991b1b';box.textContent=message;}
-
-
   /* ══════════════════════════════════════
     AUTH
   ══════════════════════════════════════ */
   auth.onAuthStateChanged(async user => {
-    if (getTeacherInviteToken()) {
-      if (!document.getElementById('teacherInviteOverlay')) {
-        const invite = await loadTeacherInvite();
-        if (invite) await showTeacherInviteForm(invite);
-      }
-      return;
-    }
     let sessionUser = null;
     const rawSession = sessionStorage.getItem('eden_user_data');
 

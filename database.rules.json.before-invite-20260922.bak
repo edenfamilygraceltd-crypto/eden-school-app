@@ -86,15 +86,6 @@
       }
     },
 
-    "accountInvites": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')",
-      "$token": {
-        ".read": true,
-        ".write": "(auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'IT Admin')) || (auth != null && data.exists() && !data.child('used').val() && newData.child('used').val() === true && newData.child('usedBy').val() === auth.uid)",
-        ".validate": "newData.hasChildren(['type','name','email','role','niveau','branche','classeId','classe','createdAt','expiresAt','used']) && newData.child('type').val() === 'teacher'"
-      }
-    },
-
     "academic_documents": {
       ".read": "auth != null",
       ".write": "auth != null",

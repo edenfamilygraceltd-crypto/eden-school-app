@@ -1569,14 +1569,6 @@ a:hover{color:#1d4ed8}
                 const teacherBranchSelect = document.getElementById('createTeacherBranch');
                 const teacherClassSelect = document.getElementById('createTeacherClass');
 
-                // Invitation enseignant : niveau/branche/classe
-                const inviteBranchSelect = document.getElementById('inviteBranch');
-                const inviteLevelSelect = document.getElementById('inviteLevel');
-                if (inviteBranchSelect) inviteBranchSelect.addEventListener('change', () => loadInviteClasses(inviteBranchSelect.value, inviteLevelSelect?.value || ''));
-                if (inviteLevelSelect) inviteLevelSelect.addEventListener('change', () => {
-                    if (inviteBranchSelect?.value) loadInviteClasses(inviteBranchSelect.value, inviteLevelSelect.value);
-                });
-
                 if (teacherBranchSelect) {
                     teacherBranchSelect.addEventListener('change', async () => {
                         const selectedBranch = teacherBranchSelect.value;
@@ -1776,7 +1768,6 @@ a:hover{color:#1d4ed8}
                 loadAnalytics();
             } else if (tabId === 'creerComptes') {
                 loadAccountsList();
-                loadTeacherInvites();
             } else if (tabId === 'gestionMDP') {
                 loadUsersForPasswordChange();
                 loadPasswordHistory();
