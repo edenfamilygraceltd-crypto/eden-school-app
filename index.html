@@ -1947,6 +1947,7 @@ const ITEMS = [
 ];
 const R_BIG  = 118;
 const R_MINI = 80;
+const visitedItems = new Set();
 
 const riEls = ITEMS.map(item => {
   const el = document.createElement('a');
@@ -1987,6 +1988,9 @@ function placeItems(open, radius, instant) {
     const delay = i * 0.055;
     const tr = `opacity .42s cubic-bezier(.2,.8,.2,1) ${delay}s,`+
                `transform .42s cubic-bezier(.2,.8,.2,1) ${delay}s`;
+    const href = el.getAttribute('href') || '';
+    const isVisited = visitedItems.has(href);
+
     if (instant) { el.style.transition = 'none'; }
     else { el.style.transition = tr; el.classList.remove('spinning-out'); }
 
@@ -1996,15 +2000,18 @@ function placeItems(open, radius, instant) {
       const ix    = cx + Math.cos(rad) * radius - 25;
       const iy    = cy + Math.sin(rad) * radius - 25;
       const offScreen = ix < -10 || ix > window.innerWidth-40 || iy < -10 || iy > window.innerHeight-40;
+      const visible = offScreen ? '0' : String(isVisited ? 0.82 : 1);
+      const scale = offScreen ? 'scale(0)' : `scale(${isVisited ? 0.96 : 1})`;
       el.style.left          = (offScreen ? cx-25 : ix) + 'px';
       el.style.top           = (offScreen ? cy-25 : iy) + 'px';
-      el.style.transform     = offScreen ? 'scale(0)' : 'scale(1) rotate(0deg)';
-      el.style.opacity       = offScreen ? '0' : '1';
+      el.style.transform     = scale + ' rotate(0deg)';
+      el.style.opacity       = visible;
       el.style.pointerEvents = offScreen ? 'none' : 'all';
-      el.style.filter = '';
+      el.style.filter = isVisited ? 'saturate(1.08) brightness(0.96)' : '';
     } else {
       el.style.left = (cx-25)+'px'; el.style.top = (cy-25)+'px';
-      el.style.transform = 'scale(.3)'; el.style.opacity = '0';
+      el.style.transform = 'scale(.3)';
+      el.style.opacity = '0';
       el.style.pointerEvents = 'none';
       el.style.filter = '';
     }
@@ -2102,6 +2109,7 @@ riEls.forEach(el=>{
   el.addEventListener('click',e=>{
     e.preventDefault();e.stopPropagation();
     const h=el.getAttribute('href');
+    if (h) visitedItems.add(h);
     if(h && h.startsWith('#')) {
       document.querySelector(h)?.scrollIntoView({behavior:'smooth'});
       closeMenu(false,true);
@@ -2205,12 +2213,22 @@ function doScroll(){
   }
   if(!menuOpen) bubble.style.transform='';
 
-  /* Blur quand scroll profond */
+  /* Blur + fade progressif quand scroll profond */
   if(!menuOpen&&!nearFooter){
     const pBlur=cl((sc-BLUR_START)/(BLUR_END-BLUR_START),0,1);
+    const fadeOp=1 - pBlur * 0.92;
+    const fadeBlur = pBlur * 2.4;
+    bubble.style.opacity = String(Math.max(0.08, fadeOp));
+    bubble.style.filter = `blur(${fadeBlur}px) brightness(${1 - pBlur * 0.35})`;
+    bubble.style.pointerEvents = pBlur > 0.9 ? 'none' : 'all';
     if(pBlur>0&&!bubbleClicked) bubble.classList.add('blurred');
     else bubble.classList.remove('blurred');
-  } else { bubble.classList.remove('blurred'); }
+  } else {
+    bubble.classList.remove('blurred');
+    bubble.style.filter = '';
+    bubble.style.opacity = '1';
+    bubble.style.pointerEvents = 'all';
+  }
 
   /* Près du footer — flèche haut */
   if(nearFooter&&!menuOpen){

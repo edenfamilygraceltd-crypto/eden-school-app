@@ -278,12 +278,7 @@
           </div>
         </div>
         <div id="contactInfo"></div>
-        <div class="field" style="margin-top:.9rem;">
-          <label data-i18n="academic_year">Année académique *</label>
-          <select id="rAcademicYear" required onchange="populateRegistrationClasses()">
-            <option value="" data-i18n="select_option">Sélectionnez</option>
-          </select>
-        </div>
+        <input type="hidden" id="rAcademicYear" value="">
         <div class="field" style="margin-top:.9rem;">
           <label class="switch-row">
             <input type="checkbox" id="rTransport"> <span data-i18n="transport">Transport bus</span>
@@ -1122,21 +1117,45 @@
     box.style.display = 'block';
   }
 
-  function populateAcademicYearSelect(){
-    const sel = document.getElementById('rAcademicYear');
-    const currentYear = new Date().getFullYear();
-    sel.innerHTML = '<option value="" data-i18n="select_option">Sélectionnez</option>';
-    for (let i = -1; i <= 4; i++) {
-      const year = currentYear + i;
-      const label = `${year}-${year + 1}`;
-      const o = document.createElement('option');
-      o.value = label;
-      o.textContent = label;
-      sel.appendChild(o);
+  function normalizeAcademicYearValue(value){
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const match = raw.match(/(\d{4})\D*(\d{2,4})/);
+    if (!match) return raw;
+    const start = Number(match[1]);
+    const endRaw = match[2];
+    const end = endRaw.length === 2 ? Number(String(start).slice(0, 2) + endRaw) : Number(endRaw);
+    return `${start}-${end}`;
+  }
+
+  function getActiveAcademicYearFromSystem(){
+    const fromStorage = normalizeAcademicYearValue(localStorage.getItem('eden_active_school_year'));
+    if (fromStorage) return fromStorage;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const start = now.getMonth() >= 7 ? year : year - 1;
+    return `${start}-${start + 1}`;
+  }
+
+  async function syncAcademicYearFromActiveSystem(){
+    try {
+      if (!window.db || !db || !db.ref) return;
+      const snap = await db.ref('schoolSettings/activeAcademicYear').once('value');
+      const remote = normalizeAcademicYearValue(snap.val());
+      if (remote) {
+        localStorage.setItem('eden_active_school_year', remote);
+      }
+    } catch (error) {
+      console.warn('Impossible de synchroniser l’année active depuis la base:', error);
     }
-    // Set current year as default
-    const currentSchoolYear = `${currentYear}-${currentYear + 1}`;
-    sel.value = currentSchoolYear;
+  }
+
+  function populateAcademicYearSelect(){
+    const hidden = document.getElementById('rAcademicYear');
+    if (!hidden) return;
+    const currentSchoolYear = getActiveAcademicYearFromSystem();
+    hidden.value = currentSchoolYear;
   }
 
   loadRegistrationClasses();
@@ -1545,8 +1564,9 @@
   });
 
   // Apply translations on page load
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     applyTranslations();
+    await syncAcademicYearFromActiveSystem();
     populateAcademicYearSelect();
   });
 </script>
