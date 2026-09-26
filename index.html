@@ -1435,7 +1435,7 @@ nav.pill,nav.shrink{background:rgba(12,25,52,.96)!important;border:1px solid rgb
                 </div>
               </div>
               <div class="col-md-6">
-                <label class="form-label" for="regRequestedClass">Classe demandée (selon branche) *</label>
+                <label class="form-label" for="regRequestedClass">Classe demandée</label>
                 <select class="form-control-modern" id="regRequestedClass" required>
                   <option value="">Sélectionner d'abord une branche</option>
                 </select>
@@ -1660,7 +1660,7 @@ nav.pill,nav.shrink{background:rgba(12,25,52,.96)!important;border:1px solid rgb
         <img src="asset/img/kimisagara.jpg" alt="Eden Family School Kimisagara"><div class="campus-mini-shade"></div><div class="campus-mini-copy"><span>02 / 03 &middot; MATERNELLE</span><h3>Kimisagara</h3><p>KG 7 Ave &middot; 7h30&ndash;17h30</p><button onclick="openBranchGallery('kimisagara')">Galerie &rarr;</button></div>
       </article>
       <article class="campus-mini">
-        <img src="asset/img/sport.jpg" alt="Eden Family School Kacyiru"><div class="campus-mini-shade"></div><div class="campus-mini-copy"><span>03 / 03 &middot; MATERNELLE</span><h3>Kacyiru</h3><p>KG 17 Ave &middot; 7h30&ndash;17h30</p><button onclick="openBranchGallery('kacyiru')">Galerie &rarr;</button></div>
+        <img src="asset/img/gisozi_photo.jpg" alt="Eden Family School Gisozi"><div class="campus-mini-shade"></div><div class="campus-mini-copy"><span>03 / 03 &middot; MATERNELLE & PRIME</span><h3>Gisozi</h3><p>KG 11 Ave &middot; 7h30&ndash;17h30</p><button onclick="openBranchGallery('gisozi')">Galerie &rarr;</button></div>
       </article>
     </div>
   </div>
@@ -1701,9 +1701,12 @@ nav.pill,nav.shrink{background:rgba(12,25,52,.96)!important;border:1px solid rgb
 <!-- Section Galerie -->
 <section id="galerie" class="eden-gallery">
   <div class="gallery-intro"><span>03 &middot; MOMENTS</span><h2>La vie &agrave;<br><em>Eden.</em></h2><p>Des moments de d&eacute;couverte, de partage et de joie qui racontent notre &eacute;cole mieux que les mots.</p></div>
-  <div class="gallery-stage" id="edenGalleryStage">
-    <div class="gallery-track" id="edenGalleryTrack"></div>
-    <div class="gallery-ui"><div class="gallery-progress" id="edenGalleryDots"></div><div class="gallery-count" id="edenGalleryCount">01</div><div class="gallery-controls"><button id="edenGalleryPrev" aria-label="Photo pr&eacute;c&eacute;dente">&larr;</button><button id="edenGalleryNext" aria-label="Photo suivante">&rarr;</button></div></div>
+  <div class="gallery-carousel" id="edenGalleryStage">
+    <div class="gallery-carousel-track" id="edenGalleryTrack"></div>
+    <button type="button" class="gallery-carousel-arrow prev" id="edenGalleryPrev" aria-label="Photo pr&eacute;c&eacute;dente">&larr;</button>
+    <button type="button" class="gallery-carousel-arrow next" id="edenGalleryNext" aria-label="Photo suivante">&rarr;</button>
+    <div class="gallery-carousel-dots" id="edenGalleryDots"></div>
+    <div class="gallery-count" id="edenGalleryCount">01</div>
   </div>
   <div class="gallery-footer"><span>EDEN FAMILY SCHOOL &middot; KIGALI</span><a class="gallery-all-link" href="galerie-hub.html" aria-label="Voir toute la galerie">Voir toute la galerie <b aria-hidden="true">&rarr;</b></a></div>
 </section>
@@ -1935,7 +1938,6 @@ document.querySelectorAll('[data-s]').forEach(s =>
    RADIAL MENU ITEMS
 ══════════════════════════════════════════════════════════ */
 const ITEMS = [
-  {label:'Accueil',      icon:'fas fa-home',          href:'#accueil'},
   {label:'Galerie',      icon:'fas fa-images',         href:'#galerie'},
   {label:'Activités',    icon:'fas fa-graduation-cap', href:'#academique'},
   {label:'Inscription',  icon:'fas fa-pen-fancy',      href:'inscription.html'},
@@ -1952,6 +1954,7 @@ const riEls = ITEMS.map(item => {
   el.href = item.href;
   el.innerHTML = `<div class="rb" data-label="${item.label}"><i class="${item.icon}"></i></div>`;
   el.style.cssText = 'opacity:0;transform:scale(.3);pointer-events:none';
+  el.dataset.href = item.href;
   document.body.appendChild(el);
   return el;
 });
@@ -1988,7 +1991,7 @@ function placeItems(open, radius, instant) {
     else { el.style.transition = tr; el.classList.remove('spinning-out'); }
 
     if (open) {
-      const angle = arcStart + (arcEnd - arcStart) * (i / (n - 1));
+      const angle = arcStart + (arcEnd - arcStart) * (i / Math.max(1, n - 1));
       const rad   = angle * Math.PI / 180;
       const ix    = cx + Math.cos(rad) * radius - 25;
       const iy    = cy + Math.sin(rad) * radius - 25;
@@ -1998,10 +2001,12 @@ function placeItems(open, radius, instant) {
       el.style.transform     = offScreen ? 'scale(0)' : 'scale(1) rotate(0deg)';
       el.style.opacity       = offScreen ? '0' : '1';
       el.style.pointerEvents = offScreen ? 'none' : 'all';
+      el.style.filter = '';
     } else {
       el.style.left = (cx-25)+'px'; el.style.top = (cy-25)+'px';
       el.style.transform = 'scale(.3)'; el.style.opacity = '0';
       el.style.pointerEvents = 'none';
+      el.style.filter = '';
     }
     if (instant) requestAnimationFrame(() => { el.style.transition = tr; });
   });
@@ -2074,7 +2079,11 @@ bubble.addEventListener('click',e=>{
   if(dragMoved){dragMoved=false;return;}
   bubbleClicked=true;
   bubble.classList.remove('blurred');
-  if(isMini&&!menuOpen){setBubbleMini(false);return;}
+  if(isMini&&!menuOpen){
+    setBubbleMini(false);
+    openMenu();
+    return;
+  }
   if(menuOpen){
     closeMenu(false,true);
     const accueil=document.getElementById('accueil');
@@ -2399,8 +2408,9 @@ async function loadGalleryFromFirebase() {
 }
 
 function renderGalleryCarousel() {
-  const track = document.getElementById('galleryCarouselTrack');
-  const dotsWrap = document.getElementById('galleryCarouselDots');
+  const track = document.getElementById('edenGalleryTrack');
+  const dotsWrap = document.getElementById('edenGalleryDots');
+  const countEl = document.getElementById('edenGalleryCount');
   if (!track || !dotsWrap || !GALLERY_IMAGES.length) return;
 
   track.innerHTML = GALLERY_IMAGES.map((img, i) => `
@@ -2417,12 +2427,14 @@ function renderGalleryCarousel() {
     <span class="gc-dot ${i === 0 ? 'active' : ''}" onclick="galleryCarouselGoTo(${i})"></span>`).join('');
 
   galleryCarouselIndex = 0;
+  if (countEl) countEl.textContent = '01';
   resetGalleryCarouselAuto();
 }
 
 function galleryCarouselGoTo(index) {
   const slides = document.querySelectorAll('.gallery-carousel-slide');
   const dots = document.querySelectorAll('.gc-dot');
+  const countEl = document.getElementById('edenGalleryCount');
   if (!slides.length) return;
 
   slides[galleryCarouselIndex]?.classList.remove('active');
@@ -2430,6 +2442,8 @@ function galleryCarouselGoTo(index) {
   galleryCarouselIndex = (index + slides.length) % slides.length;
   slides[galleryCarouselIndex]?.classList.add('active');
   dots[galleryCarouselIndex]?.classList.add('active');
+
+  if (countEl) countEl.textContent = String(galleryCarouselIndex + 1).padStart(2, '0');
 
   slides[galleryCarouselIndex]?.querySelectorAll('.gc-fade').forEach(el => {
     el.style.animation = 'none';
@@ -3081,6 +3095,13 @@ function handleInscriptionSuccessReturn(){
   }
 }
 document.addEventListener('DOMContentLoaded', () => {
+  const prevBtn = document.getElementById('edenGalleryPrev');
+  const nextBtn = document.getElementById('edenGalleryNext');
+
+  prevBtn?.addEventListener('click', galleryCarouselPrev);
+  nextBtn?.addEventListener('click', galleryCarouselNext);
+
+  renderGalleryCarousel();
   loadGalleryFromFirebase();
   handleInscriptionSuccessReturn();
 });
