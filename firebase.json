@@ -1,10 +1,6 @@
 {
-  "projects": {
-    "default": "edensmart-c7019"
-  },
   "database": {
-    "rules": "database.rules.json",
-    "target": "edensmart-app"
+    "rules": "database.rules.json"
   },
   "hosting": {
     "public": ".",
@@ -50,3 +46,5 @@
     ]
   }
 }
+
+[executed on device: HP-14-dq1037wm (afa20098-9b81-4970-9b0f-81fe61d6fef5)]
