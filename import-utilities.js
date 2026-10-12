@@ -273,7 +273,8 @@ const COLUMN_MAP = {
         'PARENT', 'PARENT NAME', 'PARENT FULL NAME',
         'PERE/MERE', 'PEREMERE',
         'PARENT COMPLET', 'TUTEUR', 'GUARDIAN',
-        'NOM DU PARENT', 'NOM PARENT', 'RESPONSABLE'
+        'NOM DU PARENT', 'NOM PARENT', 'RESPONSABLE',
+        'CHEF NOM PRENOM', 'NOM CHEF FAMILLE', 'CHEF DE FAMILLE', 'NOM RESPONSABLE'
     ],
     birthDate: [
         'BIRTH DATE', 'DATE OF BIRTH', 'DOB',
@@ -283,17 +284,32 @@ const COLUMN_MAP = {
     phone: [
         'PARENT PHONE', 'TELEPHONE', 'PHONE',
         'TELEPHONE PARENT', 'CONTACT',
-        'PHONE PARENT', 'TEL', 'TEL PARENT',
+        'PHONE PARENT', 'TEL', 'TEL PARENT', 'CHEF TELEPHONE', 'TELEPHONE CHEF FAMILLE',
         'NUMERO', 'NUMERO DE TELEPHONE', 'MOBILE'
     ],
     class: [
-        'CLASSE',           // ← FIX: était absent !
+        'CLASSE',
         'CLASS',
         'GRADE', 'LEVEL', 'SECTION',
         'CLASSROOM', 'EDUCATION LEVEL',
         'NIVEAU', 'NIVEAU SCOLAIRE',
         'ANNEE', 'PROMOTION'
-    ]
+    ],
+    gender: ['SEXE', 'GENDER', 'SEX'],
+    email: ['EMAIL', 'E-MAIL', 'EMAIL PARENT', 'PARENT EMAIL', 'COURRIEL', 'MAIL'],
+    reference: ['REFERENCE', 'RÉFÉRENCE', 'CODE UNIQUE', 'CODEUNIQUE', 'REGISTRATION CODE', 'MATRICULE', 'ID ELEVE', 'ID ÉLÈVE'],
+    branch: ['BRANCHE', 'BRANCH', 'CAMPUS', 'SITE'],
+    academicYear: ['ANNEE ACADEMIQUE', 'ANNÉE ACADÉMIQUE', 'ACADEMIC YEAR', 'SCHOOL YEAR', 'ANNEE SCOLAIRE'],
+    parentId: ['PIECE IDENTITE PARENT', 'PIECE IDENTITE CHEF', 'CHEF PIECE IDENTITE', 'CHEF PIECE IDENTITE', 'ID CHEF FAMILLE', 'IDENTITE CHEF FAMILLE', 'PARENT ID', 'GUARDIAN ID'],
+    spouseName: ['CONJOINT', 'NOM CONJOINT', 'NOM DU CONJOINT', 'CONJOINT NOM PRENOM', 'CONJOINT NOM ET PRENOM', 'SPOUSE NAME'],
+    spousePhone: ['TELEPHONE CONJOINT', 'TELEPHONE DU CONJOINT', 'CONJOINT TELEPHONE', 'SPOUSE PHONE'],
+    spouseId: ['PIECE IDENTITE CONJOINT', 'CONJOINT PIECE IDENTITE', 'ID CONJOINT', 'SPOUSE ID'],
+    city: ['VILLE', 'CITY'],
+    sector: ['SECTEUR', 'SECTOR'],
+    umurenge: ['UMURENGE', 'DISTRICT', 'COMMUNE'],
+    cell: ['AKAGARI', 'CELLULE', 'CELL'],
+    village: ['UMUDUGUDU', 'VILLAGE'],
+    umudugudu: ['UMUDUGUDU', 'VILLAGE']
 };
 
 const findFieldInRow = function(row, field) {
@@ -333,7 +349,22 @@ const extractStudentDataFromRow = function(row) {
         classes:   normalizeClassField(findFieldInRow(row, 'class')),
         parent:    normalizeNameField(findFieldInRow(row, 'parent')),
         birthDate: parseBirthDate(findFieldInRow(row, 'birthDate')),
-        phone:     normalizePhoneNumber(findFieldInRow(row, 'phone'))
+        phone:     normalizePhoneNumber(findFieldInRow(row, 'phone')),
+        gender:    String(findFieldInRow(row, 'gender') || '').trim(),
+        email:     String(findFieldInRow(row, 'email') || '').trim(),
+        reference: String(findFieldInRow(row, 'reference') || '').trim(),
+        branch:    String(findFieldInRow(row, 'branch') || '').trim(),
+        academicYear: String(findFieldInRow(row, 'academicYear') || '').trim(),
+        parentId: String(findFieldInRow(row, 'parentId') || '').trim(),
+        spouseName: normalizeNameField(findFieldInRow(row, 'spouseName')),
+        spousePhone: normalizePhoneNumber(findFieldInRow(row, 'spousePhone')),
+        spouseId: String(findFieldInRow(row, 'spouseId') || '').trim(),
+        city: String(findFieldInRow(row, 'city') || '').trim(),
+        sector: String(findFieldInRow(row, 'sector') || '').trim(),
+        umurenge: String(findFieldInRow(row, 'umurenge') || '').trim(),
+        cell: String(findFieldInRow(row, 'cell') || '').trim(),
+        village: String(findFieldInRow(row, 'village') || findFieldInRow(row, 'umudugudu') || '').trim(),
+        umudugudu: String(findFieldInRow(row, 'umudugudu') || findFieldInRow(row, 'village') || '').trim()
     };
 }
 
