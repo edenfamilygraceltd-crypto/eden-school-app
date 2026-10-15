@@ -247,8 +247,13 @@
             addClassValue(student.classe);
             addClassValue(student.className);
             addClassValue(student.class_name);
-            addClassValue(student.classId);
-            addClassValue(student.classeId);
+            [student.classId, student.classeId].forEach(classId => {
+              if (classId === undefined || classId === null || String(classId).trim() === '') return;
+              const classRecord = (Array.isArray(classesData) ? classesData : []).find(record =>
+                normalizeKey(record.id || record.classId || '') === normalizeKey(classId)
+              );
+              addClassValue(classRecord?.name || classRecord?.className || classRecord?.class || classRecord?.classe || classId);
+            });
             student.class = classValues[0] || '';
             student.classes = classValues;
 
@@ -393,9 +398,7 @@ console.log('📈 Total students loaded:', studentsData.length);
 
         // Si l'utilisateur avait une recherche par classe active, la réappliquer
         // après le rafraîchissement pour éviter que la liste ne revienne à "tous".
-        const activeClassFilter = document.getElementById('classFilter')?.value || '';
-        const activeSearch = document.getElementById('searchStudent')?.value || '';
-        if ((activeClassFilter || activeSearch) && typeof filterStudents === 'function') {
+        if (typeof filterStudents === 'function') {
           filterStudents();
         }
       }
@@ -968,9 +971,15 @@ console.log('📈 Total students loaded:', studentsData.length);
           const teacherBadge = teacher ? `<span class="badge bg-success">${teacherName}</span>` : `<span class="badge bg-secondary">Non assigné</span>`;
           
           // Display branch and class with warning if missing
-          const studentClasses = Array.isArray(s.classes)
+          const rawStudentClasses = Array.isArray(s.classes)
             ? s.classes.map(cls => cls?.toString().trim()).filter(Boolean)
             : (s.classes || s.class || s.classe || '').toString().split(',').map(cls => cls.trim()).filter(Boolean);
+          const studentClasses = [...new Set(rawStudentClasses.map(className => {
+            const classRecord = (Array.isArray(classesData) ? classesData : []).find(record =>
+              normalizeKey(record.id || record.classId || '') === normalizeKey(className)
+            );
+            return String(classRecord?.name || classRecord?.className || classRecord?.class || classRecord?.classe || className).trim();
+          }))];
           const classDisplay = studentClasses.length > 0 ? studentClasses.join(', ') : '<span class="badge bg-danger">SANS CLASSE</span>';
           
           html += `<tr>
@@ -1998,6 +2007,11 @@ console.log('📈 Total students loaded:', studentsData.length);
         if (!className) {
           container.innerHTML = '<p class="text-muted">Sélectionnez une classe pour voir les élèves</p>';
           infoElement.textContent = 'Sélectionnez une classe pour voir les détails d\'assignation';
+          const percentEl = document.getElementById('detailProgressPercent'); if (percentEl) percentEl.textContent = '0%';
+          const bar = document.getElementById('detailProgressBar'); if (bar) { bar.style.width = '0%'; bar.setAttribute('aria-valuenow', '0'); }
+          const progressText = document.getElementById('detailProgressText'); if (progressText) progressText.textContent = '0 élève attribué sur 0';
+          const missingCount = document.getElementById('detailMissingCount'); if (missingCount) missingCount.textContent = '0';
+          const unassignedList = document.getElementById('detailUnassignedStudents'); if (unassignedList) unassignedList.innerHTML = '<span class="text-muted">Choisissez une classe pour afficher les élèves sans enseignant.</span>';
           return;
         }
 
@@ -2007,14 +2021,28 @@ console.log('📈 Total students loaded:', studentsData.length);
           return;
         }
 
-        const normalize = (value) => (value || '').toString().trim().toLowerCase();
+        const normalize = value => typeof normalizeKey === 'function' ? normalizeKey(value || '') : String(value || '').normalize('NFKC').trim().toLowerCase();
         const targetClass = normalize(className);
         const teacherBranch = normalize(teacher.branch || teacher.branche || teacher.branchName || teacher.schoolBranch);
-
+        const classRecords = Array.isArray(classesData) ? classesData : [];
+        const targetClassRecord = classRecords.find(c => normalize(c.name || c.className || c.class || c.classe || c.id) === targetClass);
         const classStudents = studentsData.filter(s => {
-          const studentClass = normalize(s.classes || s.class || s.classe);
-          const studentBranch = normalize(s.branch || s.branche || s.branchName || s.schoolBranch);
-          return studentClass === targetClass && studentBranch === teacherBranch;
+          const values = [];
+          const add = value => {
+            if (Array.isArray(value)) value.forEach(add);
+            else if (value && typeof value === 'object') ['name','className','class','classe','id'].forEach(k => add(value[k]));
+            else if (value != null && String(value).trim()) values.push(String(value).trim());
+          };
+          ['class','classe','className','class_name','classroom','classId','classID','classeId','classeID','classes','assignedClass','assignedClasses'].forEach(k => add(s[k]));
+          const keys = new Set(values.map(normalize));
+          values.forEach(value => {
+            const match = classRecords.find(c => normalize(c.id || '') === normalize(value));
+            if (match) keys.add(normalize(match.name || match.className || match.class || match.classe || ''));
+          });
+          if (!keys.has(targetClass)) return false;
+          let branch = normalize(s.branch || s.branche || s.branchName || s.schoolBranch || '');
+          if (!branch) branch = normalize(targetClassRecord?.branch || targetClassRecord?.branche || targetClassRecord?.branchName || targetClassRecord?.schoolBranch || '');
+          return !teacherBranch || branch === teacherBranch;
         });
         const assignedToThisTeacher = classStudents.filter(s => s.teacherId === currentDetailTeacherId).length;
         const totalStudents = classStudents.length;
@@ -2029,17 +2057,19 @@ console.log('📈 Total students loaded:', studentsData.length);
 
         if (classStudents.length === 0) {
           container.innerHTML = '<p class="text-muted">Aucun élève dans cette classe</p>';
+          const percentEl = document.getElementById('detailProgressPercent'); if (percentEl) percentEl.textContent = '0%';
+          const bar = document.getElementById('detailProgressBar'); if (bar) { bar.style.width = '0%'; bar.setAttribute('aria-valuenow', '0'); }
+          const progressText = document.getElementById('detailProgressText'); if (progressText) progressText.textContent = '0 élève attribué sur 0';
+          const missingCount = document.getElementById('detailMissingCount'); if (missingCount) missingCount.textContent = '0';
+          const unassignedList = document.getElementById('detailUnassignedStudents'); if (unassignedList) unassignedList.innerHTML = '<span class="text-muted">Aucun élève à afficher.</span>';
         } else {
           let html = '<div class="student-assignment-list">';
-          let reportsPresent = 0;
           classStudents.forEach(s => {
-            const hasAcademic = reportsData[s.id]?.academic || false;
-            const hasConduct = reportsData[s.id]?.conduct || false;
-            if (hasAcademic || hasConduct) reportsPresent++;
-            const isAssigned = s.teacherId === currentDetailTeacherId;
-            const statusClass = isAssigned ? 'assigned' : 'unassigned';
-            const statusLabel = isAssigned ? '✓ Assigné' : 'Non assigné';
-            const statusBgColor = isAssigned ? 'bg-success-subtle' : 'bg-light';
+            const isAssigned = String(s.teacherId || '') === String(currentDetailTeacherId || '');
+            const assignedTeacher = s.teacherId ? teachersData.find(t => String(t.uid || t.id) === String(s.teacherId)) : null;
+            const hasAnyTeacher = Boolean(s.teacherId || s.teacherName);
+            const statusLabel = isAssigned ? 'Assigné à cet enseignant' : (hasAnyTeacher ? 'Assigné à ' + (assignedTeacher?.name || s.teacherName || 'un autre enseignant') : 'Non assigné');
+            const statusBgColor = isAssigned ? 'bg-success-subtle' : (hasAnyTeacher ? 'bg-info-subtle' : 'bg-warning-subtle');
             
             html += `
               <div class="list-group-item d-flex justify-content-between align-items-center py-2 ${statusBgColor}" style="border-left: 3px solid ${isAssigned ? '#198754' : '#ccc'};">
@@ -2068,11 +2098,34 @@ console.log('📈 Total students loaded:', studentsData.length);
             });
           });
           
-          const percent = classStudents.length ? Math.round((reportsPresent / classStudents.length) * 100) : 0;
-          document.getElementById('detailProgressPercent').textContent = percent + '%';
-          document.getElementById('detailProgressBar').style.width = percent + '%';
-          const missing = Math.floor(Math.random() * (classStudents.length / 2));
-          document.getElementById('detailMissingCount').textContent = missing;
+          const assignedCount = classStudents.filter(s => Boolean(s.teacherId || s.teacherName)).length;
+          const unassignedStudents = classStudents.filter(s => !s.teacherId && !s.teacherName);
+          const percent = classStudents.length ? Math.round((assignedCount / classStudents.length) * 100) : 0;
+          const percentEl = document.getElementById('detailProgressPercent');
+          const bar = document.getElementById('detailProgressBar');
+          const progressText = document.getElementById('detailProgressText');
+          const missingCount = document.getElementById('detailMissingCount');
+          const unassignedList = document.getElementById('detailUnassignedStudents');
+          if (percentEl) percentEl.textContent = percent + '%';
+          if (bar) {
+            bar.style.width = percent + '%';
+            bar.setAttribute('aria-valuenow', String(percent));
+            bar.classList.toggle('bg-danger', percent < 50);
+            bar.classList.toggle('bg-warning', percent >= 50 && percent < 100);
+            bar.classList.toggle('bg-success', percent === 100);
+          }
+          if (progressText) progressText.textContent = `${assignedCount} élève(s) attribué(s) sur ${classStudents.length}`;
+          if (missingCount) missingCount.textContent = String(unassignedStudents.length);
+          if (unassignedList) {
+            if (!unassignedStudents.length) {
+              unassignedList.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Tous les élèves de cette classe ont un enseignant.</span>';
+            } else {
+              unassignedList.innerHTML = unassignedStudents.map((student, index) => {
+                const name = String(student.name || student.fullName || student.nomPrenom || 'Élève sans nom').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+                return `<div class="d-flex align-items-center gap-2 py-1 border-bottom"><span class="text-muted">${index + 1}.</span><i class="bi bi-person-x text-warning"></i><span>${name}</span></div>`;
+              }).join('');
+            }
+          }
         }
       }
 
@@ -2174,10 +2227,25 @@ console.log('📈 Total students loaded:', studentsData.length);
         const teacherBranch = normalizeKey(teacher.branch || teacher.branche || teacher.branchName || teacher.schoolBranch);
 
         // Filter students by both class name AND branch to avoid mixing students from different branches with same class name
+        const classRecords = Array.isArray(classesData) ? classesData : [];
+        const selectedClassRecord = classRecords.find(c => normalizeKey(c.name || c.className || c.class || c.classe || c.id) === normalizeKey(className));
         const studentsToAssign = studentsData.filter(s => {
-          const studentClass = normalizeKey(s.class || s.classes || s.classe);
-          const studentBranch = normalizeKey(s.branch || s.branche || s.branchName || s.schoolBranch);
-          return studentClass === normalizeKey(className) && studentBranch === teacherBranch;
+          const values = [];
+          const add = value => {
+            if (Array.isArray(value)) value.forEach(add);
+            else if (value && typeof value === 'object') ['name','className','class','classe','id'].forEach(k => add(value[k]));
+            else if (value != null && String(value).trim()) values.push(String(value).trim());
+          };
+          ['class','classe','className','class_name','classroom','classId','classID','classeId','classeID','classes','assignedClass','assignedClasses'].forEach(k => add(s[k]));
+          const keys = new Set(values.map(normalizeKey));
+          values.forEach(value => {
+            const record = classRecords.find(c => normalizeKey(c.id || '') === normalizeKey(value));
+            if (record) keys.add(normalizeKey(record.name || record.className || record.class || record.classe || ''));
+          });
+          if (!keys.has(normalizeKey(className))) return false;
+          let studentBranch = normalizeKey(s.branch || s.branche || s.branchName || s.schoolBranch || '');
+          if (!studentBranch) studentBranch = normalizeKey(selectedClassRecord?.branch || selectedClassRecord?.branche || selectedClassRecord?.branchName || selectedClassRecord?.schoolBranch || '');
+          return !teacherBranch || studentBranch === teacherBranch;
         });
 
         if (!studentsToAssign.length) {
@@ -2345,6 +2413,60 @@ console.log('📈 Total students loaded:', studentsData.length);
         };
       }
 
+      function getSecretaryStudentExportClassName(item) {
+        const student = item.student || {};
+        const inscription = item.inscription || {};
+        const values = [];
+        const add = value => {
+          if (Array.isArray(value)) value.forEach(add);
+          else if (value && typeof value === 'object') {
+            ['name', 'className', 'class', 'classe', 'id'].forEach(key => add(value[key]));
+          } else if (value != null && String(value).trim()) {
+            values.push(String(value).trim());
+          }
+        };
+        const keys = ['class', 'classe', 'className', 'class_name', 'classroom', 'classId', 'classID', 'classeId', 'classeID', 'classes', 'assignedClass', 'assignedClasses'];
+        keys.forEach(key => { add(student[key]); add(inscription[key]); });
+        const normalize = value => String(value ?? '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+        const classRecords = Array.isArray(classesData) ? classesData : [];
+        for (const value of values) {
+          const match = classRecords.find(record =>
+            normalize(record.id) === normalize(value) ||
+            normalize(record.name || record.className || record.class || record.classe) === normalize(value)
+          );
+          if (match) return String(match.name || match.className || match.class || match.classe || value).trim();
+        }
+        return values[0] || 'Sans classe';
+      }
+
+      function getSecretaryStudentExportRecord(item, index, className, mode, selectedFields) {
+        const student = item.student || {};
+        const inscription = item.inscription || findSecretaryClassInscription(student);
+        const resolvedClassName = className || getSecretaryStudentExportClassName(item);
+        if (mode === 'all') {
+          return getSecretaryCompleteExportRecord(student, inscription, {
+            'N°': index + 1,
+            'Classe exportée': resolvedClassName
+          });
+        }
+
+        const completeRecord = getSecretaryCompleteExportRecord(student, inscription, {}, false);
+        if (mode === 'custom') {
+          const record = { 'N°': index + 1 };
+          selectedFields.forEach(field => {
+            record[field] = field === 'Classe' ? resolvedClassName : completeRecord[field] ?? '';
+          });
+          return record;
+        }
+
+        return {
+          'N°': index + 1,
+          'Nom complet élève': completeRecord['Nom complet élève'],
+          'Classe': resolvedClassName,
+          'Sexe': completeRecord['Sexe']
+        };
+      }
+
       // Prépare un export exhaustif : toutes les propriétés réellement enregistrées sur la fiche élève et l'inscription.
       // Les champs imbriqués sont aplatis pour être lisibles dans Excel; aucune donnée source n'est volontairement supprimée.
       function flattenSecretaryExportObject(value, prefix, out) {
@@ -2365,7 +2487,14 @@ console.log('📈 Total students loaded:', studentsData.length);
         out[prefix || 'Valeur'] = String(value);
       }
 
-      function getSecretaryCompleteExportRecord(student, inscription, meta = {}) {
+      function normalizeSecretaryExportGender(value) {
+        const gender = String(value ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase();
+        if (/^(m|male|masculin|garcon|boy|homme)\b/.test(gender)) return 'Garçon';
+        if (/^(f|female|feminin|fille|girl|femme)\b/.test(gender)) return 'Fille';
+        return '';
+      }
+
+      function getSecretaryCompleteExportRecord(student, inscription, meta = {}, includeRaw = true) {
         const st = student || {};
         const ins = inscription || {};
         const family = getSecretaryFamilyData(st, ins);
@@ -2375,7 +2504,7 @@ console.log('📈 Total students loaded:', studentsData.length);
           'Nom complet élève': st.name || st.fullName || st.nomPrenom || ins.nomPrenom || ins.name || '',
           'Référence élève': st.reference || st.codeUnique || st.registrationCode || ins.reference || ins.codeUnique || '',
           'Date de naissance': st.dob || st.dateNaissance || st.birthDate || ins.dateNaissance || ins.dob || '',
-          'Sexe': st.gender || st.sexe || st.sex || ins.gender || ins.sexe || '',
+          'Sexe': normalizeSecretaryExportGender(st.gender || st.sexe || st.sex || ins.gender || ins.sexe || ''),
           'Branche': st.branch || st.branche || st.branchName || ins.branche || ins.branch || '',
           'Classe': st.class || st.classe || st.classes || ins.classe || ins.class || '',
           'Année académique': st.academicYear || st.anneeAcademique || ins.anneeAcademique || ins.academicYear || '',
@@ -2395,8 +2524,12 @@ console.log('📈 Total students loaded:', studentsData.length);
           'Approuvé par': ins.confirmedBy || ins.authorizedBy || ins.approvedBy || '',
           'Origine inscription': ins.origin || ins.source || ins.registrationSource || ''
         });
+        if (!includeRaw) return row;
         Object.entries(st).forEach(([key, value]) => flattenSecretaryExportObject(value, 'FICHE ÉLÈVE / ' + key, row));
         Object.entries(ins).forEach(([key, value]) => flattenSecretaryExportObject(value, 'INSCRIPTION / ' + key, row));
+        Object.keys(row).forEach(key => {
+          if (/(sexe|gender|sex)/i.test(key)) row[key] = normalizeSecretaryExportGender(row[key]);
+        });
         return row;
       }
 
@@ -2446,7 +2579,7 @@ console.log('📈 Total students loaded:', studentsData.length);
         const enrollments = Array.isArray(inscriptionsData) ? inscriptionsData : [];
         const normalize = value => String(value ?? '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
         const usedEnrollmentIds = new Set();
-        const rows = students.map(student => {
+        let rows = students.map(student => {
           const inscription = findSecretaryClassInscription(student) || {};
           if (inscription.id) usedEnrollmentIds.add(String(inscription.id));
           return { student, inscription };
@@ -2480,14 +2613,53 @@ console.log('📈 Total students loaded:', studentsData.length);
           rows.push({ student, inscription });
           if (inscription.id) usedEnrollmentIds.add(String(inscription.id));
         });
+        const classSelect = document.getElementById('classFilter');
+        const branchSelect = document.getElementById('branchFilter');
+        const selectedClass = String(classSelect?.value || '').trim();
+        const selectedBranch = String(branchSelect?.value || '').trim();
+        const classRecords = Array.isArray(classesData) ? classesData : [];
+        const classKeysForRow = item => {
+          const values = [];
+          const add = value => {
+            if (Array.isArray(value)) value.forEach(add);
+            else if (value && typeof value === 'object') ['name','className','class','classe','id'].forEach(k => add(value[k]));
+            else if (value != null && String(value).trim()) values.push(String(value).trim());
+          };
+          const st=item.student||{}, ins=item.inscription||{};
+          ['class','classe','className','class_name','classroom','classId','classID','classeId','classeID','classes','assignedClass','assignedClasses'].forEach(k=>{add(st[k]);add(ins[k]);});
+          for (const v of [...values]) {
+            const match=classRecords.find(c=>normalize(c.id||'')===normalize(v));
+            if(match)add(match.name||match.className||match.class||match.classe||'');
+          }
+          return new Set(values.map(normalize));
+        };
+        const branchKeyForRow = item => {
+          const st=item.student||{}, ins=item.inscription||{};
+          const raw=[st.branch,st.branche,st.branchName,st.schoolBranch,st.branchId,ins.branch,ins.branche,ins.branchName].find(v=>String(v||'').trim())||'';
+          if(String(raw).trim()){
+            const byId=classRecords.find(c=>normalize(c.id||'')===normalize(raw));
+            return normalize(byId?(byId.branch||byId.branche||byId.branchName||byId.schoolBranch||raw):raw);
+          }
+          const ck=classKeysForRow(item);
+          const bs=[...new Set(classRecords.filter(c=>ck.has(normalize(c.name||c.className||c.class||c.classe||c.id||''))).map(c=>normalize(c.branch||c.branche||c.branchName||c.schoolBranch||'')).filter(Boolean))];
+          return bs.length===1?bs[0]:'';
+        };
+        if(selectedClass||selectedBranch){
+          rows=rows.filter(item=>
+            (!selectedClass||classKeysForRow(item).has(normalize(selectedClass))) &&
+            (!selectedBranch||branchKeyForRow(item)===normalize(selectedBranch))
+          );
+        }
         if (!rows.length) {
           showNotification('Aucun élève chargé. Actualisez la liste des élèves avant l’export.', 'warning');
           return null;
         }
         rows.sort((a, b) => String(a.student?.name || a.student?.fullName || a.student?.nomPrenom || a.inscription?.nomPrenom || '').localeCompare(String(b.student?.name || b.student?.fullName || b.student?.nomPrenom || b.inscription?.nomPrenom || '')));
         return {
-          className: 'Toutes les classes',
-          branchName: 'Toutes les branches',
+          className: String(document.getElementById('classFilter')?.value || '').trim() || 'Toutes les classes',
+          branchName: String(document.getElementById('branchFilter')?.value || '').trim()
+            ? String(document.getElementById('branchFilter')?.selectedOptions?.[0]?.textContent || document.getElementById('branchFilter')?.value || '').trim()
+            : 'Toutes les branches',
           academicYear: typeof getActiveSecretarySchoolYear === 'function' ? getActiveSecretarySchoolYear() : '',
           rows
         };
@@ -2576,91 +2748,435 @@ console.log('📈 Total students loaded:', studentsData.length);
         };
       }
 
-      function exportSecretaryStudentsByClassExcel() {
+      let secretaryStudentExportPending = null;
+
+      function renderSecretaryStudentExportSelection(data) {
+        const container = document.getElementById('secretaryStudentExportSelection');
+        container.replaceChildren();
+        const groups = secretaryStudentExportGroups(data);
+        [...groups.keys()].sort(delibCompareClasses).forEach(className => {
+          const groupItems = groups.get(className);
+          const section = document.createElement('section');
+          section.className = 'mb-2';
+          const header = document.createElement('div');
+          header.className = 'd-flex align-items-center gap-2 border-bottom pb-1 mb-1';
+          const classCheckbox = document.createElement('input');
+          classCheckbox.type = 'checkbox';
+          classCheckbox.className = 'form-check-input m-0 secretary-student-export-class';
+          classCheckbox.checked = true;
+          classCheckbox.setAttribute('aria-label', 'Sélectionner toute la classe ' + className);
+          const classLabel = document.createElement('strong');
+          classLabel.textContent = className + ' (' + groupItems.length + ')';
+          header.append(classCheckbox, classLabel);
+          section.appendChild(header);
+
+          groupItems.forEach(item => {
+            const rowIndex = data.rows.indexOf(item);
+            const student = item.student || {};
+            const name = student.name || student.fullName || student.nomPrenom ||
+              item.inscription?.nomPrenom || item.inscription?.name || 'Élève sans nom';
+            const label = document.createElement('label');
+            label.className = 'form-check d-flex align-items-center gap-2 ms-3 py-1';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'form-check-input m-0 secretary-student-export-student';
+            checkbox.dataset.rowIndex = String(rowIndex);
+            checkbox.dataset.className = className;
+            checkbox.checked = true;
+            const text = document.createElement('span');
+            text.className = 'form-check-label';
+            text.textContent = name;
+            label.append(checkbox, text);
+            section.appendChild(label);
+          });
+
+          classCheckbox.addEventListener('change', () => {
+            section.querySelectorAll('.secretary-student-export-student').forEach(checkbox => {
+              checkbox.checked = classCheckbox.checked;
+            });
+            updateSecretaryStudentExportSelectionState();
+          });
+          container.appendChild(section);
+        });
+        container.querySelectorAll('.secretary-student-export-student').forEach(checkbox => {
+          checkbox.addEventListener('change', updateSecretaryStudentExportSelectionState);
+        });
+      }
+
+      function updateSecretaryStudentExportSelectionState() {
+        document.querySelectorAll('#secretaryStudentExportSelection section').forEach(section => {
+          const classCheckbox = section.querySelector('.secretary-student-export-class');
+          const students = [...section.querySelectorAll('.secretary-student-export-student')];
+          const checkedCount = students.filter(checkbox => checkbox.checked).length;
+          classCheckbox.checked = checkedCount === students.length;
+          classCheckbox.indeterminate = checkedCount > 0 && checkedCount < students.length;
+        });
+      }
+
+      function setSecretaryStudentExportSelection(selected) {
+        document.querySelectorAll('.secretary-student-export-student').forEach(checkbox => {
+          checkbox.checked = selected;
+        });
+        updateSecretaryStudentExportSelectionState();
+      }
+
+      function openSecretaryStudentExportOptions(format, groupByClass) {
         const data = getSecretaryAllStudentsExportData();
         if (!data) return;
+        secretaryStudentExportPending = {
+          data,
+          format,
+          groupByClass,
+          returnFocus: document.activeElement instanceof HTMLElement ? document.activeElement : null
+        };
+        renderSecretaryStudentExportSelection(data);
+
+        const fieldContainer = document.getElementById('secretaryStudentExportFields');
+        fieldContainer.replaceChildren();
+        const fieldNames = Object.keys(getSecretaryCompleteExportRecord({}, {}, {}, false))
+          .filter(field => field !== 'N°' && field !== 'Classe exportée');
+        fieldNames.forEach((field, index) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'col-sm-6 col-md-4';
+          const label = document.createElement('label');
+          label.className = 'form-check';
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.className = 'form-check-input secretary-student-export-field';
+          checkbox.value = field;
+          checkbox.id = 'secretaryStudentExportField' + index;
+          const text = document.createElement('span');
+          text.className = 'form-check-label';
+          text.textContent = field;
+          label.append(checkbox, text);
+          wrapper.appendChild(label);
+          fieldContainer.appendChild(wrapper);
+        });
+
+        document.getElementById('secretaryStudentExportTitle').textContent =
+          'Préparer la liste ' + (format === 'pdf' ? 'PDF' : 'Excel');
+        document.querySelectorAll('input[name="secretaryStudentExportMode"]').forEach(input => {
+          input.checked = input.value === 'short';
+          input.onchange = updateSecretaryStudentExportFieldAvailability;
+        });
+        updateSecretaryStudentExportFieldAvailability();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('secretaryStudentExportModal')).show();
+      }
+
+      function updateSecretaryStudentExportFieldAvailability() {
+        const customSelected = document.getElementById('secretaryStudentExportCustom').checked;
+        const fieldContainer = document.getElementById('secretaryStudentExportFields');
+        fieldContainer.classList.toggle('opacity-50', !customSelected);
+        fieldContainer.querySelectorAll('input').forEach(input => { input.disabled = !customSelected; });
+      }
+
+      async function confirmSecretaryStudentExport() {
+        if (!secretaryStudentExportPending) return;
+        const mode = document.querySelector('input[name="secretaryStudentExportMode"]:checked')?.value || 'short';
+        const selectedFields = [...document.querySelectorAll('.secretary-student-export-field:checked')].map(input => input.value);
+        if (mode === 'custom' && !selectedFields.length) {
+          showNotification('Sélectionnez au moins une information à télécharger.', 'warning');
+          return;
+        }
+        const pending = {
+          ...secretaryStudentExportPending,
+          data: {
+            ...secretaryStudentExportPending.data,
+            rows: secretaryStudentExportPending.data.rows
+          }
+        };
+        const selectedRowIndexes = new Set(
+          [...document.querySelectorAll('.secretary-student-export-student:checked')]
+            .map(checkbox => Number(checkbox.dataset.rowIndex))
+        );
+        pending.data = {
+          ...pending.data,
+          rows: pending.data.rows.filter((item, index) => selectedRowIndexes.has(index))
+        };
+        if (!pending.data.rows.length) {
+          showNotification('Sélectionnez au moins un élève à télécharger.', 'warning');
+          return;
+        }
+        secretaryStudentExportPending = null;
+        const modalElement = document.getElementById('secretaryStudentExportModal');
+        const activeElement = document.activeElement;
+        if (activeElement instanceof HTMLElement && modalElement.contains(activeElement)) activeElement.blur();
+        if (pending.returnFocus?.isConnected) {
+          modalElement.addEventListener('hidden.bs.modal', () => pending.returnFocus.focus(), { once: true });
+        }
+        bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+        if (pending.format === 'pdf') {
+          await performSecretaryStudentsPDF(pending, mode, selectedFields);
+        } else {
+          performSecretaryStudentsExcel(pending, mode, selectedFields);
+        }
+      }
+
+      function exportSecretaryStudentsByClassExcel() {
+        openSecretaryStudentExportOptions('excel', false);
+      }
+
+      function exportSecretaryStudentsExcelOneSheetPerClass() {
+        openSecretaryStudentExportOptions('excel', true);
+      }
+
+      function exportSecretaryStudentsByClassPDF() {
+        openSecretaryStudentExportOptions('pdf', false);
+      }
+
+      function exportSecretaryStudentsPDFByClass() {
+        openSecretaryStudentExportOptions('pdf', true);
+      }
+
+      function secretaryExportCellValue(value) {
+        if (value == null) return '';
+        if (typeof value === 'object') {
+          try { return JSON.stringify(value); } catch (error) { console.warn('Valeur exportée non sérialisable.', error); return String(value); }
+        }
+        return String(value);
+      }
+
+      function secretaryStudentExportGroups(data) {
+        const groups = new Map();
+        data.rows.forEach(item => {
+          const className = getSecretaryStudentExportClassName(item);
+          if (!groups.has(className)) groups.set(className, []);
+          groups.get(className).push(item);
+        });
+        return groups;
+      }
+
+      function performSecretaryStudentsExcel(pending, mode, selectedFields) {
         if (typeof XLSX === 'undefined') {
           showNotification('La bibliothèque Excel n’est pas disponible.', 'danger');
           return;
         }
-
-        const sheetRows = data.rows.map((item, i) => {
-          const student = item.student || {};
-          const inscription = item.inscription || findSecretaryClassInscription(student);
-          return getSecretaryCompleteExportRecord(student, inscription, {
-            'N°': i + 1,
-            'Classe exportée': data.className,
-            'Branche exportée': data.branchName,
-            'Année exportée': data.academicYear || ''
+        try {
+          const { data, groupByClass } = pending;
+          const groups = secretaryStudentExportGroups(data);
+          const workbook = XLSX.utils.book_new();
+          const usedSheetNames = new Set();
+          const classes = groupByClass ? [...groups.keys()].sort(delibCompareClasses) : [null];
+          classes.forEach(className => {
+            const items = className === null
+              ? [...data.rows].sort((a, b) => {
+                  const classOrder = delibCompareClasses(getSecretaryStudentExportClassName(a), getSecretaryStudentExportClassName(b));
+                  if (classOrder) return classOrder;
+                  const nameA = a.student?.name || a.student?.fullName || a.student?.nomPrenom || a.inscription?.nomPrenom || '';
+                  const nameB = b.student?.name || b.student?.fullName || b.student?.nomPrenom || b.inscription?.nomPrenom || '';
+                  return String(nameA).localeCompare(String(nameB));
+                })
+              : groups.get(className);
+            const rows = items.map((item, index) => {
+              const resolvedClassName = className || getSecretaryStudentExportClassName(item);
+              const record = getSecretaryStudentExportRecord(item, index, resolvedClassName, mode, selectedFields);
+              return Object.fromEntries(Object.entries(record).map(([key, value]) => [key, secretaryExportCellValue(value)]));
+            });
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            worksheet['!cols'] = Object.keys(rows[0] || {}).map(key => ({ wch: Math.min(Math.max(key.length + 4, 12), 32) }));
+            let sheetName = (className || 'Eleves - ' + data.className).replace(/[\\\/?*\[\]:]/g, '_').slice(0, 31) || 'Eleves';
+            const baseName = sheetName;
+            let suffix = 2;
+            while (usedSheetNames.has(sheetName.toLocaleLowerCase())) {
+              const suffixText = ' (' + suffix++ + ')';
+              sheetName = baseName.slice(0, 31 - suffixText.length) + suffixText;
+            }
+            usedSheetNames.add(sheetName.toLocaleLowerCase());
+            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
           });
-        });
-
-        const ws = XLSX.utils.json_to_sheet(sheetRows);
-        ws['!cols'] = [
-          { wch: 6 }, { wch: 30 }, { wch: 10 }, { wch: 14 },
-          { wch: 24 }, { wch: 20 }, { wch: 30 }, { wch: 22 },
-          { wch: 30 }, { wch: 22 }, { wch: 28 }, { wch: 28 }
-        ];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Élèves - ' + data.className);
-        const safeClass = data.className.replace(/[^a-z0-9_-]+/gi, '_');
-        XLSX.writeFile(wb, 'Liste_eleves_' + safeClass + '.xlsx');
-        showNotification('Liste Excel de ' + data.className + ' exportée.', 'success');
+          const filename = (groupByClass ? 'Eleves_par_classe_' : 'Eleves_') +
+            data.className.replace(/[^a-z0-9_-]+/gi, '_') + '.xlsx';
+          XLSX.writeFile(workbook, filename);
+          showNotification('Liste Excel téléchargée avec les informations choisies.', 'success');
+        } catch (error) {
+          console.error('Erreur export Excel élèves:', error);
+          showNotification('Erreur lors de la création du fichier Excel : ' + (error?.message || 'erreur inconnue'), 'danger');
+        }
       }
 
-      async function exportSecretaryStudentsByClassPDF() {
-        const data = getSecretaryAllStudentsExportData();
-        if (!data) return;
-        if (typeof html2pdf === 'undefined') {
-          showNotification('La bibliothèque PDF n’est pas disponible.', 'danger');
+      function secretaryNormalizeText(value) {
+        return String(value == null ? '' : value)
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase().trim();
+      }
+
+      function secretaryValueIsKacyiru(value) {
+        return secretaryNormalizeText(value).includes('kacyiru');
+      }
+
+      function secretaryExportIsKacyiru(data) {
+        try {
+          const lockedBranch = typeof getSecretaryLockedBranch === 'function'
+            ? getSecretaryLockedBranch()
+            : '';
+          if (secretaryValueIsKacyiru(lockedBranch)) return true;
+
+          const filterName = secretaryNormalizeText(data?.branchName);
+          if (filterName && filterName !== 'toutes les branches') {
+            return secretaryValueIsKacyiru(filterName);
+          }
+
+          const rows = data?.rows || [];
+          if (!rows.length) return false;
+          const classRecords = Array.isArray(classesData) ? classesData : [];
+          return rows.every(item => {
+            const student = item.student || {};
+            const inscription = item.inscription || {};
+            const branchValues = [
+              student.branch, student.branche, student.branchName, student.schoolBranch,
+              student.branchId, student.section, inscription.branche, inscription.branch,
+              inscription.branchName
+            ].filter(value => String(value ?? '').trim());
+            if (branchValues.some(secretaryValueIsKacyiru)) return true;
+
+            const studentClass = secretaryNormalizeText(getSecretaryStudentExportClassName(item));
+            const classRecord = studentClass ? classRecords.find(record => [
+                record.name, record.className, record.class, record.classe, record.id
+              ].some(value => secretaryNormalizeText(value) === studentClass))
+              : null;
+            const matchingBranchRecord = branchValues
+              .map(value => classRecords.find(record => String(record.id || '') === String(value)))
+              .find(Boolean);
+            const records = [classRecord, matchingBranchRecord].filter(Boolean);
+            return records.some(record => [
+              record.branch, record.branche, record.branchName, record.schoolBranch
+            ].some(secretaryValueIsKacyiru));
+          });
+        } catch (error) {
+          console.warn('Détection Kacyiru impossible :', error);
+          return false;
+        }
+      }
+
+      function secretaryStudentExportImageLoads(url) {
+        return new Promise(resolve => {
+          const image = new Image();
+          image.onload = () => resolve(true);
+          image.onerror = () => {
+            console.warn('Image de signature introuvable pour l’export PDF.');
+            resolve(false);
+          };
+          image.crossOrigin = 'anonymous';
+          image.src = url;
+        });
+      }
+
+      async function performSecretaryStudentsPDF(pending, mode, selectedFields) {
+        const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
+        if (typeof JsPDF !== 'function') {
+          showNotification('La bibliothèque PDF n’est pas disponible. Rechargez la page puis réessayez.', 'danger');
           return;
         }
-        const safe = value => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        const container = document.createElement('div');
-        container.style.cssText = 'background:#fff;color:#111;padding:18px;font-family:Arial,sans-serif;width:100%;';
-        const records = data.rows.map((item, i) => {
-          const student = item.student || {};
-          const inscription = item.inscription || findSecretaryClassInscription(student);
-          return getSecretaryCompleteExportRecord(student, inscription, {
-            'N°': i + 1, 'Classe exportée': data.className, 'Branche exportée': data.branchName, 'Année exportée': data.academicYear || ''
-          });
-        });
-        const keys = [];
-        records.forEach(record => Object.keys(record).forEach(key => { if (!keys.includes(key)) keys.push(key); }));
-        const val = (record,key) => {
-          const value = record[key];
-          if (value === undefined || value === null) return '';
-          if (typeof value === 'object') { try { return JSON.stringify(value); } catch (_) { return String(value); } }
-          return String(value);
+        const { data, groupByClass } = pending;
+        const groups = secretaryStudentExportGroups(data);
+        const classes = [...groups.keys()].sort(delibCompareClasses);
+        const firstRecord = data.rows[0]
+          ? getSecretaryStudentExportRecord(data.rows[0], 0, getSecretaryStudentExportClassName(data.rows[0]), mode, selectedFields)
+          : {};
+        const columnCount = Object.keys(firstRecord).length;
+        const orientation = mode !== 'all' && columnCount > 4 ? 'landscape' : 'portrait';
+        const doc = new JsPDF({ unit: 'mm', format: 'a4', orientation, compress: true });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 8;
+        const safeText = value => String(secretaryExportCellValue(value) ?? '').replace(/\s+/g, ' ').trim();
+        const branchName = safeText(data.branchName || 'Toutes les branches');
+        const academicYear = safeText(data.academicYear || '');
+        const generatedDate = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+        const loadImageData = async url => {
+          try {
+            const response = await fetch(url);
+            if (!response.ok) return null;
+            const blob = await response.blob();
+            return await new Promise(resolve => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+              reader.onerror = () => resolve(null);
+              reader.readAsDataURL(blob);
+            });
+          } catch (_) { return null; }
         };
-        container.innerHTML = `
-          <div style="text-align:center;border-bottom:2px solid #222;padding-bottom:10px;margin-bottom:16px;">
-            <h2 style="margin:0;font-size:20px;">EDEN FAMILY SCHOOL</h2>
-            <div style="font-size:15px;font-weight:700;margin-top:5px;">DOSSIERS COMPLETS DES ÉLÈVES</div>
-            <div style="font-size:13px;margin-top:5px;">Classe : <strong>${safe(data.className)}</strong> | Branche : <strong>${safe(data.branchName || 'Toutes')}</strong> | Année : <strong>${safe(data.academicYear || '')}</strong></div>
-            <div style="font-size:11px;margin-top:5px;">Données extraites des fiches élèves et inscriptions enregistrées.</div>
-          </div>
-          ${records.map((record,index)=>`
-            <section style="margin-bottom:20px;">
-              <h3 style="font-size:14px;background:#e9ecef;padding:8px;border:1px solid #999;margin:0;">ÉLÈVE ${index+1} — ${safe(val(record,'Nom complet élève') || val(record,'FICHE ÉLÈVE / name') || val(record,'FICHE ÉLÈVE / nomPrenom'))}</h3>
-              <table style="width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed;"><tbody>
-                ${keys.map(key=>`<tr><th style="width:34%;text-align:left;vertical-align:top;border:1px solid #bbb;padding:4px;background:#f7f7f7;overflow-wrap:anywhere;">${safe(key)}</th><td style="border:1px solid #bbb;padding:4px;vertical-align:top;overflow-wrap:anywhere;white-space:pre-wrap;">${safe(val(record,key))}</td></tr>`).join('')}
-              </tbody></table>
-            </section>
-          `).join('')}
-          <div style="margin-top:10px;font-size:11px;text-align:right;">Total : <strong>${records.length}</strong> élève(s)</div>`;
-        document.body.appendChild(container);
-        try {
-          await html2pdf().set({
-            margin: 7, filename: 'Dossiers_complets_eleves_' + data.className.replace(/[^a-z0-9_-]+/gi, '_') + '.pdf',
-            image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['css', 'legacy'] }
-          }).from(container).save();
-          showNotification('Dossiers PDF complets de ' + data.className + ' exportés.', 'success');
-        } catch (error) {
-          console.error('Erreur export PDF classe:', error);
-          showNotification('Erreur lors de la génération du PDF.', 'danger');
-        } finally { container.remove(); }
+        const logoEden = await loadImageData(new URL('asset/img/logo_eden.png', window.location.href).href);
+        const logoRwanda = await loadImageData(new URL('asset/img/logo_rwanda.png', window.location.href).href);
+        const showSignature = secretaryExportIsKacyiru(data);
+        const signature = showSignature ? await loadImageData(new URL('asset/img/SIGNATURE_Serge_transparent.png', window.location.href).href) : null;
+        const drawHeader = () => {
+          const top = 7;
+          if (logoEden) { try { doc.addImage(logoEden, 'PNG', margin, top, 17, 17, undefined, 'FAST'); } catch (_) {} }
+          if (logoRwanda) { try { doc.addImage(logoRwanda, 'PNG', pageWidth - margin - 17, top, 17, 17, undefined, 'FAST'); } catch (_) {} }
+          doc.setTextColor(30, 58, 95);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+          doc.text('EDEN FAMILY SCHOOL', pageWidth / 2, 13, { align: 'center' });
+          doc.setFontSize(10); doc.text('LISTE DES ÉLÈVES', pageWidth / 2, 19, { align: 'center' });
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(70, 80, 95);
+          doc.text(`${branchName} | Année : ${academicYear}`, pageWidth / 2, 24, { align: 'center' });
+          doc.setDrawColor(30, 58, 95); doc.setLineWidth(0.7); doc.line(margin, 28, pageWidth - margin, 28);
+        };
+        drawHeader();
+        let firstTable = true;
+        for (const className of classes) {
+          const items = groups.get(className) || [];
+          const records = items.map((item, index) => getSecretaryStudentExportRecord(item, index, className, mode, selectedFields));
+          if (!records.length) continue;
+          const keys = Object.keys(records[0]);
+          let head, body;
+          if (mode === 'all') {
+            head = [['Élève', 'Classe', 'Information', 'Donnée']];
+            body = records.flatMap(record => Object.entries(record).filter(([key]) => key !== 'N°').map(([key, value]) => [safeText(record['Nom complet élève'] || record['Nom complet Élève'] || ''), safeText(className), safeText(key), safeText(value)]));
+          } else {
+            head = [keys];
+            body = records.map(record => keys.map(key => safeText(record[key])));
+          }
+          if (!firstTable) {
+            const y = doc.lastAutoTable?.finalY || 40;
+            if (y > doc.internal.pageSize.getHeight() - 35) doc.addPage();
+          }
+          let startY = firstTable ? 33 : (doc.lastAutoTable?.finalY || 33) + 8;
+          if (startY > doc.internal.pageSize.getHeight() - 25) { doc.addPage(); startY = 14; }
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 58, 95);
+          doc.text(`Classe : ${className} (${items.length} élève(s))`, margin, startY);
+          doc.autoTable({
+            head, body,
+            startY: startY + 3,
+            margin: { left: margin, right: margin, top: 12, bottom: showSignature ? 27 : 13 },
+            tableWidth: 'auto',
+            theme: 'grid',
+            styles: { font: 'helvetica', fontSize: mode === 'short' ? 8 : (columnCount > 7 ? 5.8 : 7), cellPadding: 1.8, overflow: 'linebreak', valign: 'top', lineColor: [190, 198, 207], lineWidth: 0.15, minCellHeight: 6 },
+            headStyles: { fillColor: [232, 237, 242], textColor: [31, 41, 55], fontStyle: 'bold', fontSize: mode === 'short' ? 8 : (columnCount > 7 ? 5.8 : 7), valign: 'middle' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            horizontalPageBreak: true,
+            horizontalPageBreakRepeat: [0],
+            rowPageBreak: 'avoid',
+            showHead: 'everyPage',
+            didDrawPage: () => {
+              // L'en-tête institutionnel est volontairement réservé à la première page.
+              // Les pages suivantes gardent le tableau et le pied de page uniquement.
+              const page = doc.internal.getNumberOfPages();
+              const pageHeight = doc.internal.pageSize.getHeight();
+              doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(90, 100, 110);
+              doc.text(`Liste des élèves | ${branchName} | ${academicYear}`, margin, pageHeight - 5);
+              doc.text(`Page ${page}`, pageWidth - margin, pageHeight - 5, { align: 'right' });
+            }
+          });
+          firstTable = false;
+        }
+        if (firstTable) {
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+          doc.text('Aucun élève trouvé pour cette sélection.', margin, 40);
+        }
+        const finalPageHeight = doc.internal.pageSize.getHeight();
+        if (showSignature) {
+          let y = (doc.lastAutoTable?.finalY || 35) + 8;
+          if (y > finalPageHeight - 28) { doc.addPage(); y = 18; }
+          doc.setDrawColor(203, 213, 225); doc.line(margin, y, pageWidth - margin, y);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(30, 58, 95);
+          doc.text('Direction de Eden Family School Kacyiru', pageWidth / 2, y + 6, { align: 'center' });
+          if (signature) { try { doc.addImage(signature, 'PNG', pageWidth / 2 - 23, y + 7, 46, 15, undefined, 'FAST'); } catch (_) {} }
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(70, 80, 95);
+          doc.text('Signature Serge', pageWidth / 2, y + 24, { align: 'center' });
+        }
+        const filenameBase = safeText(data.className || branchName || 'Toutes_les_branches').replace(/[^a-z0-9_-]+/gi, '_');
+        doc.save((groupByClass ? 'Eleves_par_classe_' : 'Eleves_') + filenameBase + '.pdf');
+        showNotification('PDF généré avec un tableau adapté à la page, sans débordement horizontal.', 'success');
       }
 
       // Fonction générique pour remplir les sélecteurs de classes
@@ -2699,40 +3215,39 @@ console.log('📈 Total students loaded:', studentsData.length);
 
       // Gestion des enseignants (lier aux élèves)
       function populateTeacherSelects() {
-        const selectStudentTeacher = document.getElementById('studentTeacher');
-
-        // ═══ UI DISPLAY FIX ═══
-        // Check container exists
-        if (selectStudentTeacher) {
-          console.log('👨‍🏫 Populating student teacher select, teachers:', teachersData.length);
-
-          let options = '<option value="">Aucun</option>';
-
-          // ═══ FILTER ACTIVE TEACHERS ═══
-          console.log('   Filtering', teachersData.length, 'teachers for status = active');
-          const activeTeachers = teachersData.filter(teacher => {
-            const isActive = teacher.status === 'active';
-            console.log('   👨‍🏫 Teacher:', teacher.name, 'Status:', teacher.status, 'Match active:', isActive);
-            return isActive;
-          });
-
-          console.log('   Found', activeTeachers.length, 'active teachers');
-          console.log('Filtered teachers:', activeTeachers);
-          activeTeachers.forEach(teacher => {
-            // ═══ ENSURE UID EXISTS ═══
-            const teacherId = teacher.uid || teacher.id;
-            if (!teacherId) {
-              console.warn('⚠️  Teacher missing uid/id:', teacher.name);
-              return;
-            }
-
-            options += `<option value="${teacherId}">${teacher.name || 'Nom inconnu'}</option>`;
-            console.log('   ✅ Added teacher option:', teacher.name, 'ID:', teacherId);
-          });
-
-          selectStudentTeacher.innerHTML = options;
-          console.log('✅ Student teacher select populated with', activeTeachers.length, '/', teachersData.length, 'teachers');
+        const select = document.getElementById('studentTeacher');
+        if (!select) return;
+        const normalize = value => typeof normalizeKey === 'function'
+          ? normalizeKey(value || '')
+          : String(value || '').normalize('NFKC').trim().toLowerCase();
+        const branchSelect = document.getElementById('studentBranch');
+        const classSelect = document.getElementById('studentClasses');
+        let wantedBranch = normalize(branchSelect?.value || '');
+        const selectedClass = normalize(classSelect?.value || '');
+        if (!wantedBranch && selectedClass) {
+          const record = (Array.isArray(classesData) ? classesData : []).find(c =>
+            normalize(c.name || c.className || c.class || c.classe || c.id) === selectedClass
+          );
+          wantedBranch = normalize(record?.branch || record?.branche || record?.branchName || record?.schoolBranch || '');
         }
+        if (!wantedBranch) wantedBranch = normalize(document.getElementById('branchFilter')?.value || '');
+        const previousValue = select.value;
+        const activeTeachers = (Array.isArray(teachersData) ? teachersData : []).filter(teacher => {
+          const active = !teacher.status || normalize(teacher.status) === 'active';
+          const teacherBranch = normalize(teacher.branch || teacher.branche || teacher.branchName || teacher.schoolBranch || '');
+          return active && (!wantedBranch || teacherBranch === wantedBranch);
+        });
+        select.innerHTML = '<option value="">Aucun</option>' + activeTeachers.map(teacher => {
+          const id = teacher.uid || teacher.id;
+          if (!id) return '';
+          const label = String(teacher.name || teacher.displayName || teacher.email || 'Enseignant')
+            .replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+          return `<option value="${id}">${label}</option>`;
+        }).join('');
+        if (activeTeachers.some(t => String(t.uid || t.id) === previousValue)) select.value = previousValue;
+        select.title = wantedBranch && !activeTeachers.length
+          ? 'Aucun enseignant actif enregistré pour cette branche'
+          : (wantedBranch ? 'Enseignants de la branche sélectionnée' : 'Enseignants actifs');
       }
 
       function populateTeacherSelectForReports() {
@@ -3089,7 +3604,7 @@ console.log('📈 Total students loaded:', studentsData.length);
           if (branchKey && sBranch && sBranch !== branchKey) return;
           if (sYear && year && sYear !== year) return;
 
-          const fields = ['class','classe','assignedClass','classAssigned','classeAffectee','classeAffectée'];
+          const fields = ['class','classe','className','class_name','assignedClass','classAssigned','classeAffectee','classeAffectée'];
           const belongsToRenamedClass = fields.some(field => normalizeKey(s[field]) === oldKey) ||
             (Array.isArray(s.classes) ? s.classes.some(v => normalizeKey(v) === oldKey) : normalizeKey(s.classes) === oldKey);
           if (belongsToRenamedClass) {
@@ -6910,6 +7425,8 @@ body{background:linear-gradient(135deg,var(--eden-cream) 0%,#eef2f7 100%)!import
       function openAddStudentModal() {
         document.getElementById('studentForm').reset();
         document.getElementById('studentId').value = '';
+        const studentBranchSelect = document.getElementById('studentBranch');
+        if (studentBranchSelect) studentBranchSelect.value = getSecretaryLockedBranch() || '';
         populateStudentClassesSelect();
         populateTeacherSelects();
         const modal = new bootstrap.Modal(document.getElementById('studentModal'));
@@ -7071,7 +7588,8 @@ body{background:linear-gradient(135deg,var(--eden-cream) 0%,#eef2f7 100%)!import
         document.getElementById('studentId').value = student.id;
         document.getElementById('studentName').value = student.name || fallbackName || '';
         document.getElementById('studentBranch').value = getSecretaryLockedBranch() || student.branch || '';
-        document.getElementById('studentClasses').value = student.classes || '';
+        document.getElementById('studentClasses').value = Array.isArray(student.classes) ? (student.classes[0] || '') : (student.classes || student.class || student.classe || '');
+        populateTeacherSelects();
         document.getElementById('studentGender').value = student.gender || '';
         document.getElementById('studentDob').value = student.dob || '';
         document.getElementById('studentParent').value = student.parent || '';
@@ -7100,20 +7618,38 @@ body{background:linear-gradient(135deg,var(--eden-cream) 0%,#eef2f7 100%)!import
           showNotification('Veuillez sélectionner une classe dans la liste déroulante', 'warning');
           return;
         }
-        const selectedClass = classesData.find(c => (c.name || '').toString().toUpperCase() === selectedClassName.toString().toUpperCase());
+        const selectedClass = classesData.find(c =>
+          String(c.name || c.className || c.class || c.classe || '').trim().toUpperCase() === selectedClassName.trim().toUpperCase()
+        );
         if (!selectedClass) {
           showNotification("La classe sélectionnée n’existe pas dans /classes. Veuillez créer la classe dans Gestion Académique.", 'danger');
           return;
         }
+        const studentBeforeSave = id ? studentsData.find(student => String(student.id) === String(id)) : null;
+        const previousClassNames = new Set(
+          [studentBeforeSave?.classes, studentBeforeSave?.class, studentBeforeSave?.classe, studentBeforeSave?.className, studentBeforeSave?.class_name]
+            .flatMap(value => Array.isArray(value) ? value : String(value || '').split(','))
+            .map(value => normalizeKey(value))
+            .filter(Boolean)
+        );
+        const newClassName = String(selectedClass.name || selectedClass.className || selectedClass.class || selectedClass.classe || selectedClassName).trim();
+        const classLevel = selectedClass.level || selectedClass.niveau || '';
         const data = {
           name: fullName,
           firstName: firstName,
           lastName: lastName,
           prenom: firstName,
           nom: lastName,
-          branch: getSecretaryLockedBranch() || document.getElementById('studentBranch').value,
-          classes: selectedClass.name,
-          level: selectedClass.level || '',
+          branch: getSecretaryLockedBranch() || selectedClass.branch || selectedClass.branche || document.getElementById('studentBranch').value,
+          classes: newClassName,
+          class: newClassName,
+          classe: newClassName,
+          className: newClassName,
+          class_name: newClassName,
+          classId: selectedClass.id || selectedClass.classId || newClassName,
+          level: classLevel,
+          niveau: classLevel,
+          classLevel,
           gender: document.getElementById('studentGender').value,
           dob: document.getElementById('studentDob').value,
           parent: document.getElementById('studentParent').value,
@@ -7126,6 +7662,16 @@ body{background:linear-gradient(135deg,var(--eden-cream) 0%,#eef2f7 100%)!import
         try {
           if (id) {
             await database.ref('students/' + id).update(data);
+            const student = studentsData.find(item => String(item.id) === String(id));
+            if (student) {
+              Object.assign(student, data, { classes: [newClassName] });
+              const classFilter = document.getElementById('classFilter');
+              if (classFilter && previousClassNames.has(normalizeKey(classFilter.value))) {
+                populateClassFilter();
+                classFilter.value = newClassName;
+              }
+              filterStudents();
+            }
           } else {
             data.dateAdded = new Date().toISOString();
             await database.ref('students').push(data);
@@ -7468,7 +8014,7 @@ body{background:linear-gradient(135deg,var(--eden-cream) 0%,#eef2f7 100%)!import
           }
           inscriptionsData=(inscriptionsData||[]).filter(x=>String(x.id||'')!==String(enrollmentId));
           renderEnrolledStudents();
-          updateSecretaryRealEnrollmentCount();
+          updateDashboardCounters();
           showNotification('« '+label+' » a été placé dans la Corbeille. Vous pourrez le restaurer depuis les paramètres de la Corbeille.','success');
         }catch(e){console.error('Suppression élève inscrit vers Corbeille:',e);showNotification('Erreur : '+(e.message||e),'danger');}
       }
