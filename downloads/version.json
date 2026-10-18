@@ -1,6 +1,9 @@
 {
-  "version": "web-20261018171936-c76ed84",
+  "siteVersion": "web-20261018173326-a25c266",
+  "appVersion": "1.0",
+  "appVersionCode": 1,
   "releaseDate": "2026-10-18",
-  "message": "A new Eden Family School website update is available. Open the official site to review changes and download Eden Smart.",
+  "appMessage": "Une nouvelle version d’Eden Smart est disponible. Téléchargez-la depuis le site officiel.",
+  "message": "Une mise à jour du site Eden Family School est disponible.",
   "downloadUrl": "/downloads/eden-smart.apk"
 }
