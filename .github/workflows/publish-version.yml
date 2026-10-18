@@ -17,10 +17,9 @@ jobs:
         env:
           COMMIT_SHA: ${{ github.sha }}
         run: |
-          VERSION="web-$(date -u +%Y%m%d%H%M%S)-${COMMIT_SHA:0:7}"
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          export VERSION="$VERSION"
-          node -e 'const fs=require("fs"); const version=process.env.VERSION; fs.writeFileSync("downloads/version.json", JSON.stringify({version,releaseDate:new Date().toISOString().slice(0,10),message:"A new Eden Family School website update is available. Open the official site to review changes and download Eden Smart.",downloadUrl:"/downloads/eden-smart.apk"},null,2)+"\n")'
+          SITE_VERSION="web-$(date -u +%Y%m%d%H%M%S)-${COMMIT_SHA:0:7}"
+          export SITE_VERSION
+          node -e 'const fs=require("fs"); const path="downloads/version.json"; let old={}; try { old=JSON.parse(fs.readFileSync(path,"utf8")); } catch (_) {} const manifest={siteVersion:process.env.SITE_VERSION,appVersion:old.appVersion||"1.0",appVersionCode:Number(old.appVersionCode||1),releaseDate:new Date().toISOString().slice(0,10),appMessage:old.appMessage||"Une nouvelle version d\u2019Eden Smart est disponible. T\u00e9l\u00e9chargez-la depuis le site officiel.",message:"Une mise \u00e0 jour du site Eden Family School est disponible.",downloadUrl:"/downloads/eden-smart.apk"}; fs.writeFileSync(path,JSON.stringify(manifest,null,2)+"\n")'
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add downloads/version.json
