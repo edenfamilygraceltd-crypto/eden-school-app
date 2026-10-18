@@ -109,5 +109,3 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
-
-[executed on device: HP-14-dq1037wm (afa20098-9b81-4970-9b0f-81fe61d6fef5)]
