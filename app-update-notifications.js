@@ -1,5 +1,3 @@
-[Reading 111 lines from start (total: 111 lines, 0 remaining)]
-
 (() => {
   'use strict';
   const MANIFEST_URL = '/downloads/version.json';
