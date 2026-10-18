@@ -1,4 +1,4 @@
-﻿name: Publish website update version
+name: Publish website update version
 on:
   push:
     branches: [main]
@@ -13,15 +13,13 @@ jobs:
     steps:
       - name: Check out website
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true
       - name: Update public release manifest
         env:
           COMMIT_SHA: ${{ github.sha }}
-          COMMIT_TITLE: ${{ github.event.head_commit.message }}
         run: |
           VERSION="web-$(date -u +%Y%m%d%H%M%S)-${COMMIT_SHA:0:7}"
-          node -e 'const fs=require("fs"); const version=process.env.VERSION; const title=process.env.COMMIT_TITLE || "Mise à jour du site"; fs.writeFileSync("downloads/version.json", JSON.stringify({version,releaseDate:new Date().toISOString().slice(0,10),message:"Une nouvelle mise à jour Eden Family School est disponible. Ouvrez le site officiel pour consulter les nouveautés et télécharger Eden Smart.",downloadUrl:"/downloads/eden-smart.apk",commitTitle:title},null,2)+"\n")' 
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          node -e 'const fs=require("fs"); const version=process.env.VERSION; fs.writeFileSync("downloads/version.json", JSON.stringify({version,releaseDate:new Date().toISOString().slice(0,10),message:"A new Eden Family School website update is available. Open the official site to review changes and download Eden Smart.",downloadUrl:"/downloads/eden-smart.apk"},null,2)+"\n")'
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add downloads/version.json
