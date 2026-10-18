@@ -1,0 +1,53 @@
+# Exclude local development dependencies and editor files
+node_modules/
+.vscode/
+.idea/
+.git/
+.github/
+
+# Never send local secrets to Vercel
+.env
+.env.*
+serviceAccountKey.json
+serviceAccount*.json
+serviceAccount.json
+drive-key.json
+*.pem
+*.key
+
+# Keep historical backups locally and in Git history, but not in new deployments
+*.bak
+**/*.bak
+*_backup*.html
+**/*_backup*.html
+*_backup_*/
+**/*_backup_*/
+_encoding_fix_backup_*/
+_encoding_global_backup_*/
+**/_encoding_fix_backup_*/
+**/_encoding_global_backup_*/
+
+# Exclude temporary validation/debug artifacts
+_check*.js
+**/_check*.js
+*_check*.py
+**/*_check*.py
+_patch*.py
+**/_patch*.py
+_tmp*.py
+**/_tmp*.py
+patch*.py
+**/patch*.py
+fix*.ps1
+**/fix*.ps1
+temp.html
+temp_js.txt
+**/temp_js.txt
+_*excerpt*.txt
+**/_*excerpt*.txt
+firebase-debug.log
+*.log
+TODO.md
+
+# Unused raw camera image; no website references found
+asset/img/*.dng
