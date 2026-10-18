@@ -1899,11 +1899,11 @@
                     </div>
                 </div>
 
-                <!-- Current month debts -->
+                <!-- Outstanding worker debts -->
                 <div class="stat-card mb-4">
                     <h5 class="fw-bold mb-3">
                         <i class="fas fa-money-bill-wave me-2 icon-text-primary"></i>
-                        <span data-i18n="currentDebts">Current Debts for this Month</span>
+                        <span data-i18n="currentDebts">Unpaid debts</span>
                     </h5>
                     <div class="table-responsive">
                         <table class="modern-table">
@@ -6165,7 +6165,7 @@
                     generatePayroll: 'Générer la paie',
                     savePayroll: 'Enregistrer Payroll',
                     generateSalaryTable: 'Générer Tableau Salaires',
-                    currentDebts: 'Dettes en cours du mois',
+                    currentDebts: 'Dettes impayées',
                     studentManagement: 'Gestion des élèves',
                     addStudent: 'Ajouter un élève',
                     searchStudent: 'Rechercher un élève...',
@@ -6320,7 +6320,7 @@
                     generatePayroll: 'Generate Payroll',
                     savePayroll: 'Save Payroll',
                     generateSalaryTable: 'Generate Salary Table',
-                    currentDebts: 'Current Debts for This Month',
+                    currentDebts: 'Unpaid Debts',
                     studentManagement: 'Students Management',
                     addStudent: 'Add Student',
                     searchStudent: 'Search a student...',
@@ -6679,6 +6679,7 @@
                     });
                     if (document.getElementById('teachers').classList.contains('active')) {
                         loadCurrentMonthDebts();
+                        loadWorkers();
                     }
                 });
 
@@ -8660,7 +8661,10 @@
                         const typeBadge = getWorkerTypeBadgeClass(worker.type);
                         const typeText = getWorkerTypeLabel(worker.type);
                         
-                        const workerDebts = debts.filter(d => d.workerId === worker.id && d.status === 'pending');
+                        const workerDebts = [
+                            ...(debts || []),
+                            ...getInjectedPayrollDebts(firebaseBranch)
+                        ].filter(d => d.workerId === worker.id && d.status === 'pending');
                         const totalDebt = workerDebts.reduce((sum, debt) => sum + (debt.amount || 0), 0);
                         
                         const tr = document.createElement('tr');
@@ -8780,28 +8784,25 @@
                     const tbody = document.getElementById('currentMonthDebtsTable');
                     tbody.innerHTML = '';
                     
-                    const currentMonth = new Date().getMonth() + 1;
-                    const currentYear = new Date().getFullYear();
                     const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
                     const combinedDebts = [
                         ...(debts || []),
                         ...getInjectedPayrollDebts(firebaseBranch)
                     ];
                     
-                    const monthDebts = combinedDebts.filter(debt => {
+                    const outstandingDebts = combinedDebts.filter(debt => {
                         if (debt.status !== 'pending') return false;
-                        const debtDate = new Date(debt.date);
-                        return debtDate.getMonth() + 1 === currentMonth && 
-                            debtDate.getFullYear() === currentYear;
+                        const worker = workers.find(item => item.id === debt.workerId);
+                        return worker && worker.branch === firebaseBranch;
                     });
                     
-                    if (monthDebts.length === 0) {
+                    if (outstandingDebts.length === 0) {
                         tbody.innerHTML = `
                             <tr>
                                 <td colspan="6" class="text-center py-4">
                                     <div class="text-muted">
                                         <i class="fas fa-money-bill-wave fa-2x mb-3"></i>
-                                        <p>No debts for this month</p>
+                                        <p>No unpaid debts for this branch</p>
                                     </div>
                                 </td>
                             </tr>
@@ -8809,7 +8810,7 @@
                         return;
                     }
                     
-                    monthDebts.forEach((debt, index) => {
+                    outstandingDebts.forEach((debt, index) => {
                         const worker = workers.find(t => t.id === debt.workerId);
                         if (!worker || worker.branch !== firebaseBranch) return;
                         
@@ -8822,11 +8823,11 @@
                             <td>${new Date(debt.date).toLocaleDateString('en-US')}</td>
                             <td>${debt.reason}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-success me-1" onclick="markDebtPaid('${debt.id}')">
-                                    <i class="fas fa-check"></i>
+                                <button class="btn btn-sm btn-outline-success me-1" title="Confirm debt was paid" onclick="markDebtPaid('${debt.id}')">
+                                    <i class="fas fa-check"></i> Paid
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteDebt('${debt.id}')">
-                                    <i class="fas fa-trash"></i>
+                                <button class="btn btn-sm btn-outline-danger" title="Move debt to trash" onclick="deleteDebt('${debt.id}')">
+                                    <i class="fas fa-trash"></i> Delete
                                 </button>
                             </td>
                         `;
@@ -8868,36 +8869,39 @@
 
             function getInjectedPayrollDebts(firebaseBranch) {
                 const normalizedBranch = (firebaseBranch || '').toString().trim().toLowerCase();
-                const targetWorker = (workers || []).find(worker => {
-                    const workerBranch = (worker.branch || '').toString().trim().toLowerCase();
-                    const workerName = (worker.name || '').toString().trim().toLowerCase();
-                    return workerBranch === normalizedBranch && workerName === 'shimiyeimana leandre';
-                });
-
+                const targetWorker = (workers || []).find(worker =>
+                    (worker.branch || '').toString().trim().toLowerCase() === normalizedBranch &&
+                    (worker.name || '').toString().trim().toLowerCase() === 'shimiyeimana leandre'
+                );
                 if (!targetWorker) return [];
 
                 return [
-                    {
-                        id: 'manual_shimi_debt_1',
+                    { amount: 25000, reason: 'contrevansion', date: '2026-04-22' },
+                    { amount: 20000, reason: 'avance sur salaire', date: '2026-04-22' }
+                ].flatMap((legacy, index) => {
+                    const id = `manual_${targetWorker.id}_shimi_${index + 1}`;
+                    const saved = (debts || []).find(debt => debt.id === id);
+                    if (saved) return [];
+                    return [{
+                        id,
                         workerId: targetWorker.id,
                         workerName: targetWorker.name,
-                        amount: 25000,
-                        reason: 'contrevansion',
-                        date: '2026-04-22',
+                        ...legacy,
                         status: 'pending',
-                        source: 'manual'
-                    },
-                    {
-                        id: 'manual_shimi_debt_2',
-                        workerId: targetWorker.id,
-                        workerName: targetWorker.name,
-                        amount: 20000,
-                        reason: 'avance sur salaire',
-                        date: '2026-04-22',
-                        status: 'pending',
-                        source: 'manual'
-                    }
-                ];
+                        source: 'manual',
+                        legacyManualDebt: true
+                    }];
+                });
+            }
+
+            function findDebtForAction(debtId) {
+                const saved = (debts || []).find(debt => debt.id === debtId);
+                if (saved) return { debt: saved, isLegacyVirtual: false };
+                for (const worker of workers || []) {
+                    const legacy = getInjectedPayrollDebts(worker.branch).find(debt => debt.id === debtId);
+                    if (legacy) return { debt: legacy, isLegacyVirtual: true };
+                }
+                return null;
             }
 
             function getPreviousDateString(dateString) {
@@ -10751,11 +10755,11 @@
             // Show debt details
             function showDebtDetails(workerId) {
                 const firebaseBranch = getFirebaseBranchForWorkers(selectedBranch);
+                const worker = workers.find(t => t.id === workerId);
                 const workerDebts = [
                     ...(debts || []),
-                    ...getInjectedPayrollDebts(firebaseBranch)
+                    ...getInjectedPayrollDebts(worker?.branch)
                 ].filter(d => d.workerId === workerId && d.status === 'pending');
-                const worker = workers.find(t => t.id === workerId);
                 
                 if (workerDebts.length === 0) {
                     showToast('No debts for this worker', 'info');
@@ -10776,14 +10780,30 @@
             // Mark debt as paid
             async function markDebtPaid(debtId) {
                 try {
-                    await debtsRef.child(debtId).update({
+                    const found = findDebtForAction(debtId);
+                    if (!found) throw new Error('Debt not found. Refresh the page and try again.');
+                    const { debt, isLegacyVirtual } = found;
+                    if (debt.status !== 'pending') {
+                        showToast('This debt is already marked as paid.', 'info');
+                        return;
+                    }
+                    if (!confirm(`Confirm that ${debt.workerName || 'this worker'} has paid ${formatCurrencyRWF(debt.amount)}?`)) return;
+                    const paidData = {
+                        ...debt,
                         status: 'paid',
                         paidDate: new Date().toISOString().split('T')[0],
                         paidBy: currentUserName
-                    });
+                    };
+                    delete paidData.id;
+                    if (isLegacyVirtual) await debtsRef.child(debtId).set(paidData);
+                    else await debtsRef.child(debtId).update(paidData);
+                    debts = isLegacyVirtual
+                        ? [...debts, { id: debtId, ...paidData }]
+                        : debts.map(item => item.id === debtId ? { ...item, ...paidData } : item);
                     
                     showToast('Debt marked as paid!', 'success');
                     loadCurrentMonthDebts();
+                    loadWorkers();
                     
                 } catch (error) {
                     console.error('Error updating debt:', error);
@@ -10793,12 +10813,36 @@
 
             // Delete debt
             async function deleteDebt(debtId) {
-                if (!confirm('Are you sure you want to delete this debt?')) return;
+                const found = findDebtForAction(debtId);
+                if (!found) {
+                    showToast('Debt not found. Refresh the page and try again.', 'error');
+                    return;
+                }
+                const { debt, isLegacyVirtual } = found;
+                const deletePrompt = isLegacyVirtual
+                    ? `Delete this ${formatCurrencyRWF(debt.amount)} debt for ${debt.workerName || 'this worker'}?`
+                    : `Move this ${formatCurrencyRWF(debt.amount)} debt for ${debt.workerName || 'this worker'} to the trash?`;
+                if (!confirm(deletePrompt)) return;
                 
                 try {
-                    await moveToTrash(debtsRef, debtId, {source:'debts', reason:'Suppression d’une dette'});
-                    showToast('Debt moved to trash successfully!', 'success');
+                    if (isLegacyVirtual) {
+                        const deletedData = {
+                            ...debt,
+                            status: 'deleted',
+                            deletedAt: Date.now(),
+                            deletedBy: currentUserName
+                        };
+                        delete deletedData.id;
+                        await debtsRef.child(debtId).set(deletedData);
+                        debts = [...debts, { id: debtId, ...deletedData }];
+                    } else {
+                        const moved = await moveToTrash(debtsRef, debtId, {source:'debts', reason:'Suppression d’une dette'});
+                        if (!moved) throw new Error('Debt no longer exists.');
+                        debts = debts.filter(item => item.id !== debtId);
+                    }
+                    showToast(isLegacyVirtual ? 'Debt deleted successfully!' : 'Debt moved to trash successfully!', 'success');
                     loadCurrentMonthDebts();
+                    loadWorkers();
                     
                 } catch (error) {
                     console.error('Error deleting debt:', error);

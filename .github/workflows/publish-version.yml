@@ -1,0 +1,29 @@
+﻿name: Publish website update version
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'downloads/version.json'
+permissions:
+  contents: write
+jobs:
+  publish-version:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out website
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Update public release manifest
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_TITLE: ${{ github.event.head_commit.message }}
+        run: |
+          VERSION="web-$(date -u +%Y%m%d%H%M%S)-${COMMIT_SHA:0:7}"
+          node -e 'const fs=require("fs"); const version=process.env.VERSION; const title=process.env.COMMIT_TITLE || "Mise à jour du site"; fs.writeFileSync("downloads/version.json", JSON.stringify({version,releaseDate:new Date().toISOString().slice(0,10),message:"Une nouvelle mise à jour Eden Family School est disponible. Ouvrez le site officiel pour consulter les nouveautés et télécharger Eden Smart.",downloadUrl:"/downloads/eden-smart.apk",commitTitle:title},null,2)+"\n")' 
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads/version.json
+          git commit -m "chore: publish website update version [skip ci]" || exit 0
+          git push

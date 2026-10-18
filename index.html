@@ -1904,11 +1904,25 @@ nav.pill,nav.shrink{background:rgba(12,25,52,.96)!important;border:1px solid rgb
   </div>
 </div>
 
+<!-- Eden Smart attendance app download -->
+<section id="eden-smart-download" aria-labelledby="edenSmartDownloadTitle" style="padding:clamp(36px,6vw,76px) 20px;background:linear-gradient(135deg,#101f4d,#2749a6);color:#fff;">
+  <div style="max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:28px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:20px;min-width:0;flex:1;">
+      <img src="asset/img/logo_eden.png" alt="Eden Family School" style="width:clamp(76px,10vw,112px);height:clamp(76px,10vw,112px);object-fit:cover;border-radius:50%;flex-shrink:0;background:#fff;padding:5px;">
+      <div><span style="display:inline-block;font-size:.78rem;letter-spacing:.12em;font-weight:800;opacity:.82;margin-bottom:8px;">EDEN FAMILY SCHOOL</span>
+        <h2 id="edenSmartDownloadTitle" style="font-size:clamp(1.45rem,3vw,2.2rem);line-height:1.2;margin:0 0 10px;color:#fff;">Download Eden Smart</h2>
+        <p style="margin:0;max-width:620px;color:#e4eaff;line-height:1.65;">Official teacher attendance app: choose the branch, record arrival and departure, and synchronize with the school's weekly attendance sheet.</p>
+      </div>
+    </div>
+    <a href="downloads/eden-smart.apk" download="Eden-Smart.apk" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:15px 22px;background:#fff;color:#17317b;border-radius:14px;font-weight:800;text-decoration:none;box-shadow:0 12px 28px #07133d55;transition:transform .18s ease,box-shadow .18s ease;white-space:nowrap;" onpointerdown="this.style.transform='scale(.96)'" onpointerup="this.style.transform='scale(1)'" onpointerleave="this.style.transform='scale(1)'"><i class="fas fa-download" aria-hidden="true"></i> Download Android app</a>
+    <p style="width:100%;margin:0;font-size:.82rem;color:#d5defc;">Android installation: download the APK from this page and allow installation if your phone asks. Share this file only with authorized school staff.</p>
+  </div>
+</section>
 <!-- Footer -->
 <footer class="eden-footer">
   <div class="footer-inner">
     <div class="footer-brand"><div class="footer-mark"><i class="fas fa-graduation-cap"></i></div><div><span>EDEN FAMILY SCHOOL</span><p>Learning by doing.</p></div></div>
-    <div class="footer-nav"><span>Explorer</span><a href="#accueil">Accueil</a><a href="#branches">Nos campus</a><a href="#galerie">Galerie</a><a href="#academique">Académique</a></div>
+    <div class="footer-nav"><span>Explorer</span><a href="#eden-smart-download">Download Eden Smart</a><a href="#accueil">Accueil</a><a href="#branches">Nos campus</a><a href="#galerie">Galerie</a><a href="#academique">Académique</a></div>
     <div class="footer-nav"><span>La vie à Eden</span><a href="#youtube">YouTube</a><a href="#jeux">Jeux éducatifs</a><a href="#contact">Contact</a></div>
     <div class="footer-contact"><span>Nous trouver</span><p>Kigali, Rwanda</p><a href="mailto:edenfamilyschool@gmail.com">edengracefamilyltd@gmail.com</a><a href="tel:+250788883842">+250 788 883 842</a><div class="footer-social"><a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a><a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a><a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a></div></div>
   </div>
@@ -3520,5 +3534,7 @@ document.getElementById('navLogo')?.addEventListener('click', function(e) {
 });
 </script>
 
-<script src="legal-pages.js"></script>`r`n</body>
+<script src="legal-pages.js"></script>
+<script src="app-update-notifications.js" defer></script>
+</body>
 </html>

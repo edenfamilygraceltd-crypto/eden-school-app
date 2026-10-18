@@ -1117,45 +1117,28 @@
     box.style.display = 'block';
   }
 
-  function normalizeAcademicYearValue(value){
-    const raw = String(value || '').trim();
-    if (!raw) return '';
-    const match = raw.match(/(\d{4})\D*(\d{2,4})/);
-    if (!match) return raw;
-    const start = Number(match[1]);
-    const endRaw = match[2];
-    const end = endRaw.length === 2 ? Number(String(start).slice(0, 2) + endRaw) : Number(endRaw);
-    return `${start}-${end}`;
-  }
-
-  function getActiveAcademicYearFromSystem(){
-    const fromStorage = normalizeAcademicYearValue(localStorage.getItem('eden_active_school_year'));
-    if (fromStorage) return fromStorage;
-
-    const now = new Date();
-    const year = now.getFullYear();
-    const start = now.getMonth() >= 7 ? year : year - 1;
-    return `${start}-${start + 1}`;
-  }
-
-  async function syncAcademicYearFromActiveSystem(){
-    try {
-      if (!window.db || !db || !db.ref) return;
-      const snap = await db.ref('schoolSettings/activeAcademicYear').once('value');
-      const remote = normalizeAcademicYearValue(snap.val());
-      if (remote) {
-        localStorage.setItem('eden_active_school_year', remote);
-      }
-    } catch (error) {
-      console.warn('Impossible de synchroniser l’année active depuis la base:', error);
-    }
-  }
-
   function populateAcademicYearSelect(){
-    const hidden = document.getElementById('rAcademicYear');
-    if (!hidden) return;
-    const currentSchoolYear = getActiveAcademicYearFromSystem();
-    hidden.value = currentSchoolYear;
+    const sel = document.getElementById('rAcademicYear');
+    const currentYear = new Date().getFullYear();
+    sel.innerHTML = '<option value="" data-i18n="select_option">Sélectionnez</option>';
+
+    // Inclure explicitement l'année historique 2025-2026, même si elle sort de la plage dynamique.
+    const years = new Set(['2025-2026']);
+    for (let i = -1; i <= 4; i++) {
+      const year = currentYear + i;
+      years.add(`${year}-${year + 1}`);
+    }
+
+    [...years].sort((a, b) => Number(a.split('-')[0]) - Number(b.split('-')[0])).forEach(label => {
+      const o = document.createElement('option');
+      o.value = label;
+      o.textContent = label;
+      sel.appendChild(o);
+    });
+
+    // Garder l'année scolaire actuelle comme sélection par défaut.
+    const currentSchoolYear = `${currentYear}-${currentYear + 1}`;
+    sel.value = currentSchoolYear;
   }
 
   loadRegistrationClasses();
