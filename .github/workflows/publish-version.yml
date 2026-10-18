@@ -19,6 +19,7 @@ jobs:
         run: |
           VERSION="web-$(date -u +%Y%m%d%H%M%S)-${COMMIT_SHA:0:7}"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          export VERSION="$VERSION"
           node -e 'const fs=require("fs"); const version=process.env.VERSION; fs.writeFileSync("downloads/version.json", JSON.stringify({version,releaseDate:new Date().toISOString().slice(0,10),message:"A new Eden Family School website update is available. Open the official site to review changes and download Eden Smart.",downloadUrl:"/downloads/eden-smart.apk"},null,2)+"\n")'
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
