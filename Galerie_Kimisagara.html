@@ -944,9 +944,8 @@
                         } else {
                             showErrorMessage('Erreur lors du chargement des posts: ' + (err.message || err));
                         }
-                    } finally {
-                        isLoadingPosts = false;
                     }
+                });
                 updateStats();
                 sortPosts(currentSort);
                 renderPosts();
@@ -1585,4 +1584,3 @@
     </script>
 </body>
 </html>
-

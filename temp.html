@@ -4750,11 +4750,8 @@
                     feesPayments.push(payment);
                 });
                 if (document.getElementById('fees')?.classList.contains('active')) {
-                        loadFeesSection();
-                        ...childSnapshot.val()
-                    };
-                    dailyReports.push(report);
-                });
+                    loadFeesSection();
+                }
             });
 
             // Écouter l'historique des payrolls
@@ -13014,5 +13011,3 @@
     </script>
 </body>
 </html>
-
-
