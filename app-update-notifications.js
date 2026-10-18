@@ -25,11 +25,11 @@
     }
     notice.replaceChildren();
     const msg = document.createElement('p');
-    msg.textContent = release.appMessage || 'Une nouvelle version d\\u2019Eden Smart est disponible.';
+    msg.textContent = release.appMessage || 'Une nouvelle version d\u2019Eden Smart est disponible.';
     msg.style.margin = '0 0 12px';
     const link = document.createElement('a');
     link.href = release.downloadUrl || APK;
-    link.textContent = 'T\\u00e9l\\u00e9charger la mise \\u00e0 jour';
+    link.textContent = 'T\u00e9l\u00e9charger la mise \u00e0 jour';
     link.style.cssText = 'display:inline-block;background:#fff;color:#17317b;font-weight:800;text-decoration:none;padding:10px 14px;border-radius:9px;margin-right:10px';
     const close = button('Plus tard', false);
     close.style.background = 'transparent';
@@ -41,7 +41,7 @@
 
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
-        const n = new Notification('Mise \\u00e0 jour Eden Smart', {body: msg.textContent, icon:'/asset/img/logo_eden.png', tag:'eden-smart-update'});
+        const n = new Notification('Mise \u00e0 jour Eden Smart', {body: msg.textContent, icon:'/asset/img/logo_eden.png', tag:'eden-smart-update'});
         n.onclick = () => { window.focus(); window.location.href = location.origin + '/#eden-smart-download'; n.close(); };
       } catch (e) { console.info('Notification système indisponible', e); }
     }
