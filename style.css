@@ -1034,8 +1034,8 @@
     }
 
     .modal-dialog {
-        margin: 0.5rem;
-        width: 95%;
+        margin: 0;
+        width: 100%;
     }
 
     .modal-content {

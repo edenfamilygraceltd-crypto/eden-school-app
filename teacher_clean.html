@@ -210,6 +210,7 @@
   }
 
   .sb-btn i { width:18px; text-align:center; font-size:.88rem; flex-shrink:0; }
+  a.sb-btn { text-decoration:none; }
   .sb-btn:hover { background:rgba(255,255,255,.07); color:#fff; }
   .sb-btn.active {
     background:linear-gradient(135deg,var(--blue-lt),var(--blue));
@@ -836,6 +837,15 @@
 
   .stu-item:hover { border-color:var(--blue-lt); }
   .stu-item.selected { border-color:var(--blue); background:var(--blue-bg); }
+  /* Sélection des élèves : zone dédiée, plus visible et distincte de la composition */
+  .bulletin-selection-card { border:2px solid #8bb8ef; background:linear-gradient(180deg,#f5f9ff 0%,#fff 100%); box-shadow:0 8px 24px rgba(26,92,168,.12); }
+  .bulletin-selection-card .card-hd { border-bottom:2px solid #d8e8fb; }
+  #bStuList { min-height:220px; max-height:390px !important; overflow-y:auto; padding:8px; border:1px solid #dbe7f5; border-radius:12px; background:#fff; }
+  #bStuList:empty { min-height:90px; }
+  .bulletin-section-label { display:flex; align-items:center; gap:12px; margin:20px 0 12px; padding:13px 16px; border-radius:12px; background:#eaf2ff; border-left:5px solid var(--blue); color:var(--blue-dk); }
+  .bulletin-section-label .step-no { display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--blue); color:#fff; font-weight:900; }
+  .bulletin-section-label strong { display:block; font-size:.9rem; }
+  .bulletin-section-label small { display:block; margin-top:2px; color:var(--txt-md); font-size:.72rem; }
 
   /* ═══════════════════════════════════════════
     LOADING / EMPTY STATES
@@ -2459,8 +2469,9 @@
 
       <div class="sb-section">Outils</div>
       <button class="sb-btn" onclick="navTo('performance')"><i class="fas fa-chart-line"></i> Performance</button>
-      <button class="sb-btn" onclick="navTo('history')"><i class="fas fa-download"></i> Télécharger</button>
+      <button class="sb-btn" onclick="navTo('history')"><i class="fas fa-download"></i> Télécharger les bulletins</button>
       <button class="sb-btn" onclick="navTo('cotation')"><i class="fas fa-pen-ruler"></i> Fiche de Cotation</button>
+      <a class="sb-btn" href="/downloads/eden-smart.apk" download="Eden-Smart.apk"><i class="fab fa-android"></i> Télécharger Eden Smart</a>
     </nav>
 
     <div class="sb-footer">
@@ -2799,6 +2810,7 @@
         </div>
 
         <div id="bulletinMaternelleFlow">
+        <div class="bulletin-section-label"><span class="step-no">1</span><div><strong>Choisir l'élève et la période</strong><small>La sélection est présentée dans un espace distinct avant la composition du bulletin.</small></div></div>
         <!-- Step tabs -->
         <div class="form-tabs">
           <button class="form-tab active" onclick="switchBulletinTab('t-eleve')" id="ftab-eleve">
@@ -2817,7 +2829,7 @@
 
         <!-- TAB: ÉLÈVE -->
         <div class="tab-pane active" id="t-eleve">
-          <div class="card">
+          <div class="card bulletin-selection-card">
             <div class="card-hd">
               <div class="card-ttl"><i class="fas fa-search"></i> Sélectionner un élève</div>
               <button class="btn btn-ghost btn-sm" onclick="window.location.reload()"><i class="fas fa-sync"></i> Actualiser</button>
@@ -2827,7 +2839,7 @@
               <input class="f-input" type="text" id="bStuSearch" placeholder="Rechercher un élève…" style="padding-left:34px;" oninput="filterStudentList()">
             </div>
             <div class="loading-wrap" id="bStuLoad"><div class="spinner"></div><p style="font-size:.8rem;font-weight:600;">Chargement Firebase…</p></div>
-            <div id="bStuList" style="max-height:280px;overflow-y:auto;"></div>
+            <div id="bStuList" aria-label="Liste des élèves à sélectionner"></div>
 
             <!-- Selected student -->
             <div id="bSelInfo" style="display:none;margin-top:12px;">
@@ -2879,6 +2891,7 @@
 
         <!-- TAB: NOTES -->
         <div class="tab-pane" id="t-notes">
+          <div class="bulletin-section-label" style="margin-top:0;"><span class="step-no">2</span><div><strong>Composer le bulletin</strong><small>Saisir les notes, compléter la conduite et vérifier l'aperçu avant publication.</small></div></div>
           <div class="card">
             <div class="card-hd">
               <div class="card-ttl"><i class="fas fa-graduation-cap"></i> Notes académiques</div>
@@ -3268,8 +3281,8 @@
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 70px 70px;gap:6px;align-items:center;padding:4px 0 8px;border-bottom:2px solid var(--bdr);font-size:.68rem;font-weight:800;color:var(--txt-lt);text-transform:uppercase;letter-spacing:.4px;">
                   <div>Branche / Matière</div>
-                  <div style="text-align:center;">TJ (/50)</div>
-                  <div style="text-align:center;">EX (/100)</div>
+                  <div style="text-align:center;">TJ (barème matière)</div>
+                  <div style="text-align:center;">EX (barème matière)</div>
                 </div>
                 <div id="editNotesContainer"></div>
               </div>
@@ -7221,9 +7234,20 @@
       }
     }
 
+    // Convertit les formats de classe Firebase (texte, tableau ou objet) en texte sûr.
+    const studentClassText = value => {
+      if (Array.isArray(value)) return value.map(v => String(v ?? '')).join(' ');
+      if (value && typeof value === 'object') {
+        return Object.entries(value)
+          .filter(([key, val]) => val === true || val === 1 || val === 'true')
+          .map(([key]) => key).join(' ') || Object.values(value).map(v => String(v ?? '')).join(' ');
+      }
+      return String(value ?? '');
+    };
+
     // Filter to maternelle and validate teacher access
     filteredStudents = allStudents.filter(s => {
-      const cls = (s.classes||s.classe||'').toUpperCase();
+      const cls = studentClassText(s.classes ?? s.classe ?? s.class ?? '').toUpperCase();
       
       // Filter by maternelle (N classes only)
       if (!cls.startsWith('N')) return false;
@@ -7232,7 +7256,7 @@
       if (currentTeacher) {
         const studentTeacherId = s.teacherId || s.teacher_id || '';
         const studentBranch = (s.branch || s.schoolBranch || '').toString().trim().toLowerCase();
-        const studentClasses = (s.classes || s.classe || '').toString().trim();
+        const studentClasses = studentClassText(s.classes ?? s.classe ?? s.class ?? '').trim();
         
         const teacherUid = currentTeacher.uid || currentTeacher.id || '';
         const teacherBranch = (currentTeacher.branch || currentTeacher.schoolBranch || '').toString().trim().toLowerCase();
@@ -7246,7 +7270,7 @@
         
         // Rule 3: Check if student.classes matches teacher.classes (if teacher has classes assigned)
         const hasTeacherClasses = teacherClasses.some(c => c && c.length > 0);
-        if (hasTeacherClasses && !teacherClasses.includes(studentClasses)) return false;
+        if (hasTeacherClasses && !areClassesCompatible(studentClasses, teacherClasses)) return false;
       }
       
       return true;
@@ -7255,7 +7279,7 @@
     if (!filteredStudents.length && currentTeacher) {
       // Fallback: if no students pass all filters, show all Maternelle students assigned to teacher
       filteredStudents = allStudents.filter(s => {
-        const cls = (s.classes||s.classe||'').toUpperCase();
+        const cls = studentClassText(s.classes ?? s.classe ?? s.class ?? '').toUpperCase();
         if (!cls.startsWith('N')) return false;
         
         const studentTeacherId = s.teacherId || s.teacher_id || '';
@@ -7268,7 +7292,7 @@
     // Last resort fallback
     if (!filteredStudents.length) {
       filteredStudents = allStudents.filter(s => {
-        const cls = (s.classes||s.classe||'').toUpperCase();
+        const cls = studentClassText(s.classes ?? s.classe ?? s.class ?? '').toUpperCase();
         return cls.startsWith('N');
       });
     }
@@ -12530,12 +12554,14 @@
     `;
   }
 
-  function selectTrimestre(val) {
+  async function selectTrimestre(val) {
     const norm = normalizeTrimesterFilter(val);
     if (!['1', '2', '3', 'BN'].includes(norm)) { toast('Trimestre invalide', 'warn'); return; }
     currentTerm = norm;
     applyTermConfigInUI();
     ensureTermConfigCard();
+    // Recharger immédiatement les indicateurs liés au trimestre sélectionné.
+    await initDashboard();
     toast(`Passage au ${norm === 'BN' ? 'Bulletin Annuel' : 'Trimestre ' + norm}`, 'ok');
   }
 
@@ -12555,6 +12581,7 @@
     currentTerm = norm;
     applyTermConfigInUI();
     ensureTermConfigCard();
+    await initDashboard();
     toast('Trimestre mis a jour dans Firebase', 'ok');
   }
 
@@ -13361,78 +13388,115 @@
     const triNorm = normalizeTrimesterFilter(trimester);
     const teacherBranch = getCurrentTeacherBranchNormalized();
     const teacherClasses = getCurrentTeacherClassesList();
+    const terms = ['1', '2', '3'];
+    const selectedTerms = ['1', '2', '3'].includes(triNorm) ? [triNorm] : terms;
+
+    // Les résultats académiques proviennent des fiches de cotation, pas des anciens bulletins.
+    let students = Array.isArray(allStudents) ? allStudents.slice() : [];
+    if (!students.length) {
+      const snap = await db.ref('students').once('value');
+      if (snap.exists()) snap.forEach(c => students.push({ _id: c.key, id: c.key, ...c.val() }));
+    }
+    students = await getAccessibleStudents(students);
+    if (teacherClasses.length) {
+      students = students.filter(st => {
+        const raw = st.classes ?? st.classe ?? st.class ?? st.className ?? '';
+        const values = Array.isArray(raw) ? raw : (raw && typeof raw === 'object'
+          ? Object.keys(raw).filter(k => raw[k] === true || raw[k] === 1 || raw[k] === 'true') : [raw]);
+        return values.some(v => areClassesCompatible(String(v ?? ''), teacherClasses));
+      });
+    }
+
+    // Garder les bulletins uniquement pour les données de conduite (pas pour les notes).
     const paths = [];
-    teacherClasses.forEach(cls => {
-      const cands = getBulletinCandidatePaths(teacherBranch || 'maternelle', cls);
-      cands.forEach(p => paths.push(p));
-    });
-    const uniqPaths = Array.from(new Set(paths));
+    teacherClasses.forEach(cls => getBulletinCandidatePaths(teacherBranch || 'maternelle', cls).forEach(p => paths.push(p)));
     const loaded = [];
-    await Promise.all(uniqPaths.map(async p => {
+    await Promise.all(Array.from(new Set(paths)).map(async path => {
       try {
-        const snap = await db.ref(p).once('value');
-        if (snap.exists()) snap.forEach(c => loaded.push({ id: c.key, _path: `${p}/${c.key}`, ...c.val() }));
+        const snap = await db.ref(path).once('value');
+        if (snap.exists()) snap.forEach(c => loaded.push({ id: c.key, ...c.val() }));
       } catch (e) {}
     }));
-
-    const accessible = getAccessibleBulletins(loaded).filter(b => {
-      if (triNorm === 'ALL') return true;
-      return normalizeTrimesterFilter(b.trimester || b.trimestre) === triNorm;
-    });
+    const accessible = getAccessibleBulletins(loaded).filter(b =>
+      isPublishedOrLegacyBulletin(b) &&
+      (!b.schoolYear && !b.annee || !academicYear || String(b.schoolYear || b.annee) === String(academicYear))
+    );
 
     const subjectAverages = {};
     const overallGradeDistribution = { E: 0, TB: 0, B: 0, Effort: 0 };
     const conductByStudent = {};
     const academicByStudent = {};
 
-    accessible.forEach(b => {
-      const studentId = b.studentId || b.id || b._id;
-      const studentName = b.studentName || b.name || 'Eleve';
-      const studentClass = b.class || b.classes || b.classe || '—';
-      const skills = b.skills || {};
-      Object.entries(skills).forEach(([sub, n]) => {
-        const tj = Number(n?.tj ?? 0);
-        const ex = Number(n?.ex ?? 0);
-        const avg = ((tj * 2) + ex) / 3;
-        if (!subjectAverages[sub]) subjectAverages[sub] = { sumTj: 0, sumEx: 0, count: 0, gradeDistribution: { E: 0, TB: 0, B: 0, Effort: 0 } };
-        subjectAverages[sub].sumTj += tj;
-        subjectAverages[sub].sumEx += ex;
-        subjectAverages[sub].count += 1;
+    for (const student of students) {
+      const studentId = String(student._id || student.id || '');
+      if (!studentId) continue;
+      const studentName = buildStudentDisplayName(student);
+      const studentClass = student.classes || student.classe || student.class || '—';
+      const perSubject = {};
+      for (const term of selectedTerms) {
+        let cotation = {};
+        try { cotation = await getStudentCotationScores(student, term); }
+        catch (e) { console.warn('Lecture cotation impossible:', studentId, term, e); }
+        for (const subject of Object.keys(COTATION_SUBJECTS || {})) {
+          const record = cotation && cotation[subject];
+          if (!record) continue;
+          const max = Number(getCotationSubjectSchoolMax(subject));
+          if (!Number.isFinite(max) || max <= 0) continue;
+          const components = [];
+          if (record.tj !== null && record.tj !== undefined && Number.isFinite(Number(record.tj))) components.push(Number(record.tj) / max * 100);
+          if (record.ex !== null && record.ex !== undefined && Number.isFinite(Number(record.ex))) components.push(Number(record.ex) / max * 100);
+          if (!components.length) continue;
+          const pct = components.reduce((a,b) => a+b, 0) / components.length;
+          (perSubject[subject] ||= []).push(pct);
+        }
+      }
 
-        const g = getGrade(avg);
-        const key = g === 'Ef' ? 'Effort' : g;
-        if (subjectAverages[sub].gradeDistribution[key] !== undefined) subjectAverages[sub].gradeDistribution[key] += 1;
-        if (overallGradeDistribution[key] !== undefined) overallGradeDistribution[key] += 1;
-
-        if (!academicByStudent[studentId]) academicByStudent[studentId] = { studentId, studentName, studentClass, scores: [], subjects: [] };
-        academicByStudent[studentId].scores.push(avg);
-        academicByStudent[studentId].subjects.push({ subject: sub, value: avg });
+      const studentScores = [];
+      Object.entries(perSubject).forEach(([subject, values]) => {
+        const avg = values.reduce((a,b) => a+b, 0) / values.length;
+        studentScores.push(avg);
+        if (!subjectAverages[subject]) subjectAverages[subject] = { sum: 0, count: 0, gradeDistribution: { E: 0, TB: 0, B: 0, Effort: 0 } };
+        subjectAverages[subject].sum += avg;
+        subjectAverages[subject].count++;
+        const grade = getGrade(avg);
+        const key = grade === 'Ef' ? 'Effort' : grade;
+        if (subjectAverages[subject].gradeDistribution[key] !== undefined) subjectAverages[subject].gradeDistribution[key]++;
+        if (overallGradeDistribution[key] !== undefined) overallGradeDistribution[key]++;
       });
+      if (studentScores.length) {
+        academicByStudent[studentId] = {
+          studentId, studentName, studentClass, scores: studentScores,
+          subjects: Object.entries(perSubject).map(([subject, values]) => ({
+            subject, value: values.reduce((a,b) => a+b, 0) / values.length
+          }))
+        };
+      }
+    }
 
+    accessible.forEach(b => {
+      const studentId = String(b.studentId || b.id || b._id || '');
+      const student = students.find(st => String(st._id || st.id || '') === studentId);
+      if (!student) return;
+      const studentName = buildStudentDisplayName(student);
+      const studentClass = student.classes || student.classe || student.class || '—';
       const conduct = b.conduct || b.conduite || {};
-      const vals = Object.values(conduct).map(v => `${v}`.toUpperCase()).filter(Boolean);
+      const vals = Object.values(conduct).map(v => String(v).toUpperCase()).filter(Boolean);
       if (vals.length) {
         const points = vals.map(v => v === 'E' ? 3 : v === 'TB' ? 2 : 1);
-        const avgCond = points.reduce((a, c) => a + c, 0) / points.length;
-        const badge = avgCond >= 2.5 ? 'E' : avgCond >= 1.8 ? 'TB' : 'B';
-        conductByStudent[studentId] = { studentId, studentName, studentClass, score: avgCond, badge };
+        const score = points.reduce((a,c) => a+c, 0) / points.length;
+        conductByStudent[studentId] = { studentId, studentName, studentClass, score, badge: score >= 2.5 ? 'E' : score >= 1.8 ? 'TB' : 'B' };
       }
     });
 
-    Object.keys(subjectAverages).forEach(sub => {
-      const s = subjectAverages[sub];
-      s.avgTj = s.count ? Math.round(s.sumTj / s.count) : 0;
-      s.avgEx = s.count ? Math.round(s.sumEx / s.count) : 0;
-    });
-
+    Object.values(subjectAverages).forEach(s => { s.avg = s.count ? Math.round(s.sum / s.count) : 0; });
     return {
       bulletins: accessible,
       subjectAverages,
       overallGradeDistribution,
-      conductRanking: Object.values(conductByStudent).sort((a, b) => b.score - a.score),
+      conductRanking: Object.values(conductByStudent).sort((a,b) => b.score-a.score),
       palmares: Object.values(academicByStudent)
-        .map(s => ({ ...s, overall: s.scores.length ? (s.scores.reduce((a, c) => a + c, 0) / s.scores.length) : 0 }))
-        .sort((a, b) => b.overall - a.overall)
+        .map(s => ({ ...s, overall: s.scores.length ? s.scores.reduce((a,c)=>a+c,0)/s.scores.length : 0 }))
+        .sort((a,b)=>b.overall-a.overall)
     };
   }
 
@@ -13458,12 +13522,14 @@
       `;
       page.appendChild(sec);
     }
+    const perfSelector = document.getElementById('perfTrimesterSel');
+    if (perfSelector && ['1', '2', '3', 'BN'].includes(String(currentTerm))) perfSelector.value = String(currentTerm);
     page.dataset.perfV2Ready = '1';
   }
 
   async function updatePerfCharts() {
     ensurePerformanceLayout();
-    const tri = document.getElementById('perfTrimesterSel')?.value || 'all';
+    const tri = document.getElementById('perfTrimesterSel')?.value || String(currentTerm || '1');
     const data = await loadRealPerformanceData(tri);
 
     const labels = Object.keys(data.subjectAverages).map(s => s.length > 12 ? `${s.slice(0, 12)}…` : s);
@@ -13697,12 +13763,12 @@
       applyTermConfigInUI();
       ensureTermConfigCard();
 
-      const studentsSnap = await db.ref('students').once('value');
-      const loadedStudents = [];
-      if (studentsSnap.exists()) studentsSnap.forEach(c => loadedStudents.push({ _id: c.key, id: c.key, ...c.val() }));
-      allStudents = await getAccessibleStudents(loadedStudents);
+      // Réutiliser exactement le chargement et les filtres de la page « Mes élèves ».
+      // Le compteur du tableau de bord compte ainsi la même population d'élèves.
+      await initStudents();
+      const dashboardStudents = Array.isArray(allStudents) ? allStudents : [];
       const stEleves = document.getElementById('stEleves');
-      if (stEleves) stEleves.textContent = `${allStudents.length}`;
+      if (stEleves) stEleves.textContent = String(dashboardStudents.length);
 
       const teacherBranch = getCurrentTeacherBranchNormalized();
       const teacherClasses = getCurrentTeacherClassesList();
@@ -13717,34 +13783,72 @@
         } catch (e) {}
       }));
 
-      const accessibleBulletins = getAccessibleBulletins(loadedBulletins);
+      // Compter uniquement les bulletins réellement enregistrés/publiés pour
+      // l'année scolaire active, les classes et la branche de cet enseignant.
+      const selectedDashboardTerm = normalizeTrimesterFilter(currentTerm || '1');
+      const accessibleBulletins = getAccessibleBulletins(loadedBulletins).filter(b => {
+        if (!isPublishedOrLegacyBulletin(b)) return false;
+        const tri = normalizeTrimesterFilter(b.trimester || b.trimestre || '');
+        // Le compteur suit le trimestre actuellement sélectionné, y compris le bulletin annuel.
+        if (tri !== selectedDashboardTerm) return false;
+        const year = String(b.schoolYear || b.annee || '').trim();
+        // Les anciens bulletins sans champ année restent compatibles avec leur
+        // chemin de stockage de classe ; ceux explicitement d'une autre année sont exclus.
+        return !year || !academicYear || year === String(academicYear);
+      });
       const dedupe = {};
       accessibleBulletins.forEach(b => {
-        const key = `${b.studentId || ''}__${normalizeTrimesterFilter(b.trimester || b.trimestre || '')}`;
-        const ts = Number(b.publishedAt || b.updatedAt || b.createdAt || 0);
-        if (!dedupe[key] || ts > Number(dedupe[key].publishedAt || dedupe[key].updatedAt || dedupe[key].createdAt || 0)) dedupe[key] = b;
+        const studentId = String(b.studentId || b.id || b._id || '').trim();
+        const tri = normalizeTrimesterFilter(b.trimester || b.trimestre || '');
+        if (!studentId) return;
+        const key = `${studentId}__${tri}__${String(b.schoolYear || b.annee || academicYear || '')}`;
+        const rawDate = b.publishedAt || b.updatedAt || b.createdAt || 0;
+        const ts = typeof rawDate === 'number' ? rawDate : (Date.parse(rawDate) || Number(rawDate) || 0);
+        const previousDate = dedupe[key]
+          ? (typeof (dedupe[key].publishedAt || dedupe[key].updatedAt || dedupe[key].createdAt) === 'number'
+              ? (dedupe[key].publishedAt || dedupe[key].updatedAt || dedupe[key].createdAt)
+              : (Date.parse(dedupe[key].publishedAt || dedupe[key].updatedAt || dedupe[key].createdAt) || 0))
+          : -1;
+        if (!dedupe[key] || ts > previousDate) dedupe[key] = b;
       });
       allBulletins = Object.values(dedupe);
       const stB = document.getElementById('stBulletins');
-      if (stB) stB.textContent = `${allBulletins.length}`;
+      if (stB) stB.textContent = String(allBulletins.length);
 
-      let avgSum = 0;
-      let avgCount = 0;
-      allBulletins.forEach(b => {
-        const skills = b.skills || {};
-        const scores = Object.values(skills).map(n => {
-          const tjPct = (Number(n?.tj || 0) / 50) * 100;
-          const exPct = Number(n?.ex || 0);
-          return (tjPct + exPct) / 2;
-        }).filter(v => !isNaN(v));
-        if (scores.length) {
-          avgSum += scores.reduce((a, c) => a + c, 0) / scores.length;
-          avgCount += 1;
+      // Moyenne calculée depuis les fiches de cotation du trimestre sélectionné.
+      // Les matières et les notes absentes sont ignorées, jamais transformées en zéro.
+      let classAverageSum = 0;
+      let classAverageCount = 0;
+      if (['1', '2', '3'].includes(selectedDashboardTerm) && typeof getStudentCotationScores === 'function') {
+        for (const student of dashboardStudents) {
+          try {
+            const cotation = await getStudentCotationScores(student, selectedDashboardTerm);
+            const subjectPercentages = [];
+            for (const subject of Object.keys(COTATION_SUBJECTS || {})) {
+              const scores = cotation && cotation[subject];
+              const max = Number(getCotationSubjectSchoolMax(subject));
+              if (!scores || !Number.isFinite(max) || max <= 0) continue;
+              const components = [];
+              if (scores.tj !== null && scores.tj !== undefined && Number.isFinite(Number(scores.tj))) {
+                components.push(Number(scores.tj) / max * 100);
+              }
+              if (scores.ex !== null && scores.ex !== undefined && Number.isFinite(Number(scores.ex))) {
+                components.push(Number(scores.ex) / max * 100);
+              }
+              if (components.length) subjectPercentages.push(components.reduce((a, b) => a + b, 0) / components.length);
+            }
+            if (subjectPercentages.length) {
+              classAverageSum += subjectPercentages.reduce((a, b) => a + b, 0) / subjectPercentages.length;
+              classAverageCount++;
+            }
+          } catch (e) {
+            console.warn('Moyenne cotation indisponible pour un élève:', e);
+          }
         }
-      });
-      const avgClass = avgCount ? Math.round(avgSum / avgCount) : 0;
+      }
+      const avgClass = classAverageCount ? Math.round(classAverageSum / classAverageCount) : null;
       const stM = document.getElementById('stMoyenne');
-      if (stM) stM.textContent = `${avgClass}%`;
+      if (stM) stM.textContent = avgClass === null ? '—' : `${avgClass}%`;
 
       const convSnap = await db.ref('conversations').once('value');
       let unreadConv = 0;
@@ -13789,14 +13893,31 @@
             </div>
           `).join('');
 
-          createNotificationRecord({
-            type: 'alert',
-            title: 'Bulletin manquant',
-            body: `${missing.length} eleve(s) sans bulletin pour T${currentTerm}`,
-            toRole: 'teacher',
-            branch: teacherBranch || null,
-            data: { count: missing.length, term: currentTerm }
-          });
+          // Ne pas créer une nouvelle notification à chaque ouverture du tableau de bord.
+          const existingAlerts = await db.ref('notifications').once('value').catch(() => null);
+          let alreadyNotified = false;
+          if (existingAlerts && existingAlerts.exists()) {
+            existingAlerts.forEach(item => {
+              const n = item.val() || {};
+              if (n.type === 'alert' && n.title === 'Bulletin manquant' &&
+                  String(n.data?.term || '') === String(currentTerm) &&
+                  normalizeBranchForMatch(n.branch || '') === normalizeBranchForMatch(teacherBranch || '') &&
+                  Number(n.createdAt || 0) > Date.now() - 24 * 60 * 60 * 1000) {
+                alreadyNotified = true;
+              }
+            });
+          }
+          if (!alreadyNotified) {
+            await createNotificationRecord({
+              type: 'alert',
+              title: 'Bulletin manquant',
+              body: `${missing.length} eleve(s) sans bulletin pour T${currentTerm}`,
+              toRole: 'teacher',
+              teacherId: getCurrentTeacherUid(),
+              branch: teacherBranch || null,
+              data: { count: missing.length, term: currentTerm, schoolYear: academicYear || '' }
+            });
+          }
         }
       }
 
@@ -14251,7 +14372,7 @@
           const mx = colMaxes[ci];
           const val = rowScores[ci];
           const cc = val !== '' ? getCotInputColor(val, mx) : '';
-          return `<td style="padding:3px 4px;"><input class="cot-score-input${cc ? ' ' + cc : ''}" type="number" min="0" max="${mx}" value="${val !== '' ? val : ''}" data-student-id="${sid}" data-sub="${normalizeSubjectKey(sb)}" data-subject="${subject}" data-col="${ci}" oninput="onCotInputChange(this)" onkeydown="onCotInputKeydown(event,this)"> <span style="font-size:.6rem;color:var(--txt-lt);">/${mx}</span></td>`;
+          return `<td style="padding:3px 4px;"><input class="cot-score-input${cc ? ' ' + cc : ''}" type="number" min="0" max="${mx}" value="${val !== '' ? val : ''}" data-student-id="${sid}" data-sub="${normalizeSubjectKey(sb)}" data-subject="${subject}" data-col="${ci}" readonly title="Double-cliquez pour modifier" ondblclick="enableCotScoreEdit(this)" onblur="this.readOnly=true" oninput="onCotInputChange(this)" onkeydown="onCotInputKeydown(event,this)"> <span style="font-size:.6rem;color:var(--txt-lt);">/${mx}</span></td>`;
         }).join('')}
         <td id="cot-total-${sid}" style="font-weight:800;${overBudget ? 'color:#b91c1c;background:#fef2f2;' : ''}">${rowTotal !== '' ? rowTotal : '—'}</td>
         <td>${mention ? `<span class="${mention.cls}">${mention.label}</span>` : '—'}</td>
@@ -14305,7 +14426,7 @@
         const val = entry !== undefined ? Number(entry?.score ?? entry) : '';
         if (val !== '') { rowTotal += val; rowCount++; colAvgs[ci].sum += val; colAvgs[ci].count++; }
         const cc = val !== '' ? getCotInputColor(val, mx) : '';
-        tbody += `<td style="padding:2px 3px;"><input class="cot-score-input${cc ? ' '+cc : ''}" type="number" min="0" max="${mx}" value="${val !== '' ? val : ''}" data-student-id="${sid}" data-sub="${normalizeSubjectKey(sb)}" data-subject="${sk}" data-col="${ci}" oninput="onCotInputChange(this)" onkeydown="onCotInputKeydown(event,this)"></td>`;
+        tbody += `<td style="padding:2px 3px;"><input class="cot-score-input${cc ? ' '+cc : ''}" type="number" min="0" max="${mx}" value="${val !== '' ? val : ''}" data-student-id="${sid}" data-sub="${normalizeSubjectKey(sb)}" data-subject="${sk}" data-col="${ci}" readonly title="Double-cliquez pour modifier" ondblclick="enableCotScoreEdit(this)" onblur="this.readOnly=true" oninput="onCotInputChange(this)" onkeydown="onCotInputKeydown(event,this)"></td>`;
       });
       if (rowCount) { classTotal += rowTotal; classCount++; }
       const pct = rowCount && typeMax ? (rowTotal / typeMax) * 100 : null;
@@ -14318,6 +14439,14 @@
   }
 
   let _cotSaveTimer = null;
+  function enableCotScoreEdit(input) {
+    if (!input || input.disabled) return;
+    input.readOnly = false;
+    input.focus();
+    input.select();
+    input.title = "Modification activée — Entrée pour valider";
+  }
+
   function onCotInputChange(input) {
     const sid = input.dataset.studentId;
     const subKey = input.dataset.sub;
@@ -14543,7 +14672,7 @@
           <div class="info-cell"><strong>DATE:</strong>${getCotMonthLabel(month)}</div>
           <div class="info-cell"><strong>CLASSE:</strong>${className}</div>
           <div class="info-cell"><strong>MATIÈRE:</strong>${subjectLabel}</div>
-          <div class="info-cell"><strong>TYPE:</strong>${type === 'TJ' ? 'Travaux Journal /50' : 'Examen /100'}</div>
+          <div class="info-cell"><strong>TYPE:</strong>${type === 'TJ' ? 'Travaux Journal /50' : 'Examen /${getCotationTypeMax()}'}</div>
           <div class="info-cell"><strong>PÉRIODE:</strong>${periodLabel}</div>
           <div class="info-cell"><strong>ANNÉE:</strong>${academicYear || '2025-2026'}</div>
         </div>
@@ -14613,6 +14742,1048 @@
     _navToOriginal(pageId);
     if (pageId === 'cotation') initCotationPage();
   };
+
+/* ===== COTATION / BULLETIN REPAIR : TESTS PAR TRIMESTRE ===== */
+const COTATION_SUBJECT_MAX = {
+  "Pre-mathématique": 100, "Français": 100,
+  "Étude du milieu": 80, "Français langage": 80,
+  "Art& Culture": 60, "Activité Physique et Motrice": 60, "Application": 100
+};
+cotationState.assessmentId = cotationState.assessmentId || "test_1";
+cotationState.assessments = cotationState.assessments || [];
+
+function getCotationSubjectSchoolMax(subject) { return Number(COTATION_SUBJECT_MAX[subject] || 100); }
+function getCotationTypeMax() { return cotationState.type === "EX" ? getCotationSubjectSchoolMax(cotationState.subject) : 50; }
+function getCotationSubjectTotal(subject) { return cotationState.type === "EX" ? getCotationSubjectSchoolMax(subject) : 50; }
+function getCotationSubBranchMax(subject, subBranch) {
+  if (!subject || !subBranch) return 0;
+  const key = normalizeSubjectKey(subBranch);
+  const custom = cotationState.exerciseConfig && cotationState.exerciseConfig[subject] && cotationState.exerciseConfig[subject][key];
+  if (custom !== undefined && custom !== null && custom !== "") return Number(custom);
+  return Number((getCotationSubjectTotal(subject) / (COTATION_SUBJECTS[subject].subBranches.length || 1)).toFixed(2));
+}
+function getCotationV2BasePath(cls, subject, tri, type) {
+  const branch = currentTeacher && (currentTeacher.branch || currentTeacher.schoolBranch) || getCurrentTeacherBranchNormalized() || "default";
+  return "cotations/" + normalizeSubjectKey(branch) + "_" + normalizeSubjectKey(cls) + "_" + normalizeSubjectKey(subject) + "_" + normalizeSubjectKey(academicYear || "2026-2027") + "_T" + tri + "_" + type;
+    (academicYear || "2026-2027") + "/" + tri + "/" + type;
+}
+function getCotationV2AssessmentPath(cls, subject, tri, type, id) {
+  return getCotationV2BasePath(cls, subject, tri, type) + "/" + id;
+}
+function getCotationCurrentAssessment() {
+  const list = cotationState.assessments || [];
+  return list.find(a => a.id === cotationState.assessmentId) || list[0] ||
+    { id: cotationState.type === "EX" ? "exam" : "test_1", label: cotationState.type === "EX" ? "Examen du trimestre" : "Test 1" };
+}
+
+/* Keep the existing page, but replace the old Période tabs with test management. */
+const _ensureCotationPageTestsOriginal = ensureCotationPage;
+ensureCotationPage = function() {
+  _ensureCotationPageTestsOriginal();
+  const page = document.getElementById("page-cotation");
+  if (!page) return;
+  const oldPeriod = page.querySelector("#cotPeriodTabs");
+  if (oldPeriod && oldPeriod.parentElement) {
+    oldPeriod.parentElement.innerHTML =
+      '<div style="min-width:210px;flex:1"><label class="f-label" id="cotAssessmentLabel">Tests du trimestre</label>' +
+      '<select class="f-input" id="cotAssessmentSelect" onchange="onCotAssessmentChange()"></select></div>' +
+      '<div style="display:flex;gap:6px;align-items:center;">' +
+      '<button class="btn btn-blue" id="cotAddTestBtn" onclick="cotAddTest()"><i class="fas fa-plus"></i> Ajouter un test</button>' +
+      '<button class="btn btn-ghost" id="cotRemoveTestBtn" onclick="cotRemoveTest()" title="Supprimer le test sélectionné"><i class="fas fa-minus"></i></button></div>';
+  }
+  const badge = page.querySelector("#cotPeriodBadge");
+  if (badge) badge.remove();
+  const subject = page.querySelector("#cotSubject");
+  if (subject && !page.querySelector("#cotSubjectMaxInfo")) {
+    const info = document.createElement("small");
+    info.id = "cotSubjectMaxInfo";
+    info.style.cssText = "display:block;color:#0f3d72;font-weight:800;margin-top:4px;";
+    info.textContent = "Barème officiel de la matière";
+    subject.insertAdjacentElement("afterend", info);
+  }
+};
+
+function getCotationPeriodTabs() {
+  const a = getCotationCurrentAssessment();
+  return [{ period: 1, month: cotationState.month, label: a.label, monthLabel: getCotMonthLabel(cotationState.month) }];
+}
+function renderCotationPeriodTabs() {
+  const a = getCotationCurrentAssessment();
+  return [{ period: 1, month: cotationState.month, label: a.label, monthLabel: getCotMonthLabel(cotationState.month) }];
+}
+function updateCotPeriodBadge() {}
+function cotTabClick() {}
+
+async function loadLegacyCotationRecords(cls, subject, tri, type) {
+  try {
+    const snap = await db.ref("cotations").once("value");
+    if (!snap.exists()) return [];
+    const ys = String(academicYear || "2026-2027").split("-");
+    const y1 = Number(ys[0]) || 2026, y2 = Number(ys[1]) || y1 + 1;
+    const months = tri === "1" ? [y1+"-09",y1+"-10",y1+"-11"] :
+      tri === "2" ? [y2+"-01",y2+"-02",y2+"-03"] : [y2+"-04",y2+"-05",y2+"-06"];
+    const wantedClass = normalizeClassWithoutBranchSuffix(cls);
+    const wantedSubject = normalizeSubjectKey(subject);
+    const prefix = normalizeSubjectKey(cls) + "_" + normalizeSubjectKey(subject) + "_";
+    const suffix = "_" + type;
+    const out = [];
+    snap.forEach(child => {
+      const d = child.val() || {}, key = child.key || "";
+      const keyMatch = key.startsWith(prefix) && key.endsWith(suffix);
+      const month = d.month || (keyMatch ? key.slice(prefix.length, key.length - suffix.length) : "");
+      const classMatch = d.class || d.className
+        ? normalizeClassWithoutBranchSuffix(d.class || d.className) === wantedClass : keyMatch;
+      const subjectMatch = d.subject ? normalizeSubjectKey(d.subject) === wantedSubject : keyMatch;
+      const typeMatch = d.type ? String(d.type).toUpperCase() === type : keyMatch;
+      if (!classMatch || !subjectMatch || !typeMatch || !months.includes(String(month))) return;
+      if (d.teacherId && currentTeacher && currentTeacher.uid && d.teacherId !== currentTeacher.uid) return;
+      if (d.branch && currentTeacher && currentTeacher.branch && !areBranchesCompatible(d.branch, currentTeacher.branch)) return;
+      if (d.entries) out.push(Object.assign({ id: child.key, legacy: true }, d, { month: month, type: type }));
+    });
+    return out.sort((a,b) => String(a.month || "").localeCompare(String(b.month || "")));
+  } catch (e) { console.warn("Anciennes cotations non accessibles", e); return []; }
+}
+
+async function migrateLegacyCotationForActiveAssessment() {
+  if (!cotationState.className || cotationState.subject === "all" || cotationState.trimestre === "BN") return;
+  const base = getCotationV2BasePath(cotationState.className, cotationState.subject, cotationState.trimestre, cotationState.type);
+  const existing = await db.ref(base).once("value");
+  if (existing.exists() && Object.keys(existing.val() || {}).length) return;
+  const legacy = await loadLegacyCotationRecords(cotationState.className, cotationState.subject, cotationState.trimestre, cotationState.type);
+  if (!legacy.length) return;
+  if (cotationState.type === "TJ") {
+    for (let i = 0; i < legacy.length; i++) {
+      const item = legacy[i];
+      const id = "test_legacy_" + String(item.month || i).replace(/[^0-9]/g, "");
+      await db.ref(base + "/" + id).set({
+        label: "Test importé — " + getCotMonthLabel(item.month), month: item.month,
+        entries: item.entries || {}, exerciseConfig: item.exerciseConfig || {},
+        class: cotationState.className, subject: cotationState.subject, trimester: cotationState.trimestre,
+        type: "TJ", teacherId: item.teacherId || getCurrentTeacherUid(),
+        branch: item.branch || getCurrentTeacherBranchNormalized(), importedFromLegacy: true, updatedAt: Date.now()
+      });
+    }
+  } else {
+    const item = legacy[legacy.length - 1];
+    await db.ref(base + "/exam").set({
+      label: "Examen unique du trimestre", month: item.month, entries: item.entries || {},
+      exerciseConfig: item.exerciseConfig || {}, class: cotationState.className,
+      subject: cotationState.subject, trimester: cotationState.trimestre, type: "EX",
+      teacherId: item.teacherId || getCurrentTeacherUid(), branch: item.branch || getCurrentTeacherBranchNormalized(),
+      importedFromLegacy: true, updatedAt: Date.now()
+    });
+  }
+}
+
+async function loadCotationAssessments() {
+  const select = document.getElementById("cotAssessmentSelect");
+  if (!select) return;
+  const add = document.getElementById("cotAddTestBtn");
+  const remove = document.getElementById("cotRemoveTestBtn");
+  const label = document.getElementById("cotAssessmentLabel");
+  if (cotationState.type === "EX") {
+    await migrateLegacyCotationForActiveAssessment();
+    cotationState.assessments = [{ id: "exam", label: "Examen unique du trimestre" }];
+    cotationState.assessmentId = "exam";
+    if (label) label.textContent = "Examen (un seul par trimestre)";
+    if (add) add.style.display = "none";
+    if (remove) remove.style.display = "none";
+  } else {
+    if (label) label.textContent = "Tests du trimestre";
+    if (add) add.style.display = "";
+    if (remove) remove.style.display = "";
+    await migrateLegacyCotationForActiveAssessment();
+    let records = {};
+    if (cotationState.subject !== "all" && cotationState.trimestre !== "BN") {
+      const snap = await db.ref(getCotationV2BasePath(cotationState.className, cotationState.subject, cotationState.trimestre, "TJ")).once("value");
+      records = snap.val() || {};
+    }
+    const tests = Object.keys(records).map(id => ({
+      id: id, label: records[id].label || ("Test " + id.replace(/^test_/, "")), month: records[id].month || ""
+    })).sort((a,b) => a.label.localeCompare(b.label, "fr", { numeric: true }));
+    cotationState.assessments = tests.length ? tests : [{ id: "test_1", label: "Test 1" }];
+    if (!cotationState.assessments.some(a => a.id === cotationState.assessmentId)) cotationState.assessmentId = cotationState.assessments[0].id;
+  }
+  select.innerHTML = cotationState.assessments.map(a => '<option value="' + a.id + '">' + a.label + '</option>').join("");
+  select.value = cotationState.assessmentId;
+  renderCotationAssessmentControls();
+}
+
+function renderCotationAssessmentControls() {
+  const info = document.getElementById("cotSubjectMaxInfo");
+  if (info) info.textContent = "Barème officiel : /" + getCotationSubjectSchoolMax(cotationState.subject) +
+    " • Chaque test TJ est noté sur /100 • La moyenne est convertie au barème propre à la matière • Un seul examen par trimestre";
+  const tj = document.getElementById("cotTypeTJ"), ex = document.getElementById("cotTypeEX");
+  if (tj) { tj.classList.toggle("active", cotationState.type === "TJ"); tj.textContent = "📝 TESTS /100"; }
+  if (ex) { ex.classList.toggle("active", cotationState.type === "EX"); ex.textContent = "📋 EXAMEN /" + getCotationSubjectSchoolMax(cotationState.subject); }
+}
+
+async function cotAddTest() {
+  if (cotationState.type !== "TJ") return;
+  const number = (cotationState.assessments || []).length + 1;
+  const label = prompt("Nom du nouveau test :", "Test " + number);
+  if (!label || !label.trim()) return;
+  const id = "test_" + Date.now();
+  const path = getCotationV2AssessmentPath(cotationState.className, cotationState.subject, cotationState.trimestre, "TJ", id);
+  await db.ref(path).set({
+    label: label.trim(), entries: {}, exerciseConfig: cotationState.exerciseConfig[cotationState.subject] || {},
+    class: cotationState.className, subject: cotationState.subject, trimester: cotationState.trimestre,
+    type: "TJ", month: cotationState.month, teacherId: getCurrentTeacherUid(),
+    teacherName: currentTeacher && currentTeacher.name || "", branch: getCurrentTeacherBranchNormalized(), createdAt: Date.now()
+  });
+  cotationState.assessmentId = id;
+  await loadCotationAssessments();
+  await loadAndRenderCotationTable();
+  toast(label.trim() + " ajouté.", "ok");
+}
+async function cotRemoveTest() {
+  const list = cotationState.assessments || [];
+  if (cotationState.type !== "TJ" || list.length <= 1) { toast("Conservez au moins un test.", "warn"); return; }
+  const active = getCotationCurrentAssessment();
+  if (!confirm("Supprimer « " + active.label + " » et tous ses points ?")) return;
+  await db.ref(getCotationV2AssessmentPath(cotationState.className, cotationState.subject, cotationState.trimestre, "TJ", active.id)).remove();
+  cotationState.assessmentId = list.find(a => a.id !== active.id).id;
+  await loadCotationAssessments();
+  await loadAndRenderCotationTable();
+  toast("Test supprimé.", "ok");
+}
+async function onCotAssessmentChange() {
+  cotationState.assessmentId = document.getElementById("cotAssessmentSelect").value;
+  await loadAndRenderCotationTable();
+}
+async function onCotTypeToggle(type) {
+  cotationState.type = type === "EX" ? "EX" : "TJ";
+  cotationState.assessmentId = cotationState.type === "EX" ? "exam" : "test_1";
+  await loadCotationAssessments();
+  await loadAndRenderCotationTable();
+}
+async function onCotSubjectChange() {
+  cotationState.subject = document.getElementById("cotSubject").value;
+  cotationState.assessmentId = cotationState.type === "EX" ? "exam" : "test_1";
+  await loadCotationAssessments();
+  await loadAndRenderCotationTable();
+}
+async function onCotTrimestreChange() {
+  cotationState.trimestre = document.getElementById("cotTrimestre").value;
+  cotationState.month = getCotTrimestreStartMonth();
+  const month = document.getElementById("cotMonth");
+  if (month) month.value = cotationState.month;
+  cotationState.assessmentId = cotationState.type === "EX" ? "exam" : "test_1";
+  await loadCotationAssessments();
+  await loadAndRenderCotationTable();
+}
+async function onCotMonthChange() {
+  cotationState.month = document.getElementById("cotMonth").value;
+  await loadAndRenderCotationTable();
+}
+
+async function loadCotationData(subject, month, type, className) {
+  if (!className || !subject || subject === "all" || cotationState.trimestre === "BN") return null;
+  const id = type === "EX" ? "exam" : (cotationState.assessmentId || "test_1");
+  const snap = await db.ref(getCotationV2AssessmentPath(className, subject, cotationState.trimestre, type, id)).once("value");
+  const data = snap.val();
+  if (data && data.exerciseConfig) cotationState.exerciseConfig[subject] = data.exerciseConfig;
+  return data || null;
+}
+async function saveCotationEntry(studentId, subBranch, score, subject, month, type, className) {
+  if (!className || !subject || subject === "all") return;
+  const id = type === "EX" ? "exam" : (cotationState.assessmentId || "test_1");
+  const path = getCotationV2AssessmentPath(className, subject, cotationState.trimestre, type, id);
+  await db.ref(path).update({
+    label: getCotationCurrentAssessment().label, class: className, subject: subject,
+    trimester: cotationState.trimestre, type: type, month: month || cotationState.month,
+    teacherId: getCurrentTeacherUid(), teacherName: currentTeacher && currentTeacher.name || "",
+    branch: getCurrentTeacherBranchNormalized(), maxScore: getCotationTypeMax(),
+    subjectMaxScore: getCotationSubjectSchoolMax(subject), updatedAt: Date.now()
+  });
+  const entryPath = path + "/entries/" + studentId + "/" + subBranch;
+  if (score === "" || score === null || score === undefined) await db.ref(entryPath).remove();
+  else await db.ref(entryPath).set({ score: Number(score), savedAt: Date.now(), savedBy: getCurrentTeacherUid() });
+}
+async function saveFullCotation() {
+  const s = cotationState;
+  if (!s.month || !s.className || !s.subject || s.subject === "all") { toast("Classe, mois ou matière manquant.", "warn"); return; }
+  const id = s.type === "EX" ? "exam" : (s.assessmentId || "test_1");
+  const entries = {};
+  document.querySelectorAll("#cotationTable input[data-student-id]").forEach(inp => {
+    const sid = inp.dataset.studentId, key = inp.dataset.sub, value = inp.value.trim();
+    if (value !== "") {
+      if (!entries[sid]) entries[sid] = {};
+      entries[sid][key] = { score: Number(value), savedAt: Date.now() };
+    }
+  });
+  await db.ref(getCotationV2AssessmentPath(s.className, s.subject, s.trimestre, s.type, id)).update({
+    label: getCotationCurrentAssessment().label, teacherId: getCurrentTeacherUid(),
+    teacherName: currentTeacher && currentTeacher.name || "", branch: getCurrentTeacherBranchNormalized(),
+    class: s.className, subject: s.subject, month: s.month, trimester: s.trimestre, type: s.type,
+    maxScore: getCotationTypeMax(), subjectMaxScore: getCotationSubjectSchoolMax(s.subject),
+    exerciseConfig: s.exerciseConfig[s.subject] || {}, entries: entries, updatedAt: Date.now()
+  });
+  toast("Fiche de cotation sauvegardée.", "ok");
+}
+async function loadAndRenderCotationTable() {
+  const s = cotationState;
+  const data = await loadCotationData(s.subject, s.month, s.type, s.className);
+  const teacherStudents = currentTeacher ? (allStudents || []).filter(st => isStudentMatch(st, currentTeacher)) : (allStudents || []);
+  const students = s.className ? teacherStudents.filter(st => areClassesCompatible(st.classes || st.classe || st.class || "", [s.className])) : teacherStudents;
+  if (s.subject === "all") renderAllSubjectsTable(students, data);
+  else renderCotationSubjectTable(s.subject, students, data);
+  await populateCotQuickSelects();
+}
+function onCotInputChange(input) {
+  const sid = input.dataset.studentId, sub = input.dataset.sub, subject = input.dataset.subject;
+  const max = getCotationSubBranchMax(subject, sub);
+  let score = input.value.trim() === "" ? "" : Number(input.value);
+  if (score !== "" && (!Number.isFinite(score) || score < 0)) score = 0;
+  if (score !== "" && score > max) { score = max; input.value = String(max); toast("Maximum : " + max + " points.", "warn"); }
+  input.className = "cot-score-input" + (score !== "" ? " " + getCotInputColor(score, max) : "");
+  updateCotRowTotal(sid, subject);
+  if (_cotSaveTimer) clearTimeout(_cotSaveTimer);
+  _cotSaveTimer = setTimeout(async () => {
+    try {
+      await saveCotationEntry(sid, sub, score, subject, cotationState.month, cotationState.type, cotationState.className);
+    } catch (e) { console.error(e); toast("Échec de sauvegarde des points.", "err"); }
+  }, 650);
+}
+function openSubBranchPopover(th, subject, subBranch) {
+  document.querySelectorAll(".cot-popover").forEach(p => p.remove());
+  const key = normalizeSubjectKey(subBranch), total = getCotationSubjectTotal(subject);
+  const current = getCotationSubBranchMax(subject, subBranch);
+  const usedOther = Object.entries(cotationState.exerciseConfig[subject] || {})
+    .filter(pair => pair[0] !== key).reduce((sum,pair) => sum + Number(pair[1] || 0), 0);
+  const remaining = Math.max(0, total - usedOther);
+  const pop = document.createElement("div");
+  pop.className = "cot-popover";
+  pop.innerHTML = '<strong>' + subBranch + '</strong><br><label>Maximum de points :</label>' +
+    '<input type="number" id="cotPopMax" min="0.1" max="' + remaining + '" step="0.1" value="' + current + '" class="f-input" style="width:90px;margin:5px 0;">' +
+    '<div style="font-size:.7rem">Disponible : ' + remaining + ' points</div>' +
+    '<button class="btn btn-blue" onclick="applySubBranchMax(\'' + subject + '\',\'' + subBranch + '\',\'' + key + '\')">Appliquer</button>';
+  th.appendChild(pop);
+}
+function applySubBranchMax(subject, subBranch, key) {
+  const value = Number(document.getElementById("cotPopMax").value), total = getCotationSubjectTotal(subject);
+  const usedOther = Object.entries(cotationState.exerciseConfig[subject] || {})
+    .filter(pair => pair[0] !== key).reduce((sum,pair) => sum + Number(pair[1] || 0), 0);
+  if (!Number.isFinite(value) || value <= 0 || value + usedOther > total + 0.001) {
+    toast("Le total des sous-branches ne peut pas dépasser /" + total + ".", "err"); return;
+  }
+  if (!cotationState.exerciseConfig[subject]) cotationState.exerciseConfig[subject] = {};
+  cotationState.exerciseConfig[subject][key] = value;
+  document.querySelectorAll(".cot-popover").forEach(p => p.remove());
+  loadAndRenderCotationTable();
+}
+async function initCotationPage() {
+  await loadTermConfiguration();
+  ensureCotationPage();
+  const teacher = document.getElementById("cotTeacherName");
+  if (teacher) teacher.value = currentTeacher && (currentTeacher.name || currentTeacher.displayName) || "";
+  const classes = getCurrentTeacherClassesList(), cls = classes[0] || "";
+  cotationState.className = cls;
+  const classEl = document.getElementById("cotClassDisplay"); if (classEl) classEl.value = cls;
+  if (!["1","2","3"].includes(String(cotationState.trimestre))) cotationState.trimestre = ["1","2","3"].includes(String(currentTerm)) ? String(currentTerm) : "1";
+  const tri = document.getElementById("cotTrimestre"); if (tri) tri.value = cotationState.trimestre;
+  cotationState.month = getCotTrimestreStartMonth();
+  const month = document.getElementById("cotMonth"); if (month) month.value = cotationState.month;
+  if (!COTATION_SUBJECTS[cotationState.subject]) cotationState.subject = Object.keys(COTATION_SUBJECTS)[0];
+  const subj = document.getElementById("cotSubject"); if (subj) subj.value = cotationState.subject;
+  if (!allStudents || !allStudents.length) {
+    const snap = await db.ref("students").once("value"), loaded = [];
+    if (snap.exists()) snap.forEach(c => loaded.push({ _id: c.key, id: c.key, ...c.val() }));
+    allStudents = currentTeacher ? await getAccessibleStudents(loaded) : loaded;
+  }
+  cotationState.type = cotationState.type === "EX" ? "EX" : "TJ";
+  cotationState.assessmentId = cotationState.type === "EX" ? "exam" : "test_1";
+  await loadCotationAssessments();
+  await loadAndRenderCotationTable();
+}
+
+/* Bulletin: read every test and the unique exam, then normalize to /100. */
+function cotScoreTotalForStudent(record, studentId) {
+  const row = record && record.entries && record.entries[studentId];
+  if (!row || typeof row !== "object") return null;
+  let total = 0, count = 0;
+  Object.values(row).forEach(v => {
+    const n = Number(v && typeof v === "object" ? v.score : v);
+    if (Number.isFinite(n)) { total += n; count++; }
+  });
+  return count ? total : null;
+}
+async function getStudentCotationScores(student, trimester) {
+  const cls = student.classes || student.classe || student.class || "", sid = student._id || student.id;
+  const out = {}, ys = String(academicYear || "2026-2027").split("-");
+  const y1 = Number(ys[0]) || 2026, y2 = Number(ys[1]) || y1 + 1;
+  const months = trimester === "1" ? [y1+"-09",y1+"-10",y1+"-11"] :
+    trimester === "2" ? [y2+"-01",y2+"-02",y2+"-03"] : [y2+"-04",y2+"-05",y2+"-06"];
+  const legacySnap = await db.ref("cotations").once("value").catch(() => null), legacy = [];
+  if (legacySnap && legacySnap.exists()) legacySnap.forEach(c => legacy.push(Object.assign({ id: c.key }, c.val() || {})));
+  for (const subject of Object.keys(COTATION_SUBJECTS)) {
+    out[subject] = { tj: null, ex: null, tjCount: 0, exCount: 0 };
+    for (const type of ["TJ","EX"]) {
+      let records = [];
+      const snap = await db.ref(getCotationV2BasePath(cls, subject, trimester, type)).once("value").catch(() => null);
+      if (snap && snap.exists()) records = Object.values(snap.val() || {}).filter(r => (!r.teacherId || !currentTeacher || !currentTeacher.uid || r.teacherId === currentTeacher.uid) && (!r.branch || !currentTeacher || !currentTeacher.branch || areBranchesCompatible(r.branch, currentTeacher.branch)));
+      if (!records.length) {
+        records = legacy.filter(d => {
+          const key = d.id || "";
+          const prefix = normalizeSubjectKey(cls) + "_" + normalizeSubjectKey(subject) + "_";
+          const suffix = "_" + type;
+          const keyMatch = key.startsWith(prefix) && key.endsWith(suffix);
+          const month = d.month || (keyMatch ? key.slice(prefix.length, key.length - suffix.length) : "");
+          const classMatch = d.class || d.className
+            ? normalizeClassWithoutBranchSuffix(d.class || d.className) === normalizeClassWithoutBranchSuffix(cls) : keyMatch;
+          const subjectMatch = d.subject ? normalizeSubjectKey(d.subject) === normalizeSubjectKey(subject) : keyMatch;
+          const typeMatch = d.type ? String(d.type).toUpperCase() === type : keyMatch;
+          return classMatch && subjectMatch && typeMatch && months.includes(String(month)) &&
+            (!d.teacherId || !currentTeacher || !currentTeacher.uid || d.teacherId === currentTeacher.uid) &&
+            (!d.branch || !currentTeacher || !currentTeacher.branch || areBranchesCompatible(d.branch, currentTeacher.branch));
+        }).sort((a,b) => String(a.month || "").localeCompare(String(b.month || "")));
+      }
+      const scores = records.map(r => cotScoreTotalForStudent(r, sid)).filter(v => v !== null);
+      if (type === "TJ" && scores.length) {
+        out[subject].tj = scores.reduce((a,b) => a+b, 0) / scores.length;
+        out[subject].tjCount = scores.length;
+      }
+      if (type === "EX" && scores.length) {
+        out[subject].ex = scores[scores.length - 1] / getCotationSubjectSchoolMax(subject) * 100;
+        out[subject].exCount = 1;
+      }
+    }
+  }
+  return out;
+}
+async function verifySelectedStudentCotation(force) {
+  if (!selectedStudent) return { missing: [], found: {} };
+  const tri = document.getElementById("bTrimestre") && document.getElementById("bTrimestre").value || BULLETIN.trimestre || "1";
+  if (tri === "BN") return { missing: [], found: {} };
+  let panel = document.getElementById("bCotationCheck");
+  const anchor = document.getElementById("bSelInfo");
+  if (!panel && anchor) {
+    panel = document.createElement("div"); panel.id = "bCotationCheck";
+    panel.style.cssText = "margin-top:10px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;font-size:.82rem;";
+    anchor.insertAdjacentElement("afterend", panel);
+  }
+  if (panel) panel.textContent = "Vérification des fiches de cotation…";
+  try {
+    const found = await getStudentCotationScores(selectedStudent, tri), missing = [], lines = [];
+    for (const subject of Object.keys(COTATION_SUBJECTS)) {
+      const d = found[subject] || {}, b = BRANCHES.find(x => x.id === subject);
+      if (!b) continue;
+      if (d.tj !== null) {
+        if (force || !(document.getElementById("n-"+b.id+"-tj") || {}).value) {
+          if (!BULLETIN.notes[b.id]) BULLETIN.notes[b.id] = {};
+          BULLETIN.notes[b.id].tj = Number(d.tj.toFixed(2));
+          const input = document.getElementById("n-"+b.id+"-tj");
+          if (input) { input.value = String(Math.round(d.tj)); onNote(b.id, "tj", input); }
+        }
+      } else missing.push(COTATION_SUBJECTS[subject].label + " — TJ");
+      if (d.ex !== null) {
+        if (force || !(document.getElementById("n-"+b.id+"-ex") || {}).value) {
+          if (!BULLETIN.notes[b.id]) BULLETIN.notes[b.id] = {};
+          BULLETIN.notes[b.id].ex = Number(d.ex.toFixed(2));
+          const input = document.getElementById("n-"+b.id+"-ex");
+          if (input) { input.value = String(Math.round(d.ex)); onNote(b.id, "ex", input); }
+        }
+      } else missing.push(COTATION_SUBJECTS[subject].label + " — EX");
+      lines.push('<div style="padding:3px 0;color:' + (d.tj !== null && d.ex !== null ? "#15803d" : "#b45309") + ';">' +
+        COTATION_SUBJECTS[subject].label + ': TJ ' + (d.tj !== null ? Math.round(d.tj)+"/"+getCotationSubjectSchoolMax(subject)+" ("+d.tjCount+" test(s))" : "manquant") +
+        ' • EX ' + (d.ex !== null ? Math.round(d.ex)+"/"+getCotationSubjectSchoolMax(subject) : "manquant") + '</div>');
+    }
+    if (panel) panel.innerHTML = '<strong style="color:#0f3d72">Contrôle des points — Trimestre ' + tri + '</strong>' + lines.join("") +
+      (missing.length ? '<div style="margin-top:8px;padding:8px;background:#fff7ed;color:#9a3412;border-radius:7px;"><strong>' +
+        missing.length + ' note(s) à compléter manuellement dans l’onglet Notes.</strong></div>' :
+        '<div style="margin-top:8px;color:#15803d;font-weight:800;">Toutes les notes TJ et EX sont disponibles.</div>');
+    return { missing: missing, found: found };
+  } catch (e) {
+    console.error("Erreur vérification des cotations", e);
+    if (panel) panel.innerHTML = '<span style="color:#b91c1c">Impossible de vérifier les fiches de cotation. Vérifiez la connexion.</span>';
+    return { missing: ["Vérification impossible"], found: {} };
+  }
+}
+const _selectBulletinStudentCotationOriginal = selectBulletinStudent;
+selectBulletinStudent = function(student, element) {
+  _selectBulletinStudentCotationOriginal(student, element);
+  BULLETIN.notes = {};
+  renderNotesForm();
+  verifySelectedStudentCotation(true);
+};
+const _goToNotesCotationOriginal = goToNotes;
+goToNotes = async function() {
+  if (selectedStudent) await verifySelectedStudentCotation(false);
+  _goToNotesCotationOriginal();
+};
+const _generateBulletinCotationOriginal = generateBulletin;
+generateBulletin = async function() {
+  if (selectedStudent) {
+    const check = await verifySelectedStudentCotation(false);
+    const unresolved = (check.missing || []).filter(item => {
+      const parts = item.split(" — ");
+      const subject = Object.keys(COTATION_SUBJECTS).find(k => COTATION_SUBJECTS[k].label === parts[0]);
+      const type = (parts[1] || "TJ").toLowerCase();
+      const input = subject ? document.getElementById("n-" + subject + "-" + type) : null;
+      return !input || !input.value.trim();
+    });
+    if (unresolved.length) {
+      toast(unresolved.length + " note(s) manquante(s). Complétez-les avant de générer le bulletin.", "warn");
+      switchBulletinTab("t-notes"); return;
+    }
+  }
+  return _generateBulletinCotationOriginal();
+};
+const _initBulletinFormCotationOriginal = initBulletinForm;
+initBulletinForm = async function() {
+  await _initBulletinFormCotationOriginal();
+  const tri = document.getElementById("bTrimestre");
+  if (tri && !tri.dataset.cotationCheckBound) {
+    tri.dataset.cotationCheckBound = "1";
+    tri.addEventListener("change", function() { BULLETIN.notes = {}; renderNotesForm(); verifySelectedStudentCotation(true); });
+  }
+};
+/* Fix the teacher/student filter: use the same authorized-student resolver as the rest of the portal. */
+async function populateCotQuickSelects() {
+  const studentSel = document.getElementById("cotQuickStudent");
+  const subSel = document.getElementById("cotQuickSubBranch");
+  if (!studentSel || !subSel) return;
+  let students = allStudents || [];
+  if (currentTeacher || (typeof auth !== "undefined" && auth.currentUser)) {
+    students = await getAccessibleStudents(students);
+  }
+  if (cotationState.className) {
+    students = students.filter(st => areClassesCompatible(st.classes || st.classe || st.class || "", [cotationState.className]));
+  }
+  const previous = studentSel.value;
+  studentSel.innerHTML = '<option value="">— Choisir un élève —</option>';
+  students.forEach(st => {
+    const id = st._id || st.id;
+    if (!id) return;
+    const option = document.createElement("option");
+    option.value = String(id);
+    option.textContent = buildStudentDisplayName(st);
+    studentSel.appendChild(option);
+  });
+  if (Array.from(studentSel.options).some(o => o.value === previous)) studentSel.value = previous;
+  const subject = cotationState.subject;
+  const config = subject && subject !== "all" ? COTATION_SUBJECTS[subject] : null;
+  const previousSub = subSel.value;
+  subSel.innerHTML = "";
+  if (!config) {
+    subSel.innerHTML = '<option value="">— Choisir une matière d’abord —</option>';
+  } else {
+    config.subBranches.forEach(sb => {
+      const option = document.createElement("option");
+      option.value = normalizeSubjectKey(sb);
+      option.dataset.max = String(getCotationSubBranchMax(subject, sb));
+      option.dataset.label = sb;
+      option.textContent = sb + " (/" + formatCotationMaxValue(getCotationSubBranchMax(subject, sb)) + ")";
+      subSel.appendChild(option);
+    });
+    if (Array.from(subSel.options).some(o => o.value === previousSub)) subSel.value = previousSub;
+  }
+}
+
+async function loadAndRenderCotationTable() {
+  const state = cotationState;
+  const data = await loadCotationData(state.subject, state.month, state.type, state.className);
+  let students = allStudents || [];
+  if (currentTeacher || (typeof auth !== "undefined" && auth.currentUser)) {
+    students = await getAccessibleStudents(students);
+  }
+  if (state.className) {
+    students = students.filter(st => areClassesCompatible(st.classes || st.classe || st.class || "", [state.className]));
+  }
+  const table = document.getElementById("cotationTable");
+  if (!students.length && table) {
+    table.innerHTML = '<tbody><tr><td style="padding:24px;text-align:center;color:#b45309;">Aucun élève trouvé pour cette classe. Vérifiez la classe attribuée à votre compte enseignant.</td></tr></tbody>';
+  } else if (state.subject === "all") {
+    renderAllSubjectsTable(students, data);
+  } else {
+    renderCotationSubjectTable(state.subject, students, data);
+  }
+  await populateCotQuickSelects();
+}
+
+const _initCotationPageStudentFixOriginal = initCotationPage;
+initCotationPage = async function() {
+  await _initCotationPageStudentFixOriginal();
+  if (allStudents && allStudents.length && (currentTeacher || (typeof auth !== "undefined" && auth.currentUser))) {
+    allStudents = await getAccessibleStudents(allStudents);
+    await loadAndRenderCotationTable();
+  }
+};
+/* Barèmes matière : les notes TJ et EX du bulletin gardent le maximum réel de la matière. */
+Object.keys(COTATION_SUBJECT_MAX).forEach(subject => {
+  if (maxScores[subject]) {
+    maxScores[subject].tj = getCotationSubjectSchoolMax(subject);
+    maxScores[subject].exam = getCotationSubjectSchoolMax(subject);
+  }
+});
+
+const _renderNotesFormSubjectMaxOriginal = renderNotesForm;
+renderNotesForm = function() {
+  _renderNotesFormSubjectMaxOriginal();
+  BRANCHES.forEach(branch => {
+    const max = getCotationSubjectSchoolMax(branch.id);
+    ["tj", "ex"].forEach(type => {
+      const input = document.getElementById("n-" + branch.id + "-" + type);
+      if (input) {
+        input.max = String(max);
+        input.placeholder = type.toUpperCase() + " /" + max;
+      }
+    });
+  });
+};
+
+const _onNoteSubjectMaxOriginal = onNote;
+onNote = function(branchId, type, input) {
+  const max = getCotationSubjectSchoolMax(branchId);
+  let value = input.value === "" ? null : Number(input.value);
+  if (value !== null && (!Number.isFinite(value) || value < 0)) value = 0;
+  if (value !== null && value > max) {
+    value = max;
+    input.value = String(max);
+    toast("Maximum autorisé pour cette matière : " + max + " points.", "warn");
+  }
+  _onNoteSubjectMaxOriginal(branchId, type, input);
+  const grade = value === null ? null : numToGrade(value / max * 100);
+  const badgeId = type === "tj" ? "gtj-" + branchId : "gex-" + branchId;
+  const badge = document.getElementById(badgeId);
+  if (badge) {
+    badge.textContent = grade || "—";
+    badge.className = "grade-badge " + gradeColor(grade);
+  }
+  const tjInput = document.getElementById("n-" + branchId + "-tj");
+  const exInput = document.getElementById("n-" + branchId + "-ex");
+  const tj = tjInput && tjInput.value !== "" ? Number(tjInput.value) / max * 100 : null;
+  const ex = exInput && exInput.value !== "" ? Number(exInput.value) / max * 100 : null;
+  const averageGrade = tj !== null && ex !== null ? numToGrade((tj + ex) / 2) :
+    tj !== null ? numToGrade(tj) : ex !== null ? numToGrade(ex) : null;
+  const finalBadge = document.getElementById("gfin-" + branchId);
+  if (finalBadge) {
+    finalBadge.textContent = averageGrade || "—";
+    finalBadge.className = "grade-badge " + gradeColor(averageGrade);
+  }
+};
+
+/* Keep the cotation-to-bulletin transfer in raw subject points, not percentages out of 100. */
+const _getStudentCotationScoresSubjectMaxOriginal = getStudentCotationScores;
+getStudentCotationScores = async function(student, trimester) {
+  const result = await _getStudentCotationScoresSubjectMaxOriginal(student, trimester);
+  Object.keys(result || {}).forEach(subject => {
+    if (result[subject].tj !== null && result[subject].tj !== undefined) {
+      result[subject].tj = result[subject].tj / 100 * getCotationSubjectSchoolMax(subject);
+    }
+    if (result[subject].ex !== null && result[subject].ex !== undefined) {
+      result[subject].ex = result[subject].ex / 100 * getCotationSubjectSchoolMax(subject);
+    }
+  });
+  return result;
+};
+const _renderEditNotesFormSubjectMaxOriginal = renderEditNotesForm;
+renderEditNotesForm = function(existingSkills) {
+  _renderEditNotesFormSubjectMaxOriginal(existingSkills);
+  BRANCHES.filter(b => b.id !== "Application").forEach(branch => {
+    const max = getCotationSubjectSchoolMax(branch.id);
+    ["tj", "ex"].forEach(type => {
+      const input = document.getElementById("edit-n-" + branch.id + "-" + type);
+      if (input) {
+        input.max = String(max);
+        input.placeholder = "0–" + max;
+      }
+    });
+  });
+};
+
+/* ===== COTATION SELECTOR + TRUE TEST AVERAGE FIX ===== */
+getCotationTypeMax = function() {
+  return cotationState.type === "EX" ? getCotationSubjectSchoolMax(cotationState.subject) : 100;
+};
+getCotationSubjectTotal = function(subject) {
+  return cotationState.type === "EX" ? getCotationSubjectSchoolMax(subject) : 100;
+};
+
+/* Chaque test TJ est noté sur 100. Le bulletin affiche la moyenne arithmétique
+   des tests (ex. 60 et 80 => 70/100), puis la convertit au barème de la matière. */
+const _getStudentCotationScoresAverageFix = getStudentCotationScores;
+getStudentCotationScores = async function(student, trimester) {
+  const result = await _getStudentCotationScoresAverageFix(student, trimester);
+  return result;
+};
+
+/* La cotation utilise STRICTEMENT le même chargement que « Mes élèves ».
+   Aucun second filtre indépendant sur teacherId, branche ou classe. */
+async function getCotationStudentsForCurrentClass() {
+  // initStudents() est la fonction qui alimente réellement « Mes élèves ».
+  // On l'appelle pour garantir la même source, le même profil et les mêmes règles d'accès.
+  await initStudents();
+
+  const myClassStudents = Array.isArray(allStudents) ? allStudents.slice() : [];
+  const selectedClass = String(cotationState.className || "").trim();
+
+  // Le compte enseignant peut avoir plusieurs classes : la fiche ne garde que
+  // la classe affichée dans la cotation. Sans classe sélectionnée, on garde tout.
+  if (!selectedClass) return myClassStudents;
+
+  const filtered = myClassStudents.filter(st => {
+    const raw = st.classes ?? st.classe ?? st.class ?? st.className ?? "";
+    const values = Array.isArray(raw) ? raw :
+      (raw && typeof raw === "object"
+        ? Object.keys(raw).filter(k => raw[k] === true || raw[k] === 1 || raw[k] === "true")
+        : [raw]);
+    return values.some(value => areClassesCompatible(String(value ?? ""), [selectedClass]));
+  });
+
+  console.log("Cotation — liste reprise de « Mes élèves »:", myClassStudents.length,
+    "| classe cotation:", selectedClass, "| affichés:", filtered.length);
+  return filtered;
+}
+
+async function populateCotQuickSelects() {
+  const studentSel = document.getElementById("cotQuickStudent");
+  const subSel = document.getElementById("cotQuickSubBranch");
+  if (!studentSel || !subSel) return;
+  const students = await getCotationStudentsForCurrentClass();
+  const previous = studentSel.value;
+  studentSel.innerHTML = '<option value="">- Choisir un élève -</option>';
+  students.forEach(st => {
+    const id = st._id || st.id;
+    if (!id) return;
+    const option = document.createElement("option");
+    option.value = String(id);
+    option.textContent = buildStudentDisplayName(st) + " — " + (st.classes || st.classe || st.class || "");
+    studentSel.appendChild(option);
+  });
+  if (Array.from(studentSel.options).some(o => o.value === previous)) studentSel.value = previous;
+  const subject = cotationState.subject;
+  const config = subject && subject !== "all" ? COTATION_SUBJECTS[subject] : null;
+  const previousSub = subSel.value;
+  subSel.innerHTML = "";
+  if (!config) {
+    subSel.innerHTML = '<option value="">- Choisir d’abord une matière -</option>';
+  } else {
+    config.subBranches.forEach(sb => {
+      const option = document.createElement("option");
+      option.value = normalizeSubjectKey(sb);
+      option.dataset.max = String(getCotationSubBranchMax(subject, sb));
+      option.dataset.label = sb;
+      option.textContent = sb + " (/" + formatCotationMaxValue(getCotationSubBranchMax(subject, sb)) + ")";
+      subSel.appendChild(option);
+    });
+    if (Array.from(subSel.options).some(o => o.value === previousSub)) subSel.value = previousSub;
+  }
+}
+
+const _loadAndRenderCotationTableSelectorFixOriginal = loadAndRenderCotationTable;
+loadAndRenderCotationTable = async function() {
+  const data = await loadCotationData(cotationState.subject, cotationState.month, cotationState.type, cotationState.className);
+  const students = await getCotationStudentsForCurrentClass();
+  const table = document.getElementById("cotationTable");
+  if (!students.length && table) {
+    table.innerHTML = '<tbody><tr><td style="padding:24px;text-align:center;color:#b45309;">Aucun élève trouvé dans cette classe. Vérifiez la classe sélectionnée et les élèves enregistrés.</td></tr></tbody>';
+  } else if (cotationState.subject === "all") {
+    renderAllSubjectsTable(students, data);
+  } else {
+    renderCotationSubjectTable(cotationState.subject, students, data);
+  }
+  await populateCotQuickSelects();
+};
+/* ===== END COTATION SELECTOR + TRUE TEST AVERAGE FIX ===== */
+
+
+/* ===== TESTS TJ : boutons + vraie fenêtre de création avec dates ===== */
+const _ensureCotationPageWithTestSelect = ensureCotationPage;
+ensureCotationPage = function() {
+  _ensureCotationPageWithTestSelect();
+  const page = document.getElementById("page-cotation");
+  const select = page && page.querySelector("#cotAssessmentSelect");
+  if (!select) return;
+  const host = select.parentElement;
+  if (!host || host.querySelector("#cotTestButtons")) return;
+  host.innerHTML =
+    '<div style="width:100%;display:flex;flex-direction:column;gap:9px;">' +
+      '<label class="f-label" id="cotAssessmentLabel">Tests du trimestre</label>' +
+      '<div id="cotTestButtons" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;"></div>' +
+      '<div id="cotTestDateInfo" style="font-size:.76rem;color:#64748b;"></div>' +
+      '<select class="f-input" id="cotAssessmentSelect" onchange="onCotAssessmentChange()" style="display:none!important" aria-hidden="true"></select>' +
+    '</div>';
+  const add = page.querySelector("#cotAddTestBtn");
+  if (add) {
+    add.removeAttribute("onclick");
+    add.onclick = openCotTestModal;
+    add.innerHTML = '<i class="fas fa-plus"></i> Créer un test';
+    add.style.borderRadius = "9px";
+  }
+  const remove = page.querySelector("#cotRemoveTestBtn");
+  if (remove) remove.title = "Supprimer le test sélectionné";
+  if (!document.getElementById("cotCreateTestModal")) {
+    const modal = document.createElement("div");
+    modal.id = "cotCreateTestModal";
+    modal.style.cssText = "display:none;position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.58);align-items:center;justify-content:center;padding:16px;";
+    modal.innerHTML =
+      '<div style="background:#fff;width:min(440px,100%);border-radius:16px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+          '<h3 style="margin:0;color:#0f3d72;font-size:1.1rem;">Créer un nouveau test</h3>' +
+          '<button type="button" onclick="closeCotTestModal()" style="border:0;background:#f1f5f9;border-radius:8px;padding:6px 10px;cursor:pointer;">✕</button>' +
+        '</div>' +
+        '<p id="cotNewTestNumber" style="margin:0 0 16px;color:#64748b;font-size:.85rem;">Test suivant</p>' +
+        '<label class="f-label" for="cotTestStartDate">Date de début</label>' +
+        '<input class="f-input" type="date" id="cotTestStartDate" style="width:100%;margin:5px 0 13px;">' +
+        '<label class="f-label" for="cotTestEndDate">Date de fin</label>' +
+        '<input class="f-input" type="date" id="cotTestEndDate" style="width:100%;margin:5px 0 18px;">' +
+        '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
+          '<button type="button" class="btn btn-ghost" onclick="closeCotTestModal()">Annuler</button>' +
+          '<button type="button" class="btn btn-blue" id="cotConfirmCreateTest" onclick="confirmCotCreateTest()"><i class="fas fa-check"></i> Créer le test</button>' +
+        '</div>' +
+      '</div>';
+    modal.addEventListener("click", e => { if (e.target === modal) closeCotTestModal(); });
+    document.body.appendChild(modal);
+  }
+};
+
+function closeCotTestModal() {
+  const modal = document.getElementById("cotCreateTestModal");
+  if (modal) modal.style.display = "none";
+}
+function openCotTestModal() {
+  if (cotationState.type !== "TJ") return;
+  const list = cotationState.assessments || [];
+  const next = list.length + 1;
+  const title = document.getElementById("cotNewTestNumber");
+  if (title) title.textContent = "Le test sera enregistré sous le nom : Test " + next;
+  const today = new Date().toISOString().slice(0,10);
+  const start = document.getElementById("cotTestStartDate");
+  const end = document.getElementById("cotTestEndDate");
+  if (start) start.value = today;
+  if (end) end.value = today;
+  const modal = document.getElementById("cotCreateTestModal");
+  if (modal) modal.style.display = "flex";
+}
+function renderCotationTestButtons() {
+  const host = document.getElementById("cotTestButtons");
+  const select = document.getElementById("cotAssessmentSelect");
+  if (!host || !select) return;
+  const list = cotationState.assessments || [];
+  select.innerHTML = list.map(a => '<option value="' + a.id + '">' + a.label + '</option>').join("");
+  select.value = cotationState.assessmentId;
+  host.innerHTML = "";
+  list.forEach((a, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = a.label || ("Test " + (index + 1));
+    button.style.cssText = "border:1px solid " + (a.id === cotationState.assessmentId ? "#0f3d72" : "#cbd5e1") + ";background:" + (a.id === cotationState.assessmentId ? "#0f3d72" : "#fff") + ";color:" + (a.id === cotationState.assessmentId ? "#fff" : "#334155") + ";border-radius:9px;padding:9px 15px;font-weight:800;cursor:pointer;";
+    button.onclick = async () => {
+      cotationState.assessmentId = a.id;
+      renderCotationTestButtons();
+      await loadAndRenderCotationTable();
+    };
+    host.appendChild(button);
+  });
+  const info = document.getElementById("cotTestDateInfo");
+  const active = list.find(a => a.id === cotationState.assessmentId);
+  if (info) info.textContent = active
+    ? "Période : " + (active.startDate || "date non définie") + " au " + (active.endDate || "date non définie")
+    : "";
+}
+async function loadCotationAssessments() {
+  const select = document.getElementById("cotAssessmentSelect");
+  if (!select) return;
+  const add = document.getElementById("cotAddTestBtn");
+  const remove = document.getElementById("cotRemoveTestBtn");
+  const label = document.getElementById("cotAssessmentLabel");
+  if (cotationState.type === "EX") {
+    await migrateLegacyCotationForActiveAssessment();
+    cotationState.assessments = [{ id: "exam", label: "Examen du trimestre" }];
+    cotationState.assessmentId = "exam";
+    if (label) label.textContent = "Examen (un seul par trimestre)";
+    if (add) add.style.display = "none";
+    if (remove) remove.style.display = "none";
+  } else {
+    if (label) label.textContent = "Tests du trimestre";
+    if (add) { add.style.display = ""; add.onclick = openCotTestModal; }
+    if (remove) remove.style.display = "";
+    await migrateLegacyCotationForActiveAssessment();
+    let records = {};
+    if (cotationState.subject !== "all" && cotationState.trimestre !== "BN" && cotationState.className) {
+      const snap = await db.ref(getCotationV2BasePath(cotationState.className, cotationState.subject, cotationState.trimestre, "TJ")).once("value");
+      records = snap.val() || {};
+    }
+    const tests = Object.keys(records).filter(id => records[id] && typeof records[id] === "object").map(id => ({
+      id,
+      createdAt: Number(records[id].createdAt || 0),
+      startDate: records[id].startDate || "",
+      endDate: records[id].endDate || "",
+      oldLabel: records[id].label || ""
+    })).sort((a,b) => (a.createdAt - b.createdAt) || a.id.localeCompare(b.id, "fr", {numeric:true}));
+    cotationState.assessments = tests.length ? tests.map((a,i) => ({...a, label:"Test " + (i+1)})) : [{id:"test_1",label:"Test 1",startDate:"",endDate:""}];
+    if (!cotationState.assessments.some(a => a.id === cotationState.assessmentId)) cotationState.assessmentId = cotationState.assessments[0].id;
+  }
+  renderCotationTestButtons();
+  renderCotationAssessmentControls();
+}
+async function confirmCotCreateTest() {
+  const startDate = document.getElementById("cotTestStartDate")?.value || "";
+  const endDate = document.getElementById("cotTestEndDate")?.value || "";
+  if (!startDate || !endDate) { toast("Veuillez saisir les dates de début et de fin.", "warn"); return; }
+  if (endDate < startDate) { toast("La date de fin doit être après la date de début.", "warn"); return; }
+  if (!cotationState.className || !cotationState.subject || cotationState.subject === "all") {
+    toast("Choisissez d'abord une classe et une matière.", "warn"); return;
+  }
+  const number = (cotationState.assessments || []).length + 1;
+  const label = "Test " + number;
+  const id = "test_" + Date.now();
+  const path = getCotationV2AssessmentPath(cotationState.className, cotationState.subject, cotationState.trimestre, "TJ", id);
+  const button = document.getElementById("cotConfirmCreateTest");
+  if (button) { button.disabled = true; button.textContent = "Création..."; }
+  try {
+    await db.ref(path).set({
+      label, startDate, endDate, entries: {},
+      exerciseConfig: cotationState.exerciseConfig[cotationState.subject] || {},
+      class: cotationState.className, subject: cotationState.subject,
+      trimester: cotationState.trimestre, type:"TJ", month:cotationState.month,
+      teacherId:getCurrentTeacherUid(), teacherName:currentTeacher && currentTeacher.name || "",
+      branch:getCurrentTeacherBranchNormalized(), createdAt:Date.now()
+    });
+    cotationState.assessmentId = id;
+    closeCotTestModal();
+    await loadCotationAssessments();
+    await loadAndRenderCotationTable();
+    toast(label + " créé avec ses dates.", "ok");
+  } catch (e) {
+    console.error("Création du test impossible:", e);
+    toast("Impossible de créer le test. Vérifiez la connexion.", "error");
+  } finally {
+    if (button) { button.disabled = false; button.innerHTML = '<i class="fas fa-check"></i> Créer le test'; }
+  }
+}
+/* ===== FIN TESTS TJ : boutons + dates ===== */
+
+
+/* ===== BARÈMES RESTAURÉS : aucun changement de maximum entre TJ et EX ===== */
+/* TJ : chaque test est saisi sur 100, puis la moyenne est ramenée au barème officiel.
+   EX : conserve directement le barème officiel de la matière. */
+getCotationTypeMax = function() {
+  return cotationState.type === "EX"
+    ? getCotationSubjectSchoolMax(cotationState.subject)
+    : 100;
+};
+getCotationSubjectTotal = function(subject) {
+  return cotationState.type === "EX"
+    ? getCotationSubjectSchoolMax(subject)
+    : 100;
+};
+
+/* Retire la division par deux ajoutée précédemment : les points du bulletin
+   restent exactement ceux calculés selon le barème officiel de chaque matière. */
+const _getStudentScoresRestoreOriginal = getStudentCotationScores;
+getStudentCotationScores = async function(student, trimester) {
+  return await _getStudentScoresRestoreOriginal(student, trimester);
+};
+
+const _renderRestoredBarScaleInfoOriginal = renderCotationAssessmentControls;
+renderCotationAssessmentControls = function() {
+  _renderRestoredBarScaleInfoOriginal();
+  const official = getCotationSubjectSchoolMax(cotationState.subject);
+  const info = document.getElementById("cotSubjectMaxInfo");
+  if (info) info.textContent =
+    "Barème officiel : /" + official +
+    " • TJ : tests notés sur /100, moyenne convertie sur /" + official +
+    " • EXAMEN : /" + official;
+  const ex = document.getElementById("cotTypeEX");
+  if (ex) ex.textContent = "📝 EXAMEN /" + official;
+};
+/* ===== FIN RESTAURATION DES BARÈMES ===== */
+
+
+/* ===== GRAPHIQUE DE PROGRESSION PAR NIVEAU / CLASSE ===== */
+let cotationProgressChart = null;
+function ensureCotationGraphPanel() {
+  const tableCard = document.getElementById("cotationTable")?.closest(".card");
+  if (!tableCard || document.getElementById("cotGraphPanel")) return;
+  const panel = document.createElement("div");
+  panel.id = "cotGraphPanel";
+  panel.className = "card";
+  panel.style.cssText = "padding:14px;margin-bottom:10px;display:none;";
+  panel.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' +
+      '<strong style="color:#0f3d72;"><i class="fas fa-chart-line"></i> Courbe de progression du niveau</strong>' +
+      '<button type="button" class="btn btn-ghost" onclick="closeCotationGraph()">Fermer</button>' +
+    '</div><div style="height:300px;position:relative;"><canvas id="cotProgressCanvas"></canvas></div>';
+  tableCard.parentNode.insertBefore(panel, tableCard);
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "btn btn-blue";
+  toggle.id = "cotGraphToggle";
+  toggle.style.cssText = "margin:0 0 8px 0;";
+  toggle.innerHTML = '<i class="fas fa-chart-line"></i> Voir le graphique';
+  toggle.onclick = showCotationGraph;
+  tableCard.parentNode.insertBefore(toggle, panel);
+}
+function closeCotationGraph() {
+  const panel = document.getElementById("cotGraphPanel");
+  if (panel) panel.style.display = "none";
+}
+async function showCotationGraph() {
+  ensureCotationGraphPanel();
+  const panel = document.getElementById("cotGraphPanel");
+  if (!panel) return;
+  panel.style.display = "block";
+  if (typeof Chart === "undefined") {
+    toast("Le module graphique Chart.js n'est pas disponible.", "error");
+    return;
+  }
+  if (cotationState.type !== "TJ") {
+    toast("Sélectionnez TJ pour voir la progression des tests.", "warn");
+    return;
+  }
+  const cls = cotationState.className;
+  const subject = cotationState.subject;
+  const tests = cotationState.assessments || [];
+  const students = await getCotationStudentsForCurrentClass();
+  const labels = tests.map((t,i) => t.label || ("Test " + (i+1)));
+  const values = [];
+  for (const test of tests) {
+    const path = getCotationV2AssessmentPath(cls, subject, cotationState.trimestre, "TJ", test.id);
+    const snap = await db.ref(path).once("value").catch(() => null);
+    const record = snap && snap.val();
+    let sum = 0, count = 0;
+    students.forEach(st => {
+      const row = record && record.entries && record.entries[st._id || st.id];
+      if (!row) return;
+      Object.values(row).forEach(v => {
+        const score = Number(v && typeof v === "object" ? v.score : v);
+        if (Number.isFinite(score)) { sum += score; count++; }
+      });
+    });
+    values.push(count ? Number((sum/count).toFixed(1)) : null);
+  }
+  const ctx = document.getElementById("cotProgressCanvas");
+  if (!ctx) return;
+  if (cotationProgressChart) cotationProgressChart.destroy();
+  cotationProgressChart = new Chart(ctx, {
+    type: "line",
+    data: { labels, datasets: [{
+      label: "Moyenne de la classe — " + (COTATION_SUBJECTS[subject]?.label || subject) + " (" + cls + ")",
+      data: values, borderColor: "#0f3d72", backgroundColor: "rgba(15,61,114,.12)",
+      borderWidth: 3, tension: .35, fill: true, spanGaps: false,
+      pointRadius: 5, pointHoverRadius: 7
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, position: "bottom" } },
+      scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: "Moyenne /100" } },
+        x: { title: { display: true, text: "Tests du trimestre" } } }
+    }
+  });
+}
+const _ensureCotationPageGraphOriginal = ensureCotationPage;
+ensureCotationPage = function() {
+  _ensureCotationPageGraphOriginal();
+  ensureCotationGraphPanel();
+};
+/* ===== FIN GRAPHIQUE DE PROGRESSION ===== */
+
+
+
+
+/* ===== END COTATION / BULLETIN REPAIR ===== */
 
   /* ══════════════════════════════════════
     INIT
