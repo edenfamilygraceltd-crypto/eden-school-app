@@ -13820,7 +13820,7 @@
       let classAverageSum = 0;
       let classAverageCount = 0;
       if (['1', '2', '3'].includes(selectedDashboardTerm) && typeof getStudentCotationScores === 'function') {
-        for (const student of dashboardStudents) {
+        await Promise.all(dashboardStudents.map(async (student) => {
           try {
             const cotation = await getStudentCotationScores(student, selectedDashboardTerm);
             const subjectPercentages = [];
@@ -13844,7 +13844,7 @@
           } catch (e) {
             console.warn('Moyenne cotation indisponible pour un élève:', e);
           }
-        }
+        }));
       }
       const avgClass = classAverageCount ? Math.round(classAverageSum / classAverageCount) : null;
       const stM = document.getElementById('stMoyenne');
@@ -13857,30 +13857,32 @@
         const convs = [];
         convSnap.forEach(c => convs.push({ id: c.key, ...c.val() }));
         const mine = convs.filter(c => Array.isArray(c.participants) && c.participants.includes(uid));
-        for (const c of mine) {
-          const mSnap = await db.ref(`conversations/${c.id}/messages`).limitToLast(1).once('value');
-          if (!mSnap.exists()) continue;
-          let last = null;
-          mSnap.forEach(x => last = x.val());
+        const lastMessages = await Promise.all(mine.map(async c => {
+          try {
+            const snap = await db.ref(`conversations/${c.id}/messages`).limitToLast(1).once('value');
+            let last = null; snap.forEach(x => last = x.val()); return last;
+          } catch (err) { return null; }
+        }));
+        unreadConv = lastMessages.filter(last => {
           const readBy = Array.isArray(last?.readBy) ? last.readBy : [];
-          if (last?.senderId !== uid && !readBy.includes(uid)) unreadConv++;
-        }
+          return !!last && last.senderId !== uid && !readBy.includes(uid);
+        }).length;
       }
       const stMsg = document.getElementById('stMessages');
       if (stMsg) stMsg.textContent = `${unreadConv}`;
 
-      const missing = [];
-      for (const s of allStudents) {
+      const tObj = getCurrentTermConfigObj();
+      const termStart = tObj?.startDate ? new Date(tObj.startDate).getTime() : Date.now();
+      const daysSinceTermStart = Math.max(0, Math.floor((Date.now() - termStart) / 86400000));
+      const missingResults = await Promise.all(allStudents.map(async (s) => {
         const cls = s.classes || s.classe || '';
         const sid = s._id || s.id;
-        const found = await fetchStudentTrimesterBulletin(sid, cls, teacherBranch || '', currentTerm);
-        if (!found) {
-          const tObj = getCurrentTermConfigObj();
-          const start = tObj?.startDate ? new Date(tObj.startDate).getTime() : Date.now();
-          const daysSince = Math.max(0, Math.floor((Date.now() - start) / 86400000));
-          missing.push({ name: buildStudentDisplayName(s), cls, daysSince });
-        }
-      }
+        try {
+          const found = await fetchStudentTrimesterBulletin(sid, cls, teacherBranch || '', currentTerm);
+          return found ? null : { name: buildStudentDisplayName(s), cls, daysSince: daysSinceTermStart };
+        } catch (err) { console.warn('V?rification bulletin indisponible:', sid, err); return null; }
+      }));
+      const missing = missingResults.filter(Boolean);
       const alertsEl = document.getElementById('alertsList');
       if (alertsEl) {
         if (!missing.length) {
