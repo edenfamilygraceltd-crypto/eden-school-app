@@ -15,7 +15,7 @@
       }
       </script>
 
-      
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="mobile-web-app-capable" content="yes">
@@ -1464,9 +1464,9 @@
     gap:6px;
   }
 
-  .bul-hd-left { 
-    display:flex; 
-    align-items:center; 
+  .bul-hd-left {
+    display:flex;
+    align-items:center;
     gap:12px;
     flex:1;
   }
@@ -2430,7 +2430,17 @@
     .chat-toolbar .chat-back { display:inline-flex !important; }
     .kanban-wrap { grid-template-columns:1fr; }
   }
-  </style>
+
+  :root { --keyboard-inset: 0px; }
+  body.keyboard-open { scroll-padding-bottom: calc(var(--keyboard-inset) + 24px); }
+  body.keyboard-open .content { padding-bottom: calc(96px + var(--keyboard-inset) + var(--safe-bottom, 0px)); }
+  body.keyboard-open .modal-overlay { align-items: flex-start; overflow-y: auto; padding-top: 12px; padding-bottom: calc(var(--keyboard-inset) + 18px); }
+  input, textarea, select { scroll-margin-top: 90px; scroll-margin-bottom: calc(var(--keyboard-inset) + 24px); }
+  @media (max-width: 768px) {
+    .content { min-height: 100dvh; }
+    .modal-overlay > .modal { max-height: calc(100dvh - 24px); overflow-y: auto; }
+  }
+</style>
   </head>
   <body>
 
@@ -2458,7 +2468,7 @@
       <div class="sb-section">Navigation</div>
       <button class="sb-btn active" onclick="navTo('dashboard')"><i class="fas fa-chart-pie"></i> Tableau de bord</button>
       <button class="sb-btn" onclick="toggleMyClassesSubmenu()"><i class="fas fa-chalkboard-user"></i> My Classe <i class="fas fa-chevron-down" style="margin-left:auto; font-size:.7rem;"></i></button>
-      
+
       <div class="submenu" id="myClassesSubmenu">
         <button class="sb-btn" onclick="navTo('students'); toggleMyClassesSubmenu()"><i class="fas fa-users"></i> Mes élèves</button>
         <button class="sb-btn" onclick="navTo('attendance'); toggleMyClassesSubmenu()"><i class="fas fa-calendar-check"></i> Présences</button>
@@ -2562,6 +2572,15 @@
               <div class="stat-lbl">Messages non lus</div>
               <div class="stat-sub" style="color:var(--orange)"><i class="fas fa-exclamation"></i> À traiter</div>
             </div>
+          </div>
+
+          <div class="card" id="appAttendanceCard">
+            <div class="card-hd">
+              <div class="card-ttl"><i class="fas fa-fingerprint"></i> Pr\u00e9sences enregistr\u00e9es avec Eden Smart</div>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="loadAppAttendanceDashboard()"><i class="fas fa-sync"></i> Actualiser</button>
+            </div>
+            <div id="appAttendanceStatus" class="stat-sub">Synchronisation avec Firebase\u2026</div>
+            <div id="appAttendanceList" style="overflow-x:auto;margin-top:10px;"><div class="loading-wrap"><div class="spinner"></div><p>Chargement des pointages\u2026</p></div></div>
           </div>
 
           <!-- Quick action card -->
@@ -3209,7 +3228,7 @@
         <!-- Bulletin History List -->
         <div class="card">
           <div class="loading-wrap" id="histLoad" style="display:none;"><div class="spinner"></div><p style="font-size:.8rem;font-weight:600;">Chargement…</p></div>
-          
+
           <style>
             .bulletin-card {
               background:#fff;
@@ -4055,7 +4074,7 @@
     try {
       const classesRef = db.ref('config/classes');
       const classesSnapshot = await classesRef.once('value');
-      
+
       if (classesSnapshot.exists()) {
         const classes = classesSnapshot.val();
         classesData.maternelle = classes.maternelle || [];
@@ -4111,7 +4130,7 @@
   function populateClassDropdownsFromDb() {
     // Récupérer toutes les classes de Firebase
     const allClasses = [];
-    
+
     // Ajouter les classes maternelle
     if (classesData.maternelle && Array.isArray(classesData.maternelle)) {
       classesData.maternelle.forEach(c => {
@@ -4121,7 +4140,7 @@
         });
       });
     }
-    
+
     // Ajouter les classes primaire
     if (classesData.primaire && Array.isArray(classesData.primaire)) {
       classesData.primaire.forEach(c => {
@@ -4131,7 +4150,7 @@
         });
       });
     }
-    
+
     // Remplir le dropdown "Ajouter élève"
     const newClassSelect = document.getElementById('newClass');
     if (newClassSelect) {
@@ -4144,7 +4163,7 @@
       });
       console.log('✅ Dropdown classe élève rempli avec', allClasses.length, 'classes');
     }
-    
+
     // Remplir le dropdown "Nouvelle activité"
     const actClassSelect = document.getElementById('actClass');
     if (actClassSelect) {
@@ -4204,7 +4223,7 @@
   function computeStudentDegree(classCode) {
     if (!classCode) return null;
     const normalized = classCode.toString().trim().toUpperCase();
-    
+
     // Maternelle: N1→1, N2→2, N3→3
     if (normalized.startsWith('N')) {
       const level = normalized.substring(1, 2); // Get the digit after 'N'
@@ -4212,13 +4231,13 @@
       if (level === '2') return '2';
       if (level === '3') return '3';
     }
-    
+
     // Primary: P1→1, P2→2, ..., P6→6
     if (normalized.startsWith('P')) {
       const level = normalized.substring(1, 2); // Get the digit after 'P'
       if (['1', '2', '3', '4', '5', '6'].includes(level)) return level;
     }
-    
+
     return null;
   }
 
@@ -4247,10 +4266,10 @@
   /* Calculate Application grade automatically from all subjects' TJ/EX averages */
   function calculateApplicationGrade(notes) {
     if (!notes || Object.keys(notes).length === 0) return 'B';
-    
+
     let totalScore = 0;
     let count = 0;
-    
+
     Object.entries(notes).forEach(([subjectId, grades]) => {
       if (normalize(subjectId) === 'application') return; // Skip application itself
       if (grades && typeof grades === 'object') {
@@ -4262,10 +4281,10 @@
         }
       }
     });
-    
+
     if (count === 0) return 'B';
     const average = totalScore / count;
-    
+
     // Convert average to grade
     if (average >= 70) return 'E';
     if (average >= 60) return 'TB';
@@ -4514,6 +4533,7 @@
     // Toujours initialiser le dashboard (sinon page vide si session absente)
     await initDashboard();
     // Don't redirect - let user work in demo mode
+    checkTeacherPortalUpdate();
   });
 
   async function loadUserProfile({ uid, email }) {
@@ -5206,7 +5226,7 @@
 
       // Filter students - use accessible students function
       myClassStudents = await getAccessibleStudents(loadedStudents);
-      
+
       console.log(`✅ My Class Students loaded: ${myClassStudents.length}`);
 
     } catch(e) {
@@ -5219,7 +5239,7 @@
     const myClassInfoEl = document.getElementById('myClassInfo');
     const classes = getTeacherClassFilter();
     if (myClassInfoEl && classes && classes.length) myClassInfoEl.textContent = classes[0];
-    
+
     filteredMyClassStudents = [...myClassStudents];
     renderMyClassTable();
     updateMyClassStats();
@@ -5972,28 +5992,28 @@
     try {
       // Load data with individual error handling
       let sSnap, bSnap, mSnap, cSnap;
-      
+
       try {
         sSnap = await db.ref('students').once('value');
       } catch(e) {
         console.warn('Students data not available:', e);
         sSnap = { exists: () => false };
       }
-      
+
       try {
         bSnap = await db.ref('bulletins_maternelle').once('value');
       } catch(e) {
         console.warn('Bulletins data not available:', e);
         bSnap = { exists: () => false };
       }
-      
+
       try {
         mSnap = await db.ref('messages').orderByChild('read').equalTo(false).once('value');
       } catch(e) {
         console.warn('Messages data not available:', e);
         mSnap = { exists: () => false };
       }
-      
+
       try {
         cSnap = await loadClassesData();
       } catch(e) {
@@ -6025,7 +6045,7 @@
       allBulletins = getAccessibleBulletins(loadedBulletins);
 
       const bulCount = allBulletins.length;
-      
+
       // Calculate average performance
       let totalGrades = 0;
       let gradeCount = 0;
@@ -6038,7 +6058,7 @@
         }
       });
       const avg = gradeCount > 0 ? Math.round(totalGrades / gradeCount) : 0;
-      
+
       const msgCount = mSnap.exists() ? Object.keys(mSnap.val()).length : 0;
 
       const stElevesEl = document.getElementById('stEleves');
@@ -6145,12 +6165,12 @@
   function renderAlerts() {
     const container = document.getElementById('alertsList');
     if (!container) return;
-    
+
     if (!alerts.length) {
       container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h4>Aucune alerte</h4><p>Tous les bulletins sont à jour</p></div>';
       return;
     }
-    
+
     container.innerHTML = '';
     alerts.forEach(alert => {
       const div = document.createElement('div');
@@ -6300,11 +6320,11 @@
 
     try {
       console.log('\n🔄 LOADING STUDENTS FROM DATABASE');
-      
+
       // Fetch all students from /students
       const studentsSnap = await db.ref('students').once('value');
       const loadedStudents = [];
-      
+
       if (studentsSnap.exists()) {
         studentsSnap.forEach(child => {
           const s = child.val();
@@ -6318,7 +6338,7 @@
       // Use accessible students (filtering based on currentTeacher)
       allStudents = await getAccessibleStudents(loadedStudents);
       console.log(`✅ Accessible students for this teacher: ${allStudents.length}`);
-      
+
     } catch(err) {
       console.error('Error loading students:', err);
       toast('Erreur de chargement des élèves', 'err');
@@ -6449,9 +6469,9 @@
     if (stBirthdayEl) stBirthdayEl.textContent = bday;
   }
 
-  function showAddStudentModal() { 
-    populateClassDropdownsFromDb(); 
-    openModal('addStuModal'); 
+  function showAddStudentModal() {
+    populateClassDropdownsFromDb();
+    openModal('addStuModal');
   }
 
   async function saveNewStudent() {
@@ -6635,9 +6655,9 @@
         const loaded = [];
         if (snap.exists()) snap.forEach(c=>{ const s=c.val(); s._id=c.key; loaded.push(s); });
         allStudents = await getAccessibleStudents(loaded);
-      } catch(e) { 
+      } catch(e) {
         console.error('Error loading students', e);
-        allStudents = []; 
+        allStudents = [];
       }
     }
 
@@ -6889,9 +6909,9 @@
     });
   }
 
-  function showAddActivityModal() { 
-    populateClassDropdownsFromDb(); 
-    openModal('addActModal'); 
+  function showAddActivityModal() {
+    populateClassDropdownsFromDb();
+    openModal('addActModal');
   }
 
   async function saveActivity() {
@@ -7197,7 +7217,7 @@
   function populateClassFilter() {
     const select = document.getElementById('bFilterCls');
     if (!select) return;
-    
+
     // Keep the hardcoded maternelle options since degree is auto-computed
     // The filter is now based on class niveau (N1, N2, N3), not individual classes
     select.innerHTML = `
@@ -7248,31 +7268,31 @@
     // Filter to maternelle and validate teacher access
     filteredStudents = allStudents.filter(s => {
       const cls = studentClassText(s.classes ?? s.classe ?? s.class ?? '').toUpperCase();
-      
+
       // Filter by maternelle (N classes only)
       if (!cls.startsWith('N')) return false;
-      
+
       // Teacher access control validation
       if (currentTeacher) {
         const studentTeacherId = s.teacherId || s.teacher_id || '';
         const studentBranch = (s.branch || s.schoolBranch || '').toString().trim().toLowerCase();
         const studentClasses = studentClassText(s.classes ?? s.classe ?? s.class ?? '').trim();
-        
+
         const teacherUid = currentTeacher.uid || currentTeacher.id || '';
         const teacherBranch = (currentTeacher.branch || currentTeacher.schoolBranch || '').toString().trim().toLowerCase();
         const teacherClasses = getTeacherClasses(currentTeacher);
-        
+
         // Rule 1: Check if student.teacherId matches teacher.uid
         if (studentTeacherId && studentTeacherId !== teacherUid) return false;
-        
+
         // Rule 2: Check if student.branch matches teacher.branch
         if (studentBranch && teacherBranch && studentBranch !== teacherBranch) return false;
-        
+
         // Rule 3: Check if student.classes matches teacher.classes (if teacher has classes assigned)
         const hasTeacherClasses = teacherClasses.some(c => c && c.length > 0);
         if (hasTeacherClasses && !areClassesCompatible(studentClasses, teacherClasses)) return false;
       }
-      
+
       return true;
     });
 
@@ -7281,10 +7301,10 @@
       filteredStudents = allStudents.filter(s => {
         const cls = studentClassText(s.classes ?? s.classe ?? s.class ?? '').toUpperCase();
         if (!cls.startsWith('N')) return false;
-        
+
         const studentTeacherId = s.teacherId || s.teacher_id || '';
         const teacherUid = currentTeacher.uid || currentTeacher.id || '';
-        
+
         return studentTeacherId === teacherUid;
       });
     }
@@ -7341,7 +7361,7 @@
     list.innerHTML = '';
     filteredStudents.forEach(s => {
       const name = `${s.firstName||s.prenom||''} ${s.lastName||s.nom||''}`.trim()||s.name||'Inconnu';
-      
+
       const el   = document.createElement('div');
       el.className = 'stu-item' + (selectedStudent&&selectedStudent._id===s._id?' selected':'');
       el.onclick   = () => selectBulletinStudent(s, el);
@@ -7361,7 +7381,7 @@
     const studentName = `${s.firstName||s.prenom||''} ${s.lastName||s.nom||''}`.trim() || s.name || 'Élève inconnu';
     const studentClass = s.classes || s.classe || '';
     const studentBranch = s.branch || s.schoolBranch || '';
-    
+
     // Store selected student with all required fields
     selectedStudent = {
       _id: s._id || s.id || '',
@@ -7377,21 +7397,21 @@
       teacherId: s.teacherId || '',
       ...s
     };
-    
+
     // Debug logging
     console.log('✅ Student selected:', selectedStudent);
     console.log('📋 Student data:', { name: studentName, class: studentClass, branch: studentBranch });
-    
+
     // Load existing trimestres for this student
     loadExistingTrimestresForStudent(selectedStudent);
-    
+
     // Update UI
     document.querySelectorAll('#bStuList .stu-item').forEach(i=>{ i.classList.remove('selected'); i.querySelector('i.fa-check-circle').style.display='none'; });
     el.classList.add('selected');
     el.querySelector('i.fa-check-circle').style.display = 'block';
 
     const clsName = getClassName(studentClass);
-    
+
     // Update selection info display - branch instead of degree
     const bSelAvaEl = document.getElementById('bSelAva');
     if (bSelAvaEl) bSelAvaEl.textContent = ini(studentName);
@@ -7410,14 +7430,14 @@
 
     const bSelInfoEl = document.getElementById('bSelInfo');
     if (bSelInfoEl) bSelInfoEl.style.display = 'block';
-    
+
     // Auto-fill teacher name
     if (currentTeacher) {
       const teacherName = currentTeacher.name || `${currentTeacher.firstName||''} ${currentTeacher.lastName||''}`.trim() || 'Enseignant';
       const bEnseignantEl = document.getElementById('bEnseignant');
       if (bEnseignantEl) bEnseignantEl.value = teacherName;
     }
-    
+
     // Auto-fill student data in bulletin preview
     const bulNomEl = document.getElementById('bulNom');
     if (bulNomEl) bulNomEl.textContent = studentName;
@@ -7430,7 +7450,7 @@
       const bulEnsEl = document.getElementById('bulEns');
       if (bulEnsEl) bulEnsEl.textContent = teacherName;
     }
-    
+
     toast(`${studentName} sélectionné(e)`, 'ok');
   }
 
@@ -7577,7 +7597,7 @@
         }
       }
       const data = (snapshot && snapshot.exists()) ? snapshot.val() : {};
-      
+
       const normalizeTrimValue = (value, fallbackKey = '') => {
         const raw = (value ?? '').toString().trim().toUpperCase();
         if (raw === 'BN' || raw === 'ANNUEL' || raw === 'ANNUAL') return 'BN';
@@ -7599,9 +7619,9 @@
           trimester: normalizeTrimValue(b.trimester || b.trimestre, key),
           key: key
         }));
-      
+
       console.log('✅ Found existing trimesters:', existingBulletins.map(b => b.trimester));
-      
+
       // Update trimester selector with existing trimesters
       const trimesterSelect = document.getElementById('bTrimestre');
       if (trimesterSelect && existingBulletins.length > 0) {
@@ -7619,7 +7639,7 @@
           }
         });
       }
-      
+
     } catch (error) {
       console.error('❌ Error loading existing trimesters:', error);
       if (isFirebaseNetworkError(error)) {
@@ -7671,10 +7691,10 @@
         console.log('ℹ️ No existing bulletin found, create new one');
         return null;
       }
-      
+
       const existingData = snapshot.val();
       console.log('✅ Found existing bulletin:', existingData);
-      
+
       // Populate BULLETIN object with existing data
       BULLETIN.notes = migrateBulletinData(existingData.skills || {});
       BULLETIN.commentaire = existingData.appreciation || '';
@@ -7682,21 +7702,21 @@
       BULLETIN.trimestre = existingData.trimester || trimester;
       BULLETIN.annee = existingData.annee || new Date().getFullYear();
       BULLETIN.enseignant = existingData.teacherName || existingData.teacher || '';
-      
+
       // Update form fields with existing data
       const commentaireEl = document.getElementById('bCommentaire');
       if (commentaireEl) commentaireEl.value = BULLETIN.commentaire;
-      
+
       const enseignantEl = document.getElementById('bEnseignant');
       if (enseignantEl) enseignantEl.value = BULLETIN.enseignant;
-      
+
       const trimestresEl = document.getElementById('bTrimestre');
       if (trimestresEl) trimestresEl.value = BULLETIN.trimestre;
-      
+
       // Regenerate forms to show loaded data
       renderNotesForm();
       renderConduiteForm();
-      
+
       // Repopulate grades in notes form
       Object.entries(BULLETIN.notes).forEach(([branchId, grades]) => {
         if (grades && typeof grades === 'object') {
@@ -7710,7 +7730,7 @@
           }
         }
       });
-      
+
       // Repopulate conduct grades by selecting the grade buttons
       Object.entries(BULLETIN.conduite).forEach(([key, grade]) => {
         const idx = key.substring(1); // Extract index from 'c0', 'c1', etc.
@@ -7723,11 +7743,11 @@
           });
         }
       });
-      
+
       console.log('📋 Form fields updated with existing data');
       toast('Bulletin existant chargé!', 'ok');
       return true;
-      
+
     } catch (error) {
       console.error('❌ Error loading existing bulletin:', error);
       if (isFirebaseNetworkError(error)) {
@@ -8053,7 +8073,7 @@
   /* MIGRATION: Convert old abbreviated subject IDs to full names */
   function migrateBulletinData(bulletinNotes) {
     if (!bulletinNotes || typeof bulletinNotes !== 'object') return bulletinNotes;
-    
+
     const idMapping = {
       'pre-math': 'Pre-mathématique',
       'francais': 'Français',
@@ -8063,13 +8083,13 @@
       'physique': 'Activité Physique et Motrice',
       'application': 'Application'
     };
-    
+
     const migratedNotes = {};
     Object.entries(bulletinNotes).forEach(([key, value]) => {
       const newKey = idMapping[key] || key; // Use mapped name or keep original
       migratedNotes[newKey] = value;
     });
-    
+
     return migratedNotes;
   }
 
@@ -8079,12 +8099,12 @@
     if (!ensureOnlineForFirebase('sauvegarder le bulletin')) return;
     const selectedStudentId = selectedStudent._id || selectedStudent.id || '';
     if (!selectedStudentId) { toast('ID élève introuvable', 'err'); return; }
-    
+
     // Use selected student data with safe fallbacks
     const studentName = selectedStudent.name || selectedStudent.nom || (selectedStudent.firstName && selectedStudent.lastName ? `${selectedStudent.firstName} ${selectedStudent.lastName}` : '') || 'Nom inconnu';
     const studentClasse = selectedStudent.classes || selectedStudent.classe || '';
     const studentBranch = selectedStudent.branch || selectedStudent.schoolBranch || '';
-    
+
     const teacherBranch = (currentTeacher?.branch || currentTeacher?.schoolBranch || '').toString().trim() || '';
     const teacherName = (currentTeacher?.name || `${currentTeacher?.firstName||''} ${currentTeacher?.lastName||''}`.trim() || 'Enseignant').trim();
 
@@ -8124,7 +8144,7 @@
       status: 'published',
       publishedAt: new Date().toISOString()
     };
-    
+
     // Normalisation requise avant d'écrire dans la base de données
     data.class = (data.class || '').toString().trim().split('_')[0].toUpperCase();
     data.section = 'maternelle';
@@ -8136,7 +8156,7 @@
       // Save to one or several paths (Kimisaagara: dual path)
       const savePaths = getBulletinStorePaths(effectiveBranch, studentClasse || normalizedClass, selectedStudentId, selectedTrimester);
       await Promise.all(savePaths.map(path => db.ref(path).set(data)));
-      
+
       allBulletins.push({...data, _id:`${selectedStudentId}_${selectedTrimester}`});
 
       // Sauvegarder aussi dans la collection /reports
@@ -8425,12 +8445,12 @@
       publishBtn.disabled = true;
       publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publication...';
     }
-    
+
     // Use selected student data with safe fallbacks
     const studentName = selectedStudent.name || selectedStudent.nom || (selectedStudent.firstName && selectedStudent.lastName ? `${selectedStudent.firstName} ${selectedStudent.lastName}` : '') || 'Nom inconnu';
     const studentClasse = selectedStudent.classes || selectedStudent.classe || '';
     const studentBranch = selectedStudent.branch || selectedStudent.schoolBranch || '';
-    
+
     const teacherBranch = (currentTeacher?.branch || currentTeacher?.schoolBranch || '').toString().trim() || '';
     const teacherName = (currentTeacher?.name || `${currentTeacher?.firstName||''} ${currentTeacher?.lastName||''}`.trim() || 'Enseignant').trim();
 
@@ -8484,11 +8504,11 @@
       status: 'published',
       publishedAt: new Date().toISOString()
     };
-    
+
     console.log('📤 Publishing bulletin with data:', data);
       // Save to one or several paths (Kimisagara: dual path)
       await Promise.all(savePaths.map(path => db.ref(path).set(data)));
-      
+
       allBulletins.push({...data, _id: `${selectedStudentId}_${selectedTrimester}`});
 
       const bulletinId = `${selectedStudentId}_${selectedTrimester}`;
@@ -8501,7 +8521,7 @@
       }, bulletinId, 'bulletin_maternelle');
 
       toast(`✅ Bulletin maternelle de ${studentName} publié et enregistré dans la base de données !`, 'ok');
-      
+
       // Reset form after successful publish
       setTimeout(() => {
         BULLETIN.notes = {};
@@ -8509,8 +8529,8 @@
         BULLETIN.commentaire = '';
         console.log('📝 Bulletin form reset');
       }, 1000);
-      
-    } catch(e) { 
+
+    } catch(e) {
       console.error('❌ Publication error:', e);
       if (isFirebaseNetworkError(e)) {
         toast('Échec publication: connexion Firebase indisponible.', 'err');
@@ -8532,16 +8552,16 @@
       toast('Sélectionnez un élève avant d\'imprimer', 'warn');
       return;
     }
-    
+
     // Ensure bulletin data is up-to-date
     BULLETIN.enseignant = document.getElementById('bEnseignant').value;
     BULLETIN.commentaire = document.getElementById('bCommentaire').value;
     BULLETIN.trimestre = document.getElementById('bTrimestre').value;
     BULLETIN.annee = document.getElementById('bAnnee').value;
-    
+
     // Switch to preview tab to show the bulletin
     switchBulletinTab('t-apercu');
-    
+
     // Small delay to ensure DOM is updated
     setTimeout(() => {
       window.print();
@@ -8676,10 +8696,10 @@
   async function loadBulletinHistory() {
     const trimesterFilter = (document.getElementById('historyClassSelect')?.value || currentTerm || 'all').toString().trim();
     const container = document.getElementById('bulletinHistoryList');
-    
+
     try {
       document.getElementById('histLoad').style.display = 'flex';
-      
+
       // 1. FETCH STUDENTS (only teacher's students)
       const studentsSnapshot = await db.ref('students').once('value');
       let allStudents = [];
@@ -8688,13 +8708,13 @@
           allStudents.push({ id: child.key, ...child.val() });
         });
       }
-      
+
       // Use advanced filtering to get accessible students
       const students = await getAccessibleStudents(allStudents);
-      
+
       // No class filtering here anymore: the selector is now trimester-based
       const filteredStudents = students;
-      
+
       // 2. FETCH BULLETINS FROM HIERARCHICAL PATH STRUCTURE
       let allBulletins = [];
 
@@ -8859,7 +8879,7 @@
       } else {
         bulletinsArray = bulletinsArrayAll.filter(b => matchesTrimesterFilter(b, normalizedTrimesterFilter));
       }
-      
+
       // 4. CHECK MISSING BULLETINS AND CREATE NOTIFICATIONS
       const bulletinIds = new Set(bulletinsArray.map(b => (b.studentId || '').toString().trim()).filter(Boolean));
       const missingStudents = filteredStudents.filter(s => !bulletinIds.has((s.id || '').toString().trim()));
@@ -8871,13 +8891,13 @@
         teacherId: s.teacherId || s.teacher || s.assignedTeacherId || s.assignedTeacher || ''
       }));
       lastHistoryTrimesterFilter = normalizedTrimesterFilter;
-      
+
       // Update counters
       document.getElementById('totalStudents').textContent = filteredStudents.length;
       document.getElementById('totalBulletins').textContent = bulletinsArray.length;
       updateMissingStudentsButton();
       updateDuplicatesButton();
-      
+
       // Create notifications for missing bulletins
       if (missingStudents.length > 0) {
         for (const s of missingStudents) {
@@ -8892,17 +8912,17 @@
           });
         }
       }
-      
+
       // 5. DISPLAY HISTORY
       let html = '';
-      
+
       if (bulletinsArray.length === 0) {
         html = '<div class="empty-state"><i class="fas fa-file-alt"></i><h4>Aucun bulletin</h4><p>Les bulletins publiés apparaîtront ici</p></div>';
       } else {
         bulletinsArray.forEach(bulletin => {
           // Migrate old format data
           bulletin.skills = migrateBulletinData(bulletin.skills || {});
-          
+
           const student = filteredStudents.find(s => s.id === bulletin.studentId);
           const studentName = bulletin.studentName || (student ? (student.name || student.nom) : 'Élève inconnu');
           const studentClass = bulletin.class || (student ? (student.classes || student.classe) : 'Classe inconnue');
@@ -8912,7 +8932,7 @@
           const isAnnualBulletin = `${trimestre}`.toUpperCase() === 'BN';
           const annee = bulletin.annee || new Date().getFullYear();
           const pubDate = bulletin.publishedAt ? new Date(bulletin.publishedAt).toLocaleDateString('fr-FR') : 'N/A';
-          
+
           // Build grades table HTML (only show letter grades, not numbers)
           let gradesTableHtml = '';
           if (!isAnnualBulletin && bulletin.skills && Object.keys(bulletin.skills).length > 0) {
@@ -8935,7 +8955,7 @@
                 </div>
               </div>`;
             });
-            
+
             // Add application grade
             const appGrade = bulletin.applicationGrade || calculateApplicationGrade(bulletin.skills);
             const appGradeCode = normalizeGradeCode(appGrade);
@@ -8947,7 +8967,7 @@
             </div>
             </div>`;
           }
-          
+
           // Build conduct HTML
           let conductHtml = '';
           const conductSource = (bulletin.conduct && typeof bulletin.conduct === 'object')
@@ -8975,7 +8995,7 @@
             });
             conductHtml += `</div></div>`;
           }
-          
+
           // Build appreciation HTML
           let appreciationHtml = '';
           if (bulletin.appreciation || bulletin.commentaire) {
@@ -8984,7 +9004,7 @@
               <div style="font-size:.75rem;color:var(--txt);line-height:1.4;">${bulletin.appreciation || bulletin.commentaire}</div>
             </div>`;
           }
-          
+
           html += `
             <div class="bulletin-card">
               <div class="bulletin-card-info">
@@ -9012,10 +9032,10 @@
             </div>`;
         });
       }
-      
+
       container.innerHTML = html;
       toast('Historique chargé avec succès', 'ok');
-      
+
     } catch (error) {
       console.error('Erreur lors du chargement de l\'historique:', error);
       lastMissingStudents = [];
@@ -9365,7 +9385,7 @@
 
           const normalizedSubject = normalize(subject);
 
-          const key = Object.keys(maxScores).find(k => 
+          const key = Object.keys(maxScores).find(k =>
               normalize(k) === normalizedSubject
           );
 
@@ -9402,7 +9422,7 @@
   async function printBulletinFromHistory(studentId, className, trimester) {
     try {
       console.log('🖨️ Print bulletin from history:', {studentId, className, trimester});
-      
+
       // Find student to get branch
       const student = allStudents.find(s => s.id === studentId || s._id === studentId);
       const studentBranch = (student?.branch || student?.schoolBranch || 'maternelle').toLowerCase();
@@ -9430,7 +9450,7 @@
         toast('Impression lancée...', 'ok');
         return;
       }
-      
+
       const candidatePaths = getBulletinEntryCandidatePaths(studentBranch, className, studentId, trimester);
       const legacyRefPath = `bulletins_${studentBranch}_${normalize(className)}/${studentId}_${trimester}`;
 
@@ -9451,21 +9471,21 @@
         toast('Bulletin non trouvé', 'err');
         return;
       }
-      
+
       const bulletin = bulletinSnapshot.val();
       const studentSnapshot = await db.ref('students/' + bulletin.studentId).once('value');
       const studentData = studentSnapshot.exists() ? { id: bulletin.studentId, ...studentSnapshot.val() } : null;
-      
+
       // Load data into #printArea
       await loadBulletinData(bulletin, studentData);
-      
+
       // Wait a moment for render, then print
       setTimeout(() => {
         window.print();
       }, 500);
-      
+
       toast('Impression lancée...', 'ok');
-      
+
     } catch (error) {
       console.error('Erreur lors de l\'impression:', error);
       toast('Erreur lors de l\'impression: ' + error.message, 'err');
@@ -9484,7 +9504,7 @@
       window.lastPreviewBulletinKey = renderKey;
 
       console.log('📋 Preview bulletin:', {studentId, className, trimester});
-      
+
       // Find student to get branch
       const student = allStudents.find(s => s.id === studentId || s._id === studentId);
       const studentBranch = (student?.branch || student?.schoolBranch || 'maternelle').toLowerCase();
@@ -9551,12 +9571,12 @@
       }
 
       const bulletin = bulletinSnapshot.val();
-      
+
       if (!isPublishedOrLegacyBulletin(bulletin)) {
         toast('Bulletin non publié', 'err');
         return;
       }
-      
+
       // Find student (optional, bulletin already has student data)
       let studentData = null;
       try {
@@ -9567,10 +9587,10 @@
       } catch (e) {
         console.warn('Could not load student data:', e);
       }
-      
+
       // Load data into #printArea (existing design)
       await loadBulletinData(bulletin, studentData);
-      
+
       // Normalize bulletin sizing for preview
       document.querySelectorAll('#printArea .bulletin').forEach(b => {
         b.style.height = 'auto';
@@ -9589,13 +9609,13 @@
           previewContent.parentElement.style.overflow = 'auto';
         }
       }
-      
+
       // Show preview
       const previewArea = document.getElementById('previewArea');
       if (previewArea) {
         previewArea.style.display = 'block';
       }
-      
+
     } catch (error) {
       console.error('Erreur lors de l\'aperçu:', error);
       toast('Erreur lors de l\'aperçu: ' + error.message, 'err');
@@ -9609,7 +9629,7 @@
 
     const existingModal = document.getElementById('downloadTypeModal');
     if (existingModal) existingModal.remove();
-    
+
     // Create and show modal
     const modal = document.createElement('div');
     modal.id = 'downloadTypeModal';
@@ -9737,7 +9757,7 @@
       // Find student to get branch
       const student = allStudents.find(s => s.id === studentId || s._id === studentId);
       const studentBranch = (student?.branch || student?.schoolBranch || 'maternelle').toLowerCase();
-      
+
       // Get bulletin data from Firebase
       const candidatePaths = getBulletinEntryCandidatePaths(studentBranch, className, studentId, trimester);
       const legacyRefPath = `bulletins_${studentBranch}_${normalize(className)}/${studentId}_${trimester}`;
@@ -9758,9 +9778,9 @@
         toast('Bulletin non trouvé', 'err');
         return;
       }
-      
+
       const bulletin = bulletinSnapshot.val();
-      
+
       // Fill basic fields
       document.getElementById('editBulletinId').value = studentId;
       document.getElementById('editBulletinClass').value = className;
@@ -9777,17 +9797,17 @@
 
       // Initialise conduct values state
       window._editConduiteValues = Object.assign({}, existingConduct);
-      
+
       // Store the Firebase path for later use
       window.editBulletinPath = foundPath;
       window.editBulletinBranch = studentBranch;
-      
+
       // Show modal
       const modal = document.getElementById('editBulletinModal');
       modal.style.display = 'flex';
-      
+
       toast('Bulletin chargé pour édition', 'ok');
-      
+
     } catch (error) {
       console.error('Erreur lors du chargement du bulletin:', error);
       toast('Erreur: ' + error.message, 'err');
@@ -9864,13 +9884,13 @@
       await db.ref(firebasePath).update(updatePayload);
 
       toast('✅ Bulletin mis à jour avec succès', 'ok');
-      
+
       // Reload the history to show updated data
       setTimeout(() => {
         closeEditBulletinModal();
         loadBulletinHistory();
       }, 800);
-      
+
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
       toast('Erreur: ' + error.message, 'err');
@@ -9887,7 +9907,7 @@
 
       const student = allStudents.find(s => s.id === studentId || s._id === studentId);
       const studentBranch = (student?.branch || student?.schoolBranch || 'maternelle').toLowerCase();
-      
+
       // Get bulletin path
       const candidatePaths = getBulletinEntryCandidatePaths(studentBranch, className, studentId, trimester);
       const legacyRefPath = `bulletins_${studentBranch}_${normalize(className)}/${studentId}_${trimester}`;
@@ -9909,14 +9929,14 @@
 
       // Delete from Firebase
       await db.ref(foundPath).remove();
-      
+
       toast('✅ Bulletin supprimé avec succès', 'ok');
-      
+
       // Reload the history
       setTimeout(() => {
         loadBulletinHistory();
       }, 800);
-      
+
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
       toast('Erreur: ' + error.message, 'err');
@@ -9991,13 +10011,13 @@
             windowWidth: 794,
             windowHeight: 1123
           },
-          jsPDF: { 
-            unit: 'mm', 
-            format: 'a4', 
+          jsPDF: {
+            unit: 'mm',
+            format: 'a4',
             orientation: 'portrait',
             compress: true
           },
-          pagebreak: { 
+          pagebreak: {
             mode: 'avoid-all',
             before: '.page-break',
             avoid: ['tr', 'td', '.bul-branch-row', '.bul-info-row']
@@ -10114,9 +10134,9 @@
         margin: [0, 0, 0, 0],
         filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true, 
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
           logging: false,
           allowTaint: true
         },
@@ -10328,13 +10348,13 @@
   async function downloadAllBulletinsAsZip() {
     const trimesterFilter = (document.getElementById('historyClassSelect')?.value || 'all').toString().trim();
     const normalizedTrimesterFilter = normalizeTrimesterFilter(trimesterFilter);
-    
+
     try {
       toast('Préparation du ZIP...', 'info');
       const downloadBtn = document.getElementById('downloadZipBtn');
       downloadBtn.disabled = true;
       downloadBtn.innerHTML = '<i class="fas fa-hourglass-half"></i> Génération...';
-      
+
       // 1. FETCH STUDENTS (only teacher's students)
       const studentsSnapshot = await db.ref('students').once('value');
       let allStudents = [];
@@ -10343,10 +10363,10 @@
           allStudents.push({ id: child.key, ...child.val() });
         });
       }
-      
+
       // Use advanced filtering to get accessible students
       const students = await getAccessibleStudents(allStudents);
-      
+
       const teacherBranch = getCurrentTeacherBranch();
 
       // No class filter anymore, this selector is trimester-based
@@ -10373,7 +10393,7 @@
       );
       const uniqueBulletins = bulletinResults.filter(Boolean);
       const missingStudents = filteredStudents.filter((_, idx) => !bulletinResults[idx]);
-      
+
       if (missingStudents.length > 0) {
         for (const s of missingStudents) {
           const newId = Date.now() + Math.random().toString(36).substr(2, 9);
@@ -10388,12 +10408,12 @@
         }
         toast(`Notifications créées pour ${missingStudents.length} bulletin(s) manquant(s)`, 'warn');
       }
-      
+
       // 4. SORT BULLETINS
       uniqueBulletins.sort((a, b) => (a.studentName || "").localeCompare(b.studentName || ""));
-      
+
       console.log('📄 Found bulletins for ZIP:', uniqueBulletins.length);
-      
+
       const zip = new JSZip();
       const periodName = getTrimesterFilterLabel(normalizedTrimesterFilter);
       const teacherName = (currentTeacher?.name || currentTeacher?.displayName || 'Enseignant').replace(/[^a-zA-Z0-9]/g, '_');
@@ -10482,7 +10502,7 @@
 
           // On conserve la construction des pages de classe, mais on n'écrit pas de fichiers individuels.
           // Cela évite un ZIP avec des centaines de fichiers individuels.
-          
+
           toast(`Préparation des pages pour ${studentName} (académique + conduite)...`, 'info');
 
         } catch (err) {
@@ -10643,15 +10663,15 @@
         const student = students.find(s => s.id === bulletin.studentId) || { name: bulletin.studentName || 'Élève inconnu' };
 
         // Update progress
-        document.getElementById('pdfProgress').textContent = 
+        document.getElementById('pdfProgress').textContent =
           `Génération: ${bulletin.studentName} (${currentIndex + 1}/${total})`;
 
         // Populate bulletin data
         await loadBulletinData(bulletin, student);
 
         // CRITICAL: wait for browser to fully render the DOM
-        await new Promise(resolve => requestAnimationFrame(() => 
-          requestAnimationFrame(() => 
+        await new Promise(resolve => requestAnimationFrame(() =>
+          requestAnimationFrame(() =>
             setTimeout(resolve, 300)
           )
         ));
@@ -10692,8 +10712,8 @@
         bulCond.style.position = 'relative';
         bulCond.appendChild(badge);
 
-        await new Promise(resolve => requestAnimationFrame(() => 
-          requestAnimationFrame(() => 
+        await new Promise(resolve => requestAnimationFrame(() =>
+          requestAnimationFrame(() =>
             setTimeout(resolve, 300)
           )
         ));
@@ -11494,7 +11514,7 @@
       }
       <\/script>
 
-      
+
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Bulletin Maternelle - ${student?.name || 'Élève'}</title>
@@ -11808,14 +11828,14 @@
       console.error('Bulletin ou élève manquant');
       return;
     }
-    
+
     // Get elements - load bulletin template first if not loaded
     const printArea = document.getElementById('printArea');
     if (!printArea.innerHTML.includes('bulCondBody')) {
       // Load the full bulletin first
       await loadBulletinData(bulletin, student);
     }
-    
+
     // Now load conduct - use the requested bulletin's conduct
     const bulCondBody = document.getElementById('bulCondBody');
     const conductSource = (bulletin.conduct && typeof bulletin.conduct === 'object')
@@ -11880,27 +11900,27 @@
     try {
       const modal = document.getElementById('downloadTypeModal');
       if (modal) modal.remove();
-      
+
       console.log('📥 Download conduite bulletin:', {studentId, className, trimester});
-      
+
       // Find student to get branch
       const student = allStudents.find(s => s.id === studentId || s._id === studentId);
       const studentBranch = (student?.branch || student?.schoolBranch || 'maternelle').toLowerCase();
-      
+
       const refPath = `bulletins_${studentBranch}_${normalize(className)}/${studentId}_${trimester}`;
       const bulletinSnapshot = await db.ref(refPath).once('value');
-      
+
       if (!bulletinSnapshot.exists()) {
         toast('Bulletin non trouvé', 'err');
         return;
       }
-      
+
       const bulletin = bulletinSnapshot.val();
       const studentDataSnapshot = await db.ref('students/' + bulletin.studentId).once('value');
       const studentData = studentDataSnapshot.exists() ? { id: bulletin.studentId, ...studentDataSnapshot.val() } : null;
-      
+
       await loadBulletinConduite(bulletin, studentData);
-      
+
       const printArea = document.getElementById('printArea');
       const studentNameRaw = (bulletin.studentName || bulletin.name || 'eleve').trim();
       const safeName = studentNameRaw.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toUpperCase();
@@ -11912,7 +11932,7 @@
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css'], before: '.page-break' }
       };
-      
+
       html2pdf().set(options).from(printArea).save();
       console.log('✅ Conduite PDF downloaded');
       toast('PDF Conduite téléchargé avec succès', 'ok');
@@ -11927,7 +11947,7 @@
     try {
       const modal = document.getElementById('downloadTypeModal');
       if (modal) modal.remove();
-      
+
       await downloadBulletinPDF(studentId, className, trimester, 'academic');
     } catch (error) {
       console.error('Erreur du téléchargement complet:', error);
@@ -11939,7 +11959,7 @@
   function filterBulletinHistory() {
     const searchTerm = document.getElementById('histSearch').value.toLowerCase();
     const cards = document.querySelectorAll('.bulletin-card');
-    
+
     cards.forEach(card => {
       const studentName = card.querySelector('.bulletin-card-name').textContent.toLowerCase();
       const isVisible = !searchTerm || studentName.includes(searchTerm);
@@ -12030,7 +12050,7 @@
       // Find student to get branch
       const student = allStudents.find(s => s.id === studentId || s._id === studentId);
       const studentBranch = (student?.branch || student?.schoolBranch || 'maternelle').toLowerCase();
-      
+
       const refPath = `bulletins_${studentBranch}_${normalize(className)}/${studentId}_${trimester}`;
       const snapshot = await db.ref(refPath).once('value');
 
@@ -12092,7 +12112,7 @@
         const teacherMatch = b.teacherId === currentTeacher?.uid || b.teacherId === currentTeacher?.id;
         const branchMatch = (b.branch || '').toString().toLowerCase().trim() === (currentTeacher?.branch || currentTeacher?.schoolBranch || '').toString().toLowerCase().trim();
         const classMatch = (b.class || b.classe || '').toString().toLowerCase().trim() === (teacherClass || '').toString().toLowerCase().trim();
-        
+
         // Check if bulletin has actual data (not empty)
         const hasSkills = b.skills && typeof b.skills === 'object' && Object.keys(b.skills).length > 0;
         const hasConduct = b.conduct && typeof b.conduct === 'object' && Object.keys(b.conduct).length > 0;
@@ -12179,7 +12199,7 @@
       // Find student to get branch
       const student = allStudents.find(s => s.id === studentId || s._id === studentId);
       const studentBranch = (student?.branch || student?.schoolBranch || 'maternelle').toLowerCase();
-      
+
       const refPath = `bulletins_${studentBranch}_${normalize(className)}/${studentId}_${trimester}`;
       const snapshot = await db.ref(refPath).once('value');
 
@@ -13752,11 +13772,86 @@
     await db.ref('notifications/' + notificationId).update({ read: true, readAt: Date.now() });
   }
 
+  async function loadAppAttendanceDashboard() {
+    const list = document.getElementById('appAttendanceList');
+    const status = document.getElementById('appAttendanceStatus');
+    if (!list) return;
+    list.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><p>Chargement des pointages Eden Smart\u2026</p></div>';
+    try {
+      const snap = await db.ref('teacher_attendance').once('value');
+      const branchKey = getCurrentTeacherBranchNormalized();
+      const ownUid = getCurrentTeacherUid();
+      const role = String(currentTeacher?.role || currentTeacher?.userRole || currentUser?.role || currentUser?.userRole || '').toLowerCase();
+      const canViewBranch = ['director','directeur','admin','administrateur','secretary','secretaire'].includes(role.replace(/[\s_-]+/g, ''));
+      const records = [];
+      if (snap.exists()) snap.forEach(teacherNode => {
+        const teacherId = teacherNode.key;
+        teacherNode.forEach(dayNode => {
+          const day = dayNode.val() || {};
+          const arrival = day.arrival || null;
+          const departure = day.departure || null;
+          const branch = String((arrival && arrival.branch) || (departure && departure.branch) || '');
+          const matchesBranch = branchKey && normalizeBranchForMatch(branch) === branchKey;
+          // Show branch records for a teacher profile; without a branch, show only own records.
+          if (canViewBranch) {
+            if (branchKey && !matchesBranch) return;
+          } else if (teacherId !== ownUid) return;
+          if (!arrival && !departure) return;
+          records.push({ teacherId, date: dayNode.key || '', name: (arrival && arrival.teacherName) || (departure && departure.teacherName) || teacherId, branch, arrival, departure });
+        });
+      });
+      records.sort((a,b) => String(b.date).localeCompare(String(a.date)));
+      const visible = records.slice(0, 25);
+      if (status) status.textContent = records.length + ' pointage(s) synchronis\u00e9(s) depuis Eden Smart' + (branchKey ? ' pour votre branche.' : '.');
+      if (!visible.length) {
+        list.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-check"></i><h4>Aucun pointage Eden Smart trouv\u00e9</h4><p>Les arriv\u00e9es et d\u00e9parts enregistr\u00e9s dans l\u2019application appara\u00eetront ici apr\u00e8s synchronisation.</p></div>';
+        return;
+      }
+      list.innerHTML = '<table style="width:100%;border-collapse:collapse;min-width:560px;font-size:.82rem;"><thead><tr style="text-align:left;background:var(--blue-bg);"><th style="padding:10px;">Date</th><th style="padding:10px;">Enseignant</th><th style="padding:10px;">Branche</th><th style="padding:10px;">Arriv\u00e9e</th><th style="padding:10px;">D\u00e9part</th><th style="padding:10px;">Statut</th></tr></thead><tbody>' + visible.map(r => {
+        const at = r.arrival ? (r.arrival.time || '?') : '?';
+        const dt = r.departure ? (r.departure.time || '?') : '?';
+        const late = r.arrival && String(r.arrival.lateStatus || '').toLowerCase() === 'late';
+        const badge = !r.arrival ? 'Arriv\u00e9e manquante' : late ? 'En retard' : '\u00c0 l\u2019heure';
+        const color = !r.arrival ? '#b45309' : late ? '#b91c1c' : '#15803d';
+        const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        return `<tr style="border-bottom:1px solid var(--bdr);"><td style="padding:10px;white-space:nowrap;">${esc(r.date)}</td><td style="padding:10px;font-weight:700;">${esc(r.name)}</td><td style="padding:10px;">${esc(r.branch || '?')}</td><td style="padding:10px;">${esc(at)}</td><td style="padding:10px;">${esc(dt)}</td><td style="padding:10px;color:${color};font-weight:800;">${badge}</td></tr>`;
+      }).join('') + '</tbody></table>';
+    } catch (err) {
+      console.error('Eden Smart attendance dashboard error:', err);
+      if (status) status.textContent = 'Connexion Firebase indisponible.';
+      list.innerHTML = '<div class="empty-state"><i class="fas fa-triangle-exclamation"></i><h4>Impossible de charger les pointages</h4><p>V\u00e9rifiez la connexion ou les r\u00e8gles Firebase, puis r\u00e9essayez.</p></div>';
+    }
+  }
+
+  async function checkTeacherPortalUpdate() {
+    try {
+      const response = await fetch('/downloads/version.json?check=' + Date.now(), { cache: 'no-store' });
+      if (!response.ok) return;
+      const info = await response.json();
+      const latest = String(info.siteVersion || '');
+      if (!latest) return;
+      const key = 'eden_teacher_site_version_seen';
+      const previous = localStorage.getItem(key);
+      if (!previous) { localStorage.setItem(key, latest); return; }
+      if (previous === latest) return;
+      const overlay = document.createElement('div');
+      overlay.id = 'teacherSiteUpdateModal';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(7,18,43,.72);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;';
+      const message = String(info.message || 'Le portail Eden Family School a \u00e9t\u00e9 mis \u00e0 jour.');
+      const safe = message.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      overlay.innerHTML = `<div style="width:min(460px,100%);background:#fff;border-radius:20px;padding:26px;box-shadow:0 20px 60px #0005;text-align:center;color:#14264b;"><div style="font-size:2.5rem;color:#1a5ca8;margin-bottom:10px;"><i class="fas fa-cloud-arrow-down"></i></div><h2 style="margin:0 0 10px;">Nouvelle mise \u00e0 jour disponible</h2><p style="line-height:1.6;color:#52627d;">${safe}</p><button id="teacherSiteUpdateReload" class="btn btn-blue" style="margin-top:18px;justify-content:center;width:100%;">Actualiser le portail</button><button id="teacherSiteUpdateLater" class="btn btn-ghost" style="margin-top:8px;justify-content:center;width:100%;">Plus tard</button></div>`;
+      document.body.appendChild(overlay);
+      overlay.querySelector('#teacherSiteUpdateReload').onclick = () => { localStorage.setItem(key, latest); window.location.reload(); };
+      overlay.querySelector('#teacherSiteUpdateLater').onclick = () => { localStorage.setItem(key, latest); overlay.remove(); };
+    } catch (e) { console.warn('Teacher portal update check skipped:', e); }
+  }
+
   async function initDashboard() {
     const dashLoad = document.getElementById('dashLoad');
     const dashBody = document.getElementById('dashBody');
-    if (dashLoad) dashLoad.style.display = 'flex';
-    if (dashBody) dashBody.style.display = 'none';
+    if (dashLoad) dashLoad.style.display = 'none';
+    if (dashBody) dashBody.style.display = 'block';
+    loadAppAttendanceDashboard();
 
     try {
       await loadTermConfiguration();
@@ -14226,7 +14321,7 @@
         console.error('❌ Erreur chargement élèves depuis Firebase:', e);
       }
     }
-    
+
     // Filtrer par la classe sélectionnée dans cotationState
     if (cotationState.className) {
       students = students.filter(s => {
@@ -14234,7 +14329,7 @@
         return areClassesCompatible(studentClass, [cotationState.className]);
       });
     }
-    
+
     const prevStu = studentSel.value;
     studentSel.innerHTML = '<option value="">— Choisir un élève —</option>' +
       students.map(s => {
@@ -15790,6 +15885,34 @@ ensureCotationPage = function() {
   /* ══════════════════════════════════════
     INIT
   ══════════════════════════════════════ */
+  (function keepFocusedFieldAboveMobileKeyboard() {
+    let viewportTimer = null;
+    function syncKeyboardViewport() {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const keyboardInset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty('--keyboard-inset', keyboardInset + 'px');
+      if (keyboardInset > 80) document.body.classList.add('keyboard-open');
+      else document.body.classList.remove('keyboard-open');
+    }
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', syncKeyboardViewport);
+      window.visualViewport.addEventListener('scroll', syncKeyboardViewport);
+    }
+    window.addEventListener('resize', syncKeyboardViewport);
+    document.addEventListener('focusin', event => {
+      const el = event.target;
+      if (!el || !el.matches('input,textarea,select,[contenteditable="true"]')) return;
+      clearTimeout(viewportTimer);
+      viewportTimer = setTimeout(() => {
+        syncKeyboardViewport();
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      }, 280);
+    });
+    document.addEventListener('focusout', () => setTimeout(syncKeyboardViewport, 250));
+    syncKeyboardViewport();
+  })();
+
   document.addEventListener('DOMContentLoaded', async () => {
     // Set today's date for attendance
     const attDate = document.getElementById('attDate');

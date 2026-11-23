@@ -142,5 +142,11 @@
         ".write": "newData.hasChildren(['description','timestamp']) && !data.exists()"
       }
     }
+    ,"teacher_attendance": {
+      "$teacherId": {
+        ".read": "auth != null && (auth.uid === $teacherId || root.child('users').child(auth.uid).child('role').val() === 'director' || root.child('users').child(auth.uid).child('role').val() === 'Director' || root.child('users').child(auth.uid).child('role').val() === 'directeur' || root.child('users').child(auth.uid).child('role').val() === 'Directeur' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'Admin' || root.child('users').child(auth.uid).child('role').val() === 'administrateur' || root.child('users').child(auth.uid).child('role').val() === 'secretary' || root.child('users').child(auth.uid).child('role').val() === 'Secretary' || root.child('users').child(auth.uid).child('role').val() === 'secretaire' || root.child('users').child(auth.uid).child('role').val() === 'Secr?taire')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'director' || root.child('users').child(auth.uid).child('role').val() === 'Director' || root.child('users').child(auth.uid).child('role').val() === 'directeur' || root.child('users').child(auth.uid).child('role').val() === 'Directeur' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'Admin' || root.child('users').child(auth.uid).child('role').val() === 'administrateur' || root.child('users').child(auth.uid).child('role').val() === 'secretary' || root.child('users').child(auth.uid).child('role').val() === 'Secretary' || root.child('users').child(auth.uid).child('role').val() === 'secretaire' || root.child('users').child(auth.uid).child('role').val() === 'Secr?taire')"
+      }
+    }
   }
 }
