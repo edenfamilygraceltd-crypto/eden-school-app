@@ -13831,15 +13831,14 @@
       const latest = String(info.siteVersion || '');
       if (!latest) return;
       const key = 'eden_teacher_site_version_seen';
-      const previous = localStorage.getItem(key);
-      if (!previous) { localStorage.setItem(key, latest); return; }
+      const previous = localStorage.getItem(key) || 'web-20261122215909-6f66c5a';
       if (previous === latest) return;
       const overlay = document.createElement('div');
       overlay.id = 'teacherSiteUpdateModal';
       overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(7,18,43,.72);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;';
-      const message = String(info.message || 'Le portail Eden Family School a \u00e9t\u00e9 mis \u00e0 jour.');
+      const message = String(info.message || 'Le portail Eden Family School a ete mis a jour.');
       const safe = message.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-      overlay.innerHTML = `<div style="width:min(460px,100%);background:#fff;border-radius:20px;padding:26px;box-shadow:0 20px 60px #0005;text-align:center;color:#14264b;"><div style="font-size:2.5rem;color:#1a5ca8;margin-bottom:10px;"><i class="fas fa-cloud-arrow-down"></i></div><h2 style="margin:0 0 10px;">Nouvelle mise \u00e0 jour disponible</h2><p style="line-height:1.6;color:#52627d;">${safe}</p><button id="teacherSiteUpdateReload" class="btn btn-blue" style="margin-top:18px;justify-content:center;width:100%;">Actualiser le portail</button><button id="teacherSiteUpdateLater" class="btn btn-ghost" style="margin-top:8px;justify-content:center;width:100%;">Plus tard</button></div>`;
+      overlay.innerHTML = `<div style="width:min(460px,100%);background:#fff;border-radius:20px;padding:26px;box-shadow:0 20px 60px #0005;text-align:center;color:#14264b;"><div style="font-size:2.5rem;color:#1a5ca8;margin-bottom:10px;"><i class="fas fa-cloud-arrow-down"></i></div><h2 style="margin:0 0 10px;">Nouvelle mise a jour disponible</h2><p style="line-height:1.6;color:#52627d;">${safe}</p><button id="teacherSiteUpdateReload" class="btn btn-blue" style="margin-top:18px;justify-content:center;width:100%;">Actualiser le portail</button><button id="teacherSiteUpdateLater" class="btn btn-ghost" style="margin-top:8px;justify-content:center;width:100%;">Plus tard</button></div>`;
       document.body.appendChild(overlay);
       overlay.querySelector('#teacherSiteUpdateReload').onclick = () => { localStorage.setItem(key, latest); window.location.reload(); };
       overlay.querySelector('#teacherSiteUpdateLater').onclick = () => { localStorage.setItem(key, latest); overlay.remove(); };
