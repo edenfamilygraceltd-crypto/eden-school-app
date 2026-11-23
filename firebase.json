@@ -7,7 +7,24 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "node_modules/**",
+      ".firebase/**",
+      "**/*.bak",
+      "**/*backup*",
+      "**/*.ps1",
+      "**/*.sh",
+      "**/*.cmd",
+      "**/*.bat",
+      "**/*.exe",
+      "**/*.dll",
+      "**/*.msi",
+      "**/*.com",
+      "**/*.jar",
+      "**/*.apk",
+      "**/*.aab",
+      "**/*.dex",
+      "**/*.so"
     ],
     "headers": [
       {

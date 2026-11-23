@@ -1,9 +1,9 @@
 {
-  "siteVersion": "web-20261123101256-77b9641",
+  "siteVersion": "web-20261123-attendance-keyboard-dashboard",
   "appVersion": "1.3",
   "appVersionCode": 4,
   "releaseDate": "2026-11-23",
-  "appMessage": "Une nouvelle version d’Eden Smart est disponible. Elle améliore la synchronisation des présences et la navigation.",
-  "message": "Une mise à jour du site Eden Family School est disponible.",
-  "downloadUrl": "/downloads/eden-smart.apk"
+  "appMessage": "Une nouvelle version d\u2019Eden Smart est disponible. Elle am\u00e9liore la synchronisation des pr\u00e9sences et la navigation.",
+  "message": "Le portail Eden Family School a\u00e9t\u00e9 am\u00e9lior\u00e9 : synchronisation des pr\u00e9sences, tableaux de bord et affichage mobile.",
+  "downloadUrl": "https://github.com/edenfamilygraceltd-crypto/eden-school-app/raw/refs/heads/main/downloads/eden-smart.apk"
 }
