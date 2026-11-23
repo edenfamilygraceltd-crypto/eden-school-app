@@ -1,0 +1,767 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/teacherMainScroll"
+    android:background="@drawable/login_background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+    <LinearLayout
+        android:id="@+id/teacherPage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="28dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="10dp"
+                android:src="@drawable/eden_logo"
+                android:background="@drawable/eden_logo_circle"
+                android:padding="3dp"
+                android:scaleType="centerCrop"
+                android:clipToOutline="true"
+                android:contentDescription="Logo Eden Family School"/>
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="EDEN FAMILY SCHOOL"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/teacherLogout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Déconnexion"
+                android:textAllCaps="false"/>
+        </LinearLayout>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="190dp"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="5dp"
+            app:strokeColor="#33C9A227"
+            app:strokeWidth="1dp">
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <ViewFlipper
+                    android:id="@+id/teacherHeroCarousel"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:flipInterval="4200"
+                    android:autoStart="true">
+                    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+                        android:src="@drawable/eden_carousel_love" android:scaleType="centerCrop"
+                        android:contentDescription="La vie scolaire à Eden Family School"/>
+                    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+                        android:src="@drawable/eden_carousel_graduation" android:scaleType="centerCrop"
+                        android:contentDescription="Cérémonie de graduation"/>
+                    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+                        android:src="@drawable/eden_carousel_sport" android:scaleType="centerCrop"
+                        android:contentDescription="Activités sportives"/>
+                </ViewFlipper>
+                <View android:layout_width="match_parent" android:layout_height="match_parent"
+                    android:background="#660A1835"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_gravity="bottom" android:orientation="vertical" android:padding="16dp">
+                    <TextView android:id="@+id/teacherHeroTitle" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:text="EDEN FAMILY SCHOOL"
+                        android:textColor="@color/page_background" android:textSize="21sp"
+                        android:textStyle="bold"/>
+                    <TextView android:id="@+id/teacherHeroSubtitle" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:text="Apprendre, grandir et réussir ensemble"
+                        android:textColor="@color/page_background" android:textSize="13sp"/>
+                    <TextView android:id="@+id/teacherHeroDots" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:text="●  ○  ○"
+                        android:textColor="#C9A227" android:textSize="13sp" android:layout_marginTop="3dp"/>
+                </LinearLayout>
+            </FrameLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <HorizontalScrollView
+            android:id="@+id/teacherQuickNavScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="10dp"
+            android:scrollbars="none">
+            <LinearLayout
+                android:id="@+id/teacherQuickNav"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="4dp" />
+        </HorizontalScrollView>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="ESPACE ENSEIGNANT"
+            android:textColor="@color/text_primary"
+            android:textStyle="bold"
+            android:textSize="13sp"/>
+        <TextView
+            android:id="@+id/teacherName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Vérification du compte…"
+            android:textColor="@color/text_primary"
+            android:textSize="25sp"
+            android:textStyle="bold"/>
+        <TextView
+            android:id="@+id/teacherBranch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="16dp"
+            android:text="Branche : chargement…"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="2dp"
+            app:strokeColor="#E2E8F0"
+            app:strokeWidth="1dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="18dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mes classes assignées"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:id="@+id/teacherClasses"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="Chargement…"
+                    android:textColor="@color/text_primary"
+                    android:textSize="21sp"
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/teacherStudentCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="— élève(s)"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:layout_marginBottom="10dp"
+            android:id="@+id/navStudentsSection"
+            android:text="Mes élèves"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addStudentButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:text="+ Ajouter un élève"
+            android:textAllCaps="false"/>
+        <EditText
+            android:id="@+id/studentSearch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:hint="Rechercher un élève par nom ou classe"
+            android:inputType="text"
+            android:singleLine="true"
+            android:padding="12dp"
+            android:background="@android:drawable/edit_text"
+            android:textColor="@color/text_primary"
+            android:textColorHint="#8290A5"/>
+        <TextView
+            android:id="@+id/teacherStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:paddingBottom="10dp"
+            android:text="Chargement des élèves autorisés…"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+            <LinearLayout
+                android:id="@+id/teacherStudentList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp"/>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="10dp"
+            android:id="@+id/navAttendanceSection"
+            android:text="Présences des élèves"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:id="@+id/attendanceDate"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:padding="10dp"
+                        android:text="Choisir une date"
+                        android:textColor="@color/text_primary"
+                        android:textStyle="bold"
+                        android:background="#EEF2FF"/>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/loadAttendanceButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Afficher"
+                        android:textAllCaps="false"/>
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/attendanceStats"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Présent : 0  •  Absent : 0  •  Retard : 0"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"/>
+                <LinearLayout
+                    android:id="@+id/attendanceList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/saveAttendanceButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Enregistrer les présences"
+                    android:textAllCaps="false"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="10dp"
+            android:id="@+id/navActivitiesSection"
+            android:text="Activités de la classe"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addActivityButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="+ Ajouter une activité"
+            android:textAllCaps="false"/>
+        <TextView
+            android:id="@+id/activityStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:text="Chargement des activités…"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+            <LinearLayout
+                android:id="@+id/teacherActivityList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp"/>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="10dp"
+            android:id="@+id/navPerformanceSection"
+            android:text="Évaluations et performances"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+        <Spinner
+            android:id="@+id/performanceTrimester"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:drawable/btn_dropdown"/>
+        <TextView
+            android:id="@+id/performanceSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:text="Chargement des résultats…"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Moyennes par matière"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+                <LinearLayout
+                    android:id="@+id/performanceSubjects"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="@color/page_background"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Classement des élèves"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+                <LinearLayout
+                    android:id="@+id/performanceRanking"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="10dp"
+            android:id="@+id/navCotationSection"
+            android:text="Fiche de cotation"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Classe assignée" android:textColor="@color/text_primary" android:textStyle="bold"/>
+                <Spinner android:id="@+id/cotationClass" android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Matière" android:textColor="@color/text_primary" android:textStyle="bold"
+                    android:layout_marginTop="8dp"/>
+                <Spinner android:id="@+id/cotationSubject" android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Trimestre" android:textColor="@color/text_primary" android:textStyle="bold"
+                    android:layout_marginTop="8dp"/>
+                <Spinner android:id="@+id/cotationTrimester" android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical">
+                    <Spinner android:id="@+id/cotationType" android:layout_width="0dp"
+                        android:layout_height="wrap_content" android:layout_weight="1"/>
+                    <Spinner android:id="@+id/cotationAssessment" android:layout_width="0dp"
+                        android:layout_height="wrap_content" android:layout_weight="1"/>
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <com.google.android.material.button.MaterialButton android:id="@+id/addCotationTestButton"
+                        android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                        android:text="＋ Créer un test" android:textAllCaps="false"/>
+                    <com.google.android.material.button.MaterialButton android:id="@+id/removeCotationTestButton"
+                        android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                        android:text="Supprimer le test" android:textAllCaps="false"/>
+                </LinearLayout>
+                <EditText android:id="@+id/cotationMonth" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:hint="Mois (AAAA-MM)"
+                    android:inputType="text" android:singleLine="true"/>
+                <TextView android:id="@+id/cotationStatus" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Choisissez une matière."
+                    android:textColor="@color/text_primary" android:textSize="12sp"
+                    android:layout_marginTop="6dp"/>
+                <LinearLayout android:id="@+id/cotationEntries" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"
+                    android:layout_marginTop="8dp"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/saveCotationButton" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Enregistrer les cotations"
+                    android:textAllCaps="false" android:layout_marginTop="10dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" android:layout_marginBottom="10dp"
+            android:id="@+id/navBulletinsSection"
+            android:text="Bulletins scolaires" android:textColor="@color/text_primary"
+            android:textSize="20sp" android:textStyle="bold"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background" app:cardCornerRadius="16dp" app:cardElevation="2dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="14dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Élève" android:textColor="@color/text_primary" android:textStyle="bold"/>
+                <Spinner android:id="@+id/bulletinStudent" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <Spinner android:id="@+id/bulletinTrimester" android:layout_width="0dp"
+                        android:layout_height="wrap_content" android:layout_weight="1"/>
+                    <EditText android:id="@+id/bulletinYear" android:layout_width="0dp"
+                        android:layout_height="wrap_content" android:layout_weight="1"
+                        android:hint="Année scolaire" android:singleLine="true"/>
+                </LinearLayout>
+                <EditText android:id="@+id/bulletinTeacher" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:hint="Nom de l'enseignant" android:singleLine="true"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/openPrimaryBulletinButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Ouvrir le formulaire du bulletin primaire"
+                    android:textAllCaps="false" android:layout_marginTop="8dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Notes par matière (TJ et EX /100) — maternelle" android:textColor="@color/text_primary"
+                    android:textStyle="bold" android:layout_marginTop="8dp"/>
+                <LinearLayout android:id="@+id/bulletinGrades" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Conduite" android:textColor="@color/text_primary" android:textStyle="bold"
+                    android:layout_marginTop="12dp"/>
+                <LinearLayout android:id="@+id/bulletinConduct" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"/>
+                <EditText android:id="@+id/bulletinComment" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:hint="Appréciation générale"
+                    android:inputType="textMultiLine" android:minLines="2"/>
+                <TextView android:id="@+id/bulletinStatus" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Préparez le bulletin."
+                    android:textColor="@color/text_primary" android:textSize="12sp"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/loadBulletinButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Charger le bulletin existant" android:textAllCaps="false"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/saveBulletinButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Enregistrer le bulletin" android:textAllCaps="false"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/publishBulletinButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Publier le bulletin" android:textAllCaps="false"
+                    android:layout_marginTop="6dp"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/exportBulletinPdfButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Exporter le bulletin en PDF" android:textAllCaps="false"
+                    android:layout_marginTop="6dp"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/exportBulletinsZipButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Télécharger les bulletins de la classe en ZIP" android:textAllCaps="false"
+                    android:layout_marginTop="6dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" android:layout_marginBottom="10dp"
+            android:id="@+id/navMessagesSection"
+            android:text="Messagerie de l’équipe" android:textColor="@color/text_primary"
+            android:textSize="20sp" android:textStyle="bold"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background" app:cardCornerRadius="16dp" app:cardElevation="2dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="14dp">
+                <TextView android:id="@+id/messageStatus" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Chargement des messages…"
+                    android:textColor="@color/text_primary" android:textSize="12sp"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/composeMessageButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Nouveau message" android:textAllCaps="false"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/refreshMessagesButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Actualiser la boîte de réception" android:textAllCaps="false"/>
+                <LinearLayout android:id="@+id/teacherMessageList" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" android:layout_marginBottom="10dp"
+            android:id="@+id/navNotificationsSection"
+            android:text="Notifications" android:textColor="@color/text_primary"
+            android:textSize="20sp" android:textStyle="bold"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background" app:cardCornerRadius="16dp" app:cardElevation="2dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="14dp">
+                <TextView android:id="@+id/notificationStatus" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Chargement des notifications…"
+                    android:textColor="@color/text_primary" android:textSize="12sp"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/refreshNotificationsButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Actualiser les notifications" android:textAllCaps="false"/>
+                <LinearLayout android:id="@+id/teacherNotificationList" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" android:layout_marginBottom="10dp"
+            android:id="@+id/navHistorySection"
+            android:text="Historique des bulletins" android:textColor="@color/text_primary"
+            android:textSize="20sp" android:textStyle="bold"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background" app:cardCornerRadius="16dp" app:cardElevation="2dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="14dp">
+                <TextView android:id="@+id/bulletinHistoryStatus" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Historique non chargé."
+                    android:textColor="@color/text_primary" android:textSize="12sp"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/refreshBulletinHistoryButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Actualiser l'historique" android:textAllCaps="false"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/checkMissingBulletinsButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Vérifier les bulletins manquants" android:textAllCaps="false" android:layout_marginTop="6dp"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/checkDuplicateBulletinsButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Détecter les bulletins en double" android:textAllCaps="false" android:layout_marginTop="6dp"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/generatePrimaryAnnualButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Générer les bulletins annuels et le classement" android:textAllCaps="false"
+                    android:layout_marginTop="6dp"/>
+                <LinearLayout android:id="@+id/bulletinHistoryList" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:id="@+id/navGallerySection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="10dp"
+            android:text="Galerie de photos"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Partagez les moments de la vie scolaire avec les enseignants de votre branche."
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/addGalleryPhotoButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="＋ Ajouter une photo"
+                    android:textAllCaps="false"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/refreshGalleryButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Actualiser la galerie"
+                    android:textAllCaps="false"/>
+                <TextView
+                    android:id="@+id/galleryStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="La galerie sera chargée après la connexion."
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"/>
+                <LinearLayout
+                    android:id="@+id/teacherGalleryList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="10dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:id="@+id/navSettingsSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="10dp"
+            android:text="Paramètres du compte"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mon profil enseignant"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold"/>
+                <EditText
+                    android:id="@+id/profileFirstName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Prénom"
+                    android:inputType="textPersonName"
+                    android:singleLine="true"/>
+                <EditText
+                    android:id="@+id/profileLastName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Nom"
+                    android:inputType="textPersonName"
+                    android:singleLine="true"/>
+                <EditText
+                    android:id="@+id/profilePhone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Téléphone"
+                    android:inputType="phone"
+                    android:singleLine="true"/>
+                <TextView
+                    android:id="@+id/profileEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="E-mail :"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"/>
+                <TextView
+                    android:id="@+id/profileBranch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Branche :"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"/>
+                <TextView
+                    android:id="@+id/profileClasses"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Classes :"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/saveTeacherProfileButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Enregistrer les modifications"
+                    android:textAllCaps="false"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/changeTeacherEmailButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Modifier l'adresse e-mail"
+                    android:textAllCaps="false"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/resetTeacherPasswordButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Réinitialiser le mot de passe"
+                    android:textAllCaps="false"/>
+                <TextView
+                    android:id="@+id/profileSettingsStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Vos informations personnelles."
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+</ScrollView>

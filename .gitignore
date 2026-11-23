@@ -1,0 +1,50 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+**/local.properties
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.externalNativeBuild/
+.cxx/
+
+# Secrets et fichiers de configuration locaux
+**/serviceAccount.json
+**/google-services.json
+**/*.jks
+**/*.keystore
+**/secrets.properties
+
+# Données privées et documents de travail
+**/*.xlsx
+**/*.xls
+**/*.pdf
+/app/src/*.zip
+/app/src/*.mp4
+
+# Sauvegardes, journaux et fichiers temporaires
+backups/
+local-backups/
+**/*.bak
+*.log
+gradle-thread-dump*.txt
+.DS_Store

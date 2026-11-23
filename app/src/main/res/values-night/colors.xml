@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mode nuit Eden : bleu principal plus lumineux et or secondaire. -->
+    <color name="text_primary">#FF86A5FF</color>
+    <color name="text_secondary">#FFC9A227</color>
+    <color name="text_muted">#FFC9A227</color>
+    <color name="page_background">#FF101827</color>
+    <color name="card_background">#FF1B2638</color>
+    <color name="card_stroke">#FF39465C</color>
+    <color name="secondary_button_background">#FF2D3A52</color>
+    <color name="glass_fill_top">#CC1B2638</color>
+    <color name="glass_fill_bottom">#B31B2638</color>
+    <color name="glass_stroke">#FF52627A</color>
+    <color name="input_fill">#FF263449</color>
+    <color name="navy_hint">#99C9A227</color>
+    <color name="gray_light">#FF101827</color>
+    <color name="pink">#FF202B3D</color>
+    <color name="navy">#FF86A5FF</color>
+    <color name="eden_blue">#FF86A5FF</color>
+    <color name="eden_gold">#FFC9A227</color>
+</resources>
