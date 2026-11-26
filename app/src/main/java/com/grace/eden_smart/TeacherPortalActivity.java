@@ -89,6 +89,9 @@ public class TeacherPortalActivity extends AppCompatActivity {
     private LinearLayout teacherNotificationList;
     private LinearLayout teacherGalleryList;
     private TextView galleryStatus;
+    private TextView lessonPreparationStatus;
+    private LinearLayout lessonPreparationList;
+    private final java.util.List<Map<String, Object>> lessonPreparationRecords = new java.util.ArrayList<>();
     private EditText profileFirstName, profileLastName, profilePhone;
     private TextView profileEmail, profileBranch, profileClasses, profileSettingsStatus;
     private final java.util.concurrent.ExecutorService galleryExecutor = java.util.concurrent.Executors.newFixedThreadPool(3);
@@ -99,11 +102,12 @@ public class TeacherPortalActivity extends AppCompatActivity {
     private String cotationAssessmentId = "test_1";
     private final java.util.List<String> cotationAssessmentIds = new java.util.ArrayList<>();
     private final java.util.List<String> cotationAssessmentLabels = new java.util.ArrayList<>();
-    private TextView cotationStatus;
-    private LinearLayout cotationEntries;
+    private TextView cotationStatus, cotationSavedStatus;
+    private LinearLayout cotationEntries, cotationSavedEntries;
     private final Map<String, EditText> cotationInputs = new java.util.LinkedHashMap<>();
     private final Map<String, String> cotationStudentNames = new java.util.LinkedHashMap<>();
     private final Map<String, Double> cotationMaxPoints = new HashMap<>();
+    private final java.util.List<String> cotationSavedRows = new java.util.ArrayList<>();
     private Spinner bulletinStudent, bulletinTrimester;
     private EditText bulletinYear, bulletinTeacher, bulletinComment;
     private TextView bulletinStatus, bulletinHistoryStatus;
@@ -120,14 +124,14 @@ public class TeacherPortalActivity extends AppCompatActivity {
             {"Étude du milieu", "Observation", "D.E. du Milieu"},
             {"Pre-mathématique", "Pré-calcul", "Formes géométriques"},
             {"Français", "Pré-lecture", "Pré-écriture"},
-            {"Français langage", "Chant / Expression orale", "Histoire"},
-            {"Art& Culture", "Dessin", "Coloriage", "Peinture", "Découpage", "Déchiquetage", "Modelage", "Pliage"},
+            {"Français langage", "Expression orale", "Histoire"},
+            {"Art& Culture", "Dessin", "Coloriage", "Peinture", "Découpage", "Déchiquetage", "Modelage", "Pliage", "Récitation", "Bricolage et construction", "Chant"},
             {"Activité Physique et Motrice", "Exercices physiques", "Jeux collectifs"}
     };
     private final java.util.List<Map<String, Object>> activityRecords = new java.util.ArrayList<>();
     private EditText studentSearch;
     private TextView teacherName, branchText, classText, studentCount, status, attendanceDate, attendanceStats;
-    private String uid, teacherBranch = "", selectedAttendanceDate;
+    private String uid, teacherBranch = "", selectedAttendanceDate, cotationSchoolYear = "";
     private final Set<String> assignedClasses = new HashSet<>();
     private final Map<String, RadioGroup> attendanceGroups = new HashMap<>();
     private final Map<String, String> savedAttendance = new HashMap<>();
@@ -167,6 +171,7 @@ public class TeacherPortalActivity extends AppCompatActivity {
                 {"👥", "Élèves", "navStudentsSection"},
                 {"📅", "Présences", "navAttendanceSection"},
                 {"🎨", "Activités", "navActivitiesSection"},
+                {"🗒️", "Préparation", "navLessonPreparationSection"},
                 {"📊", "Résultats", "navPerformanceSection"},
                 {"📝", "Cotation", "navCotationSection"},
                 {"📘", "Bulletins", "navBulletinsSection"},
@@ -178,9 +183,9 @@ public class TeacherPortalActivity extends AppCompatActivity {
         };
         int[] targets = {
                 R.id.navStudentsSection, R.id.navAttendanceSection, R.id.navActivitiesSection,
-                R.id.navPerformanceSection, R.id.navCotationSection, R.id.navBulletinsSection,
-                R.id.navMessagesSection, R.id.navNotificationsSection, R.id.navHistorySection,
-                R.id.navGallerySection, R.id.navSettingsSection
+                R.id.navLessonPreparationSection, R.id.navPerformanceSection, R.id.navCotationSection,
+                R.id.navBulletinsSection, R.id.navMessagesSection, R.id.navNotificationsSection,
+                R.id.navHistorySection, R.id.navGallerySection, R.id.navSettingsSection
         };
         for (int i = 0; i < items.length; i++) {
             final int targetId = targets[i];
@@ -215,9 +220,9 @@ public class TeacherPortalActivity extends AppCompatActivity {
         if (page == null) return;
         int[] sectionIds = {
                 R.id.navStudentsSection, R.id.navAttendanceSection, R.id.navActivitiesSection,
-                R.id.navPerformanceSection, R.id.navCotationSection, R.id.navBulletinsSection,
-                R.id.navMessagesSection, R.id.navNotificationsSection, R.id.navHistorySection,
-                R.id.navGallerySection, R.id.navSettingsSection
+                R.id.navLessonPreparationSection, R.id.navPerformanceSection, R.id.navCotationSection,
+                R.id.navBulletinsSection, R.id.navMessagesSection, R.id.navNotificationsSection,
+                R.id.navHistorySection, R.id.navGallerySection, R.id.navSettingsSection
         };
         int selectedIndex = 0;
         for (int i = 0; i < sectionIds.length; i++) if (sectionIds[i] == selectedHeaderId) selectedIndex = i;
@@ -295,9 +300,9 @@ public class TeacherPortalActivity extends AppCompatActivity {
             else if (target instanceof android.view.ViewGroup) setTextColorRecursively((android.view.ViewGroup) target, dark);
         }
         int[] headings = {R.id.navStudentsSection, R.id.navAttendanceSection, R.id.navActivitiesSection,
-                R.id.navPerformanceSection, R.id.navCotationSection, R.id.navBulletinsSection,
-                R.id.navMessagesSection, R.id.navNotificationsSection, R.id.navHistorySection,
-                R.id.navGallerySection, R.id.navSettingsSection};
+                R.id.navLessonPreparationSection, R.id.navPerformanceSection, R.id.navCotationSection,
+                R.id.navBulletinsSection, R.id.navMessagesSection, R.id.navNotificationsSection,
+                R.id.navHistorySection, R.id.navGallerySection, R.id.navSettingsSection};
         for (int id : headings) {
             TextView heading = findViewById(id);
             if (heading != null) {
@@ -344,7 +349,8 @@ public class TeacherPortalActivity extends AppCompatActivity {
             TextView label = (TextView) view;
             int id = label.getId();
             boolean section = id == R.id.navStudentsSection || id == R.id.navAttendanceSection
-                    || id == R.id.navActivitiesSection || id == R.id.navPerformanceSection
+                    || id == R.id.navActivitiesSection || id == R.id.navLessonPreparationSection
+                    || id == R.id.navPerformanceSection
                     || id == R.id.navCotationSection || id == R.id.navBulletinsSection
                     || id == R.id.navMessagesSection || id == R.id.navNotificationsSection
                     || id == R.id.navHistorySection;
@@ -389,6 +395,7 @@ public class TeacherPortalActivity extends AppCompatActivity {
 
     private void buildScreen() {
         setContentView(R.layout.activity_teacher_portal);
+        KeyboardInsets.apply(this);
         interTypeface = ResourcesCompat.getFont(this, R.font.inter);
         frauncesTypeface = ResourcesCompat.getFont(this, R.font.fraunces);
         setupTeacherQuickNavigation();
@@ -419,6 +426,10 @@ public class TeacherPortalActivity extends AppCompatActivity {
         activityList = findViewById(R.id.teacherActivityList);
         activityStatus = findViewById(R.id.activityStatus);
         findViewById(R.id.addActivityButton).setOnClickListener(v -> showActivityDialog());
+        lessonPreparationStatus = findViewById(R.id.lessonPreparationStatus);
+        lessonPreparationList = findViewById(R.id.lessonPreparationList);
+        findViewById(R.id.addLessonPreparationButton).setOnClickListener(v -> showLessonPreparationDialog(null, null));
+        findViewById(R.id.refreshLessonPreparationsButton).setOnClickListener(v -> loadLessonPreparations());
         performanceSummary = findViewById(R.id.performanceSummary);
         performanceSubjects = findViewById(R.id.performanceSubjects);
         performanceRanking = findViewById(R.id.performanceRanking);
@@ -431,6 +442,9 @@ public class TeacherPortalActivity extends AppCompatActivity {
         cotationMonth = findViewById(R.id.cotationMonth);
         cotationStatus = findViewById(R.id.cotationStatus);
         cotationEntries = findViewById(R.id.cotationEntries);
+        cotationSavedStatus = findViewById(R.id.cotationSavedStatus);
+        cotationSavedEntries = findViewById(R.id.cotationSavedEntries);
+        findViewById(R.id.exportCotationPdfButton).setOnClickListener(v -> exportCotationPdf());
         // Les sélecteurs de cotation sont initialisés dans setupCotationModule().
         findViewById(R.id.saveCotationButton).setOnClickListener(v -> saveCotationSheet());
         setupBulletinViews();
@@ -577,6 +591,7 @@ public class TeacherPortalActivity extends AppCompatActivity {
         }
         loadAssignedStudents();
         loadAssignedActivities();
+        loadLessonPreparations();
         loadTeacherPerformance();
         setupCotationModule();
         setupBulletinModule();
@@ -879,7 +894,7 @@ public class TeacherPortalActivity extends AppCompatActivity {
             HttpURLConnection connection = null;
             try {
                 connection = (HttpURLConnection) new URL(imageUrl).openConnection();
-                connection.setConnectTimeout(10000);
+                connection.setConnectTimeout(16000);
                 connection.setReadTimeout(15000);
                 connection.setInstanceFollowRedirects(true);
                 connection.setRequestProperty("User-Agent", "EdenSmart-Android");
@@ -952,6 +967,7 @@ public class TeacherPortalActivity extends AppCompatActivity {
         findViewById(R.id.addCotationTestButton).setOnClickListener(v -> createCotationTest());
         findViewById(R.id.removeCotationTestButton).setOnClickListener(v -> removeCotationTest());
         cotationStatus.setText("Cotation par trimestre — données partagées avec le portail web.");
+        loadCotationSchoolYear();
     }
 
     private String cotationKey(String value) {
@@ -968,18 +984,38 @@ public class TeacherPortalActivity extends AppCompatActivity {
     private int selectedCotationTerm() { return cotationTrimester == null ? 1 : cotationTrimester.getSelectedItemPosition() + 1; }
     private String cotationTermKey() { return "T" + selectedCotationTerm(); }
     private String cotationAcademicYear() {
+        if (cotationSchoolYear != null && cotationSchoolYear.matches("\\d{4}-\\d{4}")) return cotationSchoolYear;
         Calendar c = Calendar.getInstance();
         int year = c.get(Calendar.YEAR), month = c.get(Calendar.MONTH) + 1;
         int start = month >= 9 ? year : year - 1;
         return start + "-" + (start + 1);
+    }
+    private void loadCotationSchoolYear() {
+        FirebaseService.getInstance(getApplicationContext()).getDatabase()
+                .getReference("schoolSettings/activeAcademicYear")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        String remote = snapshot.getValue(String.class);
+                        if (remote != null && remote.trim().matches("\\d{4}-\\d{4}")) {
+                            cotationSchoolYear = remote.trim();
+                            if (bulletinYear != null) {
+                                String current = bulletinYear.getText().toString().trim();
+                                if (current.isEmpty() || "2026-2027".equals(current)) bulletinYear.setText(cotationSchoolYear);
+                            }
+                            if (cotationClass != null && cotationClass.getSelectedItem() != null) loadCotationAssessments();
+                        }
+                    }
+                    @Override public void onCancelled(@NonNull DatabaseError error) {
+                        android.util.Log.w("EdenSmart", "Active academic year unavailable; using calendar year.", error.toException());
+                    }
+                });
     }
     private String cotationBranchKey() {
         String branch = teacherBranch == null || teacherBranch.trim().isEmpty() ? "default" : teacherBranch;
         return cotationKey(branch);
     }
     private int cotationSubjectMax(String subject) {
-        if ("Étude du milieu".equals(subject) || "Français langage".equals(subject)) return 80;
-        if ("Art& Culture".equals(subject) || "Activité Physique et Motrice".equals(subject)) return 60;
+        // Toutes les matières et branches utilisent désormais le même barème /100.
         return 100;
     }
     private int selectedCotationMax() { return cotationType.getSelectedItemPosition() == 1 ? cotationSubjectMax(selectedCotationSubject()) : 100; }
@@ -1096,7 +1132,7 @@ public class TeacherPortalActivity extends AppCompatActivity {
                     for (int i=1;i<subject.length;i++) {
                         String sub=subject[i], key=cotationKey(sub);
                         DataSnapshot configured=subjectConfig.child(key);
-                        double max=configured.exists()?numberValue(configured):(double)totalMax/(subject.length-1);
+                        double max = key.equals("bricolage_et_construction") ? 10d : (configured.exists()?numberValue(configured):(double)totalMax/(subject.length-1));
                         cotationMaxPoints.put(sid+"|"+key,max);
                         EditText score=new EditText(TeacherPortalActivity.this); score.setSingleLine(true); score.setTextSize(13);
                         score.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
@@ -1110,12 +1146,127 @@ public class TeacherPortalActivity extends AppCompatActivity {
                     View divider=new View(TeacherPortalActivity.this); divider.setBackgroundColor(Color.rgb(226,232,240));
                     cotationEntries.addView(divider,new LinearLayout.LayoutParams(-1,dp(1)));
                 }
+                renderSavedCotationEntries(snapshot, subject);
                 cotationStatus.setText(cotationStudentNames.size()+" élève(s) • "+selectedCotationSubject()+" • "+cotationTermKey()+
                         " • "+(cotationType.getSelectedItemPosition()==0?"TJ /100":"EX /"+totalMax)+" • "+selectedCotationMonth());
             }
             @Override public void onCancelled(@NonNull DatabaseError error) { cotationStatus.setText("Lecture refusée : "+error.getMessage()); }
         });
     }
+    private void renderSavedCotationEntries(DataSnapshot snapshot, String[] subject) {
+        cotationSavedRows.clear();
+        cotationSavedEntries.removeAllViews();
+        DataSnapshot entries = snapshot.child("entries");
+        for (DataSnapshot studentNode : entries.getChildren()) {
+            String sid = studentNode.getKey() == null ? "" : studentNode.getKey();
+            String studentName = cotationStudentNames.getOrDefault(sid, sid);
+            for (int i = 1; i < subject.length; i++) {
+                String sub = subject[i];
+                String key = cotationKey(sub);
+                DataSnapshot scoreNode = studentNode.child(key);
+                if (!scoreNode.child("score").exists()) continue;
+                String score = String.valueOf(scoreNode.child("score").getValue());
+                long savedAt = scoreNode.child("savedAt").getValue(Long.class) == null
+                        ? 0L : scoreNode.child("savedAt").getValue(Long.class);
+                String updated = savedAt > 0
+                        ? new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE).format(new Date(savedAt))
+                        : "Date non disponible";
+                String line = studentName + " — " + sub + " : " + score + "/" +
+                        cotationMaxPoints.getOrDefault(sid + "|" + key, 0.0) + " — " + updated;
+                cotationSavedRows.add(line);
+                TextView row = text("• " + line, 12, TEXT, false);
+                row.setPadding(dp(8), dp(7), dp(4), dp(7));
+                cotationSavedEntries.addView(row);
+                View divider = new View(this);
+                divider.setBackgroundColor(Color.rgb(226, 232, 240));
+                cotationSavedEntries.addView(divider, new LinearLayout.LayoutParams(-1, dp(1)));
+            }
+        }
+        cotationSavedStatus.setText(cotationSavedRows.size() + " note(s) enregistrée(s) • " +
+                selectedCotationClass() + " • " + selectedCotationSubject() + " • " +
+                cotationTermKey() + " • " + (cotationType.getSelectedItemPosition() == 1 ? "Examen" : "TJ"));
+        if (cotationSavedRows.isEmpty()) {
+            cotationSavedEntries.addView(text("Aucune note enregistrée pour cette sélection.", 12, MUTED, false));
+        }
+    }
+
+    private void exportCotationPdf() {
+        if (cotationSavedRows.isEmpty()) {
+            Toast.makeText(this, "Aucune note enregistrée à exporter.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        PdfDocument pdf = new PdfDocument();
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        int pageNo = 1, y = 55;
+        PdfDocument.Page page = pdf.startPage(new PdfDocument.PageInfo.Builder(595, 842, pageNo).create());
+        Canvas canvas = page.getCanvas();
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        lines.add("EDEN FAMILY SCHOOL");
+        lines.add("RELEVÉ DES COTATIONS");
+        lines.add("Classe : " + selectedCotationClass());
+        lines.add("Matière : " + selectedCotationSubject());
+        lines.add("Période : " + cotationTermKey() + " • " + selectedCotationMonth());
+        lines.add("Évaluation : " + (cotationAssessmentLabels.isEmpty() ? cotationAssessmentId :
+                cotationAssessmentLabels.get(Math.max(0, cotationAssessmentIds.indexOf(cotationAssessmentId)))));
+        lines.add("Type : " + (cotationType.getSelectedItemPosition() == 1 ? "Examen" : "Travail journalier"));
+        lines.add(" ");
+        lines.addAll(cotationSavedRows);
+        lines.add(" ");
+        lines.add("Généré le : " + new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE).format(new Date()));
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            boolean heading = i < 2;
+            paint.setColor(heading ? NAVY : TEXT);
+            paint.setTypeface(Typeface.create(Typeface.DEFAULT, heading ? Typeface.BOLD : Typeface.NORMAL));
+            paint.setTextSize(heading ? 16f : 10.5f);
+            if (y > 790) {
+                pdf.finishPage(page);
+                page = pdf.startPage(new PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create());
+                canvas = page.getCanvas();
+                y = 55;
+            }
+            String remaining = line;
+            while (paint.measureText(remaining) > 515f && remaining.length() > 8) {
+                int cut = remaining.length();
+                while (cut > 8 && paint.measureText(remaining.substring(0, cut)) > 515f) cut--;
+                canvas.drawText(remaining.substring(0, cut), 40, y, paint);
+                remaining = remaining.substring(cut).trim();
+                y += 16;
+            }
+            canvas.drawText(remaining, 40, y, paint);
+            y += heading ? 25 : 18;
+        }
+        pdf.finishPage(page);
+        try {
+            String filename = "Cotation_" + cotationKey(selectedCotationClass()) + "_" +
+                    cotationKey(selectedCotationSubject()) + "_" + cotationTermKey() + "_" +
+                    new SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(new Date()) + ".pdf";
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME, filename);
+                values.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Eden Family School");
+                Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                if (uri == null) throw new java.io.IOException("Impossible de créer le PDF.");
+                try (OutputStream output = getContentResolver().openOutputStream(uri)) {
+                    if (output == null) throw new java.io.IOException("Flux de sauvegarde indisponible.");
+                    pdf.writeTo(output);
+                }
+            } else {
+                File folder = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Eden Family School");
+                if (!folder.exists() && !folder.mkdirs()) throw new java.io.IOException("Dossier inaccessible.");
+                try (OutputStream output = new FileOutputStream(new File(folder, filename))) {
+                    pdf.writeTo(output);
+                }
+            }
+            Toast.makeText(this, "PDF enregistré dans Téléchargements / Eden Family School.", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Export PDF impossible : " + e.getMessage(), Toast.LENGTH_LONG).show();
+        } finally {
+            pdf.close();
+        }
+    }
+
     private String[] findCotationSubject(String name) {
         for (String[] item : cotationSubjects) if (item[0].equals(name)) return item;
         return null;
@@ -1128,7 +1279,10 @@ public class TeacherPortalActivity extends AppCompatActivity {
         Map<String,Object> updates=new HashMap<>(); long now=System.currentTimeMillis();
         for (Map.Entry<String,EditText> item:cotationInputs.entrySet()) {
             String[] parts=item.getKey().split("\\|",2); String raw=item.getValue().getText().toString().trim();
-            if(raw.isEmpty()) continue;
+            if(raw.isEmpty()) {
+                updates.put("entries/"+parts[0]+"/"+parts[1], null);
+                continue;
+            }
             double score; try { score=Double.parseDouble(raw); } catch(NumberFormatException ex) { item.getValue().setError("Note invalide"); return; }
             double max=cotationMaxPoints.getOrDefault(item.getKey(),10.0);
             if(score<0 || score>max+0.0001) { item.getValue().setError("Maximum : "+max); return; }
@@ -1143,7 +1297,11 @@ public class TeacherPortalActivity extends AppCompatActivity {
         updates.put("subjectMaxScore",cotationSubjectMax(subject)); updates.put("updatedAt",now);
         FirebaseService.getInstance(getApplicationContext()).getDatabase().getReference(path).updateChildren(updates)
                 .addOnCompleteListener(task -> {
-                    if(task.isSuccessful()) { cotationStatus.setText("Fiche sauvegardée • "+subject+" • "+cls+" • "+cotationTermKey()); Toast.makeText(this,"Cotations enregistrées.",Toast.LENGTH_SHORT).show(); }
+                    if(task.isSuccessful()) {
+                        cotationStatus.setText("Fiche sauvegardée • "+subject+" • "+cls+" • "+cotationTermKey());
+                        Toast.makeText(this,"Cotations enregistrées.",Toast.LENGTH_SHORT).show();
+                        loadCotationSheet();
+                    }
                     else cotationStatus.setText("Échec : "+(task.getException()==null?"accès refusé":task.getException().getMessage()));
                 });
     }
@@ -1220,6 +1378,7 @@ public class TeacherPortalActivity extends AppCompatActivity {
         bulletinTeacher.setText(teacherName.getText().toString());
         refreshBulletinStudentChoices();
         loadNativeBulletinHistory();
+        loadCotationSchoolYear();
     }
 
     private void refreshBulletinStudentChoices() {
@@ -1312,12 +1471,12 @@ public class TeacherPortalActivity extends AppCompatActivity {
     private static final String[][] PRIMARY_SUBJECTS = {
             {"MATHEMATIQUES", "100", "100"},
             {"ENGLISH", "100", "100"},
-            {"KINYARWANDA", "60", "60"},
-            {"FRANÇAIS", "50", "50"},
-            {"SCIENCE ET I.C.T", "80", "80"},
-            {"ET. SOCI ET RELIG", "80", "80"},
-            {"ART ET CULTURE", "20", "20"},
-            {"EDUCATION PHYS", "10", "10"}
+            {"KINYARWANDA", "100", "100"},
+            {"FRANÇAIS", "100", "100"},
+            {"SCIENCE ET I.C.T", "100", "100"},
+            {"ET. SOCI ET RELIG", "100", "100"},
+            {"ART ET CULTURE", "100", "100"},
+            {"EDUCATION PHYS", "100", "100"}
     };
 
     private void showPrimaryBulletinDialog() {
@@ -1445,12 +1604,21 @@ public class TeacherPortalActivity extends AppCompatActivity {
         }
         double annualTotal = trimTotals[0] + trimTotals[1] + trimTotals[2];
         double currentTotal = trimTotals[Integer.parseInt(trimester) - 1];
-        String currentPct = formatPrimaryPct(currentTotal / 1000.0 * 100);
+        String currentPct = formatPrimaryPct(currentTotal / 1600.0 * 100);
         Map<String, Object> payload = new HashMap<>();
         payload.put("studentId", studentId);
+        payload.put("studentName", accessibleStudents.get(studentId).split("\\|", 2)[0]);
         payload.put("name", accessibleStudents.get(studentId).split("\\|", 2)[0]);
         payload.put("branch", teacherBranch);
         payload.put("class", cls);
+        String activeSchoolYear = bulletinYear == null ? cotationAcademicYear() : bulletinYear.getText().toString().trim();
+        if (activeSchoolYear.isEmpty()) activeSchoolYear = cotationAcademicYear();
+        payload.put("schoolYear", activeSchoolYear);
+        payload.put("academicYear", activeSchoolYear);
+        payload.put("anneeScolaire", activeSchoolYear);
+        payload.put("annee", activeSchoolYear);
+        payload.put("trimester", trimester);
+        payload.put("section", "primaire");
         payload.put("teacherId", uid);
         payload.put("teacherName", teacherName.getText().toString());
         payload.put("trimestre", Integer.parseInt(trimester));
@@ -1464,12 +1632,12 @@ public class TeacherPortalActivity extends AppCompatActivity {
         payload.put("conduite", conduct.getText().toString().trim());
         payload.put("bulletinDate", date.getText().toString().trim());
         payload.put("annualTotal", annualTotal);
-        payload.put("annualPct", formatPrimaryPct((annualTotal / 3.0) / 1000.0 * 100));
-        payload.put("maxGrand", 3000);
+        payload.put("annualPct", formatPrimaryPct((annualTotal / 3.0) / 1600.0 * 100));
+        payload.put("maxGrand", 4800);
         payload.put("trim1Total", trimTotals[0]); payload.put("trim2Total", trimTotals[1]); payload.put("trim3Total", trimTotals[2]);
-        payload.put("trim1Pct", formatPrimaryPct(trimTotals[0] / 1000.0 * 100));
-        payload.put("trim2Pct", formatPrimaryPct(trimTotals[1] / 1000.0 * 100));
-        payload.put("trim3Pct", formatPrimaryPct(trimTotals[2] / 1000.0 * 100));
+        payload.put("trim1Pct", formatPrimaryPct(trimTotals[0] / 1600.0 * 100));
+        payload.put("trim2Pct", formatPrimaryPct(trimTotals[1] / 1600.0 * 100));
+        payload.put("trim3Pct", formatPrimaryPct(trimTotals[2] / 1600.0 * 100));
         payload.put("scores", rows);
         ref.updateChildren(payload).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
@@ -1517,7 +1685,7 @@ public class TeacherPortalActivity extends AppCompatActivity {
                             double t3 = snapshotNumber(bulletin, "trim3Total");
                             double total = t1 + t2 + t3;
                             double average = total / 3.0;
-                            double pct = average > 0 ? Math.floor((average / 1000.0 * 100.0) * 10.0) / 10.0 : 0.0;
+                            double pct = average > 0 ? Math.floor((average / 1600.0 * 100.0) * 10.0) / 10.0 : 0.0;
                             Map<String, Object> item = new HashMap<>();
                             item.put("studentId", entry.getKey());
                             item.put("studentName", parts[0]);
@@ -1530,7 +1698,7 @@ public class TeacherPortalActivity extends AppCompatActivity {
                             item.put("averageAnnual", average);
                             item.put("annualPct", formatPrimaryPct(pct));
                             item.put("percentage", pct);
-                            item.put("max", 3000);
+                            item.put("max", 4800);
                             item.put("generatedAt", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(new Date()));
                             item.put("sourceBulletin", sourcePath + "/" + entry.getKey());
                             ranked.put(entry.getKey(), item);
@@ -1624,9 +1792,9 @@ public class TeacherPortalActivity extends AppCompatActivity {
                     + "  •  " + item.get("annualPct") + "%  •  " + item.get("grade");
             content.addView(text(line, 13, TEXT, true));
             TextView totals = text("T1 : " + formatPrimaryPct(((Number) item.get("trim1Total")).doubleValue())
-                    + "/1000   |   T2 : " + formatPrimaryPct(((Number) item.get("trim2Total")).doubleValue())
-                    + "/1000   |   T3 : " + formatPrimaryPct(((Number) item.get("trim3Total")).doubleValue())
-                    + "/1000", 11, MUTED, false);
+                    + "/1600   |   T2 : " + formatPrimaryPct(((Number) item.get("trim2Total")).doubleValue())
+                    + "/1600   |   T3 : " + formatPrimaryPct(((Number) item.get("trim3Total")).doubleValue())
+                    + "/1600", 11, MUTED, false);
             content.addView(totals);
             View divider = new View(this);
             divider.setBackgroundColor(Color.rgb(230, 234, 242));
@@ -2631,6 +2799,222 @@ public class TeacherPortalActivity extends AppCompatActivity {
         });
     }
 
+
+    private void loadLessonPreparations() {
+        if (lessonPreparationStatus == null || lessonPreparationList == null || uid == null) return;
+        lessonPreparationStatus.setText("Chargement des fiches de préparation…");
+        lessonPreparationList.removeAllViews();
+        FirebaseService.getInstance(getApplicationContext()).getDatabase()
+                .getReference("lesson_preparations").orderByChild("teacherUid").equalTo(uid)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                lessonPreparationRecords.clear();
+                if (snapshot.exists()) {
+                    for (DataSnapshot child : snapshot.getChildren()) {
+                        Map<String, Object> record = (Map<String, Object>) child.getValue();
+                        if (record == null) continue;
+                        String owner = recordValue(record, "teacherUid", "teacherId", "createdBy");
+                        String branch = recordValue(record, "branch", "schoolBranch", "branchName");
+                        String cls = recordValue(record, "class", "className", "classe");
+                        if (!uid.equals(owner)) continue;
+                        if (branch.isEmpty() || !normalizeBranchForMatch(branch)
+                                .equals(normalizeBranchForMatch(teacherBranch))) continue;
+                        if (cls.isEmpty() || !containsClass(cls)) continue;
+                        record.put("_id", child.getKey());
+                        lessonPreparationRecords.add(record);
+                    }
+                }
+                lessonPreparationRecords.sort((a, b) ->
+                        recordValue(b, "lessonDate", "date").compareTo(recordValue(a, "lessonDate", "date")));
+                renderLessonPreparations();
+                lessonPreparationStatus.setText(lessonPreparationRecords.size()
+                        + " fiche(s) de préparation pour vos classes assignées.");
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) {
+                lessonPreparationStatus.setText("Chargement refusé par Firebase : " + error.getMessage());
+            }
+        });
+    }
+
+    private void renderLessonPreparations() {
+        if (lessonPreparationList == null) return;
+        lessonPreparationList.removeAllViews();
+        if (lessonPreparationRecords.isEmpty()) {
+            TextView empty = text("Aucune fiche enregistrée. Créez votre première préparation de leçon.",
+                    13, MUTED, false);
+            empty.setPadding(0, dp(12), 0, dp(12));
+            lessonPreparationList.addView(empty);
+            return;
+        }
+        for (Map<String, Object> record : lessonPreparationRecords) {
+            MaterialCardView card = card();
+            LinearLayout content = column();
+            content.setPadding(dp(14), dp(12), dp(14), dp(12));
+            String title = recordValue(record, "title");
+            String cls = recordValue(record, "class", "className", "classe");
+            String subject = recordValue(record, "subject");
+            String date = recordValue(record, "lessonDate", "date");
+            content.addView(text(title.isEmpty() ? "Préparation de leçon" : title, 16, NAVY, true));
+            content.addView(text(subject + " • " + cls + " • " + date, 12, MUTED, false));
+            String objectives = recordValue(record, "objectives");
+            if (!objectives.isEmpty()) content.addView(text("Objectifs : " + objectives, 13, TEXT, false));
+            LinearLayout actions = new LinearLayout(this);
+            actions.setOrientation(LinearLayout.HORIZONTAL);
+            MaterialButton edit = new MaterialButton(this);
+            edit.setText("Modifier");
+            edit.setAllCaps(false);
+            MaterialButton delete = new MaterialButton(this);
+            delete.setText("Supprimer");
+            delete.setAllCaps(false);
+            actions.addView(edit, new LinearLayout.LayoutParams(0, dp(44), 1));
+            actions.addView(delete, new LinearLayout.LayoutParams(0, dp(44), 1));
+            content.addView(actions);
+            card.addView(content);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.bottomMargin = dp(10);
+            lessonPreparationList.addView(card, params);
+            String id = recordValue(record, "_id");
+            edit.setOnClickListener(v -> showLessonPreparationDialog(id, record));
+            delete.setOnClickListener(v -> new AlertDialog.Builder(this)
+                    .setTitle("Supprimer cette fiche ?")
+                    .setMessage("Cette action supprimera uniquement votre fiche de préparation.")
+                    .setNegativeButton("Annuler", null)
+                    .setPositiveButton("Supprimer", (dialog, which) ->
+                            FirebaseService.getInstance(getApplicationContext()).getDatabase()
+                                    .getReference("lesson_preparations").child(id).removeValue()
+                                    .addOnCompleteListener(task -> {
+                                        if (task.isSuccessful()) loadLessonPreparations();
+                                        else Toast.makeText(this, "Suppression refusée : "
+                                                + (task.getException() == null ? "" : task.getException().getMessage()),
+                                                Toast.LENGTH_LONG).show();
+                                    })).show());
+        }
+    }
+
+    private void showLessonPreparationDialog(String recordId, Map<String, Object> existing) {
+        if (assignedClasses.isEmpty()) {
+            Toast.makeText(this, "Aucune classe n'est assignée à votre compte.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        LinearLayout form = column();
+        form.setPadding(dp(18), dp(8), dp(18), dp(4));
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(form);
+        Spinner classSpinner = new Spinner(this);
+        java.util.List<String> classes = new java.util.ArrayList<>(assignedClasses);
+        java.util.Collections.sort(classes);
+        classSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, classes));
+        Spinner subjectSpinner = new Spinner(this);
+        String[] subjects = {"Français", "Pré-mathématique", "Étude du milieu",
+                "Français langage", "Art & Culture", "Activité Physique et Motrice", "Autre"};
+        subjectSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, subjects));
+        EditText title = lessonField("Titre / thème de la leçon", existing, "title", false);
+        EditText date = lessonField("Date (AAAA-MM-JJ)", existing, "lessonDate", false);
+        EditText duration = lessonField("Durée en minutes", existing, "durationMinutes", false);
+        EditText objectives = lessonField("Objectifs pédagogiques", existing, "objectives", true);
+        EditText materials = lessonField("Matériels et ressources", existing, "materials", true);
+        EditText introduction = lessonField("Introduction / mise en situation", existing, "introduction", true);
+        EditText development = lessonField("Développement / déroulement", existing, "development", true);
+        EditText conclusion = lessonField("Conclusion / synthèse", existing, "conclusion", true);
+        EditText assessment = lessonField("Évaluation formative", existing, "assessment", true);
+        if (existing != null) {
+            String oldClass = recordValue(existing, "class", "className", "classe");
+            int classIndex = classes.indexOf(oldClass);
+            if (classIndex >= 0) classSpinner.setSelection(classIndex);
+            String oldSubject = recordValue(existing, "subject");
+            for (int i = 0; i < subjects.length; i++) if (subjects[i].equals(oldSubject)) subjectSpinner.setSelection(i);
+        } else {
+            date.setText(new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date()));
+            duration.setText("30");
+        }
+        addFormLabel(form, "Classe assignée"); form.addView(classSpinner);
+        addFormLabel(form, "Matière"); form.addView(subjectSpinner);
+        addFormLabel(form, "Titre / thème"); form.addView(title);
+        addFormLabel(form, "Date"); form.addView(date);
+        date.setOnClickListener(v -> {
+            Calendar cal = Calendar.getInstance();
+            try { cal.setTime(new SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date.getText().toString())); }
+            catch (Exception ignored) { }
+            new DatePickerDialog(this, (picker, year, month, day) ->
+                    date.setText(String.format(Locale.US, "%04d-%02d-%02d", year, month + 1, day)),
+                    cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show();
+        });
+        addFormLabel(form, "Durée (minutes)"); form.addView(duration);
+        addFormLabel(form, "Objectifs pédagogiques"); form.addView(objectives);
+        addFormLabel(form, "Matériels et ressources"); form.addView(materials);
+        addFormLabel(form, "Introduction"); form.addView(introduction);
+        addFormLabel(form, "Développement"); form.addView(development);
+        addFormLabel(form, "Conclusion"); form.addView(conclusion);
+        addFormLabel(form, "Évaluation formative"); form.addView(assessment);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(recordId == null ? "Nouvelle fiche de préparation" : "Modifier la fiche")
+                .setView(scroll).setNegativeButton("Annuler", null).setPositiveButton("Enregistrer", null).create();
+        dialog.setOnShowListener(v -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(btn -> {
+            String selectedClass = String.valueOf(classSpinner.getSelectedItem());
+            String selectedSubject = String.valueOf(subjectSpinner.getSelectedItem());
+            String lessonTitle = title.getText().toString().trim();
+            String lessonDate = date.getText().toString().trim();
+            String minutes = duration.getText().toString().trim();
+            if (lessonTitle.isEmpty() || !validIsoDate(lessonDate)) {
+                Toast.makeText(this, "Le titre et une date valide sont obligatoires.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            if (!assignedClasses.contains(selectedClass)) {
+                Toast.makeText(this, "Cette classe ne fait pas partie de vos affectations.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            try {
+                if (Integer.parseInt(minutes) < 1 || Integer.parseInt(minutes) > 600) throw new NumberFormatException();
+            } catch (Exception ex) {
+                Toast.makeText(this, "La durée doit être comprise entre 1 et 600 minutes.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            Map<String, Object> data = new HashMap<>();
+            data.put("teacherUid", uid);
+            data.put("teacherName", teacherName == null ? "" : teacherName.getText().toString());
+            data.put("branch", teacherBranch);
+            data.put("class", selectedClass);
+            data.put("subject", selectedSubject);
+            data.put("title", lessonTitle);
+            data.put("lessonDate", lessonDate);
+            data.put("durationMinutes", Integer.parseInt(minutes));
+            data.put("objectives", objectives.getText().toString().trim());
+            data.put("materials", materials.getText().toString().trim());
+            data.put("introduction", introduction.getText().toString().trim());
+            data.put("development", development.getText().toString().trim());
+            data.put("conclusion", conclusion.getText().toString().trim());
+            data.put("assessment", assessment.getText().toString().trim());
+            data.put("updatedAt", System.currentTimeMillis());
+            DatabaseReference root = FirebaseService.getInstance(getApplicationContext()).getDatabase()
+                    .getReference("lesson_preparations");
+            DatabaseReference target = recordId == null ? root.push() : root.child(recordId);
+            if (recordId == null) data.put("createdAt", System.currentTimeMillis());
+            target.updateChildren(data).addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    dialog.dismiss();
+                    loadLessonPreparations();
+                    Toast.makeText(this, "Fiche enregistrée dans Firebase.", Toast.LENGTH_SHORT).show();
+                } else Toast.makeText(this, "Enregistrement refusé : "
+                        + (task.getException() == null ? "" : task.getException().getMessage()),
+                        Toast.LENGTH_LONG).show();
+            });
+        }));
+        dialog.show();
+    }
+
+    private EditText lessonField(String hint, Map<String, Object> existing, String key, boolean multiline) {
+        EditText input = new EditText(this);
+        input.setHint(hint);
+        input.setText(existing == null ? "" : recordValue(existing, key));
+        if (multiline) {
+            input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+            input.setMinLines(2);
+            input.setGravity(android.view.Gravity.TOP);
+        } else input.setSingleLine(true);
+        return input;
+    }
+
     private void loadAssignedActivities() {
         if (activitiesRef == null || activityList == null) return;
         activityStatus.setText("Chargement des activités…");
@@ -2891,9 +3275,7 @@ public class TeacherPortalActivity extends AppCompatActivity {
     }
 
     private double performanceSubjectMax(String subject) {
-        String key = normalize(subject).toLowerCase(Locale.ROOT);
-        if (key.contains("etude du milieu") || key.contains("francais langage")) return 80d;
-        if (key.contains("art") || key.contains("culture") || key.contains("activite physique") || key.contains("motrice")) return 60d;
+        // Harmonisation du calcul des performances : chaque matière est sur 100.
         return 100d;
     }
 

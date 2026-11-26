@@ -18,7 +18,27 @@
         android:theme="@style/Theme.Eden_smart">
 
         <activity
+            android:name=".DirectorPortalActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".TeacherPortalActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".AcademicPortalActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".NativeSecretaryAttendanceActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".AccountantPortalActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 

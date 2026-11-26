@@ -327,6 +327,38 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:layout_marginBottom="10dp"
+            android:id="@+id/navLessonPreparationSection"
+            android:text="Fiches de préparation des leçons"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/page_background" app:cardCornerRadius="16dp" app:cardElevation="2dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="14dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Préparez vos cours : objectifs, matériel, déroulement et évaluation."
+                    android:textColor="@color/text_primary" android:textSize="13sp"/>
+                <TextView android:id="@+id/lessonPreparationStatus" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Chargement des fiches…"
+                    android:textColor="@color/text_primary" android:textSize="12sp" android:layout_marginTop="8dp"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/addLessonPreparationButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="＋ Créer une fiche de préparation" android:textAllCaps="false"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/refreshLessonPreparationsButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Actualiser les fiches" android:textAllCaps="false"/>
+                <LinearLayout android:id="@+id/lessonPreparationList" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="10dp"
             android:id="@+id/navPerformanceSection"
             android:text="Évaluations et performances"
             android:textColor="@color/text_primary"
@@ -464,6 +496,21 @@
                     android:id="@+id/saveCotationButton" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:text="Enregistrer les cotations"
                     android:textAllCaps="false" android:layout_marginTop="10dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Notes déjà mises à jour" android:textStyle="bold"
+                    android:textColor="@color/text_primary" android:textSize="16sp"
+                    android:layout_marginTop="18dp"/>
+                <TextView android:id="@+id/cotationSavedStatus" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Les notes enregistrées apparaîtront ici."
+                    android:textColor="@color/text_primary" android:textSize="12sp"
+                    android:layout_marginTop="4dp"/>
+                <LinearLayout android:id="@+id/cotationSavedEntries" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"
+                    android:layout_marginTop="6dp"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/exportCotationPdfButton" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Télécharger les notes en PDF"
+                    android:textAllCaps="false" android:layout_marginTop="8dp"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"

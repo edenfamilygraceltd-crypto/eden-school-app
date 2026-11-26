@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         setContentView(R.layout.activity_main);
+        KeyboardInsets.apply(this);
         emailInput = findViewById(R.id.emailInput);
         passwordInput = findViewById(R.id.passwordInput);
         signInButton = findViewById(R.id.signInButton);
@@ -104,10 +105,14 @@ public class MainActivity extends AppCompatActivity {
         String role = normalizeRole(rawRole);
         if (isRole(role, "teacher", "enseignant", "enseignante")) {
             openPortal(TeacherPortalActivity.class);
-        } else if (isRole(role, "director", "directeur", "admin", "administrateur")) {
+        } else if (isRole(role, "director", "directeur")) {
+            openPortal(DirectorPortalActivity.class);
+        } else if (isRole(role, "admin", "administrateur")) {
             openPortal(DashboardActivity.class);
         } else if (isRole(role, "secretary", "secretaire")) {
             openPortal(SecretaryPortalActivity.class);
+        } else if (isRole(role, "accountant", "comptable", "comptableprincipal", "comptablesecondaire", "chiefaccountant")) {
+            openPortal(AccountantPortalActivity.class);
         } else {
             rejectAccess("Le rôle " + (rawRole == null ? "non défini" : rawRole)
                     + " n'est pas autorisé dans cette application.");

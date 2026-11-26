@@ -176,6 +176,7 @@ public class DashboardActivity extends AppCompatActivity {
         bottomNav.addView(navUpdates, new LinearLayout.LayoutParams(0, -2, 1f));
         appRoot.addView(bottomNav, new LinearLayout.LayoutParams(-1, -2));
         setContentView(appRoot);
+        KeyboardInsets.apply(this);
 
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
