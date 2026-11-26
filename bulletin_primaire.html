@@ -783,7 +783,7 @@ table.notes-table{width:100%;border-collapse:collapse;min-width:700px;font-size:
         </div>
         <div class="stats-bar">
           <div class="stat-card"><div class="stat-val" id="disp-total">0</div><div class="stat-lbl" id="disp-total-lbl">Total Annuel</div></div>
-          <div class="stat-card"><div class="stat-val" id="disp-max">3000</div><div class="stat-lbl" id="disp-max-lbl">Max Annuel</div></div>
+          <div class="stat-card"><div class="stat-val" id="disp-max">4800</div><div class="stat-lbl" id="disp-max-lbl">Max Annuel</div></div>
           <div class="stat-card"><div class="stat-val" id="disp-pct">0%</div><div class="stat-lbl">Pourcentage</div></div>
           <div class="stat-card"><div class="stat-val" id="disp-grade">—</div><div class="stat-lbl">Grade Global</div></div>
         </div>
@@ -931,12 +931,12 @@ function handleImageFallback(img) {
 const SUBJECTS=[
   {name:'MATHEMATIQUES',testMax:100,exMax:100},
   {name:'ENGLISH',testMax:100,exMax:100},
-  {name:'KINYARWANDA',testMax:60,exMax:60},
-  {name:'FRANÇAIS',testMax:50,exMax:50},
-  {name:'SCIENCE ET I.C.T',testMax:80,exMax:80},
-  {name:'ET. SOCI ET RELIG',testMax:80,exMax:80},
-  {name:'ART ET CULTURE',testMax:20,exMax:20},
-  {name:'EDUCATION PHYS',testMax:10,exMax:10}
+  {name:'KINYARWANDA',testMax:100,exMax:100},
+  {name:'FRANÇAIS',testMax:100,exMax:100},
+  {name:'SCIENCE ET I.C.T',testMax:100,exMax:100},
+  {name:'ET. SOCI ET RELIG',testMax:100,exMax:100},
+  {name:'ART ET CULTURE',testMax:100,exMax:100},
+  {name:'EDUCATION PHYS',testMax:100,exMax:100}
 ];
 // Subjects included in Tableau 2 (exams only — no ART/PHYS)
 const SUBJECTS_EXAM=['MATHEMATIQUES','ENGLISH','KINYARWANDA','FRANÇAIS','SCIENCE ET I.C.T','ET. SOCI ET RELIG'];
@@ -1071,22 +1071,22 @@ function showAnnualBulletin() {
         place: studentBulletin.annualPlace || studentBulletin.place || null,
         trimestre1: {
           total: t1,
-          percentage: studentBulletin.trim1Pct || formatDecimal((t1 || 0) / 1000 * 100),
+          percentage: studentBulletin.trim1Pct || formatDecimal((t1 || 0) / 1600 * 100),
           place: studentBulletin.trim1Place || '—'
         },
         trimestre2: {
           total: t2,
-          percentage: studentBulletin.trim2Pct || formatDecimal((t2 || 0) / 1000 * 100),
+          percentage: studentBulletin.trim2Pct || formatDecimal((t2 || 0) / 1600 * 100),
           place: studentBulletin.trim2Place || '—'
         },
         trimestre3: {
           total: t3,
-          percentage: studentBulletin.trim3Pct || formatDecimal((t3 || 0) / 1000 * 100),
+          percentage: studentBulletin.trim3Pct || formatDecimal((t3 || 0) / 1600 * 100),
           place: studentBulletin.trim3Place || '—'
         },
         annuel: {
           total: totalAnnual,
-          percentage: studentBulletin.annualPct || studentBulletin.annualPctFinal || formatDecimal(totalAnnual / 3000 * 100),
+          percentage: studentBulletin.annualPct || studentBulletin.annualPctFinal || formatDecimal(totalAnnual / 4800 * 100),
           place: studentBulletin.annualPlace || studentBulletin.place || '—',
           average: averageAnnual
         },
@@ -1401,7 +1401,7 @@ async function loadStudents(){
       const studentClass = (student.classe || student.class || student.classes || '').toString().toLowerCase().trim();
       const rawBulletin = classBulletinCache[studentId] || {};
       const total = Number(rawBulletin.annualTotal || rawBulletin.total || 0);
-      const max = Number(rawBulletin.maxGrand || rawBulletin.max || 1000);
+      const max = Number(rawBulletin.maxGrand || rawBulletin.max || 1600);
       const percentage = max > 0 ? formatDecimal((total / max) * 100) : '0.0';
       const placeRaw = rawBulletin.place || '';
       const place = parsePlaceValue(placeRaw);
@@ -1970,14 +1970,14 @@ async function saveBulletin(){
 
   const annualTotal = roundDecimal(trim1Total + trim2Total + trim3Total);
   const averageScore = roundDecimal(annualTotal / 3);
-  const annualPct = averageScore ? formatDecimal(averageScore / 1000 * 100) : '0.0';
+  const annualPct = averageScore ? formatDecimal(averageScore / 1600 * 100) : '0.0';
   const currentTrimTotal = currentTrim===1 ? trim1Total : currentTrim===2 ? trim2Total : trim3Total;
   const currentTrimPct = formatDecimal((currentTrimTotal / TRIM_MAX_GRAND) * 100);
 
   // Calcul des pourcentages par trimestre
-  const trim1Pct = trim1Total ? formatDecimal(trim1Total / 1000 * 100) : '0.0';
-  const trim2Pct = trim2Total ? formatDecimal(trim2Total / 1000 * 100) : '0.0';
-  const trim3Pct = trim3Total ? formatDecimal(trim3Total / 1000 * 100) : '0.0';
+  const trim1Pct = trim1Total ? formatDecimal(trim1Total / 1600 * 100) : '0.0';
+  const trim2Pct = trim2Total ? formatDecimal(trim2Total / 1600 * 100) : '0.0';
+  const trim3Pct = trim3Total ? formatDecimal(trim3Total / 1600 * 100) : '0.0';
 
   const payload={
     studentId,
@@ -2083,15 +2083,15 @@ async function saveAnnualBulletins(selectedStudentId) {
       const t3 = b.trim3Total || 0;
       const annualTotal = t1 + t2 + t3;
       const annualAverage = annualTotal / 3;
-      const annualPct = formatDecimal(annualAverage / 1000 * 100);
+      const annualPct = formatDecimal(annualAverage / 1600 * 100);
       const path = `${refPath}/${studentId}`;
 
       updates[`${path}/trim1Total`] = t1;
       updates[`${path}/trim2Total`] = t2;
       updates[`${path}/trim3Total`] = t3;
-      updates[`${path}/trim1Pct`] = b.trim1Pct || formatDecimal(t1 / 1000 * 100);
-      updates[`${path}/trim2Pct`] = b.trim2Pct || formatDecimal(t2 / 1000 * 100);
-      updates[`${path}/trim3Pct`] = b.trim3Pct || formatDecimal(t3 / 1000 * 100);
+      updates[`${path}/trim1Pct`] = b.trim1Pct || formatDecimal(t1 / 1600 * 100);
+      updates[`${path}/trim2Pct`] = b.trim2Pct || formatDecimal(t2 / 1600 * 100);
+      updates[`${path}/trim3Pct`] = b.trim3Pct || formatDecimal(t3 / 1600 * 100);
       updates[`${path}/trim1Place`] = b.trim1Place || null;
       updates[`${path}/trim2Place`] = b.trim2Place || null;
       updates[`${path}/trim3Place`] = b.trim3Place || null;
@@ -2179,9 +2179,9 @@ async function previewAndPrint(){
 function buildBulletinHtml(b) {
   const d = b.data;
   const maxGrand = d.maxGrand || (currentTrim ? TRIM_MAX_GRAND : ANNUAL_MAX_GRAND);
-  const trim1Pct = b.trim1Pct || (d.tri[0] ? formatDecimal(d.tri[0] / 1000 * 100) : '');
-  const trim2Pct = b.trim2Pct || (d.tri[1] ? formatDecimal(d.tri[1] / 1000 * 100) : '');
-  const trim3Pct = b.trim3Pct || (d.tri[2] ? formatDecimal(d.tri[2] / 1000 * 100) : '');
+  const trim1Pct = b.trim1Pct || (d.tri[0] ? formatDecimal(d.tri[0] / 1600 * 100) : '');
+  const trim2Pct = b.trim2Pct || (d.tri[1] ? formatDecimal(d.tri[1] / 1600 * 100) : '');
+  const trim3Pct = b.trim3Pct || (d.tri[2] ? formatDecimal(d.tri[2] / 1600 * 100) : '');
   const annualPlace = b.annualPlace || b.place || '';
 
   // ── Tableau 1 rows ──
@@ -2576,7 +2576,7 @@ ${bulletinCSS}
         ${tbl1Rows}
         <tr class="grand-row">
           <td>GRAND TOTAL</td>
-          <td>500</td><td>500</td><td>1000</td>
+          <td>800</td><td>800</td><td>1600</td>
           <td colspan="2"></td><td>${d.tri[0] ? formatDecimal(d.tri[0]) : ''}</td>
           <td colspan="2"></td><td>${d.tri[1] ? formatDecimal(d.tri[1]) : ''}</td>
           <td colspan="2"></td><td>${d.tri[2] ? formatDecimal(d.tri[2]) : ''}</td>
@@ -2785,18 +2785,18 @@ async function loadPalmares(){
 
     if (selectedTrim === '1') {
       displayTotal = trim1Total;
-      computedPct = trim1Total ? formatDecimal(trim1Total / 1000 * 100) : '0.0';
+      computedPct = trim1Total ? formatDecimal(trim1Total / 1600 * 100) : '0.0';
     } else if (selectedTrim === '2') {
       displayTotal = trim2Total;
-      computedPct = trim2Total ? formatDecimal(trim2Total / 1000 * 100) : '0.0';
+      computedPct = trim2Total ? formatDecimal(trim2Total / 1600 * 100) : '0.0';
     } else if (selectedTrim === '3') {
       displayTotal = trim3Total;
-      computedPct = trim3Total ? formatDecimal(trim3Total / 1000 * 100) : '0.0';
+      computedPct = trim3Total ? formatDecimal(trim3Total / 1600 * 100) : '0.0';
     } else {
       const annualAvg = (trim1Total + trim2Total + trim3Total) / 3;
       displayTotal = annualAvg;
       computedPct = annualAvg > 0
-        ? formatDecimal(annualAvg / 1000 * 100)
+        ? formatDecimal(annualAvg / 1600 * 100)
         : (Number(b.annualPct) > 0
             ? formatDecimal(Number(b.annualPct))
             : (Number(b.annualPercentage) > 0
@@ -2842,7 +2842,7 @@ async function loadPalmares(){
       trim3Total: b.trim3Total || 0,
       annualTotal: b.annualTotal || b.total || 0,
       annualPct: b.annualPct || b.percentage || 0,
-      maxGrand: b.maxGrand || 3000,
+      maxGrand: b.maxGrand || 4800,
       place: b.place || student.rankLabel || ''
     };
   });
@@ -2863,7 +2863,7 @@ async function loadPalmares(){
       <td>${s.name}</td>
       <td>${s.class}</td>
       <td>${s.branch}</td>
-      <td>${formatDecimal(s.total)} ${selectedTrim === 'annuel' ? '/ 1000 (annuel)' : '/ 1000'}</td>
+      <td>${formatDecimal(s.total)} ${selectedTrim === 'annuel' ? '/ 1600 (annuel)' : '/ 1600'}</td>
       <td>${s.percentage}%</td>
       <td>${s.grade}</td>
       <td>${s.conduct}</td>
@@ -3024,7 +3024,7 @@ function printSingleFromPalmares(key){
   showModal('🖨️','Imprimer le bulletin','Voulez-vous imprimer le bulletin de cet élève ?',[
     {label:'Imprimer',cls:'btn-gold',action:()=>{
       const b=allBulletins.find(x=>x._key===key);if(!b){toast('Bulletin introuvable','error');return;}
-      const mockData={rows:b.scores||[],tri:[0,0,0],totalAnnual:b.annualTotal||0,annualPct:b.annualPct||0,maxGrand:b.maxGrand||3000};
+      const mockData={rows:b.scores||[],tri:[0,0,0],totalAnnual:b.annualTotal||0,annualPct:b.annualPct||0,maxGrand:b.maxGrand||4800};
       if(b.scores)b.scores.forEach(r=>{mockData.tri[0]+=r.t1?.total||0;mockData.tri[1]+=r.t2?.total||0;mockData.tri[2]+=r.t3?.total||0;});
       document.getElementById('print-area').innerHTML=buildBulletinHtml({studentName:b.studentName,branch:b.branch,class:b.class,teacher:b.teacherName,date:b.bulletinDate,remarqueDelib:b.remarqueDelib,conduite:b.conduite,data:mockData,place:b.place,trim1Place:b.trim1Place,trim2Place:b.trim2Place,trim3Place:b.trim3Place});
       window.print();
@@ -3099,8 +3099,8 @@ async function viewBulletin(studentId){
       rows: b.scores || [], 
       tri: [trim1Total, trim2Total, trim3Total],
       totalAnnual: annualTotal || 0, 
-      annualPct: b.annualPct || formatDecimal(annualTotal / 3 / 1000 * 100) || '0.0', 
-      maxGrand: b.maxGrand || 3000 
+      annualPct: b.annualPct || formatDecimal(annualTotal / 3 / 1600 * 100) || '0.0',
+      maxGrand: b.maxGrand || 4800
     };
 
     const place = student.rankLabel || student.rank || b.place || '';
@@ -3191,8 +3191,8 @@ async function generateAnnual(studentId, className) {
     trim3Total: t3,
     totalAnnual,
     averageAnnual,
-    annualPct: averageAnnual ? formatDecimal(averageAnnual / 1000 * 100) : '0.0',
-    max: 3000,
+    annualPct: averageAnnual ? formatDecimal(averageAnnual / 1600 * 100) : '0.0',
+    max: 4800,
     generatedAt: new Date().toISOString(),
     sourceBulletin: `bulletins_primaire_${className}/${studentId}`
   };
@@ -3264,25 +3264,25 @@ function displayAnnualData(annualData, allClassStudents = []) {
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 1</div>
-          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${formatDecimal(annualData.trimestre1.total)}/1000</div>
+          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${formatDecimal(annualData.trimestre1.total)}/1600</div>
           <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre1.percentage}%</div>
           <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre1.place}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 2</div>
-          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${formatDecimal(annualData.trimestre2.total)}/1000</div>
+          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${formatDecimal(annualData.trimestre2.total)}/1600</div>
           <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre2.percentage}%</div>
           <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre2.place}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: rgba(255,255,255,.05); border-radius: 8px;">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">Trimestre 3</div>
-          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${formatDecimal(annualData.trimestre3.total)}/1000</div>
+          <div style="font-size: 18px; font-weight: bold; color: var(--gold);">${formatDecimal(annualData.trimestre3.total)}/1600</div>
           <div style="font-size: 14px; color: rgba(255,255,255,.8);">Pourcentage: ${annualData.trimestre3.percentage}%</div>
           <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top:6px;">Rang: ${annualData.trimestre3.place}</div>
         </div>
         <div style="text-align: center; padding: 10px; background: linear-gradient(135deg, rgba(200,168,75,.2), rgba(200,168,75,.1)); border-radius: 8px; border: 2px solid var(--gold);">
           <div style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 5px;">TOTAL ANNUEL</div>
-          <div style="font-size: 24px; font-weight: bold; color: var(--gold);">${formatDecimal(Number(annualData.annuel.total))}/3000</div>
+          <div style="font-size: 24px; font-weight: bold; color: var(--gold);">${formatDecimal(Number(annualData.annuel.total))}/4800</div>
           <div style="font-size: 16px; color: rgba(255,255,255,.9);">${annualData.annuel.percentage}%</div>
           <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top: 5px;">Moyenne: ${formatDecimal(Number(annualData.annuel.average))}</div>
           <div style="font-size: 12px; color: rgba(255,255,255,.7); margin-top: 5px;">Rang: ${annualData.place || annualData.rank || 'N/A'}</div>
@@ -3303,7 +3303,7 @@ function displayAnnualData(annualData, allClassStudents = []) {
               <tr style="background: rgba(59,130,246,.2);">
                 <th style="padding: 8px; text-align: center; color: #3b82f6; font-weight: bold;">Rang</th>
                 <th style="padding: 8px; text-align: left; color: #3b82f6; font-weight: bold;">Élève</th>
-                <th style="padding: 8px; text-align: center; color: #3b82f6; font-weight: bold;">Total/3000</th>
+                <th style="padding: 8px; text-align: center; color: #3b82f6; font-weight: bold;">Total/4800</th>
                 <th style="padding: 8px; text-align: center; color: #3b82f6; font-weight: bold;">%</th>
               </tr>
             </thead>
@@ -3473,7 +3473,7 @@ async function downloadZip(){
   const list=Object.values(map).sort((a,b)=>Number(b.annualPct || b.percentage || 0)-Number(a.annualPct || a.percentage || 0));
   list.forEach((b,i)=>{
     b.place = i+1; // Assign place
-    const mockData={rows:b.scores||[],tri:[0,0,0],totalAnnual:b.annualTotal||0,annualPct:b.annualPct||0,maxGrand:b.maxGrand||3000};
+    const mockData={rows:b.scores||[],tri:[0,0,0],totalAnnual:b.annualTotal||0,annualPct:b.annualPct||0,maxGrand:b.maxGrand||4800};
     if(b.scores)b.scores.forEach(r=>{mockData.tri[0]+=r.t1?.total||0;mockData.tri[1]+=r.t2?.total||0;mockData.tri[2]+=r.t3?.total||0;});
     const inner=buildBulletinHtml({studentName:b.studentName,branch:b.branch,class:b.class,teacher:b.teacherName,date:b.bulletinDate,remarqueDelib:b.remarqueDelib,conduite:b.conduite,data:mockData,place:b.place,trim1Place:b.trim1Place,trim2Place:b.trim2Place,trim3Place:b.trim3Place});
     const full=`<!DOCTYPE html><html><head>

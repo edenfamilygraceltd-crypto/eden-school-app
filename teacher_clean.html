@@ -3723,8 +3723,8 @@
     "Étude du milieu":                { label: "ÉTUDE DU MILIEU",                  subBranches: ["Observation", "D.E. du Milieu"] },
     "Pre-mathématique":               { label: "PRÉ-MATHÉMATIQUE",                 subBranches: ["Pré-calcul", "Formes géométriques"] },
     "Français":                       { label: "FRANÇAIS",                         subBranches: ["Pré-lecture", "Pré-écriture"] },
-    "Français langage":               { label: "FRANÇAIS LANGAGE",                 subBranches: ["Chant / Expression orale", "Histoire"] },
-    "Art& Culture":                   { label: "ART & CULTURE",                    subBranches: ["Dessin", "Coloriage", "Peinture", "Découpage", "Déchiquetage", "Modelage", "Pliage"] },
+    "Français langage":               { label: "FRANÇAIS LANGAGE",                 subBranches: ["Expression orale", "Histoire"] },
+    "Art& Culture":                   { label: "ART & CULTURE",                    subBranches: ["Dessin", "Coloriage", "Peinture", "Découpage", "Déchiquetage", "Modelage", "Pliage", "Récitation", "Bricolage et construction", "Chant"] },
     "Activité Physique et Motrice":   { label: "ACTIVITÉ PHYSIQUE ET MOTRICE",     subBranches: ["Exercices physiques", "Jeux collectifs"] }
   };
 
@@ -7465,7 +7465,8 @@
   }
 
   function hasLocalBulletinDraft() {
-    const hasNotes = Object.values(BULLETIN.notes || {}).some((entry) => {
+    const hasNotes = Object.entries(BULLETIN.notes || {}).some(([key, entry]) => {
+      if (normalize(key) === 'application') return false;
       if (!entry || typeof entry !== 'object') return false;
       const tj = parseFloat(entry.tj);
       const ex = parseFloat(entry.ex);
@@ -7484,6 +7485,8 @@
     c.innerHTML = '';
 
     BRANCHES.forEach(b => {
+      // Application est calculée automatiquement : aucune saisie manuelle TJ/EX.
+      if (b.id === 'Application') return;
       const row = document.createElement('div');
       row.style.cssText = 'display:grid;grid-template-columns:1fr 60px 60px 55px 55px 52px;gap:6px;align-items:center;padding:9px 0;border-bottom:1px solid var(--bdr);';
       row.innerHTML = `
@@ -7499,6 +7502,7 @@
   }
 
   function onNote(branchId, type, input) {
+    if (normalize(branchId) === 'application') { input.value = ''; return; }
     const v = parseFloat(input.value);
     const g = numToGrade(isNaN(v)?null:v);
     input.classList.remove('g-ex','g-go','g-av','g-fa');
@@ -7880,10 +7884,31 @@
     if (['1', '2', '3'].includes(currentTri)) {
       previewBulletinsByTri[currentTri] = {
         ...(previewBulletinsByTri[currentTri] || {}),
-        skills: BULLETIN.notes || {},
-        applicationGrade: calculateApplicationGrade(BULLETIN.notes || {})
+        skills: BULLETIN.notes || {}
       };
     }
+
+    // Calcul automatique depuis les cotations réelles : tous les tests TJ + l'examen,
+    // même lorsqu'il y a 2, 3 ou davantage de tests dans une matière.
+    const applicationAverages = await Promise.all(['1', '2', '3'].map(async targetTri => {
+      try {
+        const average = await calculateApplicationAverageFromCotation(
+          studentIdForPreview, (classForPreview || '').split('_')[0], targetTri, branchForPreview, BULLETIN.annee
+        );
+        return [targetTri, average];
+      } catch (error) {
+        console.warn('Application moyenne indisponible pour T' + targetTri, error);
+        return [targetTri, null];
+      }
+    }));
+    applicationAverages.forEach(([targetTri, average]) => {
+      if (average !== null && Number.isFinite(average)) {
+        previewBulletinsByTri[targetTri] = {
+          ...(previewBulletinsByTri[targetTri] || {}),
+          applicationAverage: average
+        };
+      }
+    });
 
     const getTriSkills = (targetTri) => {
       const triData = previewBulletinsByTri[targetTri] || {};
@@ -7988,20 +8013,27 @@
       tbody.appendChild(totalRow);
     }
 
-    // Application générale - show by trimester when data exists
+    // Application générale : note numérique automatique sur 100.
     const getAppGradeForTri = (targetTri) => {
       const triData = previewBulletinsByTri[targetTri] || {};
+      const average = Number(triData.applicationAverage);
+      if (triData.applicationAverage !== undefined && triData.applicationAverage !== null && Number.isFinite(average)) {
+        return { average };
+      }
+      // Compatibilité avec les anciens bulletins déjà publiés.
       const direct = normalizeGradeCode(triData.applicationGrade);
-      if (direct) return direct;
-      const triSkills = getTriSkills(targetTri);
-      if (!triSkills || !Object.keys(triSkills).length) return null;
-      return normalizeGradeCode(calculateApplicationGrade(triSkills));
+      return direct ? { grade: direct } : null;
     };
 
     const setApp = (id, targetTri) => {
       const el = document.getElementById(id);
       if (!el) return;
-      const appGrade = getAppGradeForTri(targetTri);
+      const appResult = getAppGradeForTri(targetTri);
+      if (appResult && appResult.average !== undefined) {
+        el.innerHTML = `<span style="font-weight:800;color:#1e3a5f;">${appResult.average.toFixed(1)}/100</span>`;
+        return;
+      }
+      const appGrade = appResult && appResult.grade;
       const appLabel = appGrade ? (gradeToKindergartenSkill(appGrade) || appGrade) : '—';
       const appCls = appGrade ? gradeBulletinClass(appGrade) : 'bul-nd';
       el.innerHTML = `<span class="${appCls}">${appLabel}</span>`;
@@ -8120,6 +8152,10 @@
       .toUpperCase();
 
     const effectiveBranch = (teacherBranch || studentBranch || 'maternelle').toLowerCase();
+    const applicationAverage = await calculateApplicationAverageFromCotation(
+      selectedStudentId, cleanClass || studentClasse, selectedTrimester,
+      teacherBranch || studentBranch || 'maternelle', BULLETIN.annee
+    );
 
     const data = {
       studentId: selectedStudentId,
@@ -8133,11 +8169,12 @@
       trimester: selectedTrimester,
       schoolYear: (BULLETIN.annee || '2025-2026').toString(),
       annee: (BULLETIN.annee || '2025-2026').toString(),
-      skills: BULLETIN.notes || {}, // observation-based (no heavy scoring)
+      skills: Object.fromEntries(Object.entries(BULLETIN.notes || {}).filter(([key]) => normalize(key) !== 'application')), // Application is calculated, never manually entered
       appreciation: BULLETIN.commentaire || '',
       conduct: BULLETIN.conduite || {}, // conduct data
       conduite: BULLETIN.conduite || {},
-      applicationGrade: calculateApplicationGrade(BULLETIN.notes),
+      applicationAverage: applicationAverage,
+      applicationGrade: applicationAverage === null ? null : numToGrade(applicationAverage),
       teacherName: teacherName,
       createdAt: new Date().toISOString(),
       updatedAt: Date.now(),
@@ -8302,7 +8339,16 @@
     return Number(((earned / maxTotal) * 100).toFixed(2));
   }
 
+  function calculateAnnualApplicationAverage(trimesterBulletins) {
+    const values = (trimesterBulletins || [])
+      .map(bulletin => Number(bulletin && bulletin.applicationAverage))
+      .filter(value => Number.isFinite(value) && value >= 0);
+    return values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2)) : null;
+  }
+
   function calculateAnnualApplicationGrade(trimesterBulletins) {
+    const numericAverage = calculateAnnualApplicationAverage(trimesterBulletins);
+    if (numericAverage !== null) return numToGrade(numericAverage) || 'B';
     let total = 0;
     let count = 0;
 
@@ -8368,6 +8414,7 @@
       const schoolYear = (document.getElementById('bAnnee')?.value || t3?.schoolYear || t3?.annee || '2025-2026').toString();
       const annualSkills = buildAnnualSkillsFromTrimesters(trimesterBulletins);
       const generalAverage = calculateAnnualGeneralAverage(trimesterBulletins);
+      const annualApplicationAverage = calculateAnnualApplicationAverage(trimesterBulletins);
       const annualApplicationGrade = calculateAnnualApplicationGrade(trimesterBulletins);
 
       const annualDataDraft = {
@@ -8384,6 +8431,7 @@
         schoolYear,
         annee: schoolYear,
         skills: annualSkills,
+        applicationAverage: annualApplicationAverage,
         applicationGrade: annualApplicationGrade,
         conduct: t3?.conduct || {},
         appreciation: BULLETIN.commentaire || t3?.appreciation || t3?.commentaire || '',
@@ -8466,6 +8514,10 @@
       .toUpperCase();
 
     const effectiveBranch = (teacherBranch || studentBranch || 'maternelle').toLowerCase();
+    const applicationAverage = await calculateApplicationAverageFromCotation(
+      selectedStudentId, cleanClass || studentClasse, selectedTrimester,
+      teacherBranch || studentBranch || 'maternelle', BULLETIN.annee
+    );
     const savePaths = getBulletinStorePaths(effectiveBranch, studentClasse || normalizedClass, selectedStudentId, selectedTrimester);
 
     try {
@@ -8494,11 +8546,12 @@
       teacherId: currentTeacher?.id || currentTeacher?.uid || '',
       trimester: selectedTrimester,
       schoolYear: (BULLETIN.annee || '2025-2026').toString(),
-      skills: BULLETIN.notes || {},
+      skills: Object.fromEntries(Object.entries(BULLETIN.notes || {}).filter(([key]) => normalize(key) !== 'application')),
       appreciation: BULLETIN.commentaire || '',
       conduct: BULLETIN.conduite || {},
       conduite: BULLETIN.conduite || {},
-      applicationGrade: calculateApplicationGrade(BULLETIN.notes),
+      applicationAverage: applicationAverage,
+      applicationGrade: applicationAverage === null ? null : numToGrade(applicationAverage),
       teacherName: teacherName,
       createdAt: new Date().toISOString(),
       status: 'published',
@@ -12448,14 +12501,25 @@
   }
 
   async function loadTermConfiguration() {
+    // Use the same school-wide academic year as the secretary portal and Android app.
+    const now = new Date();
+    const startYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+    const calendarAcademicYear = `${startYear}-${startYear + 1}`;
+    let sharedAcademicYear = '';
     try {
+      try {
+        const activeYearSnap = await db.ref('schoolSettings/activeAcademicYear').once('value');
+        const activeYearValue = String(activeYearSnap.val() || '').trim();
+        if (/^\d{4}-\d{4}$/.test(activeYearValue)) sharedAcademicYear = activeYearValue;
+      } catch (yearError) { console.warn('Année scolaire partagée indisponible:', yearError?.message || yearError); }
+
       // Primary source: settings/termConfig (shared with admin settings page)
       const settingsSnap = await db.ref('settings/termConfig').once('value');
       if (settingsSnap.exists()) {
         const cfg = settingsSnap.val() || {};
         const configuredTerm = cfg.trimestre || cfg.trimester || cfg.currentTerm || '1';
         currentTerm = `${configuredTerm}`;
-        academicYear = cfg.academicYear || '2025-2026';
+        academicYear = sharedAcademicYear || cfg.academicYear || calendarAcademicYear;
         termsConfig = [{
           id: `${currentTerm}`,
           name: cfg.termName || cfg.name || `Trimestre ${currentTerm}`,
@@ -12470,7 +12534,7 @@
       if (snap.exists()) {
         const d = snap.val() || {};
         currentTerm = `${d.currentTerm || '1'}`;
-        academicYear = d.academicYear || '2025-2026';
+        academicYear = sharedAcademicYear || d.academicYear || calendarAcademicYear;
         termsConfig = Array.isArray(d.terms) ? d.terms : [];
         return;
       }
@@ -12478,7 +12542,7 @@
       console.warn('loadTermConfiguration fallback:', e?.message || e);
     }
     currentTerm = '1';
-    academicYear = '2025-2026';
+    academicYear = sharedAcademicYear || calendarAcademicYear;
     termsConfig = [];
   }
 
@@ -14034,7 +14098,9 @@
   // ══════════════════════════════════════════════════════════════
 
   function normalizeSubjectKey(s) {
-    return (s || '').toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    // Keep Firebase keys identical to Android's NFD-based cotationKey().
+    return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
   }
 
   function getCotMentionBadge(pct) {
@@ -14842,18 +14908,19 @@
 /* ===== COTATION / BULLETIN REPAIR : TESTS PAR TRIMESTRE ===== */
 const COTATION_SUBJECT_MAX = {
   "Pre-mathématique": 100, "Français": 100,
-  "Étude du milieu": 80, "Français langage": 80,
-  "Art& Culture": 60, "Activité Physique et Motrice": 60, "Application": 100
+  "Étude du milieu": 100, "Français langage": 100,
+  "Art& Culture": 100, "Activité Physique et Motrice": 100, "Application": 100
 };
 cotationState.assessmentId = cotationState.assessmentId || "test_1";
 cotationState.assessments = cotationState.assessments || [];
 
 function getCotationSubjectSchoolMax(subject) { return Number(COTATION_SUBJECT_MAX[subject] || 100); }
-function getCotationTypeMax() { return cotationState.type === "EX" ? getCotationSubjectSchoolMax(cotationState.subject) : 50; }
-function getCotationSubjectTotal(subject) { return cotationState.type === "EX" ? getCotationSubjectSchoolMax(subject) : 50; }
+function getCotationTypeMax() { return cotationState.type === "EX" ? getCotationSubjectSchoolMax(cotationState.subject) : 100; }
+function getCotationSubjectTotal(subject) { return cotationState.type === "EX" ? getCotationSubjectSchoolMax(subject) : 100; }
 function getCotationSubBranchMax(subject, subBranch) {
   if (!subject || !subBranch) return 0;
   const key = normalizeSubjectKey(subBranch);
+  if (key === "bricolage_et_construction") return 10;
   const custom = cotationState.exerciseConfig && cotationState.exerciseConfig[subject] && cotationState.exerciseConfig[subject][key];
   if (custom !== undefined && custom !== null && custom !== "") return Number(custom);
   return Number((getCotationSubjectTotal(subject) / (COTATION_SUBJECTS[subject].subBranches.length || 1)).toFixed(2));
@@ -14861,8 +14928,53 @@ function getCotationSubBranchMax(subject, subBranch) {
 function getCotationV2BasePath(cls, subject, tri, type) {
   const branch = currentTeacher && (currentTeacher.branch || currentTeacher.schoolBranch) || getCurrentTeacherBranchNormalized() || "default";
   return "cotations/" + normalizeSubjectKey(branch) + "_" + normalizeSubjectKey(cls) + "_" + normalizeSubjectKey(subject) + "_" + normalizeSubjectKey(academicYear || "2026-2027") + "_T" + tri + "_" + type;
-    (academicYear || "2026-2027") + "/" + tri + "/" + type;
 }
+
+/* Application du bulletin : moyenne automatique de tous les tests TJ et de l'examen,
+   ramenée sur 100. Chaque matière pèse le même poids, même si elle a plusieurs tests. */
+async function calculateApplicationAverageFromCotation(studentId, className, trimester, branchName, schoolYear) {
+  if (!studentId || !className || !trimester || !db) return null;
+  const branch = branchName || (currentTeacher && (currentTeacher.branch || currentTeacher.schoolBranch)) || getCurrentTeacherBranchNormalized() || "default";
+  const year = schoolYear || academicYear || "2026-2027";
+  const subjects = Object.entries(COTATION_SUBJECTS || {}).filter(([name]) => normalizeSubjectKey(name) !== "application");
+  const subjectAverages = await Promise.all(subjects.map(async ([subject, config]) => {
+    const subBranches = config.subBranches || [];
+    const assessments = await Promise.all(["TJ", "EX"].map(async type => {
+      const path = "cotations/" + normalizeSubjectKey(branch) + "_" + normalizeSubjectKey(className) + "_" +
+        normalizeSubjectKey(subject) + "_" + normalizeSubjectKey(year) + "_T" + trimester + "_" + type;
+      let records = {};
+      try {
+        const snap = await db.ref(path).once("value");
+        records = snap.val() || {};
+      } catch (error) {
+        console.warn("Lecture cotation impossible pour " + subject + " / " + type, error);
+        return [];
+      }
+      return Object.values(records).filter(record => record && typeof record === "object" && record.entries)
+        .map(record => {
+          const studentEntries = record.entries[studentId] || {};
+          const configMax = record.exerciseConfig || {};
+          let earned = 0, possible = 0;
+          subBranches.forEach(sub => {
+            const key = normalizeSubjectKey(sub);
+            const entry = studentEntries[key];
+            if (!entry || entry.score === undefined || entry.score === null || entry.score === "") return;
+            const max = key === "bricolage_et_construction" ? 10 : Number(configMax[key] || (100 / Math.max(1, subBranches.length)));
+            const score = Number(entry.score);
+            if (!Number.isFinite(score) || !Number.isFinite(max) || max <= 0) return;
+            earned += Math.max(0, Math.min(score, max));
+            possible += max;
+          });
+          return possible > 0 ? (earned / possible) * 100 : null;
+        }).filter(value => value !== null);
+    }));
+    const scores = assessments.flat();
+    return scores.length ? scores.reduce((sum, value) => sum + value, 0) / scores.length : null;
+  }));
+  const valid = subjectAverages.filter(value => value !== null && Number.isFinite(value));
+  return valid.length ? Number((valid.reduce((sum, value) => sum + value, 0) / valid.length).toFixed(2)) : null;
+}
+
 function getCotationV2AssessmentPath(cls, subject, tri, type, id) {
   return getCotationV2BasePath(cls, subject, tri, type) + "/" + id;
 }

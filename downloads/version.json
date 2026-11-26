@@ -1,9 +1,9 @@
 {
-  "siteVersion": "web-20261123-attendance-keyboard-dashboard",
-  "appVersion": "1.3",
-  "appVersionCode": 4,
-  "releaseDate": "2026-11-23",
-  "appMessage": "Une nouvelle version d'Eden Smart est disponible. Elle ameliore la synchronisation des presences et la navigation.",
-  "message": "Le portail Eden Family School a ete ameliore : synchronisation des presences, tableaux de bord et affichage mobile.",
+  "siteVersion": "web-20261126-application-cotation-artculture",
+  "appVersion": "1.5",
+  "appVersionCode": 6,
+  "releaseDate": "2026-11-26",
+  "appMessage": "Eden Smart 1.5 : cotations maternelle sur 100, bricolage et construction sur 10, Application calculee automatiquement et affichage des points de tests par eleve.",
+  "message": "Le portail Eden Family School a ete mis a jour : bulletins, cotations, affichage des points et ameliorations des espaces de travail.",
   "downloadUrl": "https://github.com/edenfamilygraceltd-crypto/eden-school-app/raw/refs/heads/main/downloads/eden-smart.apk"
 }
