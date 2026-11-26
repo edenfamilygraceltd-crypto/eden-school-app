@@ -1,9 +1,9 @@
 {
-  "siteVersion": "web-20261126-application-cotation-artculture",
+  "siteVersion": "web-20261126165901-6c0ca75",
   "appVersion": "1.5",
   "appVersionCode": 6,
   "releaseDate": "2026-11-26",
   "appMessage": "Eden Smart 1.5 : cotations maternelle sur 100, bricolage et construction sur 10, Application calculee automatiquement et affichage des points de tests par eleve.",
-  "message": "Le portail Eden Family School a ete mis a jour : bulletins, cotations, affichage des points et ameliorations des espaces de travail.",
-  "downloadUrl": "https://github.com/edenfamilygraceltd-crypto/eden-school-app/raw/refs/heads/main/downloads/eden-smart.apk"
+  "message": "Une mise à jour du site Eden Family School est disponible.",
+  "downloadUrl": "/downloads/eden-smart.apk"
 }
